@@ -432,13 +432,15 @@ module.exports = function(options, repo, params, id, dataResolver) {
 
     var minCorner = mercator.px([bbox[0], bbox[3]], z),
         maxCorner = mercator.px([bbox[2], bbox[1]], z);
-    w /= (1 + 2 * padding);
-    h /= (1 + 2 * padding);
+    var w_ = w / (1 + 2 * padding);
+    var h_ = h / (1 + 2 * padding);
 
     z -= Math.max(
-      Math.log((maxCorner[0] - minCorner[0]) / w),
-      Math.log((maxCorner[1] - minCorner[1]) / h)
+      Math.log((maxCorner[0] - minCorner[0]) / w_),
+      Math.log((maxCorner[1] - minCorner[1]) / h_)
     ) / Math.LN2;
+
+    z = Math.max(Math.log(Math.max(w, h) / 256) / Math.LN2, Math.min(25, z));
 
     return z;
   };
