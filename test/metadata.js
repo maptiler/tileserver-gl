@@ -18,7 +18,7 @@ var testTileJSONArray = function(url) {
   });
 };
 
-var testTileJSON = function(url, basename) {
+var testTileJSON = function(url) {
   describe(url + ' is TileJSON', function() {
     it('is json', function(done) {
       supertest(app)
@@ -27,11 +27,10 @@ var testTileJSON = function(url, basename) {
         .expect('Content-Type', /application\/json/, done);
     });
 
-    it('has valid basename and tiles', function(done) {
+    it('has valid tiles', function(done) {
       supertest(app)
         .get(url)
         .expect(function(res) {
-          res.body.basename.should.equal(basename);
           res.body.tiles.length.should.be.greaterThan(0);
         }).end(done);
     });
@@ -64,6 +63,6 @@ describe('Metadata', function() {
     });
   });
 
-  testTileJSON('/styles/bright/rendered.json', 'bright');
-  testTileJSON('/data/zurich-vector.json', 'zurich-vector');
+  testTileJSON('/styles/bright/rendered.json');
+  testTileJSON('/data/zurich-vector.json');
 });
