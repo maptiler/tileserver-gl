@@ -1,18 +1,18 @@
 @font-face {
   font-family: 'OpenSans';
-  src: url('/fonts/OpenSans-Regular.ttf');
+  src: url('fonts/OpenSans-Regular.ttf');
   font-weight: normal;
   font-style: normal;
 }
 @font-face {
   font-family: 'OpenSans';
-  src: url('/fonts/OpenSans-Italic.ttf');
+  src: url('fonts/OpenSans-Italic.ttf');
   font-weight: normal;
   font-style: italic;
 }
 @font-face {
   font-family: 'OpenSans';
-  src: url('/fonts/OpenSans-Bold.ttf');
+  src: url('fonts/OpenSans-Bold.ttf');
   font-weight: bold;
   font-style: normal;
 }
@@ -149,21 +149,21 @@ footer a {
 body {
   background-repeat:no-repeat !important;
   background-size: contain !important;
-  background-image: url(/images/header-map-640px.png);
+  background-image: url(images/header-map-640px.png);
 }
 @media only screen and (min-width: 641px) {
   body {
-    background-image: url(/images/header-map-1280px.png);
+    background-image: url(images/header-map-1280px.png);
   }
 }
 @media only screen and (min-width: 1281px) {
   body {
-    background-image: url(/images/header-map-1600px.png);
+    background-image: url(images/header-map-1600px.png);
   }
 }
 @media only screen and (min-width: 1601px) {
   body {
-    background-image: url(/images/header-map-2560px.png);
+    background-image: url(images/header-map-2560px.png);
   }
 }
 
