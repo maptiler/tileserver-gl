@@ -69,6 +69,16 @@
         type: 'line',
         paint: {'line-color': colorText}
       });
+      layers_.push({
+        id: el['id'] + Math.random(),
+        source: 'vector_layer_',
+        'source-layer': el['id'],
+        interactive: true,
+        type: 'circle',
+        paint: {'circle-color': colorText,
+                'circle-radius': 3},
+        filter: ["==", "$type", "Point"]
+      });
       var item = document.createElement('div');
       item.innerHTML = '<div style="' +
         'background:rgba(' + color[0] + ',' + color[1] + ',' + color[2] + ',1);' +
