@@ -539,7 +539,7 @@ module.exports = function(options, repo, params, id, dataResolver) {
   app.get('/rendered.json', function(req, res, next) {
     var info = clone(tileJSON);
     info.tiles = utils.getTileUrls(req, info.tiles,
-                                   'styles/' + id + '/rendered', info.format);
+                                   'styles/' + id + '/rendered', info.format, info.baseURL);
     return res.send(info);
   });
 

@@ -6,19 +6,23 @@ var async = require('async'),
 
 var glyphCompose = require('glyph-pbf-composite');
 
-module.exports.getTileUrls = function(req, domains, path, format) {
+module.exports.getTileUrls = function(req, domains, path, format, baseURL) {
+  var key = req.query.key;
+  var query = (key && key.length > 0) ? ('?key=' + key) : '';
+
+  if (baseURL) {
+    return [baseURL + path + '/{z}/{x}/{y}.' + format + query]
+  }
 
   if (domains) {
     if (domains.constructor === String && domains.length > 0) {
       domains = domains.split(',');
     }
+
   }
   if (!domains || domains.length == 0) {
     domains = [req.headers.host];
   }
-
-  var key = req.query.key;
-  var query = (key && key.length > 0) ? ('?key=' + key) : '';
 
   var uris = [];
   domains.forEach(function(domain) {

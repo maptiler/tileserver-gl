@@ -66,6 +66,16 @@ The value of ``root`` is used as prefix for all data types.
 
 You can use this to optionally specify on what domains the rendered tiles are accessible. This can be used for basic load-balancing or to bypass browser's limit for the number of connections per domain.
 
+``baseURL``
+-----------
+
+When you run the tile server server behind a load-balancer, the automatic URL generators wont't have the required information to build URLs which point to the correct LB endpoint.
+
+Also, if your load balancer is forwarding a HTTPS connection to the non-HTTPS ``tileserver-gl``, setting the ``baseURL`` is indispensable.
+
+Not compatible with the ``domains`` option.
+
+
 ``formatQuality``
 -----------------
 

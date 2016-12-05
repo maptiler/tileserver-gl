@@ -14,7 +14,8 @@ module.exports = function(options, repo, params, id) {
 
   var mbtilesFile = path.resolve(options.paths.mbtiles, params.mbtiles);
   var tileJSON = {
-    'tiles': params.domains || options.domains
+    'tiles': params.domains || options.domains,
+    'baseURL': options.baseURL
   };
 
   repo[id] = tileJSON;
