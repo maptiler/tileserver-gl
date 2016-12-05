@@ -42,6 +42,7 @@ module.exports = function(options, repo, params, id, dataResolver) {
   var lastModified = new Date().toUTCString();
 
   var rootPath = options.paths.root;
+  var baseURL = options.baseURL;
 
   var styleFile = params.style;
   var map = {
@@ -539,7 +540,7 @@ module.exports = function(options, repo, params, id, dataResolver) {
   app.get('/rendered.json', function(req, res, next) {
     var info = clone(tileJSON);
     info.tiles = utils.getTileUrls(req, info.tiles,
-                                   'styles/' + id + '/rendered', info.format, info.baseURL);
+                                   'styles/' + id + '/rendered', info.format, baseURL);
     return res.send(info);
   });
 
