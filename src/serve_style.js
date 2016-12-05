@@ -59,9 +59,8 @@ module.exports = function(options, repo, params, id, reportTiles, reportFont) {
       if (!opt_nokey && req.query.key) {
         query = '?key=' + req.query.key;
       }
-      var url = baseURL ? baseURL : req.protocol + '://' + req.headers.host;
-      return url.replace(
-          'local://', url + '/') + query;
+      return url.replace('local://',
+        (baseURL ? baseURL : req.protocol + '://' + req.headers.host) + '/') + query;
     };
 
     var styleJSON_ = clone(styleJSON);

@@ -255,6 +255,7 @@ module.exports = function(opts, callback) {
             req, style.serving_rendered.tiles,
             'styles/' + id + '/rendered', style.serving_rendered.format, baseURL);
         style.xyz_link = tiles[0];
+        style.baseURL = baseURL;
       }
     });
     var data = clone(serving.data || {});
@@ -296,6 +297,7 @@ module.exports = function(opts, callback) {
           size /= 1024;
         }
         data_.formatted_filesize = size.toFixed(2) + ' ' + suffix;
+        data_.baseURL = baseURL;
       }
     });
     return {
