@@ -11,7 +11,7 @@ module.exports.getTileUrls = function(req, domains, path, format, baseURL) {
   var query = (key && key.length > 0) ? ('?key=' + key) : '';
 
   if (baseURL) {
-    return [baseURL + path + '/{z}/{x}/{y}.' + format + query]
+    return [baseURL + '/' + path + '/{z}/{x}/{y}.' + format + query]
   }
 
   if (domains) {
