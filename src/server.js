@@ -69,7 +69,7 @@ module.exports = function(opts, callback) {
   }
 
   var options = config.options || {};
-  var baseURL = config.baseURL;
+  var baseURL = options.baseURL;
 
   var paths = options.paths || {};
   options.paths = paths;
@@ -300,7 +300,8 @@ module.exports = function(opts, callback) {
     });
     return {
       styles: styles,
-      data: data
+      data: data,
+      baseURL: baseURL
     };
   });
 
@@ -314,6 +315,7 @@ module.exports = function(opts, callback) {
     style.name = (serving.styles[id] || serving.rendered[id]).name;
     style.serving_data = serving.styles[id];
     style.serving_rendered = serving.rendered[id];
+    style.baseURL = baseURL;
     return style;
   });
 
@@ -331,6 +333,8 @@ module.exports = function(opts, callback) {
     }
     data.id = id;
     data.is_vector = data.format == 'pbf';
+
+    data.baseURL = baseURL;
     return data;
   });
 
