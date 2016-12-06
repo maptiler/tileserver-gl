@@ -13,6 +13,7 @@ module.exports = function(options, repo, params, id) {
   var app = express().disable('x-powered-by');
 
   var mbtilesFile = path.resolve(options.paths.mbtiles, params.mbtiles);
+  var baseURL = options.baseURL;
   var tileJSON = {
     'tiles': params.domains || options.domains
   };
@@ -81,7 +82,7 @@ module.exports = function(options, repo, params, id) {
   app.get('/' + id + '.json', function(req, res, next) {
     var info = clone(tileJSON);
     info.tiles = utils.getTileUrls(req, info.tiles,
-                                   'data/' + id, info.format);
+                                   'data/' + id, info.format, baseURL);
     return res.send(info);
   });
 

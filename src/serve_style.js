@@ -12,6 +12,8 @@ module.exports = function(options, repo, params, id, reportTiles, reportFont) {
 
   var styleFile = path.join(options.paths.styles, params.style);
 
+  var baseURL = options.baseURL;
+
   var styleJSON = clone(require(styleFile));
   Object.keys(styleJSON.sources).forEach(function(name) {
     var source = styleJSON.sources[name];
@@ -57,8 +59,8 @@ module.exports = function(options, repo, params, id, reportTiles, reportFont) {
       if (!opt_nokey && req.query.key) {
         query = '?key=' + req.query.key;
       }
-      return url.replace(
-          'local://', req.protocol + '://' + req.headers.host + '/') + query;
+      return url.replace('local://',
+        (baseURL ? baseURL : req.protocol + '://' + req.headers.host) + '/') + query;
     };
 
     var styleJSON_ = clone(styleJSON);

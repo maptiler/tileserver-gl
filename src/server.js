@@ -69,6 +69,8 @@ module.exports = function(opts, callback) {
   }
 
   var options = config.options || {};
+  var baseURL = options.baseURL;
+
   var paths = options.paths || {};
   options.paths = paths;
   paths.root = path.resolve(
@@ -165,7 +167,7 @@ module.exports = function(opts, callback) {
         version: styleJSON.version,
         name: styleJSON.name,
         id: id,
-        url: req.protocol + '://' + req.headers.host +
+        url: (baseURL ? baseURL : req.protocol + '://' + req.headers.host) +
              '/styles/' + id + '.json' + query
       });
     });
@@ -176,7 +178,7 @@ module.exports = function(opts, callback) {
     Object.keys(serving[type]).forEach(function(id) {
       var info = clone(serving[type][id]);
       info.tiles = utils.getTileUrls(req, info.tiles,
-                                     type + '/' + id, info.format);
+                                     type + '/' + id, info.format, baseURL);
       arr.push(info);
     });
     return arr;
@@ -224,6 +226,7 @@ module.exports = function(opts, callback) {
 
   serveTemplate('/$', 'index', function(req) {
     var styles = clone(config.styles || {});
+
     Object.keys(styles).forEach(function(id) {
       var style = styles[id];
       style.name = (serving.styles[id] || serving.rendered[id] || {}).name;
@@ -247,10 +250,12 @@ module.exports = function(opts, callback) {
           base64url('http://' + req.headers.host +
             '/styles/' + id + '/rendered.json' + query) + '/wmts';
 
+
         var tiles = utils.getTileUrls(
             req, style.serving_rendered.tiles,
-            'styles/' + id + '/rendered', style.serving_rendered.format);
+            'styles/' + id + '/rendered', style.serving_rendered.format, baseURL);
         style.xyz_link = tiles[0];
+        style.baseURL = baseURL;
       }
     });
     var data = clone(serving.data || {});
@@ -277,7 +282,7 @@ module.exports = function(opts, callback) {
             '/data/' + id + '.json' + query) + '/wmts';
 
         var tiles = utils.getTileUrls(
-            req, data_.tiles, 'data/' + id, data_.format);
+            req, data_.tiles, 'data/' + id, data_.format, baseURL);
         data_.xyz_link = tiles[0];
       }
       if (data_.filesize) {
@@ -292,11 +297,13 @@ module.exports = function(opts, callback) {
           size /= 1024;
         }
         data_.formatted_filesize = size.toFixed(2) + ' ' + suffix;
+        data_.baseURL = baseURL;
       }
     });
     return {
       styles: styles,
-      data: data
+      data: data,
+      baseURL: baseURL
     };
   });
 
@@ -310,6 +317,7 @@ module.exports = function(opts, callback) {
     style.name = (serving.styles[id] || serving.rendered[id]).name;
     style.serving_data = serving.styles[id];
     style.serving_rendered = serving.rendered[id];
+    style.baseURL = baseURL;
     return style;
   });
 
@@ -327,6 +335,8 @@ module.exports = function(opts, callback) {
     }
     data.id = id;
     data.is_vector = data.format == 'pbf';
+
+    data.baseURL = baseURL;
     return data;
   });
 

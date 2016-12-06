@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{name}} - TileServer GL</title>
   {{#is_vector}}
-  <link rel="stylesheet" type="text/css" href="/mapbox-gl.css{{&key_query}}" />
-  <script src="/mapbox-gl.js{{&key_query}}"></script>
+  <link rel="stylesheet" type="text/css" href="{{baseURL}}/mapbox-gl.css{{&key_query}}" />
+  <script src="{{baseURL}}/mapbox-gl.js{{&key_query}}"></script>
   <style>
     body {background:#000;color:#ccc;}
     #map {position:absolute;top:0;left:0;right:250px;bottom:0;}
@@ -17,9 +17,9 @@
   </style>
   {{/is_vector}}
   {{^is_vector}}
-  <link rel="stylesheet" type="text/css" href="/mapbox.css{{&key_query}}" />
-  <script src="/mapbox.js{{&key_query}}"></script>
-  <script src="/leaflet-hash.js{{&key_query}}"></script>
+  <link rel="stylesheet" type="text/css" href="{{baseURL}}/mapbox.css{{&key_query}}" />
+  <script src="{{baseURL}}/mapbox.js{{&key_query}}"></script>
+  <script src="{{baseURL}}/leaflet-hash.js{{&key_query}}"></script>
   <style>
     body { margin:0; padding:0; }
     #map { position:absolute; top:0; bottom:0; width:100%; }
@@ -108,7 +108,7 @@
     }
   };
   xhttp.responseType = 'json';
-  xhttp.open('GET', '/data/{{id}}.json{{&key_query}}', true);
+  xhttp.open('GET', '{{baseURL}}/data/{{id}}.json{{&key_query}}', true);
   xhttp.send();
 
   var propertyList = document.getElementById('propertyList');
@@ -133,7 +133,7 @@
   <h1 style="display:none;">{{name}}</h1>
   <div id='map'></div>
   <script>
-    var map = L.mapbox.map('map', '/data/{{id}}.json{{&key_query}}', { zoomControl: false });
+    var map = L.mapbox.map('map', '{{baseURL}}/data/{{id}}.json{{&key_query}}', { zoomControl: false });
     map.eachLayer(function(layer) {
       // do not add scale prefix even if retina display is detected
       layer.scalePrefix = '.';
