@@ -149,8 +149,13 @@ module.exports = function(options, repo, params, id, styles) {
 
   app.get('/' + id + '.json', function(req, res, next) {
     var info = clone(tileJSON);
-    info.tiles = utils.getTileUrls(req, info.tiles,
-                                   'data/' + id, info.format);
+    info.tiles = utils.getTileUrls(req, info.tiles, 'data/' + id, info.format);
+    // delete usless info
+    delete info.Layer;
+    delete info.id;
+    delete info.filesize;
+    delete info.basename;
+    delete info.mtime;
     return res.send(info);
   });
 
