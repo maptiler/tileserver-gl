@@ -27,6 +27,11 @@ module.exports = function(options, allowedFonts) {
     });
   });
 
+  app.get('/fontstacks.json', function(req, res, next) {
+    res.header('Content-type', 'application/json');
+    return res.send(Object.keys(existingFonts));
+  });
+
   app.get('/:fontstack/:range([\\d]+-[\\d]+).pbf',
       function(req, res, next) {
     var fontstack = decodeURI(req.params.fontstack);
