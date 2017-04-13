@@ -22,18 +22,30 @@ function isGzipped(data) {
   return data[0] === 0x1f && data[1] === 0x8b;
 }
 
-function unzipTile(tile) {
-  if (tile.isGzipped) {
-    tile.data = zlib.gunzipSync(tile.data);
-    tile.isGzipped = false;
+function unzip(tile, fn) {
+  if (!tile.isGzipped) {
+    return fn();
   }
+  zlib.gunzip(tile.data, function(err, buffer) {
+    if (!err) {
+      tile.data = buffer;
+      tile.isGzipped = false;
+    }
+    fn(err);
+  });
 }
 
-function zipTile(tile) {
-  if (!tile.isGzipped) {
-    tile.data = zlib.gzipSync(tile.data);
-    tile.isGzipped = true;
+function zip(tile, fn) {
+  if (tile.isGzipped) {
+    return fn();
   }
+  zlib.gzip(tile.data, function(err, buffer) {
+    if (!err) {
+      tile.data = buffer;
+      tile.isGzipped = true;
+    }
+    fn(err);
+  });
 }
 
 module.exports = function(options, repo, params, id, styles) {
@@ -147,12 +159,16 @@ module.exports = function(options, repo, params, id, styles) {
     }
     var tile = req.tile;
     var shrinker = lookupShrinker(style);
-    if (shrinker) {
-      unzipTile(tile);
-      tile.data = shrinker(tile.data, req.params.z, tileJSON.maxzoom);
-      //console.log(shrinker.getStats());
+    if (!shrinker) {
+      return next();
     }
-    next();
+    unzip(tile, function(err) {
+      if (!err) {
+        tile.data = shrinker(tile.data, req.params.z, tileJSON.maxzoom);
+        //console.log(shrinker.getStats());
+      }
+      next(err);
+    });
   }
 
   function formatTile(req, res, next) {
@@ -166,27 +182,35 @@ module.exports = function(options, repo, params, id, styles) {
       z = req.params.z;
 
     tile.contentType = 'application/json';
-    unzipTile(tile);
-
-    var vectorTile = new VectorTile(new pbf(tile.data));
-    var geojson = {
-      "type": "FeatureCollection",
-      "features": []
-    };
-
-    for (var layerName in vectorTile.layers) {
-      var layer = vectorTile.layers[layerName];
-      for (var i = 0; i < layer.length; i++) {
-        var feature = layer.feature(i);
-        var featureGeoJSON = feature.toGeoJSON(x, y, z);
-        featureGeoJSON.properties.layer = layerName;
-        geojson.features.push(featureGeoJSON);
+    unzip(tile, function(err) {
+      if (err) {
+        return next(err);
       }
-    }
 
-    tile.data = JSON.stringify(geojson);
+      var vectorTile = new VectorTile(new pbf(tile.data));
+      var geojson = {
+        "type": "FeatureCollection",
+        "features": []
+      };
 
-    next();
+      for (var layerName in vectorTile.layers) {
+        var layer = vectorTile.layers[layerName];
+        for (var i = 0; i < layer.length; i++) {
+          var feature = layer.feature(i);
+          var featureGeoJSON = feature.toGeoJSON(x, y, z);
+          featureGeoJSON.properties.layer = layerName;
+          geojson.features.push(featureGeoJSON);
+        }
+      }
+
+      tile.data = JSON.stringify(geojson);
+
+      next();
+    });
+  }
+
+  function zipTile(req, res, next) {
+    zip(req.tile, next);
   }
 
   function sendTile(req, res) {
@@ -197,9 +221,7 @@ module.exports = function(options, repo, params, id, styles) {
     headers['Content-Encoding'] = 'gzip';
     res.set(headers);
 
-    zipTile(req.tile);
-
-    return res.status(200).send(req.tile.data);
+    res.status(200).send(req.tile.data);
   }
 
   app.get(tilePattern,
@@ -207,6 +229,7 @@ module.exports = function(options, repo, params, id, styles) {
     getTile,
     shrinkTile,
     formatTile,
+    zipTile,
     sendTile
   );
 
