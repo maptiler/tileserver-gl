@@ -13,7 +13,7 @@
   },
   "license": "BSD-2-Clause",
   "engines": {
-    "node": ">=4.2.1 <5"
+    "node": ">=4.2.1"
   },
   "scripts": {
     "test": "mocha test/**.js"
