@@ -4,6 +4,8 @@ var fs = require('fs'),
     path = require('path'),
     zlib = require('zlib');
 
+var baseURL = options.baseURL;
+
 var clone = require('clone'),
     express = require('express'),
     mbtiles = require('@mapbox/mbtiles'),
@@ -160,7 +162,8 @@ module.exports = function(options, repo, params, id, styles) {
     var info = clone(tileJSON);
     info.tiles = utils.getTileUrls(req, info.tiles,
                                    'data/' + id, info.format, {
-                                     'pbf': options.pbfAlias
+                                     'pbf': options.pbfAlias,
+                                     baseURL
                                    });
     return res.send(info);
   });

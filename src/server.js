@@ -7,6 +7,8 @@ process.env.UV_THREADPOOL_SIZE =
 var fs = require('fs'),
     path = require('path');
 
+var baseURL = options.baseURL;
+
 var base64url = require('base64url'),
     clone = require('clone'),
     cors = require('cors'),
@@ -133,7 +135,7 @@ function start(opts) {
         }, function(font) {
           serving.fonts[font] = true;
         }).then(function(sub) {
-          app.use('/styles/', sub);
+          app.use('/tiles/styles/', sub);
         }));
     }
     if (item.serve_rendered !== false) {
@@ -150,7 +152,7 @@ function start(opts) {
               return mbtilesFile;
             }
           ).then(function(sub) {
-            app.use('/styles/', sub);
+            app.use('/tiles/styles/', sub);
           })
         );
       } else {
@@ -161,7 +163,7 @@ function start(opts) {
 
   startupPromises.push(
     serve_font(options, serving.fonts).then(function(sub) {
-      app.use('/', sub);
+      app.use('/tiles/', sub);
     })
   );
 
@@ -174,12 +176,12 @@ function start(opts) {
 
     startupPromises.push(
       serve_data(options, serving.data, item, id, serving.styles).then(function(sub) {
-        app.use('/data/', sub);
+        app.use('/tiles/data/', sub);
       })
     );
   });
 
-  app.get('/styles.json', function(req, res, next) {
+  app.get('/tiles/styles.json', function(req, res, next) {
     var result = [];
     var query = req.query.key ? ('?key=' + req.query.key) : '';
     Object.keys(serving.styles).forEach(function(id) {
@@ -188,8 +190,8 @@ function start(opts) {
         version: styleJSON.version,
         name: styleJSON.name,
         id: id,
-        url: req.protocol + '://' + req.headers.host +
-             '/styles/' + id + '/style.json' + query
+        url: (baseURL ? baseURL : req.protocol + '://' + req.headers.host +
+             '/tiles/styles/' + id + '/style.json' + query
       });
     });
     res.send(result);
@@ -200,13 +202,13 @@ function start(opts) {
       var info = clone(serving[type][id]);
       var path = '';
       if (type == 'rendered') {
-        path = 'styles/' + id;
+        path = 'tiles/styles/' + id;
       } else {
         path = type + '/' + id;
       }
       info.tiles = utils.getTileUrls(req, info.tiles, path, info.format, {
-        'pbf': options.pbfAlias
-      });
+        'pbf': options.pbfAlias,
+      }, baseURL);
       arr.push(info);
     });
     return arr;
@@ -224,7 +226,7 @@ function start(opts) {
 
   //------------------------------------
   // serve web presentations
-  app.use('/', express.static(path.join(__dirname, '../public/resources')));
+  app.use('/tiles/', express.static(path.join(__dirname, '../public/resources')));
 
   var templates = path.join(__dirname, '../public/templates');
   var serveTemplate = function(urlPath, template, dataGetter) {
@@ -288,12 +290,13 @@ function start(opts) {
         var query = req.query.key ? ('?key=' + req.query.key) : '';
         style.wmts_link = 'http://wmts.maptiler.com/' +
           base64url('http://' + req.headers.host +
-            '/styles/' + id + '.json' + query) + '/wmts';
+            '/tiles/styles/' + id + '.json' + query) + '/wmts';
 
         var tiles = utils.getTileUrls(
             req, style.serving_rendered.tiles,
-            'styles/' + id, style.serving_rendered.format);
+            'styles/' + id, style.serving_rendered.format, baseURL);
         style.xyz_link = tiles[0];
+        style.baseURL = baseURL;
       }
     });
     var data = clone(serving.data || {});
@@ -322,7 +325,7 @@ function start(opts) {
         var tiles = utils.getTileUrls(
             req, data_.tiles, 'data/' + id, data_.format, {
               'pbf': options.pbfAlias
-            });
+            },baseURL);
         data_.xyz_link = tiles[0];
       }
       if (data_.filesize) {
@@ -341,11 +344,12 @@ function start(opts) {
     });
     return {
       styles: Object.keys(styles).length ? styles : null,
-      data: Object.keys(data).length ? data : null
+      data: Object.keys(data).length ? data : null,
+      baseURL: baseURL
     };
   });
 
-  serveTemplate('/styles/:id/$', 'viewer', function(req) {
+  serveTemplate('/tiles/styles/:id/$', 'viewer', function(req) {
     var id = req.params.id;
     var style = clone((config.styles || {})[id]);
     if (!style) {
@@ -355,6 +359,7 @@ function start(opts) {
     style.name = (serving.styles[id] || serving.rendered[id]).name;
     style.serving_data = serving.styles[id];
     style.serving_rendered = serving.rendered[id];
+    style.baseURL = baseURL;
     return style;
   });
 
@@ -372,6 +377,7 @@ function start(opts) {
     }
     data.id = id;
     data.is_vector = data.format == 'pbf';
+    data.baseURL = baseURL;
     return data;
   });
 

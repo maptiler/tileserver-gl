@@ -3,6 +3,8 @@
 var path = require('path'),
     fs = require('fs');
 
+var baseURL = options.baseURL;
+
 var clone = require('clone'),
     express = require('express');
 
@@ -79,7 +81,7 @@ module.exports = function(options, repo, params, id, reportTiles, reportFont) {
         query = '?' + queryParams.join('&');
       }
       return url.replace(
-          'local://', req.protocol + '://' + req.headers.host + '/') + query;
+          'local://', (baseURL ? baseURL : req.protocol + '://' + req.headers.host + '/') + query;
     };
 
     var styleJSON_ = clone(styleJSON);
