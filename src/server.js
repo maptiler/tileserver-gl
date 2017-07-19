@@ -135,7 +135,7 @@ function start(opts) {
         }, function(font) {
           serving.fonts[font] = true;
         }).then(function(sub) {
-          app.use('/tiles/styles/', sub);
+          app.use('/styles/', sub);
         }));
     }
     if (item.serve_rendered !== false) {
@@ -152,7 +152,7 @@ function start(opts) {
               return mbtilesFile;
             }
           ).then(function(sub) {
-            app.use('/tiles/styles/', sub);
+            app.use('/styles/', sub);
           })
         );
       } else {
@@ -163,7 +163,7 @@ function start(opts) {
 
   startupPromises.push(
     serve_font(options, serving.fonts).then(function(sub) {
-      app.use('/tiles/', sub);
+      app.use('/', sub);
     })
   );
 
@@ -176,12 +176,12 @@ function start(opts) {
 
     startupPromises.push(
       serve_data(options, serving.data, item, id, serving.styles).then(function(sub) {
-        app.use('/tiles/data/', sub);
+        app.use('/data/', sub);
       })
     );
   });
 
-  app.get('/tiles/styles.json', function(req, res, next) {
+  app.get('/styles.json', function(req, res, next) {
     var result = [];
     var query = req.query.key ? ('?key=' + req.query.key) : '';
     Object.keys(serving.styles).forEach(function(id) {
@@ -191,7 +191,7 @@ function start(opts) {
         name: styleJSON.name,
         id: id,
         url: (baseURL ? baseURL : req.protocol + '://' + req.headers.host +
-             '/tiles/styles/' + id + '/style.json' + query
+             '/styles/' + id + '/style.json' + query
       });
     });
     res.send(result);
@@ -202,7 +202,7 @@ function start(opts) {
       var info = clone(serving[type][id]);
       var path = '';
       if (type == 'rendered') {
-        path = 'tiles/styles/' + id;
+        path = '/styles/' + id;
       } else {
         path = type + '/' + id;
       }
@@ -226,7 +226,7 @@ function start(opts) {
 
   //------------------------------------
   // serve web presentations
-  app.use('/tiles/', express.static(path.join(__dirname, '../public/resources')));
+  app.use('/', express.static(path.join(__dirname, '../public/resources')));
 
   var templates = path.join(__dirname, '../public/templates');
   var serveTemplate = function(urlPath, template, dataGetter) {
@@ -290,7 +290,7 @@ function start(opts) {
         var query = req.query.key ? ('?key=' + req.query.key) : '';
         style.wmts_link = 'http://wmts.maptiler.com/' +
           base64url('http://' + req.headers.host +
-            '/tiles/styles/' + id + '.json' + query) + '/wmts';
+            '/styles/' + id + '.json' + query) + '/wmts';
 
         var tiles = utils.getTileUrls(
             req, style.serving_rendered.tiles,
@@ -349,7 +349,7 @@ function start(opts) {
     };
   });
 
-  serveTemplate('/tiles/styles/:id/$', 'viewer', function(req) {
+  serveTemplate('/styles/:id/$', 'viewer', function(req) {
     var id = req.params.id;
     var style = clone((config.styles || {})[id]);
     if (!style) {

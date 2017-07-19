@@ -162,9 +162,9 @@ module.exports = function(options, repo, params, id, styles) {
     var info = clone(tileJSON);
     info.tiles = utils.getTileUrls(req, info.tiles,
                                    'data/' + id, info.format, {
-                                     'pbf': options.pbfAlias,
-                                     baseURL
-                                   });
+                                     'pbf': options.pbfAlias
+                                   },
+                                   baseURL);
     return res.send(info);
   });
 
