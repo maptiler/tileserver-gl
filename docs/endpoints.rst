@@ -36,6 +36,7 @@ Static images
     * e.g. ``5.9,45.8|5.9,47.8|10.5,47.8|10.5,45.8|5.9,45.8``
 
   * ``encodedpath`` - an alternative way to provide a path using Google's polyline encoding. Only used if ``path`` is not provided.
+    
     * more details: https://developers.google.com/maps/documentation/utilities/polylinealgorithm
   * ``latlng`` - indicates the ``path`` coordinates are in ``lat,lng`` order rather than the usual ``lng,lat``. possible values: ``true`` or ``1``
   * ``fill`` - color to use as the fill (e.g. ``red``, ``rgba(255,255,255,0.5)``, ``#0000ff``)
