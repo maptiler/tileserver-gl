@@ -7,6 +7,7 @@ var advancedPool = require('advanced-pool'),
     util = require('util'),
     zlib = require('zlib');
 
+var baseURL = options.baseURL;
 // sharp has to be required before node-canvas
 // see https://github.com/lovell/sharp/issues/371
 var sharp = require('sharp');
@@ -736,7 +737,7 @@ module.exports = function(options, repo, params, id, dataResolver) {
   app.get('/' + id + '.json', function(req, res, next) {
     var info = clone(tileJSON);
     info.tiles = utils.getTileUrls(req, info.tiles,
-                                   'styles/' + id, info.format);
+                                   'styles/' + id, info.format, baseURL);
     return res.send(info);
   });
 

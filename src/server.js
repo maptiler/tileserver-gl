@@ -7,6 +7,8 @@ process.env.UV_THREADPOOL_SIZE =
 var fs = require('fs'),
     path = require('path');
 
+var baseURL = options.baseURL;
+
 var base64url = require('base64url'),
     clone = require('clone'),
     cors = require('cors'),
@@ -194,7 +196,7 @@ function start(opts) {
         version: styleJSON.version,
         name: styleJSON.name,
         id: id,
-        url: req.protocol + '://' + req.headers.host +
+        url: (baseURL ? baseURL : req.protocol + '://' + req.headers.host +
              '/styles/' + id + '/style.json' + query
       });
     });
@@ -206,13 +208,13 @@ function start(opts) {
       var info = clone(serving[type][id]);
       var path = '';
       if (type == 'rendered') {
-        path = 'styles/' + id;
+        path = '/styles/' + id;
       } else {
         path = type + '/' + id;
       }
       info.tiles = utils.getTileUrls(req, info.tiles, path, info.format, {
-        'pbf': options.pbfAlias
-      });
+        'pbf': options.pbfAlias,
+      }, baseURL);
       arr.push(info);
     });
     return arr;
@@ -298,8 +300,9 @@ function start(opts) {
 
         var tiles = utils.getTileUrls(
             req, style.serving_rendered.tiles,
-            'styles/' + id, style.serving_rendered.format);
+            'styles/' + id, style.serving_rendered.format, baseURL);
         style.xyz_link = tiles[0];
+        style.baseURL = baseURL;
       }
     });
     var data = clone(serving.data || {});
@@ -328,7 +331,7 @@ function start(opts) {
         var tiles = utils.getTileUrls(
             req, data_.tiles, 'data/' + id, data_.format, {
               'pbf': options.pbfAlias
-            });
+            },baseURL);
         data_.xyz_link = tiles[0];
       }
       if (data_.filesize) {
@@ -347,7 +350,8 @@ function start(opts) {
     });
     return {
       styles: Object.keys(styles).length ? styles : null,
-      data: Object.keys(data).length ? data : null
+      data: Object.keys(data).length ? data : null,
+      baseURL: baseURL
     };
   });
 
@@ -361,6 +365,7 @@ function start(opts) {
     style.name = (serving.styles[id] || serving.rendered[id]).name;
     style.serving_data = serving.styles[id];
     style.serving_rendered = serving.rendered[id];
+    style.baseURL = baseURL;
     return style;
   });
 
@@ -378,6 +383,7 @@ function start(opts) {
     }
     data.id = id;
     data.is_vector = data.format == 'pbf';
+    data.baseURL = baseURL;
     return data;
   });
 

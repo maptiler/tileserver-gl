@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{name}} - TileServer GL</title>
-  <link rel="stylesheet" type="text/css" href="/mapbox-gl.css{{&key_query}}" />
+  <link rel="stylesheet" type="text/css" href="{{baseURL}}/mapbox-gl.css{{&key_query}}" />
   <script src="/mapbox-gl.js{{&key_query}}"></script>
-  <link rel="stylesheet" type="text/css" href="/mapbox.css{{&key_query}}" />
-  <script src="/mapbox.js{{&key_query}}"></script>
-  <script src="/leaflet-hash.js{{&key_query}}"></script>
+  <link rel="stylesheet" type="text/css" href="{{baseURL}}/mapbox.css{{&key_query}}" />
+  <script src="{{baseURL}}/mapbox.js{{&key_query}}"></script>
+  <script src="{{baseURL}}/leaflet-hash.js{{&key_query}}"></script>
   <style>
     body { margin:0; padding:0; }
     #map { position:absolute; top:0; bottom:0; width:100%; }
@@ -24,15 +24,15 @@
         (q.indexOf('raster') >= 0 ? 'raster' :
           (mapboxgl.supported() ? 'vector' : 'raster'));
     if (preference == 'vector') {
-      mapboxgl.setRTLTextPlugin('/mapbox-gl-rtl-text.js{{&key_query}}');
+      mapboxgl.setRTLTextPlugin('{{baseURL}}/mapbox-gl-rtl-text.js{{&key_query}}');
       var map = new mapboxgl.Map({
         container: 'map',
-        style: '/styles/{{id}}/style.json{{&key_query}}',
+        style: '{{baseURL}}/styles/{{id}}/style.json{{&key_query}}',
         hash: true
       });
       map.addControl(new mapboxgl.NavigationControl());
     } else {
-      var map = L.mapbox.map('map', '/styles/{{id}}.json{{&key_query}}', { zoomControl: false });
+      var map = L.mapbox.map('map', '{{baseURL}}/styles/{{id}}.json{{&key_query}}', { zoomControl: false });
       new L.Control.Zoom({ position: 'topright' }).addTo(map);
       setTimeout(function() {
         new L.Hash(map);
