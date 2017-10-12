@@ -185,6 +185,20 @@ function start(opts) {
     );
   });
 
+  app.get('/new-user', function(req, res){
+    var userId = req.query.id;
+    var id = "heatmap-"+userId;
+    var item = {
+      mbtiles: "heatmap-"+userId+".mbtiles"
+    }
+    
+    serve_data(options, serving.data, item, id, serving.styles).then(function(sub) {
+        console.log("# serve data")
+        app.use('/data/', sub);
+        res.send("ok")
+    });
+  });
+
   app.get('/styles.json', function(req, res, next) {
     var result = [];
     var query = req.query.key ? ('?key=' + req.query.key) : '';
