@@ -747,7 +747,7 @@ module.exports = function(options, repo, params, id, dataResolver) {
   app.get('/' + id + '.json', function(req, res, next) {
     var info = clone(tileJSON);
     info.tiles = utils.getTileUrls(req, info.tiles,
-                                   'styles/' + id, info.format);
+                                   'styles/' + id, info.format, null, options);
     return res.send(info);
   });
 

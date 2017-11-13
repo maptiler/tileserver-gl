@@ -6,7 +6,7 @@ var path = require('path'),
 var clone = require('clone'),
     glyphCompose = require('glyph-pbf-composite');
 
-module.exports.getTileUrls = function(req, domains, path, format, aliases) {
+module.exports.getTileUrls = function(req, domains, path, format, aliases, options) {
 
   if (domains) {
     if (domains.constructor === String && domains.length > 0) {
@@ -36,8 +36,8 @@ module.exports.getTileUrls = function(req, domains, path, format, aliases) {
 
   var key = req.query.key;
   var queryParams = [];
-  if (req.query.key) {
-    queryParams.push('key=' + req.query.key);
+  if (req.query[options.auth.keyName]) {
+    queryParams.push(options.auth.keyName + '=' + req.query[options.auth.keyName]);
   }
   if (req.query.style) {
     queryParams.push('style=' + req.query.style);
