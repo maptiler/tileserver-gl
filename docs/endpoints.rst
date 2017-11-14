@@ -6,18 +6,18 @@ If you visit the server on the configured port (default 8080) you can see your m
 
 Styles
 ======
-* Styles are served at ``/styles/{id}.json`` (+ array at ``/styles.json``)
+* Styles are served at ``/styles/{id}/style.json`` (+ array at ``/styles.json``)
 
   * Sprites at ``/styles/{id}/sprite[@2x].{format}``
   * Fonts at ``/fonts/{fontstack}/{start}-{end}.pbf``
 
 Rendered tiles
 ==============
-* Rendered tiles are served at ``/styles/{id}/rendered/{z}/{x}/{y}[@2x].{format}``
+* Rendered tiles are served at ``/styles/{id}/{z}/{x}/{y}[@2x].{format}``
 
   * The optional ``@2x`` (or ``@3x``, ``@4x``) part can be used to render HiDPI (retina) tiles
   * Available formats: ``png``, ``jpg`` (``jpeg``), ``webp``
-  * TileJSON at ``/styles/{id}/rendered.json``
+  * TileJSON at ``/styles/{id}.json``
 
 * The rendered tiles are not available in the ``tileserver-gl-light`` version.
 
@@ -64,3 +64,10 @@ Array of all TileJSONs is at ``/index.json`` (``/rendered.json``; ``/data.json``
 List of available fonts
 =======================
 Array of names of the available fonts is at ``/fonts.json``
+
+Health check
+============
+Endpoint reporting health status is at ``/health`` and currently returns:
+
+  * ``503`` Starting - for a short period before everything is initialized
+  * ``200`` OK - when the server is running

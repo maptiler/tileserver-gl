@@ -6,13 +6,14 @@ var fs = require('fs'),
 
 var clone = require('clone'),
     express = require('express'),
-    mbtiles = require('mbtiles'),
+    mbtiles = require('@mapbox/mbtiles'),
     pbf = require('pbf'),
-    VectorTile = require('vector-tile').VectorTile;
+    VectorTile = require('@mapbox/vector-tile').VectorTile;
 
 var tileshrinkGl;
 try {
   tileshrinkGl = require('tileshrink-gl');
+  global.addStyleParam = true;
 } catch (e) {}
 
 var utils = require('./utils');
@@ -33,20 +34,36 @@ module.exports = function(options, repo, params, id, styles) {
   if (!mbtilesFileStats.isFile() || mbtilesFileStats.size == 0) {
     throw Error('Not valid MBTiles file: ' + mbtilesFile);
   }
-  var source = new mbtiles(mbtilesFile, function(err) {
-    source.getInfo(function(err, info) {
-      tileJSON['name'] = id;
-      tileJSON['format'] = 'pbf';
+  var source;
+  var sourceInfoPromise = new Promise(function(resolve, reject) {
+    source = new mbtiles(mbtilesFile, function(err) {
+      if (err) {
+        reject(err);
+        return;
+      }
+      source.getInfo(function(err, info) {
+        if (err) {
+          reject(err);
+          return;
+        }
+        tileJSON['name'] = id;
+        tileJSON['format'] = 'pbf';
 
-      Object.assign(tileJSON, info);
+        Object.assign(tileJSON, info);
 
-      tileJSON['tilejson'] = '2.0.0';
-      delete tileJSON['filesize'];
-      delete tileJSON['mtime'];
-      delete tileJSON['scheme'];
+        tileJSON['tilejson'] = '2.0.0';
+        delete tileJSON['filesize'];
+        delete tileJSON['mtime'];
+        delete tileJSON['scheme'];
 
-      Object.assign(tileJSON, params.tilejson || {});
-      utils.fixTileJSONCenter(tileJSON);
+        Object.assign(tileJSON, params.tilejson || {});
+        utils.fixTileJSONCenter(tileJSON);
+
+        if (options.dataDecoratorFunc) {
+          tileJSON = options.dataDecoratorFunc(id, 'tilejson', tileJSON);
+        }
+        resolve();
+      });
     });
   });
 
@@ -109,6 +126,13 @@ module.exports = function(options, repo, params, id, styles) {
                 //console.log(shrinkers[style].getStats());
               }
             }
+            if (options.dataDecoratorFunc) {
+              if (isGzipped) {
+                data = zlib.unzipSync(data);
+                isGzipped = false;
+              }
+              data = options.dataDecoratorFunc(id, 'data', data, z, x, y);
+            }
           }
           if (format == 'pbf') {
             headers['Content-Type'] = 'application/x-protobuf';
@@ -160,5 +184,7 @@ module.exports = function(options, repo, params, id, styles) {
     return res.send(info);
   });
 
-  return app;
+  return sourceInfoPromise.then(function() {
+    return app;
+  });
 };

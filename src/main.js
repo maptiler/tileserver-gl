@@ -6,7 +6,7 @@ var fs = require('fs'),
     path = require('path'),
     request = require('request');
 
-var mbtiles = require('mbtiles');
+var mbtiles = require('@mapbox/mbtiles');
 
 var packageJson = require('../package');
 
@@ -32,6 +32,10 @@ var opts = require('nomnom')
     default: 8080,
     help: 'Port'
   })
+  .option('cors', {
+    default: true,
+    help: 'Enable Cross-origin resource sharing headers'
+  })
   .option('verbose', {
     abbr: 'V',
     flag: true,
@@ -54,7 +58,8 @@ var startServer = function(configPath, config) {
     configPath: configPath,
     config: config,
     bind: opts.bind,
-    port: opts.port
+    port: opts.port,
+    cors: opts.cors
   });
 };
 
@@ -70,6 +75,12 @@ var startWithMBTiles = function(mbtilesFile) {
   }
   var instance = new mbtiles(mbtilesFile, function(err) {
     instance.getInfo(function(err, info) {
+      if (err || !info) {
+        console.log('ERROR: Metadata missing in the MBTiles.');
+        console.log('       Make sure ' + path.basename(mbtilesFile) +
+                    ' is valid MBTiles.');
+        process.exit(1);
+      }
       var bounds = info.bounds;
 
       var styleDir = path.resolve(__dirname, "../node_modules/tileserver-gl-styles/");

@@ -19,85 +19,89 @@
   <section>
     <h1 class="title {{#if is_light}}light{{/if}}"><img src="/images/logo.png" alt="TileServer GL" /></h1>
     <h2 class="subtitle">Vector {{#if is_light}}<s>and raster</s>{{else}}and raster{{/if}} maps with GL styles</h2>
-    <h2 class="box-header">Styles</h2>
-    <div class="box">
-    {{#each styles}}
-      <div class="item">
-        {{#if thumbnail}}
-          <img src="/styles/{{@key}}/rendered/{{thumbnail}}{{&../key_query}}" alt="{{name}} preview" />
-        {{else}}
-          <img src="/images/placeholder.png" alt="{{name}} preview" />
-        {{/if}}
-        <div class="details">
-          <h3>{{name}}</h3>
-          <p class="identifier">identifier: {{@key}}</p>
-          <p class="services">
-            services:
+    {{#if styles}}
+      <h2 class="box-header">Styles</h2>
+      <div class="box">
+      {{#each styles}}
+        <div class="item">
+          {{#if thumbnail}}
+            <img src="/styles/{{@key}}/{{thumbnail}}{{&../key_query}}" alt="{{name}} preview" />
+          {{else}}
+            <img src="/images/placeholder.png" alt="{{name}} preview" />
+          {{/if}}
+          <div class="details">
+            <h3>{{name}}</h3>
+            <p class="identifier">identifier: {{@key}}</p>
+            <p class="services">
+              services:
+              {{#if serving_data}}
+                <a href="/styles/{{@key}}/style.json{{&../key_query}}">GL Style</a>
+              {{/if}}
+              {{#if serving_rendered}}
+                {{#if serving_data}}| {{/if}}<a href="/styles/{{@key}}.json{{&../key_query}}">TileJSON</a>
+              {{/if}}
+              {{#if wmts_link}}
+                | <a href="{{&wmts_link}}">WMTS</a>
+              {{/if}}
+              {{#if xyz_link}}
+                | <a href="#" onclick="return toggle_xyz('xyz_style_{{@key}}');">XYZ</a>
+                  <input id="xyz_style_{{@key}}" type="text" value="{{&xyz_link}}" style="display:none;" />
+              {{/if}}
+            </p>
+          </div>
+          <div class="viewers">
             {{#if serving_data}}
-              <a href="/styles/{{@key}}.json{{&../key_query}}">GL Style</a>
+              {{#if serving_rendered}}
+                <a class="btn" href="/styles/{{@key}}/{{&../key_query}}{{viewer_hash}}">Viewer</a>
+              {{/if}}
             {{/if}}
             {{#if serving_rendered}}
-              {{#if serving_data}}| {{/if}}<a href="/styles/{{@key}}/rendered.json{{&../key_query}}">TileJSON</a>
+              <a class="btn" href="/styles/{{@key}}/?{{&../key_query_part}}raster{{viewer_hash}}">Raster</a>
             {{/if}}
-            {{#if wmts_link}}
-              | <a href="{{&wmts_link}}">WMTS</a>
+            {{#if serving_data}}
+              <a class="btn" href="/styles/{{@key}}/?{{&../key_query_part}}vector{{viewer_hash}}">Vector</a>
             {{/if}}
-            {{#if xyz_link}}
-              | <a href="#" onclick="return toggle_xyz('xyz_style_{{@key}}');">XYZ</a>
-                <input id="xyz_style_{{@key}}" type="text" value="{{&xyz_link}}" style="display:none;" />
-            {{/if}}
-          </p>
+          </div>
         </div>
-        <div class="viewers">
-          {{#if serving_data}}
-            {{#if serving_rendered}}
-              <a class="btn" href="/styles/{{@key}}/{{&../key_query}}{{viewer_hash}}">Viewer</a>
-            {{/if}}
-          {{/if}}
-          {{#if serving_rendered}}
-            <a class="btn" href="/styles/{{@key}}/?{{&../key_query_part}}raster{{viewer_hash}}">Raster</a>
-          {{/if}}
-          {{#if serving_data}}
-            <a class="btn" href="/styles/{{@key}}/?{{&../key_query_part}}vector{{viewer_hash}}">Vector</a>
-          {{/if}}
-        </div>
+      {{/each}}
       </div>
-    {{/each}}
-    </div>
-    <h2 class="box-header">Data</h2>
-    <div class="box">
-    {{#each data}}
-      <div class="item">
-        {{#if thumbnail}}
-          <img src="/data/{{@key}}/{{thumbnail}}{{&../key_query}}" alt="{{name}} preview" />
-        {{else}}
-          <img src="/images/placeholder.png" alt="{{name}} preview" />
-        {{/if}}
-        <div class="details">
-          <h3>{{name}}</h3>
-          <p class="identifier">identifier: {{@key}}{{#if formatted_filesize}} | size: {{formatted_filesize}}{{/if}} | type: {{#is_vector}}vector{{/is_vector}}{{^is_vector}}raster{{/is_vector}} data</p>
-          <p class="services">
-            services: <a href="/data/{{@key}}.json{{&../key_query}}">TileJSON</a>
-            {{#if wmts_link}}
-              | <a href="{{&wmts_link}}">WMTS</a>
-            {{/if}}
-            {{#if xyz_link}}
-              | <a href="#" onclick="return toggle_xyz('xyz_data_{{@key}}');">XYZ</a>
-                <input id="xyz_data_{{@key}}" type="text" value="{{&xyz_link}}" style="display:none;" />
-            {{/if}}
-          </p>
+    {{/if}}
+    {{#if data}}
+      <h2 class="box-header">Data</h2>
+      <div class="box">
+      {{#each data}}
+        <div class="item">
+          {{#if thumbnail}}
+            <img src="/data/{{@key}}/{{thumbnail}}{{&../key_query}}" alt="{{name}} preview" />
+          {{else}}
+            <img src="/images/placeholder.png" alt="{{name}} preview" />
+          {{/if}}
+          <div class="details">
+            <h3>{{name}}</h3>
+            <p class="identifier">identifier: {{@key}}{{#if formatted_filesize}} | size: {{formatted_filesize}}{{/if}} | type: {{#is_vector}}vector{{/is_vector}}{{^is_vector}}raster{{/is_vector}} data</p>
+            <p class="services">
+              services: <a href="/data/{{@key}}.json{{&../key_query}}">TileJSON</a>
+              {{#if wmts_link}}
+                | <a href="{{&wmts_link}}">WMTS</a>
+              {{/if}}
+              {{#if xyz_link}}
+                | <a href="#" onclick="return toggle_xyz('xyz_data_{{@key}}');">XYZ</a>
+                  <input id="xyz_data_{{@key}}" type="text" value="{{&xyz_link}}" style="display:none;" />
+              {{/if}}
+            </p>
+          </div>
+          <div class="viewers">
+            {{#is_vector}}
+            <a class="btn" href="/data/{{@key}}/{{&../key_query}}{{viewer_hash}}">Inspect</a>
+            {{/is_vector}}
+            {{^is_vector}}
+            <a class="btn" href="/data/{{@key}}/{{&../key_query}}{{viewer_hash}}">View</a>
+            {{/is_vector}}
+          </div>
         </div>
-        <div class="viewers">
-          {{#is_vector}}
-          <a class="btn" href="/data/{{@key}}/{{&../key_query}}{{viewer_hash}}">Inspect</a>
-          {{/is_vector}}
-          {{^is_vector}}
-          <a class="btn" href="/data/{{@key}}/{{&../key_query}}{{viewer_hash}}">View</a>
-          {{/is_vector}}
-        </div>
+      {{/each}}
       </div>
-    {{/each}}
-    </div>
+    {{/if}}
   </section>
   <footer>
     <a href="https://www.klokantech.com/" target="_blank"><img src="/images/klokantech.png" /></a>

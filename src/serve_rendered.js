@@ -1,9 +1,9 @@
 'use strict';
 
-var async = require('async'),
-    advancedPool = require('advanced-pool'),
+var advancedPool = require('advanced-pool'),
     fs = require('fs'),
     path = require('path'),
+    url = require('url'),
     util = require('util'),
     zlib = require('zlib');
 
@@ -17,14 +17,13 @@ var Canvas = require('canvas'),
     express = require('express'),
     mercator = new (require('@mapbox/sphericalmercator'))(),
     mbgl = require('@mapbox/mapbox-gl-native'),
-    mbtiles = require('mbtiles'),
-    pngquant = require('node-pngquant-native'),
+    mbtiles = require('@mapbox/mbtiles'),
+    proj4 = require('proj4'),
     request = require('request');
 
 var utils = require('./utils');
 
 var FLOAT_PATTERN = '[+-]?(?:\\d+|\\d+\.?\\d+)';
-var SCALE_PATTERN = '@[234]x';
 
 var getScale = function(scale) {
   return (scale || '@1x').slice(1, 2) | 0;
@@ -36,12 +35,83 @@ mbgl.on('message', function(e) {
   }
 });
 
+/**
+ * Lookup of sharp output formats by file extension.
+ */
+var extensionToFormat = {
+  '.jpg': 'jpeg',
+  '.jpeg': 'jpeg',
+  '.png': 'png',
+  '.webp': 'webp'
+};
+
+/**
+ * Cache of response data by sharp output format and color.  Entry for empty
+ * string is for unknown or unsupported formats.
+ */
+var cachedEmptyResponses = {
+  '': new Buffer(0)
+};
+
+/**
+ * Create an appropriate mbgl response for http errors.
+ * @param {string} format The format (a sharp format or 'pbf').
+ * @param {string} color The background color (or empty string for transparent).
+ * @param {Function} callback The mbgl callback.
+ */
+function createEmptyResponse(format, color, callback) {
+  if (!format || format === 'pbf') {
+    callback(null, {data: cachedEmptyResponses['']});
+    return;
+  }
+
+  if (format === 'jpg') {
+    format = 'jpeg';
+  }
+  if (!color) {
+    color = 'rgba(255,255,255,0)';
+  }
+
+  var cacheKey = format + ',' + color;
+  var data = cachedEmptyResponses[cacheKey];
+  if (data) {
+    callback(null, {data: data});
+    return;
+  }
+
+  // create an "empty" response image
+  var color = new Color(color);
+  var array = color.array();
+  var channels = array.length == 4 && format != 'jpeg' ? 4 : 3;
+  sharp(new Buffer(array), {
+    raw: {
+      width: 1,
+      height: 1,
+      channels: channels
+    }
+  }).toFormat(format).toBuffer(function(err, buffer, info) {
+    if (!err) {
+      cachedEmptyResponses[cacheKey] = buffer;
+    }
+    callback(null, {data: buffer});
+  });
+}
+
 module.exports = function(options, repo, params, id, dataResolver) {
   var app = express().disable('x-powered-by');
+
+  var maxScaleFactor = Math.min(Math.floor(options.maxScaleFactor || 3), 9);
+  var scalePattern = '';
+  for (var i = 2; i <= maxScaleFactor; i++) {
+    scalePattern += i.toFixed();
+  }
+  scalePattern = '@[' + scalePattern + ']x';
 
   var lastModified = new Date().toUTCString();
 
   var rootPath = options.paths.root;
+
+  var watermark = params.watermark || options.watermark;
 
   var styleFile = params.style;
   var map = {
@@ -50,15 +120,24 @@ module.exports = function(options, repo, params, id, dataResolver) {
   };
 
   var existingFonts = {};
-  fs.readdir(options.paths.fonts, function(err, files) {
-    files.forEach(function(file) {
-      fs.stat(path.join(options.paths.fonts, file), function(err, stats) {
-        if (!err) {
+  var fontListingPromise = new Promise(function(resolve, reject) {
+    fs.readdir(options.paths.fonts, function(err, files) {
+      if (err) {
+        reject(err);
+        return;
+      }
+      files.forEach(function(file) {
+        fs.stat(path.join(options.paths.fonts, file), function(err, stats) {
+          if (err) {
+            reject(err);
+            return;
+          }
           if (stats.isDirectory()) {
             existingFonts[path.basename(file)] = true;
           }
-        }
+        });
       });
+      resolve();
     });
   });
 
@@ -80,13 +159,18 @@ module.exports = function(options, repo, params, id, dataResolver) {
             var parts = req.url.split('/');
             var fontstack = unescape(parts[2]);
             var range = parts[3].split('.')[0];
-            utils.getFontsPbf(null, options.paths[protocol], fontstack, range, existingFonts,
-                function(err, concated) {
-              callback(err, {data: concated});
+            utils.getFontsPbf(
+              null, options.paths[protocol], fontstack, range, existingFonts
+            ).then(function(concated) {
+              callback(null, {data: concated});
+            }, function(err) {
+              callback(err, {data: null});
             });
           } else if (protocol == 'mbtiles') {
             var parts = req.url.split('/');
-            var source = map.sources[parts[2]];
+            var sourceId = parts[2];
+            var source = map.sources[sourceId];
+            var sourceInfo = styleJSON.sources[sourceId];
             var z = parts[3] | 0,
                 x = parts[4] | 0,
                 y = parts[5].split('.')[0] | 0,
@@ -94,22 +178,31 @@ module.exports = function(options, repo, params, id, dataResolver) {
             source.getTile(z, x, y, function(err, data, headers) {
               if (err) {
                 //console.log('MBTiles error, serving empty', err);
-                callback(null, { data: source.emptyTile });
-              } else {
-                var response = {};
-
-                if (headers['Last-Modified']) {
-                  response.modified = new Date(headers['Last-Modified']);
-                }
-
-                if (format == 'pbf') {
-                  response.data = zlib.unzipSync(data);
-                } else {
-                  response.data = data;
-                }
-
-                callback(null, response);
+                createEmptyResponse(sourceInfo.format, sourceInfo.color, callback);
+                return;
               }
+
+              var response = {};
+              if (headers['Last-Modified']) {
+                response.modified = new Date(headers['Last-Modified']);
+              }
+
+              if (format == 'pbf') {
+                try {
+                  response.data = zlib.unzipSync(data);
+                }
+                catch (err) {
+                  console.log("Skipping incorrect header for tile mbtiles://%s/%s/%s/%s.pbf", id, z, x, y);
+                }
+                if (options.dataDecoratorFunc) {
+                  response.data = options.dataDecoratorFunc(
+                    sourceId, 'data', response.data, z, x, y);
+                }
+              } else {
+                response.data = data;
+              }
+
+              callback(null, response);
             });
           } else if (protocol == 'http' || protocol == 'https') {
             request({
@@ -117,29 +210,28 @@ module.exports = function(options, repo, params, id, dataResolver) {
                 encoding: null,
                 gzip: true
             }, function(err, res, body) {
-                if (err) {
-                  //console.log('HTTP tile error', err);
-                  callback(null, { data: new Buffer(0) });
-                } else if (res.statusCode == 200) {
-                  var response = {};
-
-                  if (res.headers.modified) {
-                    response.modified = new Date(res.headers.modified);
-                  }
-                  if (res.headers.expires) {
-                    response.expires = new Date(res.headers.expires);
-                  }
-                  if (res.headers.etag) {
-                    response.etag = res.headers.etag;
-                  }
-
-                  response.data = body;
-
-                  callback(null, response);
-                } else {
-                  //console.log('HTTP error', JSON.parse(body).message);
-                  callback(null, { data: new Buffer(0) });
+                var parts = url.parse(req.url);
+                var extension = path.extname(parts.pathname).toLowerCase();
+                var format = extensionToFormat[extension] || '';
+                if (err || res.statusCode < 200 || res.statusCode >= 300) {
+                  // console.log('HTTP error', err || res.statusCode);
+                  createEmptyResponse(format, '', callback);
+                  return;
                 }
+
+                var response = {};
+                if (res.headers.modified) {
+                  response.modified = new Date(res.headers.modified);
+                }
+                if (res.headers.expires) {
+                  response.expires = new Date(res.headers.expires);
+                }
+                if (res.headers.etag) {
+                  response.etag = res.headers.etag;
+                }
+
+                response.data = body;
+                callback(null, response);
             });
           }
         }
@@ -157,7 +249,7 @@ module.exports = function(options, repo, params, id, dataResolver) {
     });
   };
 
-  var styleJSONPath = path.join(options.paths.styles, styleFile);
+  var styleJSONPath = path.resolve(options.paths.styles, styleFile);
   styleJSON = clone(require(styleJSONPath));
 
   var httpTester = /^(http(s)?:)?\/\//;
@@ -186,6 +278,8 @@ module.exports = function(options, repo, params, id, dataResolver) {
   tileJSON.tiles = params.domains || options.domains;
   utils.fixTileJSONCenter(tileJSON);
 
+  var dataProjWGStoInternalWGS = null;
+
   var queue = [];
   Object.keys(styleJSON.sources).forEach(function(name) {
     var source = styleJSON.sources[name];
@@ -207,12 +301,12 @@ module.exports = function(options, repo, params, id, dataResolver) {
         }
         mbtilesFile = dataResolver(mbtilesFile);
         if (!mbtilesFile) {
-          console.log('ERROR: data "' + mbtilesFile + '" not found!');
+          console.error('ERROR: data "' + mbtilesFile + '" not found!');
           process.exit(1);
         }
       }
 
-      queue.push(function(callback) {
+      queue.push(new Promise(function(resolve, reject) {
         mbtilesFile = path.resolve(options.paths.mbtiles, mbtilesFile);
         var mbtilesFileStats = fs.statSync(mbtilesFile);
         if (!mbtilesFileStats.isFile() || mbtilesFileStats.size == 0) {
@@ -222,7 +316,18 @@ module.exports = function(options, repo, params, id, dataResolver) {
           map.sources[name].getInfo(function(err, info) {
             if (err) {
               console.error(err);
+              return;
             }
+
+            if (!dataProjWGStoInternalWGS && info.proj4) {
+              // how to do this for multiple sources with different proj4 defs?
+              var to3857 = proj4('EPSG:3857');
+              var toDataProj = proj4(info.proj4);
+              dataProjWGStoInternalWGS = function(xy) {
+                return to3857.inverse(toDataProj.forward(xy));
+              };
+            }
+
             var type = source.type;
             Object.assign(source, info);
             source.type = type;
@@ -231,26 +336,11 @@ module.exports = function(options, repo, params, id, dataResolver) {
               'mbtiles://' + name + '/{z}/{x}/{y}.' + (info.format || 'pbf')
             ];
             delete source.scheme;
-            if (source.format == 'pbf') {
-              map.sources[name].emptyTile = new Buffer(0);
-            } else {
-              var color = new Color(source.color || 'rgba(255,255,255,0)');
-              var format = source.format;
-              if (format == 'jpg') {
-                format = 'jpeg';
-              }
-              var array = color.array();
-              var channels = array.length == 4 && format != 'jpeg' ? 4 : 3;
-              sharp(new Buffer(array), {
-                raw: {
-                  width: 1,
-                  height: 1,
-                  channels: channels
-                }
-              }).toFormat(format).toBuffer(function(err, buffer, info) {
-                map.sources[name].emptyTile = buffer;
-              });
+
+            if (options.dataDecoratorFunc) {
+              source = options.dataDecoratorFunc(name, 'tilejson', source);
             }
+
             if (!attributionOverride &&
                 source.attribution && source.attribution.length > 0) {
               if (tileJSON.attribution.length > 0) {
@@ -258,34 +348,41 @@ module.exports = function(options, repo, params, id, dataResolver) {
               }
               tileJSON.attribution += source.attribution;
             }
-            callback(null);
+            resolve();
           });
         });
-      });
+      }));
     }
   });
 
-  async.parallel(queue, function(err, results) {
-    // TODO: make pool sizes configurable
-    map.renderers[1] = createPool(1, 4, 16);
-    map.renderers[2] = createPool(2, 2, 8);
-    map.renderers[3] = createPool(3, 2, 4);
-    map.renderers[4] = createPool(4, 2, 4);
+  var renderersReadyPromise = Promise.all(queue).then(function() {
+    // standard and @2x tiles are much more usual -> default to larger pools
+    var minPoolSizes = options.minRendererPoolSizes || [8, 4, 2];
+    var maxPoolSizes = options.maxRendererPoolSizes || [16, 8, 4];
+    for (var s = 1; s <= maxScaleFactor; s++) {
+      var i = Math.min(minPoolSizes.length - 1, s - 1);
+      var j = Math.min(maxPoolSizes.length - 1, s - 1);
+      var minPoolSize = minPoolSizes[i];
+      var maxPoolSize = Math.max(minPoolSize, maxPoolSizes[j]);
+      map.renderers[s] = createPool(s, minPoolSize, maxPoolSize);
+    }
   });
 
   repo[id] = tileJSON;
 
-  var tilePattern = '/rendered/:z(\\d+)/:x(\\d+)/:y(\\d+)' +
-                    ':scale(' + SCALE_PATTERN + ')?\.:format([\\w]+)';
+  var tilePattern = '/' + id + '/:z(\\d+)/:x(\\d+)/:y(\\d+)' +
+                    ':scale(' + scalePattern + ')?\.:format([\\w]+)';
 
   var respondImage = function(z, lon, lat, bearing, pitch,
                               width, height, scale, format, res, next,
                               opt_overlay) {
-    if (Math.abs(lon) > 180 || Math.abs(lat) > 85.06) {
+    if (Math.abs(lon) > 180 || Math.abs(lat) > 85.06 ||
+        lon != lon || lat != lat) {
       return res.status(400).send('Invalid center');
     }
     if (Math.min(width, height) <= 0 ||
-        Math.max(width, height) * scale > (options.maxSize || 2048)) {
+        Math.max(width, height) * scale > (options.maxSize || 2048) ||
+        width != width || height != height) {
       return res.status(400).send('Invalid size');
     }
     if (format == 'png' || format == 'webp') {
@@ -312,7 +409,10 @@ module.exports = function(options, repo, params, id, dataResolver) {
       }
       renderer.render(params, function(err, data) {
         pool.release(renderer);
-        if (err) console.log(err);
+        if (err) {
+          console.error(err);
+          return;
+        }
 
         var image = sharp(data, {
           raw: {
@@ -330,6 +430,19 @@ module.exports = function(options, repo, params, id, dataResolver) {
         if (opt_overlay) {
           image.overlayWith(opt_overlay);
         }
+        if (watermark) {
+          var canvas = new Canvas(scale * width, scale * height);
+          var ctx = canvas.getContext('2d');
+          ctx.scale(scale, scale);
+          ctx.font = '10px sans-serif';
+          ctx.strokeWidth = '1px';
+          ctx.strokeStyle = 'rgba(255,255,255,.4)';
+          ctx.strokeText(watermark, 5, height - 5);
+          ctx.fillStyle = 'rgba(0,0,0,.4)';
+          ctx.fillText(watermark, 5, height - 5);
+
+          image.overlayWith(canvas.toBuffer());
+        }
 
         var formatQuality = (params.formatQuality || {})[format] ||
                             (options.formatQuality || {})[format];
@@ -344,16 +457,6 @@ module.exports = function(options, repo, params, id, dataResolver) {
         image.toBuffer(function(err, buffer, info) {
           if (!buffer) {
             return res.status(404).send('Not found');
-          }
-
-          if (format == 'png') {
-            var usePngQuant =
-                (options.formatQuality || {}).pngQuantization === true;
-            if (usePngQuant) {
-              buffer = pngquant.compress(buffer, {
-                quality: [0, formatQuality || 90]
-              });
-            }
           }
 
           res.set({
@@ -392,17 +495,22 @@ module.exports = function(options, repo, params, id, dataResolver) {
                         tileSize, tileSize, scale, format, res, next);
   });
 
-  var extractPathFromQuery = function(query) {
+  var extractPathFromQuery = function(query, transformer) {
     var pathParts = (query.path || '').split('|');
     var path = [];
     pathParts.forEach(function(pair) {
       var pairParts = pair.split(',');
       if (pairParts.length == 2) {
+        var pair;
         if (query.latlng == '1' || query.latlng == 'true') {
-          path.push([+(pairParts[1]), +(pairParts[0])]);
+          pair = [+(pairParts[1]), +(pairParts[0])];
         } else {
-          path.push([+(pairParts[0]), +(pairParts[1])]);
+          pair = [+(pairParts[0]), +(pairParts[1])];
         }
+        if (transformer) {
+          pair = transformer(pair);
+        }
+        path.push(pair);
       }
     });
     return path;
@@ -419,9 +527,19 @@ module.exports = function(options, repo, params, id, dataResolver) {
       return [px[0] * scale, px[1] * scale];
     };
 
+    var center = precisePx([x, y], z);
+
+    var mapHeight = 512 * (1 << z);
+    var maxEdge = center[1] + h / 2;
+    var minEdge = center[1] - h / 2;
+    if (maxEdge > mapHeight) {
+      center[1] -= (maxEdge - mapHeight);
+    } else if (minEdge < 0) {
+      center[1] -= minEdge;
+    }
+
     var canvas = new Canvas(scale * w, scale * h);
     var ctx = canvas.getContext('2d');
-    var center = precisePx([x, y], z);
     ctx.scale(scale, scale);
     if (bearing) {
       ctx.translate(w / 2, h / 2);
@@ -474,128 +592,167 @@ module.exports = function(options, repo, params, id, dataResolver) {
     return z;
   };
 
-  var staticPattern =
-      '/static/:raw(raw)?/%s/:width(\\d+)x:height(\\d+)' +
-      ':scale(' + SCALE_PATTERN + ')?\.:format([\\w]+)';
+  if (options.serveStaticMaps !== false) {
+    var staticPattern =
+        '/' + id + '/static/:raw(raw)?/%s/:width(\\d+)x:height(\\d+)' +
+        ':scale(' + scalePattern + ')?\.:format([\\w]+)';
 
-  var centerPattern =
-      util.format(':x(%s),:y(%s),:z(%s)(@:bearing(%s)(,:pitch(%s))?)?',
-                  FLOAT_PATTERN, FLOAT_PATTERN, FLOAT_PATTERN,
-                  FLOAT_PATTERN, FLOAT_PATTERN);
+    var centerPattern =
+        util.format(':x(%s),:y(%s),:z(%s)(@:bearing(%s)(,:pitch(%s))?)?',
+                    FLOAT_PATTERN, FLOAT_PATTERN, FLOAT_PATTERN,
+                    FLOAT_PATTERN, FLOAT_PATTERN);
 
-  app.get(util.format(staticPattern, centerPattern), function(req, res, next) {
-    var raw = req.params.raw;
-    var z = +req.params.z,
-        x = +req.params.x,
-        y = +req.params.y,
-        bearing = +(req.params.bearing || '0'),
-        pitch = +(req.params.pitch || '0'),
-        w = req.params.width | 0,
-        h = req.params.height | 0,
-        scale = getScale(req.params.scale),
-        format = req.params.format;
+    app.get(util.format(staticPattern, centerPattern), function(req, res, next) {
+      var raw = req.params.raw;
+      var z = +req.params.z,
+          x = +req.params.x,
+          y = +req.params.y,
+          bearing = +(req.params.bearing || '0'),
+          pitch = +(req.params.pitch || '0'),
+          w = req.params.width | 0,
+          h = req.params.height | 0,
+          scale = getScale(req.params.scale),
+          format = req.params.format;
 
-    if (z < 0) {
-      return res.status(404).send('Invalid zoom');
-    }
+      if (z < 0) {
+        return res.status(404).send('Invalid zoom');
+      }
 
-    if (raw) {
-      var ll = mercator.inverse([x, y]);
-      x = ll[0];
-      y = ll[1];
-    }
+      var transformer = raw ?
+        mercator.inverse.bind(mercator) : dataProjWGStoInternalWGS;
 
-    var path = extractPathFromQuery(req.query);
-    var overlay = renderOverlay(z, x, y, bearing, pitch, w, h, scale,
-                                path, req.query);
+      if (transformer) {
+        var ll = transformer([x, y]);
+        x = ll[0];
+        y = ll[1];
+      }
 
-    return respondImage(z, x, y, bearing, pitch, w, h, scale, format,
-                        res, next, overlay);
-  });
+      var path = extractPathFromQuery(req.query, transformer);
+      var overlay = renderOverlay(z, x, y, bearing, pitch, w, h, scale,
+                                  path, req.query);
 
-  var boundsPattern =
-      util.format(':minx(%s),:miny(%s),:maxx(%s),:maxy(%s)',
-                  FLOAT_PATTERN, FLOAT_PATTERN, FLOAT_PATTERN, FLOAT_PATTERN);
-
-  app.get(util.format(staticPattern, boundsPattern), function(req, res, next) {
-    var raw = req.params.raw;
-    var bbox = [+req.params.minx, +req.params.miny,
-                +req.params.maxx, +req.params.maxy];
-
-    if (raw) {
-      var minCorner = mercator.inverse(bbox.slice(0, 2));
-      var maxCorner = mercator.inverse(bbox.slice(2));
-      bbox[0] = minCorner[0];
-      bbox[1] = minCorner[1];
-      bbox[2] = maxCorner[0];
-      bbox[3] = maxCorner[1];
-    }
-
-    var w = req.params.width | 0,
-        h = req.params.height | 0,
-        scale = getScale(req.params.scale),
-        format = req.params.format;
-
-    var z = calcZForBBox(bbox, w, h, req.query),
-        x = (bbox[0] + bbox[2]) / 2,
-        y = (bbox[1] + bbox[3]) / 2,
-        bearing = 0,
-        pitch = 0;
-
-    var path = extractPathFromQuery(req.query);
-    var overlay = renderOverlay(z, x, y, bearing, pitch, w, h, scale,
-                                path, req.query);
-    return respondImage(z, x, y, bearing, pitch, w, h, scale, format,
-                        res, next, overlay);
-  });
-
-  var autoPattern = 'auto';
-
-  app.get(util.format(staticPattern, autoPattern), function(req, res, next) {
-    var path = extractPathFromQuery(req.query);
-    if (path.length < 2) {
-      return res.status(400).send('Invalid path');
-    }
-
-    var raw = req.params.raw;
-    var w = req.params.width | 0,
-        h = req.params.height | 0,
-        bearing = 0,
-        pitch = 0,
-        scale = getScale(req.params.scale),
-        format = req.params.format;
-
-    var bbox = [Infinity, Infinity, -Infinity, -Infinity];
-    path.forEach(function(pair) {
-      bbox[0] = Math.min(bbox[0], pair[0]);
-      bbox[1] = Math.min(bbox[1], pair[1]);
-      bbox[2] = Math.max(bbox[2], pair[0]);
-      bbox[3] = Math.max(bbox[3], pair[1]);
+      return respondImage(z, x, y, bearing, pitch, w, h, scale, format,
+                          res, next, overlay);
     });
 
-    var z = calcZForBBox(bbox, w, h, req.query),
-        x = (bbox[0] + bbox[2]) / 2,
-        y = (bbox[1] + bbox[3]) / 2;
+    var serveBounds = function(req, res, next) {
+      var raw = req.params.raw;
+      var bbox = [+req.params.minx, +req.params.miny,
+                  +req.params.maxx, +req.params.maxy];
+      var center = [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2];
 
-    if (raw) {
-      var ll = mercator.inverse([x, y]);
-      x = ll[0];
-      y = ll[1];
-    }
+      var transformer = raw ?
+        mercator.inverse.bind(mercator) : dataProjWGStoInternalWGS;
 
-    var overlay = renderOverlay(z, x, y, bearing, pitch, w, h, scale,
-                                path, req.query);
+      if (transformer) {
+        var minCorner = transformer(bbox.slice(0, 2));
+        var maxCorner = transformer(bbox.slice(2));
+        bbox[0] = minCorner[0];
+        bbox[1] = minCorner[1];
+        bbox[2] = maxCorner[0];
+        bbox[3] = maxCorner[1];
+        center = transformer(center);
+      }
 
-    return respondImage(z, x, y, bearing, pitch, w, h, scale, format,
-                        res, next, overlay);
-  });
+      var w = req.params.width | 0,
+          h = req.params.height | 0,
+          scale = getScale(req.params.scale),
+          format = req.params.format;
 
-  app.get('/rendered.json', function(req, res, next) {
+      var z = calcZForBBox(bbox, w, h, req.query),
+          x = center[0],
+          y = center[1],
+          bearing = 0,
+          pitch = 0;
+
+      var path = extractPathFromQuery(req.query, transformer);
+      var overlay = renderOverlay(z, x, y, bearing, pitch, w, h, scale,
+                                  path, req.query);
+      return respondImage(z, x, y, bearing, pitch, w, h, scale, format,
+                          res, next, overlay);
+    };
+
+    var boundsPattern =
+        util.format(':minx(%s),:miny(%s),:maxx(%s),:maxy(%s)',
+                    FLOAT_PATTERN, FLOAT_PATTERN, FLOAT_PATTERN, FLOAT_PATTERN);
+
+    app.get(util.format(staticPattern, boundsPattern), serveBounds);
+
+    app.get('/' + id + '/static/', function(req, res, next) {
+      for (var key in req.query) {
+        req.query[key.toLowerCase()] = req.query[key];
+      }
+      req.params.raw = true;
+      req.params.format = (req.query.format || 'image/png').split('/').pop();
+      var bbox = (req.query.bbox || '').split(',');
+      req.params.minx = bbox[0];
+      req.params.miny = bbox[1];
+      req.params.maxx = bbox[2];
+      req.params.maxy = bbox[3];
+      req.params.width = req.query.width || '256';
+      req.params.height = req.query.height || '256';
+      if (req.query.scale) {
+        req.params.width /= req.query.scale;
+        req.params.height /= req.query.scale;
+        req.params.scale = '@' + req.query.scale;
+      }
+
+      return serveBounds(req, res, next);
+    });
+
+    var autoPattern = 'auto';
+
+    app.get(util.format(staticPattern, autoPattern), function(req, res, next) {
+      var raw = req.params.raw;
+      var w = req.params.width | 0,
+          h = req.params.height | 0,
+          bearing = 0,
+          pitch = 0,
+          scale = getScale(req.params.scale),
+          format = req.params.format;
+
+      var transformer = raw ?
+        mercator.inverse.bind(mercator) : dataProjWGStoInternalWGS;
+
+      var path = extractPathFromQuery(req.query, transformer);
+      if (path.length < 2) {
+        return res.status(400).send('Invalid path');
+      }
+
+      var bbox = [Infinity, Infinity, -Infinity, -Infinity];
+      path.forEach(function(pair) {
+        bbox[0] = Math.min(bbox[0], pair[0]);
+        bbox[1] = Math.min(bbox[1], pair[1]);
+        bbox[2] = Math.max(bbox[2], pair[0]);
+        bbox[3] = Math.max(bbox[3], pair[1]);
+      });
+
+      var bbox_ = mercator.convert(bbox, '900913');
+      var center = mercator.inverse(
+        [(bbox_[0] + bbox_[2]) / 2, (bbox_[1] + bbox_[3]) / 2]
+      );
+
+      var z = calcZForBBox(bbox, w, h, req.query),
+          x = center[0],
+          y = center[1];
+
+      var overlay = renderOverlay(z, x, y, bearing, pitch, w, h, scale,
+                                  path, req.query);
+
+      return respondImage(z, x, y, bearing, pitch, w, h, scale, format,
+                          res, next, overlay);
+    });
+  }
+
+  app.get('/' + id + '.json', function(req, res, next) {
     var info = clone(tileJSON);
     info.tiles = utils.getTileUrls(req, info.tiles,
-                                   'styles/' + id + '/rendered', info.format);
+                                   'styles/' + id, info.format);
     return res.send(info);
   });
 
-  return app;
+  return Promise.all([fontListingPromise, renderersReadyPromise]).then(function() {
+    return app;
+  });
+
 };

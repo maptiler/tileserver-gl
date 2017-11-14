@@ -1,6 +1,6 @@
 language: node_js
 node_js:
-  - "4"
+  - "6"
 env:
   - CXX=g++-4.8
 addons:
@@ -12,7 +12,7 @@ addons:
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
-  - sudo apt-get install -qq xvfb
+  - sudo apt-get install -qq xvfb libgles2-mesa-dev libgbm-dev libxxf86vm-dev
 install:
   - npm install
   - wget -O test_data.zip https://github.com/klokantech/tileserver-gl/releases/download/v1.3.0/test_data.zip

@@ -11,12 +11,12 @@ var testIs = function(url, type, status) {
 var prefix = 'test-style';
 
 describe('Styles', function() {
-  describe('/styles/' + prefix + '.json is valid style', function() {
-    testIs('/styles/' + prefix + '.json', /application\/json/);
+  describe('/styles/' + prefix + '/style.json is valid style', function() {
+    testIs('/styles/' + prefix + '/style.json', /application\/json/);
 
     it('contains expected properties', function(done) {
       supertest(app)
-        .get('/styles/' + prefix + '.json')
+        .get('/styles/' + prefix + '/style.json')
         .expect(function(res) {
           res.body.version.should.equal(8);
           res.body.name.should.be.String();
@@ -27,8 +27,8 @@ describe('Styles', function() {
         }).end(done);
     });
   });
-  describe('/styles/streets.json is not served', function() {
-    testIs('/styles/streets.json', /./, 404);
+  describe('/styles/streets/style.json is not served', function() {
+    testIs('/styles/streets/style.json', /./, 404);
   });
 
   describe('/styles/' + prefix + '/sprite[@2x].{format}', function() {

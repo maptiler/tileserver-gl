@@ -12,6 +12,7 @@ before(function() {
   });
   global.app = running.app;
   global.server = running.server;
+  return running.startupPromise;
 });
 
 after(function() {

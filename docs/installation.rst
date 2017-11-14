@@ -7,7 +7,7 @@ Docker
 
 When running docker image, no special installation is needed -- the docker will automatically download the image if not present.
 
-Just run ``docker run -it -v $(pwd):/data -p 8080:80 klokantech/tileserver-gl``.
+Just run ``docker run --rm -it -v $(pwd):/data -p 8080:80 klokantech/tileserver-gl``.
 
 Additional options (see usage_) can be passed to the TileServer GL by appending them to the end of this command. You can, for example, do the following:
 
@@ -50,7 +50,7 @@ Alternatively, you can use ``tileserver-gl-light`` package instead, which is pur
 Build from source
 =======================
 
-Make sure you have Node v4 (nvm_ install 4) and run::
+Make sure you have Node v6 (nvm install 6) and run::
 
   npm install
   node .

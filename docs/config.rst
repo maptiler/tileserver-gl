@@ -21,13 +21,13 @@ Example::
       ],
       "formatQuality": {
         "jpeg": 80,
-        "webp": 90,
-        "pngQuantization": false,
-        "png": 90
+        "webp": 90
       },
+      "maxScaleFactor": 3,
       "maxSize": 2048,
       "pbfAlias": "pbf",
-      "serveAllFonts": false
+      "serveAllFonts": false,
+      "serveStaticMaps": true
     },
     "styles": {
       "basic": {
@@ -68,17 +68,60 @@ The value of ``root`` is used as prefix for all data types.
 
 You can use this to optionally specify on what domains the rendered tiles are accessible. This can be used for basic load-balancing or to bypass browser's limit for the number of connections per domain.
 
+``frontPage``
+-----------------
+
+Path to the html (relative to ``root`` path) to use as a front page.
+
+Use ``true`` (or nothing) to serve the default TileServer GL front page with list of styles and data.
+Use ``false`` to disable the front page altogether (404).
+
 ``formatQuality``
 -----------------
 
 Quality of the compression of individual image formats. [0-100]
 
-The value for ``png`` is only used when ``pngQuantization`` is ``true``.
+``maxScaleFactor``
+-----------
+
+Maximum scale factor to allow in raster tile and static maps requests (e.g. ``@3x`` suffix).
+Also see ``maxSize`` below.
+Default value is ``3``, maximum ``9``.
 
 ``maxSize``
 -----------
 
-Maximum image side length to be allowed to be rendered (including scale factor). Default is ``2048``.
+Maximum image side length to be allowed to be rendered (including scale factor).
+Be careful when changing this value since there are hardware limits that need to be considered.
+Default is ``2048``.
+
+``minRendererPoolSizes``
+------------------------
+
+Minimum amount of raster tile renderers per scale factor.
+The value is an array: the first element is the minimum amount of renderers for scale factor one, the second for scale factor two and so on.
+If the array has less elements than ``maxScaleFactor``, then the last element is used for all remaining scale factors as well.
+Selecting renderer pool sizes is a trade-off between memory use and speed.
+A reasonable value will depend on your hardware and your amount of styles and scale factors.
+If you have plenty of memory, you'll want to set this equal to ``maxRendererPoolSizes`` to avoid increased latency due to renderer destruction and recreation.
+If you need to conserve memory, you'll want something lower than ``maxRendererPoolSizes``, possibly allocating more renderers to scale factors that are more common.
+Default is ``[8, 4, 2]``.
+
+``maxRendererPoolSizes``
+------------------------
+
+Maximum amount of raster tile renderers per scale factor.
+The value and considerations are similar to ``minRendererPoolSizes`` above.
+If you have plenty of memory, try setting these equal to or slightly above your processor count, e.g. if you have four processors, try a value of ``[6]``.
+If you need to conserve memory, try lower values for scale factors that are less common.
+Default is ``[16, 8, 4]``.
+
+``watermark``
+-----------
+
+Optional string to be rendered into the raster tiles (and static maps) as watermark (bottom-left corner).
+Can be used for hard-coding attributions etc. (can also be specified per-style).
+Not used by default.
 
 ``styles``
 ==========

@@ -1,6 +1,6 @@
 {
   "name": "tileserver-gl",
-  "version": "1.4.1",
+  "version": "2.2.0",
   "description": "Map tile server for JSON GL styles - vector and server side generated raster tiles",
   "main": "src/main.js",
   "bin": "src/main.js",
@@ -13,36 +13,33 @@
   },
   "license": "BSD-2-Clause",
   "engines": {
-    "node": ">=4.2.1 <5"
+    "node": ">=6 <7"
   },
   "scripts": {
-    "test": "mocha test/**.js"
+    "test": "mocha test/**.js --timeout 10000"
   },
   "dependencies": {
-    "async": "2.1.4",
-    "advanced-pool": "0.3.2",
+    "@mapbox/mapbox-gl-native": "3.5.4",
+    "@mapbox/mbtiles": "0.9.0",
+    "@mapbox/sphericalmercator": "1.0.5",
+    "@mapbox/vector-tile": "1.3.0",
+    "advanced-pool": "0.3.3",
     "base64url": "2.0.0",
-    "canvas": "1.6.2",
-    "clone": "2.1.0",
+    "canvas": "1.6.6",
+    "clone": "2.1.1",
     "color": "1.0.3",
-    "cors": "2.8.1",
-    "express": "4.14.1",
+    "cors": "2.8.4",
+    "express": "4.15.4",
     "glyph-pbf-composite": "0.0.2",
-    "handlebars": "4.0.6",
-    "mbtiles": "0.9.0",
-    "morgan": "1.7.0",
-    "node-pngquant-native": "1.0.4",
+    "handlebars": "4.0.10",
+    "http-shutdown": "^1.2.0",
+    "morgan": "1.8.2",
     "nomnom": "1.8.1",
     "pbf": "3.0.5",
-    "request": "2.79.0",
-    "sharp": "0.17.1",
-    "tileserver-gl-styles": "1.1.0",
-    "vector-tile": "1.3.0",
-    "@mapbox/mapbox-gl-native": "3.4.4",
-    "@mapbox/sphericalmercator": "1.0.5"
-  },
-  "optionalDependencies": {
-    "tileshrink-gl": "./plugins/tileshrink-gl"
+    "proj4": "2.4.4",
+    "request": "2.81.0",
+    "sharp": "0.18.2",
+    "tileserver-gl-styles": "1.2.0"
   },
   "devDependencies": {
     "should": "^11.2.0",

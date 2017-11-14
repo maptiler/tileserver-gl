@@ -9,6 +9,8 @@ Vector and raster maps with GL styles. Server side rendering by Mapbox GL Native
 
 ## Get Started
 
+Make sure you have Node.js version **6** installed (running `node -v` it should output something like `v6.11.3`).
+
 Install `tileserver-gl` with server-side raster rendering of vector tiles with npm
 
 ```bash
@@ -34,7 +36,7 @@ Alternatively, you can use the `tileserver-gl-light` package instead, which is p
 An alternative to npm to start the packed software easier is to install [Docker](http://www.docker.com/) on your computer and then run in the directory with the downloaded MBTiles the command:
 
 ```bash
-docker run -it -v $(pwd):/data -p 8080:80 klokantech/tileserver-gl
+docker run --rm -it -v $(pwd):/data -p 8080:80 klokantech/tileserver-gl
 ```
 
 This will download and start a ready to use container on your computer and the maps are going to be available in webbrowser on localhost:8080.

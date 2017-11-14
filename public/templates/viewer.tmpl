@@ -27,12 +27,12 @@
       mapboxgl.setRTLTextPlugin('/mapbox-gl-rtl-text.js{{&key_query}}');
       var map = new mapboxgl.Map({
         container: 'map',
-        style: '/styles/{{id}}.json{{&key_query}}',
+        style: '/styles/{{id}}/style.json{{&key_query}}',
         hash: true
       });
       map.addControl(new mapboxgl.NavigationControl());
     } else {
-      var map = L.mapbox.map('map', '/styles/{{id}}/rendered.json{{&key_query}}', { zoomControl: false });
+      var map = L.mapbox.map('map', '/styles/{{id}}.json{{&key_query}}', { zoomControl: false });
       new L.Control.Zoom({ position: 'topright' }).addTo(map);
       setTimeout(function() {
         new L.Hash(map);

@@ -10,7 +10,7 @@ var clone = require('clone'),
 module.exports = function(options, repo, params, id, reportTiles, reportFont) {
   var app = express().disable('x-powered-by');
 
-  var styleFile = path.join(options.paths.styles, params.style);
+  var styleFile = path.resolve(options.paths.styles, params.style);
 
   var styleJSON = clone(require(styleFile));
   Object.keys(styleJSON.sources).forEach(function(name) {
@@ -62,13 +62,13 @@ module.exports = function(options, repo, params, id, reportTiles, reportFont) {
 
   repo[id] = styleJSON;
 
-  app.get('/' + id + '.json', function(req, res, next) {
+  app.get('/' + id + '/style.json', function(req, res, next) {
     var fixUrl = function(url, opt_nokey, opt_nostyle) {
       if (!url || (typeof url !== 'string') || url.indexOf('local://') !== 0) {
         return url;
       }
       var queryParams = [];
-      if (!opt_nostyle) {
+      if (!opt_nostyle && global.addStyleParam) {
         queryParams.push('style=' + id);
       }
       if (!opt_nokey && req.query.key) {
@@ -117,5 +117,5 @@ module.exports = function(options, repo, params, id, reportTiles, reportFont) {
     });
   });
 
-  return app;
+  return Promise.resolve(app);
 };
