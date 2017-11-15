@@ -16,7 +16,10 @@ module.exports = function(options, repo, params, id, reportTiles, reportFont) {
   Object.keys(styleJSON.sources).forEach(function(name) {
     var source = styleJSON.sources[name];
     var url = source.url;
-    if (url && url.lastIndexOf('mbtiles:', 0) === 0) {
+
+    var validateUrl = source.validate_url !=undefined ? source.validate_url : true
+
+    if (url && url.lastIndexOf('mbtiles:', 0) === 0 && validateUrl) {
       var mbtilesFile = url.substring('mbtiles://'.length);
       var fromData = mbtilesFile[0] == '{' &&
                      mbtilesFile[mbtilesFile.length - 1] == '}';
@@ -63,7 +66,22 @@ module.exports = function(options, repo, params, id, reportTiles, reportFont) {
   repo[id] = styleJSON;
 
   app.get('/' + id + '/style.json', function(req, res, next) {
+
+    var pattern = req.query.pattern
+    var value = req.query.value
+
+    console.log("## Pattern: "+pattern)
+    console.log("## Value: "+value)
+
     var fixUrl = function(url, opt_nokey, opt_nostyle) {
+      console.log("## Before if "+pattern)
+
+      if(pattern != null){
+        console.log("## Enter replace for "+url)
+        url = url.replace(pattern, value)
+        console.log("## Url: "+url)
+      }
+
       if (!url || (typeof url !== 'string') || url.indexOf('local://') !== 0) {
         return url;
       }
@@ -78,6 +96,7 @@ module.exports = function(options, repo, params, id, reportTiles, reportFont) {
       if (queryParams.length) {
         query = '?' + queryParams.join('&');
       }
+
       return url.replace(
           'local://', req.protocol + '://' + req.headers.host + '/') + query;
     };
@@ -86,6 +105,7 @@ module.exports = function(options, repo, params, id, reportTiles, reportFont) {
     Object.keys(styleJSON_.sources).forEach(function(name) {
       var source = styleJSON_.sources[name];
       source.url = fixUrl(source.url);
+      console.log("final url: "+source.url)
     });
     // mapbox-gl-js viewer cannot handle sprite urls with query
     if (styleJSON_.sprite) {
@@ -94,6 +114,8 @@ module.exports = function(options, repo, params, id, reportTiles, reportFont) {
     if (styleJSON_.glyphs) {
       styleJSON_.glyphs = fixUrl(styleJSON_.glyphs, false, true);
     }
+
+
     return res.send(styleJSON_);
   });
 

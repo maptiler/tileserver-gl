@@ -513,6 +513,11 @@ module.exports = function(options, repo, params, id, dataResolver) {
         path.push(pair);
       }
     });
+
+    if(path.length==0){
+      path = utils.decodePolyline(query.encodedpath);
+    }
+
     return path;
   };
 
