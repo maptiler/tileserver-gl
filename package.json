@@ -45,5 +45,8 @@
     "should": "^11.2.0",
     "mocha": "^3.2.0",
     "supertest": "^3.0.0"
-  }
+  },
+  "bundledDependencies": [
+    "tileserver-gl-styles"
+  ]
 }
