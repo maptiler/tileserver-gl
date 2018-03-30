@@ -2,6 +2,7 @@ TileServer GL
 =============
 
 Copyright (c) 2016, Klokan Technologies GmbH
+Copyright (c) 2018, Beat (markers feature)
 
 All rights reserved.
 

@@ -23,6 +23,8 @@ var Canvas = require('canvas'),
 
 var utils = require('./utils');
 
+var markerSize = 20;
+
 var FLOAT_PATTERN = '[+-]?(?:\\d+|\\d+\.?\\d+)';
 
 var getScale = function(scale) {
@@ -262,6 +264,27 @@ module.exports = function(options, repo, params, id, dataResolver) {
   if (styleJSON.glyphs && !httpTester.test(styleJSON.glyphs)) {
     styleJSON.glyphs = 'fonts://' + styleJSON.glyphs;
   }
+
+  var markerImages = [];
+  var markerImageNames = ['pickup','dropoff'];
+
+
+  var markerLoadPromise = new Promise(function(resolveCallback, rejectCallback) {
+
+      markerImageNames.forEach(function(imageName){
+          fs.readFile(path.join(__dirname, "../public/resources/images/") + imageName + '-marker.png', function(err, fileData) {
+
+              if (err) {
+                 rejectCallback(err);
+              }
+
+              var mkrImage = new Canvas.Image();
+              mkrImage.src = fileData;
+              markerImages.push(mkrImage);
+          });
+      });
+      resolveCallback();
+  });
 
   var tileJSON = {
     'tilejson': '2.0.0',
@@ -568,6 +591,20 @@ module.exports = function(options, repo, params, id, dataResolver) {
       ctx.stroke();
     }
 
+    if (query.showMarkers && query.showMarkers == 1) {
+        // Add the markers, if requested to do so.
+
+        var markers = [
+                        [markerImages[0], precisePx(path[0],z).map(function(loc,idx){ return (idx ==1)? loc - markerSize/2: loc - markerSize/2;})],
+                        [markerImages[1], precisePx(path[path.length-1],z).map(function(loc,idx){ return (idx == 1)?loc - markerSize/2: loc - markerSize/2;})]
+                    ];
+
+        markers.forEach(function(imgSpec){
+            var coordinates = imgSpec[1];
+            ctx.drawImage(imgSpec[0], coordinates[0], coordinates[1], markerSize, markerSize);
+        });
+    }
+
     return canvas.toBuffer();
   };
 
@@ -615,7 +652,7 @@ module.exports = function(options, repo, params, id, dataResolver) {
           format = req.params.format;
 
       if (z < 0) {
-        return res.status(404).send('Invalid zoom');
+        return res.status(400).send('Invalid zoom');
       }
 
       var transformer = raw ?
@@ -751,7 +788,7 @@ module.exports = function(options, repo, params, id, dataResolver) {
     return res.send(info);
   });
 
-  return Promise.all([fontListingPromise, renderersReadyPromise]).then(function() {
+  return Promise.all([markerLoadPromise, fontListingPromise, renderersReadyPromise]).then(function() {
     return app;
   });
 

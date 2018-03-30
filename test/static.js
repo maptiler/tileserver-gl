@@ -49,7 +49,7 @@ describe('Static endpoints', function() {
       testStatic(prefix, '0,0,0/256x256', 'gif', 400);
       testStatic(prefix, '0,0,0/256x256', 'png', 404, 1);
 
-      testStatic(prefix, '0,0,-1/256x256', 'png', 404);
+      testStatic(prefix, '0,0,-1/256x256', 'png', 400);
       testStatic(prefix, '0,0,0/256.5x256.5', 'png', 404);
 
       testStatic(prefix, '0,0,0,/256x256', 'png', 404);
@@ -91,6 +91,11 @@ describe('Static endpoints', function() {
         testStatic(prefix, 'auto/20x20', 'png', 200, 2, /image\/png/, '?path=10,10|20,20');
         testStatic(prefix, 'auto/200x200', 'png', 200, 3, /image\/png/, '?path=-10,-10|-20,-20');
       });
+
+      describe('with markers', function() {
+          testStatic(prefix, 'auto/20x20', 'png', 200, 2, /image\/png/, '?path=10,10|20,20&showMarkers=1');
+          testStatic(prefix, 'auto/20x20', 'png', 200, 2, /image\/png/, '?path=10,10|20,20&showMarkers=0');
+      })
     });
 
     describe('invalid requests return 4xx', function() {
