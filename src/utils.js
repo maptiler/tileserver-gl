@@ -12,7 +12,7 @@ module.exports.getTileUrls = function(req, domains, path, format, aliases) {
     if (domains.constructor === String && domains.length > 0) {
       domains = domains.split(',');
     }
-    var host = req.headers.host;
+    var host = req.hostname;
     var hostParts = host.split('.');
     var relativeSubdomainsUsable = hostParts.length > 1 &&
         !/^([0-9]{1,3}\.){3}[0-9]{1,3}(\:[0-9]+)?$/.test(host);
@@ -31,7 +31,7 @@ module.exports.getTileUrls = function(req, domains, path, format, aliases) {
     domains = newDomains;
   }
   if (!domains || domains.length == 0) {
-    domains = [req.headers.host];
+    domains = [req.hostname];
   }
 
   var key = req.query.key;
