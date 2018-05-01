@@ -21,7 +21,11 @@ var packageJson = require('../package'),
     serve_rendered = null,
     serve_style = require('./serve_style'),
     serve_data = require('./serve_data'),
-    utils = require('./utils');
+    utils = require('./utils'),
+    avgresp = require('./avgresp'),
+    prometheus = require('prom-client');
+
+prometheus.collectDefaultMetrics({ timeout: 5000 });
 
 var isLight = packageJson.name.slice(-6) == '-light';
 if (!isLight) {
@@ -51,6 +55,8 @@ function start(opts) {
       skip: function(req, res) { return opts.silent && (res.statusCode == 200 || res.statusCode == 304) }
     }));
   }
+
+  app.use(/\/styles\/.*\/static\/.*$/, avgresp.avgresp());
 
   var config = opts.config || null;
   var configPath = null;
@@ -391,12 +397,30 @@ function start(opts) {
     console.log('Startup complete');
     startupComplete = true;
   });
+
   app.get('/health', function(req, res, next) {
+
+    var healthTemplate = {
+    "service": "tileserver",
+    "status": "200",
+    "message": "OK"
+    };
+
+    var statusCode = 200;
+
     if (startupComplete) {
-      return res.status(200).send('OK');
+        statusCode = 200;
+        healthTemplate.message = "OK";
     } else {
-      return res.status(503).send('Starting');
+        statusCode = 503;
+        healthTemplate.message = "Starting";
     }
+    healthTemplate.status = statusCode;
+    return res.status(statusCode).send(healthTemplate);
+  });
+
+  app.get('/metrics', function(req, res, next){
+     res.end(prometheus.register.metrics());
   });
 
   var server = app.listen(process.env.PORT || opts.port, process.env.BIND || opts.bind, function() {
