@@ -173,7 +173,7 @@ Sprites
 
 If your style requires any sprites, make sure the style JSON contains proper path in the ``sprite`` property.
 
-It can be a local path (e.g. ``my-style/sprite``) or remove http(s) location (e.g. ``https://mycdn.com/my-style/sprite``). Several possible extension are added to this path, so the following files should be present:
+It can be a local path (e.g. ``my-style/sprite``) or remote http(s) location (e.g. ``https://mycdn.com/my-style/sprite``). Several possible extension are added to this path, so the following files should be present:
 
 * ``sprite.json``
 * ``sprite.png``

@@ -18,6 +18,7 @@ Getting started
     -p, --port <port>     Port [8080]
     -C|--no-cors          Disable Cross-origin resource sharing headers
     -V, --verbose         More verbose output
+    -s, --silent          Less verbose output
     -v, --version         Version info
 
 
