@@ -4,7 +4,7 @@ MAINTAINER Petr Sloup <petr.sloup@klokantech.com>
 ENV NODE_ENV="production"
 VOLUME /data
 WORKDIR /data
-EXPOSE 80
+EXPOSE 8080
 ENTRYPOINT ["/bin/bash", "/usr/src/app/run.sh"]
 
 RUN apt-get -qq update \
