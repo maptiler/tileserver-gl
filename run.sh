@@ -17,7 +17,7 @@ sleep 3
 export DISPLAY=:99.0
 
 cd /data
-node /usr/src/app/ -p 80 "$@" &
+node /usr/src/app/ "$@" &
 child=$!
 wait "$child"
 
