@@ -29,7 +29,7 @@ module.exports = function(options, repo, params, id, reportTiles, reportFont) {
         }
       }
       var identifier = reportTiles(mbtilesFile, fromData);
-      source.url = 'local://data/' + identifier + '.json';
+      source.url = 'local://mbtiles/' + identifier + '.json';
     }
   });
 
@@ -54,7 +54,7 @@ module.exports = function(options, repo, params, id, reportTiles, reportFont) {
             .replace('{style}', path.basename(styleFile, '.json'))
             .replace('{styleJsonFolder}', path.relative(options.paths.sprites, path.dirname(styleFile)))
             );
-    styleJSON.sprite = 'local://styles/' + id + '/sprite';
+    styleJSON.sprite = 'local://gl-styles/' + id + '/sprite';
   }
   if (styleJSON.glyphs && !httpTester.test(styleJSON.glyphs)) {
     styleJSON.glyphs = 'local://fonts/{fontstack}/{range}.pbf';

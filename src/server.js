@@ -142,7 +142,7 @@ function start(opts) {
         }, function(font) {
           serving.fonts[font] = true;
         }).then(function(sub) {
-          app.use('/styles/', sub);
+          app.use('/gl-styles/', sub);
         }));
     }
     if (item.serve_rendered !== false) {
@@ -159,7 +159,7 @@ function start(opts) {
               return mbtilesFile;
             }
           ).then(function(sub) {
-            app.use('/styles/', sub);
+            app.use('/gl-styles/', sub);
           })
         );
       } else {
@@ -183,7 +183,7 @@ function start(opts) {
 
     startupPromises.push(
       serve_data(options, serving.data, item, id, serving.styles).then(function(sub) {
-        app.use('/data/', sub);
+        app.use('/mbtiles/', sub);
       })
     );
   });
@@ -198,7 +198,7 @@ function start(opts) {
         name: styleJSON.name,
         id: id,
         url: req.protocol + '://' + req.headers.host +
-             '/styles/' + id + '/style.json' + query
+             '/gl-styles/' + id + '/style.json' + query
       });
     });
     res.send(result);
@@ -209,7 +209,7 @@ function start(opts) {
       var info = clone(serving[type][id]);
       var path = '';
       if (type == 'rendered') {
-        path = 'styles/' + id;
+        path = 'gl-styles/' + id;
       } else {
         path = type + '/' + id;
       }
@@ -298,7 +298,7 @@ function start(opts) {
         
         var tiles = utils.getTileUrls(
             req, style.serving_rendered.tiles,
-            'styles/' + id, style.serving_rendered.format);
+            'gl-styles/' + id, style.serving_rendered.format);
         style.xyz_link = tiles[0];
       }
     });
@@ -321,7 +321,7 @@ function start(opts) {
         }
 
         var tiles = utils.getTileUrls(
-            req, data_.tiles, 'data/' + id, data_.format, {
+            req, data_.tiles, 'mbtiles/' + id, data_.format, {
               'pbf': options.pbfAlias
             });
         data_.xyz_link = tiles[0];
@@ -346,7 +346,7 @@ function start(opts) {
     };
   });
 
-  serveTemplate('/styles/:id/$', 'viewer', function(req) {
+  serveTemplate('/gl-styles/:id/$', 'viewer', function(req) {
     var id = req.params.id;
     var style = clone((config.styles || {})[id]);
     if (!style) {
@@ -361,10 +361,10 @@ function start(opts) {
 
   /*
   app.use('/rendered/:id/$', function(req, res, next) {
-    return res.redirect(301, '/styles/' + req.params.id + '/');
+    return res.redirect(301, '/gl-styles/' + req.params.id + '/');
   });
   */
-  serveTemplate('/styles/:id/wmts.xml', 'wmts', function(req) {
+  serveTemplate('/gl-styles/:id/wmts.xml', 'wmts', function(req) {
     var id = req.params.id;
     var wmts = clone((config.styles || {})[id]);
     if (!wmts) {
@@ -379,7 +379,7 @@ function start(opts) {
     return wmts;
   });
 
-  serveTemplate('/data/:id/$', 'data', function(req) {
+  serveTemplate('/mbtiles/:id/$', 'data', function(req) {
     var id = req.params.id;
     var data = clone(serving.data[id]);
     if (!data) {

@@ -11,12 +11,12 @@ var testIs = function(url, type, status) {
 var prefix = 'test-style';
 
 describe('Styles', function() {
-  describe('/styles/' + prefix + '/style.json is valid style', function() {
-    testIs('/styles/' + prefix + '/style.json', /application\/json/);
+  describe('/gl-styles/' + prefix + '/style.json is valid style', function() {
+    testIs('/gl-styles/' + prefix + '/style.json', /application\/json/);
 
     it('contains expected properties', function(done) {
       supertest(app)
-        .get('/styles/' + prefix + '/style.json')
+        .get('/gl-styles/' + prefix + '/style.json')
         .expect(function(res) {
           res.body.version.should.equal(8);
           res.body.name.should.be.String();
@@ -27,15 +27,15 @@ describe('Styles', function() {
         }).end(done);
     });
   });
-  describe('/styles/streets/style.json is not served', function() {
-    testIs('/styles/streets/style.json', /./, 404);
+  describe('/gl-styles/streets/style.json is not served', function() {
+    testIs('/gl-styles/streets/style.json', /./, 404);
   });
 
-  describe('/styles/' + prefix + '/sprite[@2x].{format}', function() {
-    testIs('/styles/' + prefix + '/sprite.json', /application\/json/);
-    testIs('/styles/' + prefix + '/sprite@2x.json', /application\/json/);
-    testIs('/styles/' + prefix + '/sprite.png', /image\/png/);
-    testIs('/styles/' + prefix + '/sprite@2x.png', /image\/png/);
+  describe('/gl-styles/' + prefix + '/sprite[@2x].{format}', function() {
+    testIs('/gl-styles/' + prefix + '/sprite.json', /application\/json/);
+    testIs('/gl-styles/' + prefix + '/sprite@2x.json', /application\/json/);
+    testIs('/gl-styles/' + prefix + '/sprite.png', /image\/png/);
+    testIs('/gl-styles/' + prefix + '/sprite@2x.png', /image\/png/);
   });
 });
 

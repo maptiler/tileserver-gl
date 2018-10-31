@@ -1,6 +1,6 @@
 var testStatic = function(prefix, q, format, status, scale, type, query) {
   if (scale) q += '@' + scale + 'x';
-  var path = '/styles/' + prefix + '/static/' + q + '.' + format;
+  var path = '/gl-styles/' + prefix + '/static/' + q + '.' + format;
   if (query) {
     path += query;
   }

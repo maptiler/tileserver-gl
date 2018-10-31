@@ -178,7 +178,7 @@ module.exports = function(options, repo, params, id, styles) {
   app.get('/' + id + '.json', function(req, res, next) {
     var info = clone(tileJSON);
     info.tiles = utils.getTileUrls(req, info.tiles,
-                                   'data/' + id, info.format, {
+                                   'mbtiles/' + id, info.format, {
                                      'pbf': options.pbfAlias
                                    });
     return res.send(info);

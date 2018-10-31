@@ -6,32 +6,32 @@ If you visit the server on the configured port (default 8080) you can see your m
 
 Styles
 ======
-* Styles are served at ``/styles/{id}/style.json`` (+ array at ``/styles.json``)
+* Styles are served at ``/gl-styles/{id}/style.json`` (+ array at ``/styles.json``)
 
-  * Sprites at ``/styles/{id}/sprite[@2x].{format}``
+  * Sprites at ``/gl-styles/{id}/sprite[@2x].{format}``
   * Fonts at ``/fonts/{fontstack}/{start}-{end}.pbf``
 
 Rendered tiles
 ==============
-* Rendered tiles are served at ``/styles/{id}/{z}/{x}/{y}[@2x].{format}``
+* Rendered tiles are served at ``/gl-styles/{id}/{z}/{x}/{y}[@2x].{format}``
 
   * The optional ``@2x`` (or ``@3x``, ``@4x``) part can be used to render HiDPI (retina) tiles
   * Available formats: ``png``, ``jpg`` (``jpeg``), ``webp``
-  * TileJSON at ``/styles/{id}.json``
+  * TileJSON at ``/gl-styles/{id}.json``
 
 * The rendered tiles are not available in the ``tileserver-gl-light`` version.
 
 WMTS Capabilities
 ==============
-* WMTS Capabilities are served at ``/styles/{id}/wmts.xml``
+* WMTS Capabilities are served at ``/gl-styles/{id}/wmts.xml``
 
 Static images
 =============
 * Several endpoints:
 
-  * ``/styles/{id}/static/{lon},{lat},{zoom}[@{bearing}[,{pitch}]]/{width}x{height}[@2x].{format}`` (center-based)
-  * ``/styles/{id}/static/{minx},{miny},{maxx},{maxy}/{width}x{height}[@2x].{format}`` (area-based)
-  * ``/styles/{id}/static/auto/{width}x{height}[@2x].{format}`` (autofit path -- see below)
+  * ``/gl-styles/{id}/static/{lon},{lat},{zoom}[@{bearing}[,{pitch}]]/{width}x{height}[@2x].{format}`` (center-based)
+  * ``/gl-styles/{id}/static/{minx},{miny},{maxx},{maxy}/{width}x{height}[@2x].{format}`` (area-based)
+  * ``/gl-styles/{id}/static/auto/{width}x{height}[@2x].{format}`` (autofit path -- see below)
 
 * All the static image endpoints additionally support following query parameters:
 
@@ -47,19 +47,19 @@ Static images
 
     * value of ``0.1`` means "add 10% size to each side to make sure the area of interest is nicely visible"
 
-* You can also use (experimental) ``/styles/{id}/static/raw/...`` endpoints with raw spherical mercator coordinates (EPSG:3857) instead of WGS84.
+* You can also use (experimental) ``/gl-styles/{id}/static/raw/...`` endpoints with raw spherical mercator coordinates (EPSG:3857) instead of WGS84.
 
 * The static images are not available in the ``tileserver-gl-light`` version.
 
 Source data
 ===========
-* Source data are served at ``/data/{mbtiles}/{z}/{x}/{y}.{format}``
+* Source data are served at ``/mbtiles/{mbtiles}/{z}/{x}/{y}.{format}``
 
   * Format depends on the source file (usually ``png`` or ``pbf``)
 
     * ``geojson`` is also available (useful for inspecting the tiles) in case the original format is ``pbf``
 
-  * TileJSON at ``/data/{mbtiles}.json``
+  * TileJSON at ``/mbtiles/{mbtiles}.json``
 
 TileJSON arrays
 ===============

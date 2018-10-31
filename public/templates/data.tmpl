@@ -42,7 +42,7 @@
       sources: {
         'vector_layer_': {
           type: 'vector',
-          url: '/data/{{id}}.json{{&key_query}}'
+          url: '/mbtiles/{{id}}.json{{&key_query}}'
         }
       },
       layers: []
@@ -74,7 +74,7 @@
   <h1 style="display:none;">{{name}}</h1>
   <div id='map'></div>
   <script>
-    var map = L.mapbox.map('map', '/data/{{id}}.json{{&key_query}}', { zoomControl: false });
+    var map = L.mapbox.map('map', '/mbtiles/{{id}}.json{{&key_query}}', { zoomControl: false });
     map.eachLayer(function(layer) {
       // do not add scale prefix even if retina display is detected
       layer.scalePrefix = '.';

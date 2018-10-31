@@ -71,6 +71,6 @@ describe('Metadata', function() {
     });
   });
 
-  testTileJSON('/styles/test-style.json');
-  testTileJSON('/data/openmaptiles.json');
+  testTileJSON('/gl-styles/test-style.json');
+  testTileJSON('/mbtiles/openmaptiles.json');
 });
