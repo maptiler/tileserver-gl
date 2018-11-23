@@ -346,8 +346,8 @@ function start(opts) {
     };
   });
 
-  serveTemplate('/styles/:id/$', 'viewer', function(req) {
-    var id = req.params.id;
+  serveTemplate('/styles/:id/:version?/$', 'viewer', function(req) {
+    var id = req.params.version ? req.params.id +'/'+req.params.version : req.params.id;
     var style = clone((config.styles || {})[id]);
     if (!style) {
       return null;
@@ -364,8 +364,8 @@ function start(opts) {
     return res.redirect(301, '/styles/' + req.params.id + '/');
   });
   */
-  serveTemplate('/styles/:id/wmts.xml', 'wmts', function(req) {
-    var id = req.params.id;
+  serveTemplate('/styles/:id/:version?/wmts.xml', 'wmts', function(req) {
+    var id = req.params.version ? req.params.id +'/'+req.params.version : req.params.id;
     var wmts = clone((config.styles || {})[id]);
     if (!wmts) {
       return null;
@@ -379,8 +379,8 @@ function start(opts) {
     return wmts;
   });
 
-  serveTemplate('/data/:id/$', 'data', function(req) {
-    var id = req.params.id;
+  serveTemplate('/data/:id:version?/$', 'data', function(req) {
+    var id = req.params.version ? req.params.id +'/'+req.params.version : req.params.id;
     var data = clone(serving.data[id]);
     if (!data) {
       return null;
