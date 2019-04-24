@@ -18,12 +18,21 @@ jobs:
           command: |
             mkdir ./artifact
             DEPLOYABLE="${CIRCLE_PROJECT_REPONAME}-${CIRCLE_SHA1}.tar.gz"
-            rsync -avz --exclude 'artifact' * artifact/
-            cp -rf * ./artifact/
+            cp -rf configuration \
+            node_modules \
+            src \
+            run.sh \
+            package.json \
+            map_files \
+            public \
+            docs \
+            publish.js \
+            ./artifact/
             pushd ./artifact
               echo "Taring ${DEPLOYABLE}"
               tar -zcvf $DEPLOYABLE *
             popd
+            cp -rf ./deployment ./artifact/
       - persist_to_workspace:
           root: /tmp/repo
           paths:
@@ -54,12 +63,13 @@ jobs:
 deploy-to-dev:
     docker:
       - image: monosolutions/terraform:1.0.4
-    working_directory: /tmp/repo
+    working_directory: /tmp/repo/artifact/deployment
     environment:
       REGION: "eu-central-1"
       ENVIRONMENT: "dev"
     steps:
-      - checkout
+      - attach_workspace:
+          at: ~/tmp/repo
       - run:
           name: Configure deployment
           command: |
@@ -74,7 +84,7 @@ deploy-to-dev:
       - run:
           name: Deploy tileserver to fra dev
           command: |
-            cd /tmp/repo/deployment/eu-central-1/dev/tileserver && terragrunt apply --terragrunt-non-interactive -auto-approve
+            cd /tmp/repo/artifact/deployment/eu-central-1/dev/tileserver && terragrunt apply --terragrunt-non-interactive -auto-approve
 workflows:
   version: 2
   deploy:
