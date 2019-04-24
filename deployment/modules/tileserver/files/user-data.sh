@@ -5,6 +5,7 @@ REGION=${region}
 ENVIRONMENT=${environment}
 MONO_REGION=${mono_region}
 REPO_VERSION=${repo_version}
+BUCKET="mono-deployment-$ENVIRONMENT"
 DEPLOYABLE="tileserver-gl-$REPO_VERSION.tar.gz"
 FULL_BUCKET_URI="s3://$BUCKET/tileserver-gl/$DEPLOYABLE"
 # Setup dependencies
