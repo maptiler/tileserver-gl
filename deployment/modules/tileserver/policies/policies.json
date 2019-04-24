@@ -45,13 +45,11 @@
             "Sid": "",
             "Effect": "Allow",
             "Action": [
-                "s3:GetObject",
-                "s3:ListBucket",
-                "s3:HeadObject"
+                "s3:*"
             ],
             "Resource": [
-                "arn:aws:s3:::mono-deployment-dev",
-                "arn:aws:s3:::mono-deployment-dev/tileserver-gl/*"
+                "arn:aws:s3:::mono-deployment-${environment}",
+                "arn:aws:s3:::mono-deployment-${environment}/*/*"
             ]
         }
     ]
