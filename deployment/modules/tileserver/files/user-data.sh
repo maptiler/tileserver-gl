@@ -32,7 +32,7 @@ sudo mkdir -p /usr/src/app/. \
 sudo chown -R ubuntu:ubuntu /usr/src/app/.
 # Setup project
 {
-	aws s3 cp "FULL_BUCKET_URI" /tmp/tileserver-gl.tar.gz
+	aws s3 cp "$FULL_BUCKET_URI" /tmp/tileserver-gl.tar.gz
 	tar xzf /tmp/tileserver-gl.tar.gz -C /tmp/uncompressed/
 	# Setup map files
 	sudo mv /tmp/uncompressed/map_files/* /data/.
