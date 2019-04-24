@@ -1,0 +1,23 @@
+version: 2
+jobs:
+  deploy-to-dev:
+    docker:
+      - image: monosolutions/terraform:1.0.4
+    working_directory: /tmp/repo
+    environment:
+      REGION: "eu-central-1"
+    steps:
+      - checkout
+      - run:
+          name: Configure deployment
+          command: |
+            aws configure set aws_access_key_id "${AWS_DEV_ACCESS_KEY}"
+            aws configure set aws_secret_access_key "${AWS_DEV_SECRET_KEY}"
+            aws configure set region "${REGION}"
+            wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.14.10/terragrunt_linux_amd64 -O terragrunt
+            chmod a+x terragrunt
+            mv terragrunt /bin/
+      - run:
+          name: Deploy tileserver to fra dev
+          command: |
+            cd /tmp/repo/deployment/eu-central-1/dev/tileserver && terragrunt apply --terragrunt-non-interactive -auto-approve
