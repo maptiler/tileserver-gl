@@ -20,7 +20,4 @@ resource "aws_alb_target_group" "target_group_this" {
     protocol            = "HTTP"
     matcher = "200"
   }
-  lifecycle {
-    create_before_destroy = true
-  }
 }
