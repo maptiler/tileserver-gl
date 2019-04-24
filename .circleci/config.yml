@@ -21,3 +21,8 @@ jobs:
           name: Deploy tileserver to fra dev
           command: |
             cd /tmp/repo/deployment/eu-central-1/dev/tileserver && terragrunt apply --terragrunt-non-interactive -auto-approve
+workflows:
+  version: 2
+  deploy:
+    jobs:
+      - deploy-to-dev
