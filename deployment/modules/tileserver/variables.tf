@@ -54,3 +54,13 @@ variable "repo_version" {
   type = "string"
   description = "Version of repo to fetch and setup from S3"
 }
+
+variable "aws_access_key" {
+  type = "string"
+  description = "AWS access creds to fetch artifact"
+}
+
+variable "aws_secret_key" {
+  type = "string"
+  description = "AWS access secret to fetch artifact"
+}

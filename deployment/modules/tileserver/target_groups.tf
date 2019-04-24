@@ -1,5 +1,5 @@
 resource "aws_alb_target_group" "target_group_this" {
-  name = "maps"
+  name = "maps-test"
   port = "80"
   protocol = "HTTP"
   vpc_id = "${data.terraform_remote_state.mono_vpc.vpc_id[0]}"
