@@ -49,7 +49,7 @@
             ],
             "Resource": [
                 "arn:aws:s3:::mono-deployment-${environment}",
-                "arn:aws:s3:::mono-deployment-${environment}/*/*"
+                "arn:aws:s3:::mono-deployment-${environment}/*"
             ]
         }
     ]
