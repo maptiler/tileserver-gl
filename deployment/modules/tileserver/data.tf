@@ -44,12 +44,11 @@ data "template_file" "shell-script" {
 }
 
 data "template_cloudinit_config" "cloudinit" {
-  part {
-    filename     = "init.cfg"
-    content_type = "text/cloud-config"
-    content      = "${data.template_file.cloud_init.rendered}"
-  }
-
+  # part {
+  #   filename     = "init.cfg"
+  #   content_type = "text/cloud-config"
+  #   content      = "${data.template_file.cloud_init.rendered}"
+  # }
   part {
     content_type = "text/x-shellscript"
     content      = "${data.template_file.shell-script.rendered}"
