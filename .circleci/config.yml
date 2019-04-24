@@ -73,7 +73,7 @@ jobs:
       ENVIRONMENT: "dev"
     steps:
       - attach_workspace:
-          at: ~/tmp/repo
+          at: /tmp/repo
       - run:
           name: Configure deployment
           command: |
