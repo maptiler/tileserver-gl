@@ -68,4 +68,5 @@ sudo sed -i -e 's/node \/usr\/src\/app\/ -p 80 "$@" \&/node \/usr\/src\/app\/ -p
 } || {
 	echo "Could not mount EFS!!!"
 }
+sudo service nginx restart
 bash /usr/src/app/run.sh &
