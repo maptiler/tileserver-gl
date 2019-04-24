@@ -6,12 +6,19 @@ jobs:
       - image: node:6.17.1-jessie
     steps:
       - checkout
+      - restore_cache:
+          key: node-dependencies-{{ checksum "package.json" }}
       - run: npm install
+      - save_cache:
+          paths:
+            - node_modules
+          key: node-dependencies-{{ checksum "package.json" }}
       - run:
           name: Build Artifact
           command: |
             mkdir ./artifact
             DEPLOYABLE="${CIRCLE_PROJECT_REPONAME}-${CIRCLE_SHA1}.tar.gz"
+            rsync -avz --exclude 'artifact' * artifact/
             cp -rf * ./artifact/
             pushd ./artifact
               echo "Taring ${DEPLOYABLE}"
