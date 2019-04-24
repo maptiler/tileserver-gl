@@ -1,4 +1,4 @@
-FROM node:6-stretch
+FROM node:6.15.1-stretch
 MAINTAINER Petr Sloup <petr.sloup@klokantech.com>
 
 ENV NODE_ENV="production"
@@ -21,6 +21,7 @@ RUN apt-get -qq update \
     libprotobuf-dev \
     libxxf86vm-dev \
     xvfb \
+    x11-utils \
 && apt-get clean
 
 RUN mkdir -p /usr/src/app

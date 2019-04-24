@@ -35,12 +35,16 @@ var opts = require('commander')
   .option(
     '-p, --port <port>',
     'Port [8080]',
-    parseInt,
-    8080
+    8080,
+    parseInt
   )
   .option(
     '-C|--no-cors',
     'Disable Cross-origin resource sharing headers'
+  )
+  .option(
+    '-u|--public_url <url>',
+    'Enable exposing the server on subpaths, not necessarily the root of the domain'
   )
   .option(
     '-V, --verbose',
@@ -49,6 +53,14 @@ var opts = require('commander')
   .option(
     '-s, --silent',
     'Less verbose output'
+  )
+  .option(
+    '-l|--log_file <file>',
+    'output log file (defaults to standard out)'
+  )
+  .option(
+    '-f|--log_format <format>',
+    'define the log format:  https://github.com/expressjs/morgan#morganformat-options'
   )
   .version(
     packageJson.version,
@@ -59,13 +71,20 @@ var opts = require('commander')
 console.log('Starting ' + packageJson.name + ' v' + packageJson.version);
 
 var startServer = function(configPath, config) {
+  var publicUrl = opts.public_url;
+  if (publicUrl && publicUrl.lastIndexOf('/') !== publicUrl.length - 1) {
+    publicUrl += '/';
+  }
   return require('./server')({
     configPath: configPath,
     config: config,
     bind: opts.bind,
     port: opts.port,
     cors: opts.cors,
-    silent: opts.silent
+    silent: opts.silent,
+    logFile: opts.log_file,
+    logFormat: opts.log_format,
+    publicUrl: publicUrl
   });
 };
 
