@@ -3,7 +3,7 @@ terragrunt = {
     path = "${find_in_parent_folders()}"
   }
   terraform {
-    source = "git::ssh://git@github.com/monosolutions/terraform-modules.git//mono-tileserver"
+    source = "/tmp/repo/deployment/modules/tileserver"
   }
 }
 region = "eu-central-1"

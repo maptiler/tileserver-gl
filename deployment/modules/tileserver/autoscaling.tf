@@ -1,5 +1,5 @@
 resource "aws_launch_configuration" "launchconfiguration" {
-  name_prefix          = "maps-${var.environment}-"
+  name_prefix          = "maps-${var.environment}-${var.version}-"
   image_id             = "${data.aws_ami.amazon_linux.id}"
   key_name             = "${data.terraform_remote_state.mono_keypair.key_name}"
   iam_instance_profile = "${aws_iam_instance_profile.profile.name}"
@@ -19,7 +19,7 @@ resource "aws_launch_configuration" "launchconfiguration" {
 
 resource "aws_autoscaling_group" "autoscalinggroup" {
   vpc_zone_identifier  = ["${data.terraform_remote_state.mono_vpc.sn_private_a_id}"]
-  name_prefix          = "maps-${var.environment}-${var.version}"
+  name          = "maps-${aws_launch_configuration.launchconfiguration.name}"
   launch_configuration = "${aws_launch_configuration.launchconfiguration.name}"
   max_size             = 5
   desired_capacity     = 1
@@ -27,7 +27,7 @@ resource "aws_autoscaling_group" "autoscalinggroup" {
   health_check_grace_period = 300
   health_check_type = "ELB"
   force_delete = true
-  termination_policies = ["OldestInstance"]
+  termination_policies = ["OldestInstance", "OldestLaunchConfiguration"]
 
   target_group_arns = ["${aws_alb_target_group.target_group_this.arn}"]
   enabled_metrics = ["GroupMinSize", "GroupMaxSize", 
