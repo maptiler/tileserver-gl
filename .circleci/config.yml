@@ -60,7 +60,7 @@ jobs:
               echo "Bucket is here"
             }
             aws s3 cp "/tmp/repo/artifact/${DEPLOYABLE}" "s3://${BUCKET}/tileserver-gl/${DEPLOYABLE}"
-deploy-to-dev:
+  deploy-to-dev:
     docker:
       - image: monosolutions/terraform:1.0.4
     working_directory: /tmp/repo/artifact/deployment
