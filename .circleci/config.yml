@@ -19,15 +19,15 @@ jobs:
             mkdir ./artifact
             DEPLOYABLE="${CIRCLE_PROJECT_REPONAME}-${CIRCLE_SHA1}.tar.gz"
             cp -rf configuration \
-            node_modules \
-            src \
-            run.sh \
-            package.json \
-            map_files \
-            public \
-            docs \
-            publish.js \
-            ./artifact/
+              node_modules \
+              src \
+              run.sh \
+              package.json \
+              map_files \
+              public \
+              docs \
+              publish.js \
+              ./artifact/
             pushd ./artifact
               echo "Taring ${DEPLOYABLE}"
               tar -zcvf $DEPLOYABLE *
