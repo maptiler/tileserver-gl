@@ -39,6 +39,7 @@ data "template_file" "shell-script" {
     region = "${var.region}"
     mono_region = "${var.mono_region}"
     repo_version = "${var.repo_version}"
+    environment = "${var.environment}"
   }
 }
 
