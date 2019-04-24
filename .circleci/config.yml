@@ -83,13 +83,16 @@ jobs:
             wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.14.10/terragrunt_linux_amd64 -O terragrunt
             chmod a+x terragrunt
             mv terragrunt /bin/
-            sed -i -e "s%repo_version =%repo_version = \"${CIRCLE_SHA1}\"%g" "${REGION}/${ENVIRONMENT}/tileserver/terraform.tfvars"
-            sed -i -e "s%aws_access_key =%aws_access_key = \"${AWS_DEV_ACCESS_KEY}\"%g" "${REGION}/${ENVIRONMENT}/tileserver/terraform.tfvars"
-            sed -i -e "s%aws_secret_key =%aws_secret_key = \"${AWS_DEV_SECRET_KEY}\"%g" "${REGION}/${ENVIRONMENT}/tileserver/terraform.tfvars"  
+            # sed -i -e "s%repo_version =%repo_version = \"${CIRCLE_SHA1}\"%g" "${REGION}/${ENVIRONMENT}/tileserver/terraform.tfvars"
       - run:
           name: Deploy tileserver to fra dev
           command: |
-            cd /tmp/repo/artifact/deployment/eu-central-1/dev/tileserver && terragrunt apply --terragrunt-non-interactive -auto-approve
+            cd /tmp/repo/artifact/deployment/eu-central-1/dev/tileserver && \
+            terragrunt apply \
+            -var="aws_access_key=$AWS_DEV_ACCESS_KEY" \
+            -var="aws_secret_key=$AWS_DEV_SECRET_KEY" \
+            -var="repo_version=$CIRCLE_SHA1" \
+            --terragrunt-non-interactive -auto-approve
 workflows:
   version: 2
   deploy:
