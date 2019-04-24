@@ -3,7 +3,7 @@ jobs:
   build-package:
     working_directory: /tmp/repo
     docker:
-      - image: monosolutions/iitesting
+      - image: node:6.17.1-jessie
     steps:
       - checkout
       - run: npm install
