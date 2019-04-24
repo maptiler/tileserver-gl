@@ -1,9 +1,9 @@
 version: 2
 jobs:
   build-package:
-  working_directory: /tmp/repo
-  docker:
-    - image: monosolutions/iitesting
+    working_directory: /tmp/repo
+    docker:
+      - image: monosolutions/iitesting
     steps:
       - checkout
       - run: npm install
