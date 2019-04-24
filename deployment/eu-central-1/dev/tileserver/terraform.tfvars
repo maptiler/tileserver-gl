@@ -3,7 +3,7 @@ terragrunt = {
     path = "${find_in_parent_folders()}"
   }
   terraform {
-    source = "/tmp/repo/deployment/modules/tileserver"
+    source = "/tmp/repo/artifact/deployment/modules/tileserver"
   }
 }
 region = "eu-central-1"
