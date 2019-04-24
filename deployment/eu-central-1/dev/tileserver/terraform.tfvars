@@ -17,3 +17,5 @@ mono_region = "fra"
 version = "2.1"
 state_bucket = "tg-state-eu-central-1"
 repo_version =
+aws_access_key =
+aws_secret_Key =

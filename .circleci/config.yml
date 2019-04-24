@@ -84,7 +84,9 @@ jobs:
             chmod a+x terragrunt
             mv terragrunt /bin/
             sed -i -e "s/repo_version =/repo_version = \"${CIRCLE_SHA1}\"/g" \
-            "${REGION}/${ENVIRONMENT}/tileserver/terraform.tfvars"
+              "s/aws_access_key =/aws_access_key = \"${AWS_DEV_ACCESS_KEY}\"/g" \
+              "s/aws_secret_key =/aws_secret_key = \"${AWS_DEV_SECRET_KEY}\"/g" \
+              "${REGION}/${ENVIRONMENT}/tileserver/terraform.tfvars"
       - run:
           name: Deploy tileserver to fra dev
           command: |
