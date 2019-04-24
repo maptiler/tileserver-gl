@@ -43,10 +43,10 @@ sudo chown -R ubuntu:ubuntu /usr/src/app/.
 	# Setup map files
 	sudo mv /tmp/uncompressed/map_files/* /data/.
 	sudo chown -R ubuntu:ubuntu /data/.
-	# Setup app
-	mv /tmp/uncompressed/* /usr/src/app/.
 	# Setup nginx
 	sudo mv /tmp/uncompressed/configuration/nginx.conf /etc/nginx/.
+	# Setup app
+	mv /tmp/uncompressed/* /usr/src/app/.
 	# cd /usr/src/app/. && npm install	
 } || {
 	echo ""
