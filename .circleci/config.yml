@@ -1,11 +1,56 @@
 version: 2
 jobs:
-  deploy-to-dev:
+  build-package:
+  working_directory: /tmp/repo
+  docker:
+    - image: monosolutions/iitesting
+    steps:
+      - checkout
+      - run: npm install
+      - run:
+          name: Build Artifact
+          command: |
+            mkdir ./artifact
+            DEPLOYABLE="${CIRCLE_PROJECT_REPONAME}-${CIRCLE_SHA1}.tar.gz"
+            cp -rf * ./artifact/
+            pushd ./artifact
+              echo "Taring ${DEPLOYABLE}"
+              tar -zcvf $DEPLOYABLE *
+            popd
+      - persist_to_workspace:
+          root: /tmp/repo
+          paths:
+            - artifact
+  upload-package:
+    environment:
+      ENVIRONMENT: "dev"
+      REGION: "eu-central-1"
+    working_directory: /tmp/repo
+    docker:
+      - image: monosolutions/awscli:latest
+    steps:
+      - attach_workspace:
+          at: /tmp/repo
+      - run:
+          name: Upload Artifact Dev
+          command: |
+            aws configure set aws_access_key_id "${AWS_DEV_ACCESS_KEY}"
+            aws configure set aws_secret_access_key "${AWS_DEV_SECRET_KEY}"
+            BUCKET="mono-deployment-${ENVIRONMENT}"
+            DEPLOYABLE="${CIRCLE_PROJECT_REPONAME}-${CIRCLE_SHA1}.tar.gz"
+            {
+              aws s3api create-bucket --bucket "${BUCKET}"
+            } || {
+              echo "Bucket is here"
+            }
+            aws s3 cp "/tmp/repo/artifact/${DEPLOYABLE}" "s3://${BUCKET}/tileserver-gl/${DEPLOYABLE}"
+deploy-to-dev:
     docker:
       - image: monosolutions/terraform:1.0.4
     working_directory: /tmp/repo
     environment:
       REGION: "eu-central-1"
+      ENVIRONMENT: "dev"
     steps:
       - checkout
       - run:
@@ -17,6 +62,8 @@ jobs:
             wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.14.10/terragrunt_linux_amd64 -O terragrunt
             chmod a+x terragrunt
             mv terragrunt /bin/
+            sed -i -e "s/repo_version =/repo_version = \"${CIRCLE_SHA1}\"/g" \
+            "${REGION}/${ENVIRONMENT}/tileserver/terraform.tfvars"
       - run:
           name: Deploy tileserver to fra dev
           command: |
@@ -25,4 +72,15 @@ workflows:
   version: 2
   deploy:
     jobs:
-      - deploy-to-dev
+      - build-package:
+          filters:
+            branches:
+              only:
+                - master
+                - MODE-11365
+      - upload-package:
+          requires:
+            - build-package
+      - deploy-to-dev:
+          requires:
+            - upload-package

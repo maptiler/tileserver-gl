@@ -16,3 +16,4 @@ mono_efs_remote_state = "prod/mono-efs/terraform.tfstate"
 mono_region = "fra"
 version = "2.0"
 state_bucket = "tg-state-eu-central-1"
+repo_version =

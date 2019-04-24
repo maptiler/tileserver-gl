@@ -22,7 +22,7 @@ variable "version" {
 
 variable "mono_region" {
   type        = "string"
-  description = "Dns zone id"
+  description = "fra/yyz"
 }
 
 variable "mono_vpc_remote_state" {
@@ -48,4 +48,9 @@ variable "mono_keypair_remote_state" {
 variable "mono_alb_remote_state" {
   type = "string"
   description = "Remote state for mono_alb"
+}
+
+variable "repo_version" {
+  type = "string"
+  description = "Version of repo to fetch and setup from S3"
 }

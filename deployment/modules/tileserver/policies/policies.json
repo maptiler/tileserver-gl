@@ -40,6 +40,18 @@
             "Effect": "Allow",
             "Action": "logs:*",
             "Resource": "*"
+        },
+        {
+            "Sid": "",
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject",
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::mono-deployment-dev",
+                "arn:aws:s3:::mono-deployment-dev/tileserver-gl/*"
+            ]
         }
     ]
 }

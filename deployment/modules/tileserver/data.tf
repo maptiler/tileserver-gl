@@ -8,10 +8,15 @@ data "aws_ami" "amazon_linux" {
 
   filter {
     name   = "name"
-    values = ["mono-tileserver-ami *"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*"]
   }
 
-  owners = ["self"]
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  owners = ["099720109477"] # Canonical
 }
 
 data "terraform_remote_state" "mono_vpc" {
@@ -31,6 +36,9 @@ data "template_file" "shell-script" {
   template = "${file("files/user-data.sh")}"
   vars {
     efs_dns_name = "${data.terraform_remote_state.mono_efs.efs_dns_name}"
+    region = "${var.region}"
+    mono_region = "${var.mono_region}"
+    repo_version = "${var.repo_version}"
   }
 }
 
