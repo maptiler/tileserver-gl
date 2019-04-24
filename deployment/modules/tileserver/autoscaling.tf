@@ -19,7 +19,7 @@ resource "aws_launch_configuration" "launchconfiguration" {
 
 resource "aws_autoscaling_group" "autoscalinggroup" {
   vpc_zone_identifier  = ["${data.terraform_remote_state.mono_vpc.sn_private_a_id}"]
-  name          = "maps-${aws_launch_configuration.launchconfiguration.name}"
+  name          = "${aws_launch_configuration.launchconfiguration.name}"
   launch_configuration = "${aws_launch_configuration.launchconfiguration.name}"
   max_size             = 5
   desired_capacity     = 1
