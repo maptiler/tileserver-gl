@@ -11,11 +11,11 @@ FULL_BUCKET_URI="s3://$BUCKET/tileserver-gl/$DEPLOYABLE"
 sudo rm /var/lib/dpkg/lock
 curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
 sudo apt install -y apt-transport-https \
-curl unzip build-essential python libcairo2-dev \
+curl unzip build-essential python python-pip libcairo2-dev \
 libgles2-mesa-dev libgbm-dev libllvm3.9 libprotobuf-dev \
 libxxf86vm-dev libjpeg-dev xvfb nginx git nodejs nfs-common \
 heat-cfntools software-properties-common cloud-init
-
+sudo pip install awscli
 # Setup environment
 sudo tee -a /etc/environment << EOL
 REGION=$REGION
