@@ -2,7 +2,7 @@
 set -x
 #shellcheck disable=SC2154,SC2086,SC2035
 REGION=${region}
-ENVIRONMENT=${evironment}
+ENVIRONMENT=${environment}
 MONO_REGION=${mono_region}
 REPO_VERSION=${repo_version}
 DEPLOYABLE="tileserver-gl-$REPO_VERSION.tar.gz"
