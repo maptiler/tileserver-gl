@@ -11,6 +11,7 @@ jobs:
       - run:
           name: Setup and run npm
           command: |
+            apt update && \
             apt install -y apt-transport-https \
               build-essential python libcairo2-dev \
               libgles2-mesa-dev libgbm-dev libllvm3.9 libprotobuf-dev \
