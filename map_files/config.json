@@ -1,0 +1,33 @@
+{
+  "options": {
+    "paths": {
+      "root": "",
+      "fonts": "glyphs",
+      "sprites": "sprites",
+      "mbtiles": "mbtiles",
+      "styles": "styles"
+    }
+  },
+  "styles": {
+    "mono": {
+      "style": "mono.json"
+    },
+    "mono-bw": {
+      "style": "mono-bw.json"
+    },
+    "mono-blue-water": {
+      "style": "mono-blue-water.json"
+    },
+    "mono-blue": {
+      "style": "mono-blue.json"
+    },
+    "mono-chrome": {
+      "style": "mono-chrome.json"
+    }
+  },
+  "data": {
+    "osm2vectortiles": {
+      "mbtiles": "planet.mbtiles"
+    }
+  }
+}
