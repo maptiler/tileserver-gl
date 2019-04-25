@@ -1,7 +1,7 @@
 version: 2
 jobs:
   build-package:
-    working_directory: /tmp/repo
+    working_directory: /usr/src/app
     docker:
       - image: node:6.17.1-jessie
     steps:
@@ -33,6 +33,7 @@ jobs:
               tar -zcvf $DEPLOYABLE *
             popd
             cp -rf ./deployment ./artifact/
+            mkdir -p /tmp/repo && mv artifact /tmp/repo/
       - persist_to_workspace:
           root: /tmp/repo
           paths:
