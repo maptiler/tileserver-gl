@@ -3,23 +3,12 @@ jobs:
   build-package:
     working_directory: /usr/src/app
     docker:
-      - image: ubuntu:16.04
+      - image: monosolutions/ubuntu-nodejs
     steps:
       - checkout
       - restore_cache:
           key: node-dependencies-{{ checksum "package.json" }}
-      - run:
-          name: Setup and run npm
-          command: |
-            apt update && \
-            apt install -y apt-transport-https \
-              build-essential python libcairo2-dev \
-              libgles2-mesa-dev libgbm-dev libllvm3.9 libprotobuf-dev \
-              libxxf86vm-dev libjpeg-dev xvfb nodejs \
-              heat-cfntools software-properties-common curl
-            curl -sL https://deb.nodesource.com/setup_6.x | bash -
-            apt install -y nodejs
-            npm install
+      - run: npm install
       - save_cache:
           paths:
             - node_modules
