@@ -123,7 +123,7 @@ module.exports = function(options, repo, params, id, styles) {
                   isGzipped = false;
                 }
                 data = shrinkers[style](data, z, tileJSON.maxzoom);
-                //console.log(shrinkers[style].getStats());
+                console.log(shrinkers[style].getStats());
               }
             }
             if (options.dataDecoratorFunc) {
