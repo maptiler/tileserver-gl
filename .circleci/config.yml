@@ -17,7 +17,7 @@ jobs:
               libgles2-mesa-dev libgbm-dev libllvm3.9 libprotobuf-dev \
               libxxf86vm-dev libjpeg-dev xvfb nodejs \
               heat-cfntools software-properties-common curl
-            curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
+            curl -sL https://deb.nodesource.com/setup_6.x | bash -
             npm install
       - save_cache:
           paths:
