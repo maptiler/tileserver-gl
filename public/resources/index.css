@@ -28,7 +28,7 @@ a{
   color: #499DCE;
   transition: color .2s;
 }
-a:hover {
+a:hover{
   color: #395D73;
 }
 .title {
@@ -47,7 +47,7 @@ a:hover {
   color: #499DCE;
   font-size:.8em;
 }
-section {
+section{
   margin: 15px auto;
   width: 930px;
   padding: 30px 0;
@@ -70,7 +70,7 @@ section {
   font-size:20px;
   background:#fff;
 }
-.item {
+.item{
   background:#fff;
   height: 191px;
   border: 1px solid #ededed;
@@ -79,7 +79,7 @@ section {
 .item:nth-child(odd) {
   background-color:#fbfbfb;
 }
-.item img {
+.item img{
   position: absolute;
   margin: 30px;
   width: 128px;
@@ -122,10 +122,10 @@ section {
   text-decoration: none;
   font-weight: bold;
 }
-.btn:first-child:hover {
+.btn:first-child:hover{
   background: #395D73;
 }
-footer {
+footer{
   width:100%;
   border-top:1px solid #ededed;
   text-align:center;
@@ -133,7 +133,7 @@ footer {
   padding-top:10px;
   font-size:12px;
 }
-footer img {
+footer img{
   width: 118px;
   height: 32px;
 }
@@ -146,10 +146,6 @@ footer p {
 footer a {
   color: #787878;
   text-decoration: none;
-}
-.details h3, .identifier {
-  max-width: 550px;
-  word-break: break-all;
 }
 
 /* body background image */
@@ -189,31 +185,31 @@ body {
   .title.light:after {
     font-size:.6em;
   }
-  .title img {
+  .title img{
     width: 200px;
   }
-  .subtitle {
+  .subtitle{
     font-size: 20px;
     margin: 0 0 35px 0;
   }
-  .item {
+  .item{
     height: 245px;
   }
-  .viewers {
+  .viewers{
     float: left;
     text-align: left;
     width: 100%;
     margin-left: 30px;
     margin-top: 15px;
   }
-  .viewers a {
+  .viewers a{
     display: inline-block;
     vertical-align: middle;
   }
-  .btn {
+  .btn{
     margin: 0 20px 0 0;
   }
-  .btn:first-child {
+  .btn:first-child{
     padding: 0 20px;
   }
 }

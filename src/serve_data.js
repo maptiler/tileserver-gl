@@ -18,7 +18,7 @@ try {
 
 var utils = require('./utils');
 
-module.exports = function(options, repo, params, id, styles, publicUrl) {
+module.exports = function(options, repo, params, id, styles) {
   var app = express().disable('x-powered-by');
 
   var mbtilesFile = path.resolve(options.paths.mbtiles, params.mbtiles);
@@ -89,7 +89,7 @@ module.exports = function(options, repo, params, id, styles, publicUrl) {
     source.getTile(z, x, y, function(err, data, headers) {
       if (err) {
         if (/does not exist/.test(err.message)) {
-          return res.status(204).send();
+          return res.status(404).send(err.message);
         } else {
           return res.status(500).send(err.message);
         }
@@ -178,7 +178,7 @@ module.exports = function(options, repo, params, id, styles, publicUrl) {
   app.get('/' + id + '.json', function(req, res, next) {
     var info = clone(tileJSON);
     info.tiles = utils.getTileUrls(req, info.tiles,
-                                   'data/' + id, info.format, publicUrl, {
+                                   'data/' + id, info.format, {
                                      'pbf': options.pbfAlias
                                    });
     return res.send(info);

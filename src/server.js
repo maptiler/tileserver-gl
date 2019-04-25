@@ -7,7 +7,8 @@ process.env.UV_THREADPOOL_SIZE =
 var fs = require('fs'),
     path = require('path');
 
-var clone = require('clone'),
+var base64url = require('base64url'),
+    clone = require('clone'),
     cors = require('cors'),
     enableShutdown = require('http-shutdown'),
     express = require('express'),
@@ -41,13 +42,10 @@ function start(opts) {
 
   app.enable('trust proxy');
 
-  if (process.env.NODE_ENV !== 'test') {
-    var defaultLogFormat = process.env.NODE_ENV == 'production' ? 'tiny' : 'dev';
-    var logFormat = opts.logFormat || defaultLogFormat;
-    app.use(morgan(logFormat, {
-      stream: opts.logFile ? fs.createWriteStream(opts.logFile, { flags: 'a' }) : process.stdout,
-      skip: function(req, res) { return opts.silent && (res.statusCode == 200 || res.statusCode == 304) }
-    }));
+  if (process.env.NODE_ENV == 'production') {
+    app.use(morgan('tiny'));
+  } else if (process.env.NODE_ENV !== 'test') {
+    app.use(morgan('dev'));
   }
 
   var config = opts.config || null;
@@ -111,7 +109,7 @@ function start(opts) {
     }
 
     if (item.serve_data !== false) {
-      startupPromises.push(serve_style(options, serving.styles, item, id, opts.publicUrl,
+      startupPromises.push(serve_style(options, serving.styles, item, id,
         function(mbtiles, fromData) {
           var dataItemId;
           Object.keys(data).forEach(function(id) {
@@ -147,7 +145,7 @@ function start(opts) {
     if (item.serve_rendered !== false) {
       if (serve_rendered) {
         startupPromises.push(
-          serve_rendered(options, serving.rendered, item, id, opts.publicUrl,
+          serve_rendered(options, serving.rendered, item, id,
             function(mbtiles) {
               var mbtilesFile;
               Object.keys(data).forEach(function(id) {
@@ -181,7 +179,7 @@ function start(opts) {
     }
 
     startupPromises.push(
-      serve_data(options, serving.data, item, id, serving.styles, opts.publicUrl).then(function(sub) {
+      serve_data(options, serving.data, item, id, serving.styles).then(function(sub) {
         app.use('/data/', sub);
       })
     );
@@ -196,7 +194,7 @@ function start(opts) {
         version: styleJSON.version,
         name: styleJSON.name,
         id: id,
-        url: utils.getPublicUrl(opts.publicUrl, req) +
+        url: req.protocol + '://' + req.headers.host +
              '/styles/' + id + '/style.json' + query
       });
     });
@@ -212,7 +210,7 @@ function start(opts) {
       } else {
         path = type + '/' + id;
       }
-      info.tiles = utils.getTileUrls(req, info.tiles, path, info.format, opts.publicUrl, {
+      info.tiles = utils.getTileUrls(req, info.tiles, path, info.format, {
         'pbf': options.pbfAlias
       });
       arr.push(info);
@@ -263,12 +261,10 @@ function start(opts) {
             }
           }
           data['server_version'] = packageJson.name + ' v' + packageJson.version;
-          data['public_url'] = opts.publicUrl || '/';
           data['is_light'] = isLight;
           data['key_query_part'] =
               req.query.key ? 'key=' + req.query.key + '&amp;' : '';
           data['key_query'] = req.query.key ? '?key=' + req.query.key : '';
-          if (template === 'wmts') res.set('Content-Type', 'text/xml');
           return res.status(200).send(compiled(data));
         });
         resolve();
@@ -296,9 +292,14 @@ function start(opts) {
               Math.floor(centerPx[1] / 256) + '.png';
         }
 
+        var query = req.query.key ? ('?key=' + req.query.key) : '';
+        style.wmts_link = 'http://wmts.maptiler.com/' +
+          base64url('http://' + req.headers.host +
+            '/styles/' + id + '.json' + query) + '/wmts';
+
         var tiles = utils.getTileUrls(
             req, style.serving_rendered.tiles,
-            'styles/' + id, style.serving_rendered.format, opts.publicUrl);
+            'styles/' + id, style.serving_rendered.format);
         style.xyz_link = tiles[0];
       }
     });
@@ -320,8 +321,13 @@ function start(opts) {
               Math.floor(centerPx[1] / 256) + '.' + data_.format;
         }
 
+        var query = req.query.key ? ('?key=' + req.query.key) : '';
+        data_.wmts_link = 'http://wmts.maptiler.com/' +
+          base64url('http://' + req.headers.host +
+            '/data/' + id + '.json' + query) + '/wmts';
+
         var tiles = utils.getTileUrls(
-            req, data_.tiles, 'data/' + id, data_.format, opts.publicUrl, {
+            req, data_.tiles, 'data/' + id, data_.format, {
               'pbf': options.pbfAlias
             });
         data_.xyz_link = tiles[0];
@@ -364,20 +370,6 @@ function start(opts) {
     return res.redirect(301, '/styles/' + req.params.id + '/');
   });
   */
-  serveTemplate('/styles/:id/wmts.xml', 'wmts', function(req) {
-    var id = req.params.id;
-    var wmts = clone((config.styles || {})[id]);
-    if (!wmts) {
-      return null;
-    }
-    if (wmts.hasOwnProperty("serve_rendered") && !wmts.serve_rendered) {
-      return null;
-    }
-    wmts.id = id;
-    wmts.name = (serving.styles[id] || serving.rendered[id]).name;
-    wmts.baseUrl = (req.get('X-Forwarded-Protocol')?req.get('X-Forwarded-Protocol'):req.protocol) + '://' + req.get('host');
-    return wmts;
-  });
 
   serveTemplate('/data/:id/$', 'data', function(req) {
     var id = req.params.id;

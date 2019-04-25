@@ -10,81 +10,56 @@ var mbtiles = require('@mapbox/mbtiles');
 
 var packageJson = require('../package');
 
-var args = process.argv;
-if (args.length >= 3 && args[2][0] != '-') {
-  args.splice(2, 0, '--mbtiles');
-}
+var opts = require('nomnom')
+  .option('mbtiles', {
+    default: undefined,
+    help: 'MBTiles file (uses demo configuration);\n' +
+          '\t    ignored if the configuration file is also specified',
+    position: 0
+  })
+  .option('config', {
+    abbr: 'c',
+    default: 'config.json',
+    help: 'Configuration file'
+  })
+  .option('bind', {
+    abbr: 'b',
+    default: undefined,
+    help: 'Bind address'
+  })
+  .option('port', {
+    abbr: 'p',
+    default: 8080,
+    help: 'Port'
+  })
+  .option('cors', {
+    default: true,
+    help: 'Enable Cross-origin resource sharing headers'
+  })
+  .option('verbose', {
+    abbr: 'V',
+    flag: true,
+    help: 'More verbose output'
+  })
+  .option('version', {
+    abbr: 'v',
+    flag: true,
+    help: 'Version info',
+    callback: function() {
+      return packageJson.name + ' v' + packageJson.version;
+    }
+  }).parse();
 
-var opts = require('commander')
-  .description('tileserver-gl startup options')
-  .usage('tileserver-gl [mbtiles] [options]')
-  .option(
-    '--mbtiles <file>',
-    'MBTiles file (uses demo configuration);\n' +
-    '\t                  ignored if the configuration file is also specified'
-  )
-  .option(
-    '-c, --config <file>',
-    'Configuration file [config.json]',
-    'config.json'
-  )
-  .option(
-    '-b, --bind <address>',
-    'Bind address'
-  )
-  .option(
-    '-p, --port <port>',
-    'Port [8080]',
-    8080,
-    parseInt
-  )
-  .option(
-    '-C|--no-cors',
-    'Disable Cross-origin resource sharing headers'
-  )
-  .option(
-    '-u|--public_url <url>',
-    'Enable exposing the server on subpaths, not necessarily the root of the domain'
-  )
-  .option(
-    '-V, --verbose',
-    'More verbose output'
-  )
-  .option(
-    '-s, --silent',
-    'Less verbose output'
-  )
-  .option(
-    '-l|--log_file <file>',
-    'output log file (defaults to standard out)'
-  )
-  .option(
-    '-f|--log_format <format>',
-    'define the log format:  https://github.com/expressjs/morgan#morganformat-options'
-  )
-  .version(
-    packageJson.version,
-    '-v, --version'
-  )
-  .parse(args);
 
 console.log('Starting ' + packageJson.name + ' v' + packageJson.version);
 
 var startServer = function(configPath, config) {
-  var publicUrl = opts.public_url;
-  if (publicUrl && publicUrl.lastIndexOf('/') !== publicUrl.length - 1) {
-    publicUrl += '/';
-  }
   return require('./server')({
     configPath: configPath,
     config: config,
     bind: opts.bind,
     port: opts.port,
-    cors: opts.cors,
-    silent: opts.silent,
-    logFile: opts.log_file,
-    logFormat: opts.log_format,
-    publicUrl: publicUrl
+    cors: opts.cors
   });
 };
 

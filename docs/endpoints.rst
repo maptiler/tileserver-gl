@@ -21,10 +21,6 @@ Rendered tiles
 
 * The rendered tiles are not available in the ``tileserver-gl-light`` version.
 
-WMTS Capabilities
-==============
-* WMTS Capabilities are served at ``/styles/{id}/wmts.xml``
-
 Static images
 =============
 * Several endpoints:

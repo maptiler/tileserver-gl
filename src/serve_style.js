@@ -6,9 +6,8 @@ var path = require('path'),
 var clone = require('clone'),
     express = require('express');
 
-var utils = require('./utils');
 
-module.exports = function(options, repo, params, id, publicUrl, reportTiles, reportFont) {
+module.exports = function(options, repo, params, id, reportTiles, reportFont) {
   var app = express().disable('x-powered-by');
 
   var styleFile = path.resolve(options.paths.styles, params.style);
@@ -80,7 +79,7 @@ module.exports = function(options, repo, params, id, publicUrl, reportTiles, rep
         query = '?' + queryParams.join('&');
       }
       return url.replace(
-          'local://', utils.getPublicUrl(publicUrl, req)) + query;
+          'local://', req.protocol + '://' + req.headers.host + '/') + query;
     };
 
     var styleJSON_ = clone(styleJSON);

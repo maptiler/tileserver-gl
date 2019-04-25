@@ -20,7 +20,7 @@ npm install -g tileserver-gl
 Now download vector tiles from [OpenMapTiles](https://openmaptiles.org/downloads/).
 
 ```bash
-curl -o zurich_switzerland.mbtiles https://[GET-YOUR-LINK]/extracts/zurich_switzerland.mbtiles
+curl -o zurich_switzerland.mbtiles https://openmaptiles.os.zhdk.cloud.switch.ch/v3.3/extracts/zurich_switzerland.mbtiles
 ```
 
 Start `tileserver-gl` with the downloaded vector tiles.

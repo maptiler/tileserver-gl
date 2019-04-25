@@ -23,7 +23,6 @@ describe('Styles', function() {
           res.body.sources.should.be.Object();
           res.body.glyphs.should.be.String();
           res.body.sprite.should.be.String();
-          res.body.sprite.should.equal('/test/styles/test-style/sprite');
           res.body.layers.should.be.Array();
         }).end(done);
     });

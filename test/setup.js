@@ -8,8 +8,7 @@ before(function() {
   process.chdir('test_data');
   var running = require('../src/server')({
     configPath: 'config.json',
-    port: 8888,
-    publicUrl: '/test/'
+    port: 8888
   });
   global.app = running.app;
   global.server = running.server;
@@ -18,5 +17,5 @@ before(function() {
 
 after(function() {
   console.log('global teardown');
-  global.server.close(function() { console.log('Done'); process.exit(); });
+  global.server.close(function() { console.log('Done'); });
 });
