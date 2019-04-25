@@ -3,12 +3,21 @@ jobs:
   build-package:
     working_directory: /usr/src/app
     docker:
-      - image: node:6.17.1-jessie
+      - image: ubuntu:16.04
     steps:
       - checkout
       - restore_cache:
           key: node-dependencies-{{ checksum "package.json" }}
-      - run: npm install
+      - run:
+          name: Setup and run npm
+          command: |
+            curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
+            sudo apt install -y apt-transport-https \
+              build-essential python libcairo2-dev \
+              libgles2-mesa-dev libgbm-dev libllvm3.9 libprotobuf-dev \
+              libxxf86vm-dev libjpeg-dev xvfb nodejs \
+              heat-cfntools software-properties-common
+            npm install
       - save_cache:
           paths:
             - node_modules
