@@ -11,12 +11,12 @@ jobs:
       - run:
           name: Setup and run npm
           command: |
-            curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
-            sudo apt install -y apt-transport-https \
+            apt install -y apt-transport-https \
               build-essential python libcairo2-dev \
               libgles2-mesa-dev libgbm-dev libllvm3.9 libprotobuf-dev \
               libxxf86vm-dev libjpeg-dev xvfb nodejs \
-              heat-cfntools software-properties-common
+              heat-cfntools software-properties-common curl
+            curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
             npm install
       - save_cache:
           paths:
