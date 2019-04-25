@@ -18,6 +18,7 @@ jobs:
               libxxf86vm-dev libjpeg-dev xvfb nodejs \
               heat-cfntools software-properties-common curl
             curl -sL https://deb.nodesource.com/setup_6.x | bash -
+            apt install -y nodejs
             npm install
       - save_cache:
           paths:
