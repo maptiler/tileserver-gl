@@ -8,7 +8,8 @@ before(function() {
   process.chdir('test_data');
   var running = require('../src/server')({
     configPath: 'config.json',
-    port: 8888
+    port: 8888,
+    publicUrl: '/test/'
   });
   global.app = running.app;
   global.server = running.server;

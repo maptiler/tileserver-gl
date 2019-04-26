@@ -43,6 +43,10 @@ var opts = require('commander')
     'Disable Cross-origin resource sharing headers'
   )
   .option(
+    '-u|--public_url',
+    'Enable exposing the server on subpaths, not necessarily the root of the domain'
+  )
+  .option(
     '-V, --verbose',
     'More verbose output'
   )
@@ -59,13 +63,18 @@ var opts = require('commander')
 console.log('Starting ' + packageJson.name + ' v' + packageJson.version);
 
 var startServer = function(configPath, config) {
+  var publicUrl = opts.public_url;
+  if (publicUrl && publicUrl.lastIndexOf('/') !== publicUrl.length - 1) {
+    publicUrl += '/';
+  }
   return require('./server')({
     configPath: configPath,
     config: config,
     bind: opts.bind,
     port: opts.port,
     cors: opts.cors,
-    silent: opts.silent
+    silent: opts.silent,
+    publicUrl: publicUrl
   });
 };
 

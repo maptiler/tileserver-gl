@@ -112,7 +112,7 @@ function start(opts) {
     }
 
     if (item.serve_data !== false) {
-      startupPromises.push(serve_style(options, serving.styles, item, id,
+      startupPromises.push(serve_style(options, serving.styles, item, id, opts.publicUrl,
         function(mbtiles, fromData) {
           var dataItemId;
           Object.keys(data).forEach(function(id) {
@@ -148,7 +148,7 @@ function start(opts) {
     if (item.serve_rendered !== false) {
       if (serve_rendered) {
         startupPromises.push(
-          serve_rendered(options, serving.rendered, item, id,
+          serve_rendered(options, serving.rendered, item, id, opts.publicUrl,
             function(mbtiles) {
               var mbtilesFile;
               Object.keys(data).forEach(function(id) {
@@ -182,7 +182,7 @@ function start(opts) {
     }
 
     startupPromises.push(
-      serve_data(options, serving.data, item, id, serving.styles).then(function(sub) {
+      serve_data(options, serving.data, item, id, serving.styles, opts.publicUrl).then(function(sub) {
         app.use('/data/', sub);
       })
     );
@@ -197,7 +197,11 @@ function start(opts) {
         version: styleJSON.version,
         name: styleJSON.name,
         id: id,
+<<<<<<< HEAD
         url: req.protocol + '://' + req.hostname +
+=======
+        url: utils.getPublicUrl(opts.publicUrl, req) +
+>>>>>>> a1a8996d3f5354c878a87473efafb581ae878e50
              '/styles/' + id + '/style.json' + query
       });
     });
@@ -213,7 +217,7 @@ function start(opts) {
       } else {
         path = type + '/' + id;
       }
-      info.tiles = utils.getTileUrls(req, info.tiles, path, info.format, {
+      info.tiles = utils.getTileUrls(req, info.tiles, path, info.format, opts.publicUrl, {
         'pbf': options.pbfAlias
       });
       arr.push(info);
@@ -264,6 +268,7 @@ function start(opts) {
             }
           }
           data['server_version'] = packageJson.name + ' v' + packageJson.version;
+          data['public_url'] = opts.publicUrl || '/';
           data['is_light'] = isLight;
           data['key_query_part'] =
               req.query.key ? 'key=' + req.query.key + '&amp;' : '';
@@ -295,10 +300,10 @@ function start(opts) {
               Math.floor(centerPx[0] / 256) + '/' +
               Math.floor(centerPx[1] / 256) + '.png';
         }
-        
+
         var tiles = utils.getTileUrls(
             req, style.serving_rendered.tiles,
-            'styles/' + id, style.serving_rendered.format);
+            'styles/' + id, style.serving_rendered.format, opts.publicUrl);
         style.xyz_link = tiles[0];
       }
     });
@@ -321,7 +326,7 @@ function start(opts) {
         }
 
         var tiles = utils.getTileUrls(
-            req, data_.tiles, 'data/' + id, data_.format, {
+            req, data_.tiles, 'data/' + id, data_.format, opts.publicUrl, {
               'pbf': options.pbfAlias
             });
         data_.xyz_link = tiles[0];

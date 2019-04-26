@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TileServer GL - Server for vector and raster maps with GL styles</title>
-  <link rel="stylesheet" type="text/css" href="/index.css{{&key_query}}" />
+  <link rel="stylesheet" type="text/css" href="{{public_url}}index.css{{&key_query}}" />
   <script>
     function toggle_xyz(id) {
       var el = document.getElementById(id);
@@ -17,7 +17,7 @@
 </head>
 <body>
   <section>
-    <h1 class="title {{#if is_light}}light{{/if}}"><img src="/images/logo.png" alt="TileServer GL" /></h1>
+    <h1 class="title {{#if is_light}}light{{/if}}"><img src="{{public_url}}images/logo.png" alt="TileServer GL" /></h1>
     <h2 class="subtitle">Vector {{#if is_light}}<s>and raster</s>{{else}}and raster{{/if}} maps with GL styles</h2>
     {{#if styles}}
       <h2 class="box-header">Styles</h2>
@@ -25,9 +25,9 @@
       {{#each styles}}
         <div class="item">
           {{#if thumbnail}}
-            <img src="/styles/{{@key}}/{{thumbnail}}{{&../key_query}}" alt="{{name}} preview" />
+            <img src="{{public_url}}styles/{{@key}}/{{thumbnail}}{{&../key_query}}" alt="{{name}} preview" />
           {{else}}
-            <img src="/images/placeholder.png" alt="{{name}} preview" />
+            <img src="{{public_url}}images/placeholder.png" alt="{{name}} preview" />
           {{/if}}
           <div class="details">
             <h3>{{name}}</h3>
@@ -35,10 +35,10 @@
             <p class="services">
               services:
               {{#if serving_data}}
-                <a href="/styles/{{@key}}/style.json{{&../key_query}}">GL Style</a>
+                <a href="{{public_url}}styles/{{@key}}/style.json{{&../key_query}}">GL Style</a>
               {{/if}}
               {{#if serving_rendered}}
-                {{#if serving_data}}| {{/if}}<a href="/styles/{{@key}}.json{{&../key_query}}">TileJSON</a>
+                {{#if serving_data}}| {{/if}}<a href="{{public_url}}styles/{{@key}}.json{{&../key_query}}">TileJSON</a>
               {{/if}}
               {{#if serving_rendered}}
                 | <a href="/styles/{{@key}}/wmts.xml{{&../key_query}}">WMTS</a>
@@ -52,14 +52,14 @@
           <div class="viewers">
             {{#if serving_data}}
               {{#if serving_rendered}}
-                <a class="btn" href="/styles/{{@key}}/{{&../key_query}}{{viewer_hash}}">Viewer</a>
+                <a class="btn" href="{{public_url}}styles/{{@key}}/{{&../key_query}}{{viewer_hash}}">Viewer</a>
               {{/if}}
             {{/if}}
             {{#if serving_rendered}}
-              <a class="btn" href="/styles/{{@key}}/?{{&../key_query_part}}raster{{viewer_hash}}">Raster</a>
+              <a class="btn" href="{{public_url}}styles/{{@key}}/?{{&../key_query_part}}raster{{viewer_hash}}">Raster</a>
             {{/if}}
             {{#if serving_data}}
-              <a class="btn" href="/styles/{{@key}}/?{{&../key_query_part}}vector{{viewer_hash}}">Vector</a>
+              <a class="btn" href="{{public_url}}styles/{{@key}}/?{{&../key_query_part}}vector{{viewer_hash}}">Vector</a>
             {{/if}}
           </div>
         </div>
@@ -72,15 +72,15 @@
       {{#each data}}
         <div class="item">
           {{#if thumbnail}}
-            <img src="/data/{{@key}}/{{thumbnail}}{{&../key_query}}" alt="{{name}} preview" />
+            <img src="{{public_url}}data/{{@key}}/{{thumbnail}}{{&../key_query}}" alt="{{name}} preview" />
           {{else}}
-            <img src="/images/placeholder.png" alt="{{name}} preview" />
+            <img src="{{public_url}}images/placeholder.png" alt="{{name}} preview" />
           {{/if}}
           <div class="details">
             <h3>{{name}}</h3>
             <p class="identifier">identifier: {{@key}}{{#if formatted_filesize}} | size: {{formatted_filesize}}{{/if}} | type: {{#is_vector}}vector{{/is_vector}}{{^is_vector}}raster{{/is_vector}} data</p>
             <p class="services">
-              services: <a href="/data/{{@key}}.json{{&../key_query}}">TileJSON</a>
+              services: <a href="{{public_url}}data/{{@key}}.json{{&../key_query}}">TileJSON</a>
               {{#if wmts_link}}
                 | <a href="{{&wmts_link}}">WMTS</a>
               {{/if}}
@@ -92,10 +92,10 @@
           </div>
           <div class="viewers">
             {{#is_vector}}
-            <a class="btn" href="/data/{{@key}}/{{&../key_query}}{{viewer_hash}}">Inspect</a>
+            <a class="btn" href="{{public_url}}data/{{@key}}/{{&../key_query}}{{viewer_hash}}">Inspect</a>
             {{/is_vector}}
             {{^is_vector}}
-            <a class="btn" href="/data/{{@key}}/{{&../key_query}}{{viewer_hash}}">View</a>
+            <a class="btn" href="{{public_url}}data/{{@key}}/{{&../key_query}}{{viewer_hash}}">View</a>
             {{/is_vector}}
           </div>
         </div>
@@ -104,7 +104,7 @@
     {{/if}}
   </section>
   <footer>
-    <a href="https://www.klokantech.com/" target="_blank"><img src="/images/klokantech.png" /></a>
+    <a href="https://www.klokantech.com/" target="_blank"><img src="{{public_url}}images/klokantech.png" /></a>
     <p>
       <a href="https://github.com/klokantech/tileserver-gl" target="_blank">Powered by TileServer GL ({{server_version}})</a> – <a href="https://www.klokantech.com/" target="_blank">an open-source project from Klokan Technologies GmbH.</a> <img src="https://t.klokantech.com/8073932/19" class="t" />
     </p>
