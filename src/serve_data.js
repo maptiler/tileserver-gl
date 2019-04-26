@@ -89,7 +89,7 @@ module.exports = function(options, repo, params, id, styles) {
     source.getTile(z, x, y, function(err, data, headers) {
       if (err) {
         if (/does not exist/.test(err.message)) {
-          return res.status(404).send(err.message);
+          return res.status(204).send(err.message);
         } else {
           return res.status(500).send(err.message);
         }

@@ -35,8 +35,8 @@ var opts = require('commander')
   .option(
     '-p, --port <port>',
     'Port [8080]',
-    parseInt,
-    8080
+    8080,
+    parseInt
   )
   .option(
     '-C|--no-cors',

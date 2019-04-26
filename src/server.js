@@ -7,8 +7,7 @@ process.env.UV_THREADPOOL_SIZE =
 var fs = require('fs'),
     path = require('path');
 
-var base64url = require('base64url'),
-    clone = require('clone'),
+var clone = require('clone'),
     cors = require('cors'),
     enableShutdown = require('http-shutdown'),
     express = require('express'),
@@ -269,6 +268,7 @@ function start(opts) {
           data['key_query_part'] =
               req.query.key ? 'key=' + req.query.key + '&amp;' : '';
           data['key_query'] = req.query.key ? '?key=' + req.query.key : '';
+          if (template === 'wmts') res.set('Content-Type', 'text/xml');
           return res.status(200).send(compiled(data));
         });
         resolve();
@@ -295,12 +295,7 @@ function start(opts) {
               Math.floor(centerPx[0] / 256) + '/' +
               Math.floor(centerPx[1] / 256) + '.png';
         }
-
-        var query = req.query.key ? ('?key=' + req.query.key) : '';
-        style.wmts_link = 'http://wmts.maptiler.com/' +
-          base64url('http://' + req.hostname +
-            '/styles/' + id + '.json' + query) + '/wmts';
-
+        
         var tiles = utils.getTileUrls(
             req, style.serving_rendered.tiles,
             'styles/' + id, style.serving_rendered.format);
@@ -324,11 +319,6 @@ function start(opts) {
               Math.floor(centerPx[0] / 256) + '/' +
               Math.floor(centerPx[1] / 256) + '.' + data_.format;
         }
-
-        var query = req.query.key ? ('?key=' + req.query.key) : '';
-        data_.wmts_link = 'http://wmts.maptiler.com/' +
-          base64url('http://' + req.hostname +
-            '/data/' + id + '.json' + query) + '/wmts';
 
         var tiles = utils.getTileUrls(
             req, data_.tiles, 'data/' + id, data_.format, {
@@ -374,6 +364,20 @@ function start(opts) {
     return res.redirect(301, '/styles/' + req.params.id + '/');
   });
   */
+  serveTemplate('/styles/:id/wmts.xml', 'wmts', function(req) {
+    var id = req.params.id;
+    var wmts = clone((config.styles || {})[id]);
+    if (!wmts) {
+      return null;
+    }
+    if (wmts.hasOwnProperty("serve_rendered") && !wmts.serve_rendered) {
+      return null;
+    }
+    wmts.id = id;
+    wmts.name = (serving.styles[id] || serving.rendered[id]).name;
+    wmts.baseUrl = (req.get('X-Forwarded-Protocol')?req.get('X-Forwarded-Protocol'):req.protocol) + '://' + req.get('host');
+    return wmts;
+  });
 
   serveTemplate('/data/:id/$', 'data', function(req) {
     var id = req.params.id;
