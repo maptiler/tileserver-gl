@@ -46,3 +46,11 @@ On laptop you can use [Docker Kitematic](https://kitematic.com/) and search "til
 ## Documentation
 
 You can read full documentation of this project at http://tileserver.readthedocs.io/.
+
+## Offline development to fix styles
+
+Tool and instructions: https://openmaptiles.org/docs/style/maputnik/
+Run the `maputnik` executable to start a server on `localhost:8000`, open your browser and visit the address.
+
+To  inspect and make temporary changes to our styles you can load them using the live tileJSON URLs either for dev or prod.
+To load the map data that we use make sure you use the live URL that points to the data OSM2Vector tileJSON.
