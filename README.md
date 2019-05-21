@@ -54,3 +54,5 @@ Run the `maputnik` executable to start a server on `localhost:8000`, open your b
 
 To  inspect and make temporary changes to our styles you can load them using the live tileJSON URLs either for dev or prod.
 To load the map data that we use make sure you use the live URL that points to the data OSM2Vector tileJSON.
+
+Latest tilserver README: https://buildmedia.readthedocs.org/media/pdf/tileserver/latest/tileserver.pdf
