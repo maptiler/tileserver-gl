@@ -1,14 +1,19 @@
 'use strict';
 
 var path = require('path'),
-    fs = require('fs');
+    fs = require('fs'),
+    url = require('url');
 
 var clone = require('clone'),
     glyphCompose = require('glyph-pbf-composite');
 
 
 module.exports.getPublicUrl = function(publicUrl, req) {
-  return publicUrl || (req.protocol + '://' + req.headers.host + '/')
+  if (publicUrl) {
+    return (new url.URL(publicUrl, req.protocol + '://' + req.headers.host)).toString()
+  } else {
+    return req.protocol + '://' + req.headers.host + '/'
+  }
 }
 
 module.exports.getTileUrls = function(req, domains, path, format, publicUrl, aliases) {
@@ -54,13 +59,15 @@ module.exports.getTileUrls = function(req, domains, path, format, publicUrl, ali
   }
 
   var uris = [];
+
   if (!publicUrl) {
     domains.forEach(function(domain) {
       uris.push(req.protocol + '://' + domain + '/' + path +
                 '/{z}/{x}/{y}.' + format + query);
     });
   } else {
-    uris.push(publicUrl + path + '/{z}/{x}/{y}.' + format + query)
+    uris.push(module.exports.getPublicUrl(publicUrl, req) + path +
+      '/{z}/{x}/{y}.' + format + query)
   }
 
   return uris;
