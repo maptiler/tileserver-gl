@@ -41,7 +41,7 @@ sudo chown -R ubuntu:ubuntu /usr/src/app/.
 	aws s3 cp "$FULL_BUCKET_URI" /tmp/tileserver-gl.tar.gz
 	tar xzf /tmp/tileserver-gl.tar.gz -C /tmp/uncompressed/
 	# Setup map files
-	sudo mv /tmp/uncompressed/map_files/* /data/.
+	sudo mv /tmp/uncompressed/configuration/map_files/* /data/.
 	sudo chown -R ubuntu:ubuntu /data/.
 	# Setup nginx
 	sudo mv /tmp/uncompressed/configuration/nginx.conf /etc/nginx/.

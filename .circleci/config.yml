@@ -23,7 +23,6 @@ jobs:
               src \
               run.sh \
               package.json \
-              map_files \
               public \
               docs \
               publish.js \
