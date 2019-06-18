@@ -35,13 +35,22 @@ sudo mkdir -p /usr/src/app/. \
 /data/mbtiles/. \
 /tmp/uncompressed/.
 
+# Configure service/Mount FS
+# sudo sed -i -e 's/node \/usr\/src\/app\/ -p 80 "$@" \&/node \/usr\/src\/app\/ -p 8080 "$@" -c config.json  \&/g' /usr/src/app/run.sh
+{
+	sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport "${efs_dns_name}:/mbtiles/" /data/mbtiles
+} || {
+	echo "Could not mount EFS!!!"
+}
+
 sudo chown -R ubuntu:ubuntu /usr/src/app/.
 # Setup project
 {
 	aws s3 cp "$FULL_BUCKET_URI" /tmp/tileserver-gl.tar.gz
 	tar xzf /tmp/tileserver-gl.tar.gz -C /tmp/uncompressed/
 	# Setup map files
-	sudo mv /tmp/uncompressed/configuration/map_files/* /data/.
+	sudo mv -f /tmp/uncompressed/configuration/map_files/config.json /data/
+	sudo mv -f /tmp/uncompressed/configuration/map_files/* /data/mbtiles/2019-04-29_data/
 	sudo chown -R ubuntu:ubuntu /data/.
 	# Setup nginx
 	sudo mv /tmp/uncompressed/configuration/nginx.conf /etc/nginx/.
@@ -59,12 +68,6 @@ sudo chown -R ubuntu:ubuntu /usr/src/app/.
 	echo "/etc/nginx"
 	echo ""
 }
-# Configure service
-# sudo sed -i -e 's/node \/usr\/src\/app\/ -p 80 "$@" \&/node \/usr\/src\/app\/ -p 8080 "$@" -c config.json  \&/g' /usr/src/app/run.sh
-{
-	sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport "${efs_dns_name}:/mbtiles/" /data/mbtiles
-} || {
-	echo "Could not mount EFS!!!"
-}
+
 sudo service nginx restart
 bash /usr/src/app/run.sh &
