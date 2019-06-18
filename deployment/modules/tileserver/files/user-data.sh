@@ -1,6 +1,6 @@
 #!/bin/bash
 set -x
-#shellcheck disable=SC2154,SC2086,SC2035
+# shellcheck disable=SC2154,SC2086,SC2035
 REGION=${region}
 ENVIRONMENT=${environment}
 MONO_REGION=${mono_region}
@@ -50,6 +50,9 @@ sudo chown -R ubuntu:ubuntu /usr/src/app/.
 	tar xzf /tmp/tileserver-gl.tar.gz -C /tmp/uncompressed/
 	# Setup map files
 	sudo mv -f /tmp/uncompressed/configuration/map_files/config.json /data/
+	sudo rm -rf /data/mbtiles/2019-04-29_data/styles \
+	/data/mbtiles/2019-04-29_data/glyphs \
+	/data/mbtiles/2019-04-29_data/sprites
 	sudo mv -f /tmp/uncompressed/configuration/map_files/* /data/mbtiles/2019-04-29_data/
 	sudo chown -R ubuntu:ubuntu /data/.
 	# Setup nginx
