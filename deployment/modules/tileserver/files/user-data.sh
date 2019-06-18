@@ -54,7 +54,10 @@ sudo chown -R ubuntu:ubuntu /usr/src/app/.
 	/data/mbtiles/2019-04-29_data/glyphs \
 	/data/mbtiles/2019-04-29_data/sprites
 	sudo mv -f /tmp/uncompressed/configuration/map_files/* /data/mbtiles/2019-04-29_data/
-	sudo chown -R ubuntu:ubuntu /data/.
+	sudo chown -R ubuntu:ubuntu /data/mbtiles/2019-04-29_data/styles
+	sudo chown -R ubuntu:ubuntu /data/mbtiles/2019-04-29_data/glyphs
+	sudo chown -R ubuntu:ubuntu /data/mbtiles/2019-04-29_data/sprites
+	sudo chown ubuntu:ubuntu /data/config.json
 	# Setup nginx
 	sudo mv /tmp/uncompressed/configuration/nginx.conf /etc/nginx/.
 	# Setup app
