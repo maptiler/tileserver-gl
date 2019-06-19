@@ -8,8 +8,8 @@
             "type": "vector"
         }
     },
-    "sprite": "mono",
-    "glyphs": "{fontstack}/{range}.pbf",
+    "sprite": "https://test.monomaps.com/styles/updated-mono/sprite",
+    "glyphs": "https://test.monomaps.com/fonts/{fontstack}/{range}.pbf",
     "metadata": {
         "mapbox:autocomposite": true,
         "mapbox:type": "template",
