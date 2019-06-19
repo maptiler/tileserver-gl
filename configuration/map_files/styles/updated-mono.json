@@ -103,42 +103,6 @@
             }
         },
         {
-            "id": "road_minor-copy",
-            "metadata": {
-              "mapbox:group": "1444849345966.4436"
-            },
-            "paint": {
-              "line-color": "rgba(255, 255, 255, 1)",
-              "line-width": 2
-            },
-            "type": "line",
-            "source": "mapbox",
-            "source-layer": "transportation",
-            "filter": [
-              "all",
-              [
-                "==",
-                "$type",
-                "LineString"
-              ],
-              [
-                "in",
-                "class",
-                "minor",
-                "service"
-              ],
-              [
-                "==",
-                "service",
-                "driveway"
-              ]
-            ],
-            "layout": {
-              "line-cap": "round",
-              "line-join": "round"
-            }
-        },
-        {
             "id": "waterway",
             "type": "line",
             "metadata": {
@@ -1288,15 +1252,9 @@
             "filter": [
                 "all",
                 [
-                    "==",
-                    "$type",
-                    "LineString"
-                ],
-                [
                     "in",
                     "class",
-                    "minor",
-                    "service"
+                    "minor"
                 ]
             ],
             "layout": {
@@ -1537,7 +1495,7 @@
                     "tunnel"
                 ],
                 [
-                    "in",
+                    "==",
                     "class",
                     "motorway"
                 ]
