@@ -1,7 +1,7 @@
 {
   "options": {
     "paths": {
-      "root": "",
+      "root": "mbtiles/2019-04-29_data",
       "fonts": "glyphs",
       "sprites": "sprites",
       "mbtiles": "mbtiles",
