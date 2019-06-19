@@ -4,12 +4,12 @@
     "name": "Updated Mono",
     "sources": {
         "mapbox": {
-            "url": "mbtiles://planet.mbtiles",
+            "url": "https://test.monomaps.com/data/osm2vectortiles.json",
             "type": "vector"
         }
     },
-    "sprite": "https://test.monomaps.com/styles/updated-mono/sprite",
-    "glyphs": "https://test.monomaps.com/fonts/{fontstack}/{range}.pbf",
+    "sprite": "mono",
+    "glyphs": "{fontstack}/{range}.pbf",
     "metadata": {
         "mapbox:autocomposite": true,
         "mapbox:type": "template",
