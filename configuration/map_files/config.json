@@ -1,7 +1,7 @@
 {
   "options": {
     "paths": {
-      "root": "mbtiles/2019-04-29_data",
+      "root": "",
       "fonts": "glyphs",
       "sprites": "sprites",
       "mbtiles": "mbtiles",
@@ -9,8 +9,8 @@
     }
   },
   "styles": {
-    "test-style": {
-      "style": "test-style.json"
+    "updated-mono": {
+      "style": "updated-mono.json"
     },
     "mono": {
       "style": "mono.json"
