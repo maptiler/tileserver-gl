@@ -4,7 +4,7 @@
     "name": "Updated Mono",
     "sources": {
         "mapbox": {
-            "url": "https://test.monomaps.com/data/osm2vectortiles.json",
+            "url": "mbtiles://planet.mbtiles",
             "type": "vector"
         }
     },
@@ -76,8 +76,7 @@
             }
         }
     },
-    "layers": [
-        {
+    "layers": [{
             "id": "background",
             "type": "background",
             "paint": {
@@ -295,26 +294,26 @@
                 "fill-color": "#f0e8f8"
             }
         },
-        {
-            "id": "landuse_pitch",
-            "type": "fill",
-            "metadata": {
-                "mapbox:group": "1444849388993.3071"
-            },
-            "source": "mapbox",
-            "source-layer": "landuse",
-            "filter": [
-                "all",
-                [
-                    "==",
-                    "class",
-                    "pitch"
-                ]
-            ],
-            "paint": {
-                "fill-color": "#f0e8f8"
-            }
-        },
+	{
+	  "id": "landuse_pitch",
+	  "type": "fill",
+	  "metadata": {
+	    "mapbox:group": "1444849388993.3071"
+	  },
+	  "source": "mapbox",
+	  "source-layer": "landuse",
+	  "filter": [
+	    "all",
+	    [
+	      "==",
+	      "class",
+	      "pitch"
+	    ]
+	  ],
+	  "paint": {
+	    "fill-color": "#f0e8f8"
+	  }
+	},
         {
             "id": "landuse_wood",
             "type": "fill",
@@ -853,7 +852,7 @@
                             7,
                             1.5
                         ],
-                        [
+                       [
                             20,
                             22
                         ]
@@ -982,7 +981,7 @@
                     "base": 1.2,
                     "stops": [
                         [
-                            12.5,
+                           12.5,
                             0
                         ],
                         [
@@ -1110,7 +1109,7 @@
                 }
             }
         },
-        {
+        { 
             "id": "tunnel_major_rail",
             "type": "line",
             "metadata": {
@@ -1237,30 +1236,30 @@
                 "line-opacity": 1
             }
         },
-        {
-            "id": "road_minor",
-            "metadata": {
-                "mapbox:group": "1444849345966.4436"
-            },
-            "paint": {
-                "line-color": "rgba(255, 255, 255, 1)",
-                "line-width": 2
-            },
-            "type": "line",
-            "source": "mapbox",
-            "source-layer": "transportation",
-            "filter": [
-                "all",
-                [
-                    "in",
-                    "class",
-                    "minor"
-                ]
-            ],
-            "layout": {
-                "line-cap": "round",
-                "line-join": "round"
-            }
+	{
+	  "id": "road_minor",
+	  "metadata": {
+            "mapbox:group": "1444849345966.4436"
+	  },
+	  "paint": {
+            "line-color": "rgba(255, 255, 255, 1)",
+	    "line-width": 2
+	  },
+	  "type": "line",
+	  "source": "mapbox",
+	  "source-layer": "transportation",
+	  "filter": [
+	    "all",
+	    [
+	      "in",
+	      "class",
+	      "minor"
+	     ]
+	  ],
+	  "layout": {
+	        "line-cap": "round",
+	        "line-join": "round"
+  	  }
         },
         {
             "id": "road_service_track_casing",
@@ -1548,7 +1547,7 @@
                 [
                     "all",
                     [
-                        "!in",
+                       "!in",
                         "structure",
                         "bridge",
                         "tunnel"
@@ -1805,7 +1804,7 @@
             "paint": {
                 "line-color": "#bbb",
                 "line-width": {
-                    "base": 1.4,
+                   "base": 1.4,
                     "stops": [
                         [
                             14,
@@ -1936,7 +1935,7 @@
                     "stops": [
                         [
                             15,
-                            1
+                           1
                         ],
                         [
                             16,
@@ -2203,7 +2202,7 @@
                     ]
                 }
             }
-        },
+      },
         {
             "id": "bridge_path_pedestrian",
             "type": "line",
@@ -2331,7 +2330,7 @@
                         [
                             13,
                             1.5
-                        ],
+                       ],
                         [
                             14,
                             2.5
@@ -2730,7 +2729,7 @@
                             12,
                             3
                         ]
-                    ]
+                   ]
                 }
             }
         },
@@ -3169,7 +3168,7 @@
             "source-layer": "poi",
             "minzoom": 15,
             "filter": [
-                "all",
+                "all",               
                 [
                     "==",
                     "$type",
@@ -3277,47 +3276,47 @@
                 "text-halo-width": 1,
                 "text-halo-blur": 0.5
             },
-            "filter": [
-                "all",
-                [
-                    "==",
-                    "class",
-                    "railway"
-                ]
+	    "filter": [
+	      "all",
+	      [
+	        "==",
+	        "class",
+	        "railway"
+              ]
             ]
         },
-        {
-            "id": "railway_line",
-            "type": "line",
-            "source": "mapbox",
-            "source-layer": "transportation",
-            "filter": [
-                "all",
-                [
-                    "==",
-                    "subclass",
-                    "rail"
-                ],
-                [
-                    "==",
-                    "class",
-                    "rail"
-                ]
-            ],
-            "paint": {
-                "line-width": 1,
-                "line-color": "rgba(188, 188, 188, 1)",
-                "line-offset": 0
-            },
-            "line-opacity": 1,
-            "minzoom": 5,
-            "layout": {
-                "line-cap": "round",
-                "line-join": "round",
-                "visibility": "visible"
-            }
-        },
-        {
+	{
+	  "id": "railway_line",
+	  "type": "line",
+	  "source": "mapbox",
+	  "source-layer": "transportation",
+	  "filter": [
+	    "all",
+	    [
+	      "==",
+	      "subclass",
+	      "rail"
+	    ],
+	    [
+	      "==",
+	      "class",
+	      "rail"
+	    ]
+	  ],
+	  "paint": {
+	    "line-width": 1,
+	    "line-color": "rgba(188, 188, 188, 1)",
+	    "line-offset": 0
+	  },
+	  "line-opacity": 1,
+	  "minzoom": 5,
+	  "layout": {
+	    "line-cap": "round",
+	    "line-join": "round",
+	    "visibility": "visible"
+	  }
+	},
+	{
             "id": "airport_label",
             "type": "symbol",
             "metadata": {
@@ -3418,8 +3417,8 @@
             ],
             "layout": {
                 "text-field": "{ref}",
-                "text-font": [
-                    "Open Sans Semibold"
+                "text-font":  [
+		            "Open Sans Semibold"
                 ],
                 "text-size": 11,
                 "icon-image": "motorway_{reflen}",
@@ -3451,7 +3450,7 @@
             "source": "mapbox",
             "source-layer": "place",
             "filter": [
-                "in",
+                "in", 
                 "class",
                 "hamlet",
                 "island",
@@ -3668,7 +3667,7 @@
                     "Point"
                 ],
                 [
-                    ">=",
+                   ">=",
                     "labelrank",
                     4
                 ]
@@ -3793,7 +3792,7 @@
             },
             "paint": {
                 "text-color": "#74aee9",
-                "text-halo-color": "rgba(255,255,255,0.7)",
+               "text-halo-color": "rgba(255,255,255,0.7)",
                 "text-halo-width": 0.75,
                 "text-halo-blur": 0.75
             }
@@ -3919,7 +3918,7 @@
             "layout": {
                 "text-font": [
                     "Open Sans Italic"
-                ],
+              ],
                 "text-field": "{name_en}",
                 "text-letter-spacing": 0.2,
                 "symbol-placement": "line",
@@ -4042,7 +4041,7 @@
             "type": "symbol",
             "metadata": {
                 "mapbox:group": "1444849242106.713"
-            },
+           },
             "source": "mapbox",
             "source-layer": "place",
             "filter": [
