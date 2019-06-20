@@ -1,7 +1,7 @@
 {
     "version": 8,
     "id": "mono-bw",
-    "name": "Updated-Mono-BW",
+    "name": "Mono-BW",
     "sources": {
         "mapbox": {
             "url": "mbtiles://planet.mbtiles",

@@ -1,7 +1,7 @@
 {
     "version": 8,
     "id": "mono-chrome",
-    "name": "Updated-Mono-Chrome",
+    "name": "Mono-Chrome",
     "sources": {
         "mapbox": {
             "url": "mbtiles://planet.mbtiles",

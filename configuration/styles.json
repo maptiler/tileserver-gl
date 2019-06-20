@@ -1,5 +1,6 @@
 {
   "version": 8,
+  "id": "klokantech-basic",
   "name": "Klokantech Basic",
   "metadata": {
     "mapbox:autocomposite": false,
@@ -1740,6 +1741,5 @@
         "icon-allow-overlap": false
       }
     }
-  ],
-  "id": "klokantech-basic"
+  ]
 }

@@ -1,7 +1,7 @@
 {
     "version": 8,
     "id": "mono-blue-water",
-    "name": "Updated-Mono-Blue-Water",
+    "name": "Mono-Blue-Water",
     "sources": {
         "mapbox": {
             "url": "mbtiles://planet.mbtiles",
