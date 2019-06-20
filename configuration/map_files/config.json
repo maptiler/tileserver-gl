@@ -12,11 +12,8 @@
     "updated-mono": {
       "style": "updated-mono.json"
     },
-    "mono": {
-      "style": "mono.json"
-    },
     "mono-bw": {
-      "style": "mono-bw.json"
+      "style": "updated-mono-bw.json"
     },
     "mono-blue-water": {
       "style": "mono-blue-water.json"
@@ -25,7 +22,7 @@
       "style": "mono-blue.json"
     },
     "updated-mono-chrome": {
-      "style": "mono-chrome.json"
+      "style": "updated-mono-chrome.json"
     }
   },
   "data": {
