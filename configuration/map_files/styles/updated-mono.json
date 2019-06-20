@@ -5214,6 +5214,201 @@
               "text-halo-blur": 0.5
             },
             "minzoom": 15
+        },
+        {
+            "id": "icon_car",
+            "type": "symbol",
+            "metadata": {
+              "mapbox:group": "1444849297111.495"
+            },
+            "source": "mapbox",
+            "source-layer": "poi",
+            "filter": [
+              "all",
+              [
+                "==",
+                "class",
+                "car"
+              ]
+            ],
+            "layout": {
+              "text-font": [
+                "Open Sans Semibold"
+              ],
+              "text-field": "{name_en}",
+              "text-max-width": 9,
+              "text-padding": 2,
+              "text-offset": [
+                0,
+                0.6
+              ],
+              "text-anchor": "top",
+              "text-size": 12,
+              "icon-image": "car-11"
+            },
+            "paint": {
+              "text-color": "#666",
+              "text-halo-color": "#ffffff",
+              "text-halo-width": 1,
+              "text-halo-blur": 0.5
+            },
+            "minzoom": 16
+        },
+        {
+            "id": "icon_golf",
+            "type": "symbol",
+            "metadata": {
+              "mapbox:group": "1444849297111.495"
+            },
+            "source": "mapbox",
+            "source-layer": "poi",
+            "filter": [
+              "all",
+              [
+                "==",
+                "class",
+                "golf"
+              ]
+            ],
+            "layout": {
+              "text-font": [
+                "Open Sans Semibold"
+              ],
+              "text-field": "{name_en}",
+              "text-max-width": 9,
+              "text-padding": 2,
+              "text-offset": [
+                0,
+                0.6
+              ],
+              "text-anchor": "top",
+              "text-size": 12,
+              "icon-image": "golf-11"
+            },
+            "paint": {
+              "text-color": "#666",
+              "text-halo-color": "#ffffff",
+              "text-halo-width": 1,
+              "text-halo-blur": 0.5
+            },
+            "minzoom": 14
+        },
+        {
+            "id": "icon_police",
+            "type": "symbol",
+            "metadata": {
+              "mapbox:group": "1444849297111.495"
+            },
+            "source": "mapbox",
+            "source-layer": "poi",
+            "filter": [
+              "all",
+              [
+                "==",
+                "class",
+                "police"
+              ]
+            ],
+            "layout": {
+              "text-font": [
+                "Open Sans Semibold"
+              ],
+              "text-field": "{name_en}",
+              "text-max-width": 9,
+              "text-padding": 2,
+              "text-offset": [
+                0,
+                0.6
+              ],
+              "text-anchor": "top",
+              "text-size": 12,
+              "icon-image": "police-11"
+            },
+            "paint": {
+              "text-color": "#666",
+              "text-halo-color": "#ffffff",
+              "text-halo-width": 1,
+              "text-halo-blur": 0.5
+            },
+            "minzoom": 16
+        },
+        {
+            "id": "icon_hospital",
+            "type": "symbol",
+            "metadata": {
+              "mapbox:group": "1444849297111.495"
+            },
+            "source": "mapbox",
+            "source-layer": "poi",
+            "filter": [
+              "all",
+              [
+                "==",
+                "class",
+                "hospital"
+              ]
+            ],
+            "layout": {
+              "text-font": [
+                "Open Sans Semibold"
+              ],
+              "text-field": "{name_en}",
+              "text-max-width": 9,
+              "text-padding": 2,
+              "text-offset": [
+                0,
+                0.6
+              ],
+              "text-anchor": "top",
+              "text-size": 12,
+              "icon-image": "hospital-11"
+            },
+            "paint": {
+              "text-color": "#666",
+              "text-halo-color": "#ffffff",
+              "text-halo-width": 1,
+              "text-halo-blur": 0.5
+            },
+            "minzoom": 16
+        },
+        {
+            "id": "icon_beer",
+            "type": "symbol",
+            "metadata": {
+              "mapbox:group": "1444849297111.495"
+            },
+            "source": "mapbox",
+            "source-layer": "poi",
+            "filter": [
+              "all",
+              [
+                "==",
+                "subclass",
+                "pub"
+              ]
+            ],
+            "layout": {
+              "text-font": [
+                "Open Sans Semibold"
+              ],
+              "text-field": "{name_en}",
+              "text-max-width": 9,
+              "text-padding": 2,
+              "text-offset": [
+                0,
+                0.6
+              ],
+              "text-anchor": "top",
+              "text-size": 12,
+              "icon-image": "beer-11"
+            },
+            "paint": {
+              "text-color": "#666",
+              "text-halo-color": "#ffffff",
+              "text-halo-width": 1,
+              "text-halo-blur": 0.5
+            },
+            "minzoom": 16
         }
     ]
 }
