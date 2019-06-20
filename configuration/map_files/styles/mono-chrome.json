@@ -3068,7 +3068,7 @@
                 ],
                 [
                     "in",
-                    "scalerank",
+                    "rank",
                     1,
                     2,
                     3
@@ -3740,7 +3740,7 @@
             "source-layer": "place",
             "filter": [
                 ">=",
-                "scalerank",
+                "rank",
                 4
             ],
             "layout": {
@@ -3780,7 +3780,7 @@
             "source-layer": "place",
             "filter": [
                 "==",
-                "scalerank",
+                "rank",
                 3
             ],
             "layout": {
@@ -3820,7 +3820,7 @@
             "source-layer": "place",
             "filter": [
                 "==",
-                "scalerank",
+                "rank",
                 2
             ],
             "layout": {
@@ -3860,7 +3860,7 @@
             "source-layer": "place",
             "filter": [
                 "==",
-                "scalerank",
+                "rank",
                 1
             ],
             "layout": {
