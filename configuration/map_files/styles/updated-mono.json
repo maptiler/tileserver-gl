@@ -76,7 +76,8 @@
             }
         }
     },
-    "layers": [{
+    "layers": [
+        {
             "id": "background",
             "type": "background",
             "paint": {
@@ -294,26 +295,26 @@
                 "fill-color": "#f0e8f8"
             }
         },
-	{
-	  "id": "landuse_pitch",
-	  "type": "fill",
-	  "metadata": {
-	    "mapbox:group": "1444849388993.3071"
-	  },
-	  "source": "mapbox",
-	  "source-layer": "landuse",
-	  "filter": [
-	    "all",
-	    [
-	      "==",
-	      "class",
-	      "pitch"
-	    ]
-	  ],
-	  "paint": {
-	    "fill-color": "#f0e8f8"
-	  }
-	},
+        {
+        "id": "landuse_pitch",
+        "type": "fill",
+        "metadata": {
+            "mapbox:group": "1444849388993.3071"
+        },
+        "source": "mapbox",
+        "source-layer": "landuse",
+        "filter": [
+            "all",
+            [
+            "==",
+            "class",
+            "pitch"
+            ]
+        ],
+        "paint": {
+            "fill-color": "#f0e8f8"
+        }
+        },
         {
             "id": "landuse_wood",
             "type": "fill",
@@ -1236,30 +1237,30 @@
                 "line-opacity": 1
             }
         },
-	{
-	  "id": "road_minor",
-	  "metadata": {
-            "mapbox:group": "1444849345966.4436"
-	  },
-	  "paint": {
-            "line-color": "rgba(255, 255, 255, 1)",
-	    "line-width": 2
-	  },
-	  "type": "line",
-	  "source": "mapbox",
-	  "source-layer": "transportation",
-	  "filter": [
-	    "all",
-	    [
-	      "in",
-	      "class",
-	      "minor"
-	     ]
-	  ],
-	  "layout": {
-	        "line-cap": "round",
-	        "line-join": "round"
-  	  }
+        {
+            "id": "road_minor",
+            "metadata": {
+                    "mapbox:group": "1444849345966.4436"
+            },
+            "paint": {
+                    "line-color": "rgba(255, 255, 255, 1)",
+                "line-width": 2
+            },
+            "type": "line",
+            "source": "mapbox",
+            "source-layer": "transportation",
+            "filter": [
+                "all",
+                [
+                "in",
+                "class",
+                "minor"
+                ]
+            ],
+            "layout": {
+                    "line-cap": "round",
+                    "line-join": "round"
+            }
         },
         {
             "id": "road_service_track_casing",
@@ -2845,38 +2846,38 @@
               ]
             ]
         },
-	{
-	  "id": "railway_line",
-	  "type": "line",
-	  "source": "mapbox",
-	  "source-layer": "transportation",
-	  "filter": [
-	    "all",
-	    [
-	      "==",
-	      "subclass",
-	      "rail"
-	    ],
-	    [
-	      "==",
-	      "class",
-	      "rail"
-	    ]
-	  ],
-	  "paint": {
-	    "line-width": 1,
-	    "line-color": "rgba(188, 188, 188, 1)",
-	    "line-offset": 0
-	  },
-	  "line-opacity": 1,
-	  "minzoom": 5,
-	  "layout": {
-	    "line-cap": "round",
-	    "line-join": "round",
-	    "visibility": "visible"
-	  }
-	},
-	{
+        {
+            "id": "railway_line",
+            "type": "line",
+            "source": "mapbox",
+            "source-layer": "transportation",
+            "filter": [
+                "all",
+                [
+                "==",
+                "subclass",
+                "rail"
+                ],
+                [
+                "==",
+                "class",
+                "rail"
+                ]
+            ],
+            "paint": {
+                "line-width": 1,
+                "line-color": "rgba(188, 188, 188, 1)",
+                "line-offset": 0
+            },
+            "line-opacity": 1,
+            "minzoom": 5,
+            "layout": {
+                "line-cap": "round",
+                "line-join": "round",
+                "visibility": "visible"
+            }
+        },
+	    {
             "id": "airport_label",
             "type": "symbol",
             "metadata": {
@@ -3854,7 +3855,7 @@
             }
         },
         {
-            "id": "poi_label_r10-19",
+            "id": "poi_label_r10+",
             "type": "symbol",
             "metadata": {
               "mapbox:group": "1444849297111.495"
@@ -3876,50 +3877,6 @@
               ],
               [
                 "<",
-                "rank",
-                20
-              ]
-            ],
-            "layout": {
-              "text-font": [
-                "Open Sans Semibold"
-              ],
-              "text-field": "{name_en}",
-              "text-max-width": 9,
-              "text-padding": 2,
-              "text-offset": [
-                0,
-                0.6
-              ],
-              "text-anchor": "top",
-              "text-size": 12,
-              "icon-image": "{class}-11"
-            },
-            "paint": {
-              "text-color": "#666",
-              "text-halo-color": "#ffffff",
-              "text-halo-width": 1,
-              "text-halo-blur": 0.5
-            }
-        },
-        {
-            "id": "poi_label_r20plus",
-            "type": "symbol",
-            "metadata": {
-              "mapbox:group": "1444849297111.495"
-            },
-            "source": "mapbox",
-            "source-layer": "poi",
-            "minzoom": 17,
-            "filter": [
-              "all",
-              [
-                "==",
-                "$type",
-                "Point"
-              ],
-              [
-                ">",
                 "rank",
                 20
               ]
