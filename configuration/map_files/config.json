@@ -10,10 +10,10 @@
   },
   "styles": {
     "updated-mono": {
-      "style": "updated-mono.json"
+      "style": "mono.json"
     },
     "mono-bw": {
-      "style": "updated-mono-bw.json"
+      "style": "mono-bw.json"
     },
     "mono-blue-water": {
       "style": "mono-blue-water.json"
@@ -22,7 +22,7 @@
       "style": "mono-blue.json"
     },
     "updated-mono-chrome": {
-      "style": "updated-mono-chrome.json"
+      "style": "mono-chrome.json"
     }
   },
   "data": {
