@@ -56,3 +56,19 @@ To  inspect and make temporary changes to our styles you can load them using the
 To load the map data that we use make sure you use the live URL that points to the data OSM2Vector tileJSON.
 
 Latest tilserver README: https://buildmedia.readthedocs.org/media/pdf/tileserver/latest/tileserver.pdf
+
+### Updating Styles/Sprites
+
+Updated the point label groups, grouping by rank and zoom level.
+
+Fixed some landuse colors of class pitch (Fx #15.65/55.698642/12.572399).
+
+Railway lines added to each style.
+
+Updated the "image-icon" reference in the styles from {maki}-11 to {class}-11.
+The name of each icon to be shown is the same as the class name.
+
+
+## NOTE:
+When uploading a local JSON file to the the Maputnik editor, change the source URL, the sprite and glyphs to URLs.
+Fx: ["sprite": "mono"] to ["sprite": "https://maps.monomaps.com/styles/updated-mono/sprite"]
