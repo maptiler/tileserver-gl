@@ -2837,13 +2837,13 @@
                 "text-halo-width": 1,
                 "text-halo-blur": 0.5
             },
-	    "filter": [
-	      "all",
-	      [
-	        "==",
-	        "class",
-	        "railway"
-              ]
+            "filter": [
+            "all",
+            [
+                "==",
+                "class",
+                "railway"
+                ]
             ]
         },
         {

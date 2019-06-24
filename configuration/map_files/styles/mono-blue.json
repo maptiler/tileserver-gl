@@ -2944,7 +2944,7 @@
                 "mapbox:group": "1444849297111.495"
             },
             "source": "mapbox",
-            "source-layer": "rail_station_label",
+            "source-layer": "poi",
             "layout": {
                 "text-size": 12,
                 "icon-image": "{class}-11",
@@ -2965,7 +2965,15 @@
                 "text-color": "hsl(0, 0%, 100%)",
                 "text-halo-blur": 0.5,
                 "text-halo-width": 1
-            }
+            },
+            "filter": [
+                "all",
+                [
+                    "==",
+                    "class",
+                    "railway"
+                    ]
+            ]
         },
         {
             "id": "poi_label_r10+",
