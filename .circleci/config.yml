@@ -97,7 +97,11 @@ jobs:
             wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.14.10/terragrunt_linux_amd64 -O terragrunt
             chmod a+x terragrunt
             mv terragrunt /bin/
-            # sed -i -e "s%repo_version =%repo_version = \"${CIRCLE_SHA1}\"%g" "${REGION}/${ENVIRONMENT}/tileserver/terraform.tfvars"
+      - run:
+          name: Deploy tileserver-alb to fra dev
+          command: |
+            cd /tmp/repo/artifact/deployment/eu-central-1/dev/tileserver-alb && \
+            terragrunt apply --terragrunt-non-interactive -auto-approve
       - run:
           name: Deploy tileserver to fra dev
           command: |
@@ -126,7 +130,11 @@ jobs:
             wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.14.10/terragrunt_linux_amd64 -O terragrunt
             chmod a+x terragrunt
             mv terragrunt /bin/
-            # sed -i -e "s%repo_version =%repo_version = \"${CIRCLE_SHA1}\"%g" "${REGION}/${ENVIRONMENT}/tileserver/terraform.tfvars"
+      - run:
+          name: Deploy tileserver-alb to fra prod
+          command: |
+            cd /tmp/repo/artifact/deployment/eu-central-1/prod/tileserver-alb && \
+            terragrunt apply --terragrunt-non-interactive -auto-approve
       - run:
           name: Deploy tileserver to fra prod
           command: |
