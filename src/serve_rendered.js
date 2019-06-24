@@ -148,7 +148,7 @@ module.exports = function(options, repo, params, id, dataResolver) {
         ratio: ratio,
         request: function(req, callback) {
           var protocol = req.url.split(':')[0];
-          //console.log('Handling request:', req);
+          // console.log('Handling request:', req);
           if (protocol == 'sprites') {
             var dir = options.paths[protocol];
             var file = unescape(req.url).substring(protocol.length + 3);
@@ -177,7 +177,7 @@ module.exports = function(options, repo, params, id, dataResolver) {
                 format = parts[5].split('.')[1];
             source.getTile(z, x, y, function(err, data, headers) {
               if (err) {
-                //console.log('MBTiles error, serving empty', err);
+                // console.log('MBTiles error, serving empty', err);
                 createEmptyResponse(sourceInfo.format, sourceInfo.color, callback);
                 return;
               }
@@ -214,7 +214,7 @@ module.exports = function(options, repo, params, id, dataResolver) {
                 var extension = path.extname(parts.pathname).toLowerCase();
                 var format = extensionToFormat[extension] || '';
                 if (err || res.statusCode < 200 || res.statusCode >= 300) {
-                  //console.log('HTTP error', err || res.statusCode);
+                  // console.log('HTTP error', err || res.statusCode);
                   createEmptyResponse(format, '', callback);
                   return;
                 }
