@@ -51,13 +51,13 @@ sudo chown -R ubuntu:ubuntu /usr/src/app/.
 	tar xzf /tmp/tileserver-gl.tar.gz -C /tmp/uncompressed/
 	# Setup map files
 	sudo mv -f /tmp/uncompressed/configuration/map_files/config.json /data/
-	sudo rm -rf /data/mbtiles/${DATA_VERSION}_data/styles \
-	/data/mbtiles/${DATA_VERSION}_data/glyphs \
-	/data/mbtiles/${DATA_VERSION}_data/sprites
-	sudo mv -f /tmp/uncompressed/configuration/map_files/* /data/mbtiles/${DATA_VERSION}_data/
-	sudo chown -R ubuntu:ubuntu /data/mbtiles/${DATA_VERSION}_data/styles
-	sudo chown -R ubuntu:ubuntu /data/mbtiles/${DATA_VERSION}_data/glyphs
-	sudo chown -R ubuntu:ubuntu /data/mbtiles/${DATA_VERSION}_data/sprites
+	sudo rm -rf /data/mbtiles/$${DATA_VERSION}_data/styles \
+	/data/mbtiles/$${DATA_VERSION}_data/glyphs \
+	/data/mbtiles/$${DATA_VERSION}_data/sprites
+	sudo mv -f /tmp/uncompressed/configuration/map_files/* /data/mbtiles/$${DATA_VERSION}_data/
+	sudo chown -R ubuntu:ubuntu /data/mbtiles/$${DATA_VERSION}_data/styles
+	sudo chown -R ubuntu:ubuntu /data/mbtiles/$${DATA_VERSION}_data/glyphs
+	sudo chown -R ubuntu:ubuntu /data/mbtiles/$${DATA_VERSION}_data/sprites
 	sudo chown ubuntu:ubuntu /data/config.json
 	# Setup nginx
 	sudo mv /tmp/uncompressed/configuration/nginx.conf /etc/nginx/.
