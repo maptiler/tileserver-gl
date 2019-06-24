@@ -10,6 +10,7 @@ AWS_SECRET_KEY=${aws_secret_key}
 BUCKET="mono-deployment-$ENVIRONMENT"
 DEPLOYABLE="tileserver-gl-$REPO_VERSION.tar.gz"
 FULL_BUCKET_URI="s3://$BUCKET/tileserver-gl/$DEPLOYABLE"
+DATA_VERSION="2019-05-20"
 # Setup dependencies
 sudo rm /var/lib/dpkg/lock
 curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
@@ -28,7 +29,7 @@ EOL
 aws configure set aws_access_key_id "$AWS_ACCESS_KEY"
 aws configure set aws_secret_access_key "$AWS_SECRET_KEY"
 aws configure set region "$REGION"
-DATA_VERSION="2019-04-29"
+
 sudo rm /etc/apt/sources.list.d/microsoft.list
 sudo groupadd nginx
 sudo useradd nginx -g nginx
