@@ -94,13 +94,14 @@ jobs:
             aws configure set aws_access_key_id "${AWS_DEV_ACCESS_KEY}"
             aws configure set aws_secret_access_key "${AWS_DEV_SECRET_KEY}"
             aws configure set region "${REGION}"
+            ssh -T -oStrictHostKeyChecking=no git@github.com || true
+            mkdir ~/.ssh &&  ssh-keyscan github.com >> ~/.ssh/known_hosts
             wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.14.10/terragrunt_linux_amd64 -O terragrunt
             chmod a+x terragrunt
             mv terragrunt /bin/
       - run:
           name: Deploy tileserver-alb to fra dev
           command: |
-            ssh-keyscan github.com >> ~/.ssh/known_hosts
             cd /tmp/repo/artifact/deployment/eu-central-1/dev/tileserver-alb && \
             terragrunt apply --terragrunt-non-interactive -auto-approve
       - run:
@@ -125,10 +126,11 @@ jobs:
       - run:
           name: Configure deployment
           command: |
-            ssh-keyscan github.com >> ~/.ssh/known_hosts
             aws configure set aws_access_key_id "${AWS_PROD_ACCESS_KEY}"
             aws configure set aws_secret_access_key "${AWS_PROD_SECRET_KEY}"
             aws configure set region "${REGION}"
+            ssh -T -oStrictHostKeyChecking=no git@github.com || true
+            mkdir ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
             wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.14.10/terragrunt_linux_amd64 -O terragrunt
             chmod a+x terragrunt
             mv terragrunt /bin/
