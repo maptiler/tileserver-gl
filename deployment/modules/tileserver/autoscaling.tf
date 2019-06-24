@@ -44,6 +44,11 @@ resource "aws_autoscaling_group" "autoscalinggroup" {
     value               = "maps"
     propagate_at_launch = true
   }
+
+  provisioner "local-exec" {
+    # Wait until the number of "ok" instance status checks is equal to 1
+    command = "sleep 15; i=0; while [[ $(/usr/bin/aws ec2 describe-instances --filters 'Name=tag:aws:autoscaling:groupName,Values=${aws_autoscaling_group.autoscalinggroup.name}' --query 'Reservations[*].Instances[*].InstanceId' --output text | xargs aws ec2 describe-instance-status --query 'InstanceStatuses[*].SystemStatus.Status' --instance-ids | jq 'map(select(. == \"ok\")) | length') -lt 1 ]]; do i=$(echo $((++i))); echo ''; echo retrying $i; sleep 5;if [[ $i -eq 60 ]]; then exit 1; fi; done; sleep 45"
+  }
 }
 
 #
