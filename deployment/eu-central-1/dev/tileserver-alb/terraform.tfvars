@@ -30,3 +30,4 @@ egress = [
 egress_count = 1
 vpc_remote_state = "dev/vpc/terraform.tfstate"
 state_bucket = "tg-state-eu-central-1"
+alb_idle_timeout = "60"
