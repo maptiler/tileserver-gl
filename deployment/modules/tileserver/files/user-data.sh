@@ -28,6 +28,7 @@ EOL
 aws configure set aws_access_key_id "$AWS_ACCESS_KEY"
 aws configure set aws_secret_access_key "$AWS_SECRET_KEY"
 aws configure set region "$REGION"
+DATA_VERSION="2019-04-29"
 sudo rm /etc/apt/sources.list.d/microsoft.list
 sudo groupadd nginx
 sudo useradd nginx -g nginx
@@ -36,7 +37,6 @@ sudo mkdir -p /usr/src/app/. \
 /tmp/uncompressed/.
 
 # Configure service/Mount FS
-# sudo sed -i -e 's/node \/usr\/src\/app\/ -p 80 "$@" \&/node \/usr\/src\/app\/ -p 8080 "$@" -c config.json  \&/g' /usr/src/app/run.sh
 {
 	sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport "${efs_dns_name}:/mbtiles/" /data/mbtiles
 } || {
@@ -50,13 +50,13 @@ sudo chown -R ubuntu:ubuntu /usr/src/app/.
 	tar xzf /tmp/tileserver-gl.tar.gz -C /tmp/uncompressed/
 	# Setup map files
 	sudo mv -f /tmp/uncompressed/configuration/map_files/config.json /data/
-	sudo rm -rf /data/mbtiles/2019-04-29_data/styles \
-	/data/mbtiles/2019-04-29_data/glyphs \
-	/data/mbtiles/2019-04-29_data/sprites
-	sudo mv -f /tmp/uncompressed/configuration/map_files/* /data/mbtiles/2019-04-29_data/
-	sudo chown -R ubuntu:ubuntu /data/mbtiles/2019-04-29_data/styles
-	sudo chown -R ubuntu:ubuntu /data/mbtiles/2019-04-29_data/glyphs
-	sudo chown -R ubuntu:ubuntu /data/mbtiles/2019-04-29_data/sprites
+	sudo rm -rf /data/mbtiles/${DATA_VERSION}_data/styles \
+	/data/mbtiles/${DATA_VERSION}_data/glyphs \
+	/data/mbtiles/${DATA_VERSION}_data/sprites
+	sudo mv -f /tmp/uncompressed/configuration/map_files/* /data/mbtiles/${DATA_VERSION}_data/
+	sudo chown -R ubuntu:ubuntu /data/mbtiles/${DATA_VERSION}_data/styles
+	sudo chown -R ubuntu:ubuntu /data/mbtiles/${DATA_VERSION}_data/glyphs
+	sudo chown -R ubuntu:ubuntu /data/mbtiles/${DATA_VERSION}_data/sprites
 	sudo chown ubuntu:ubuntu /data/config.json
 	# Setup nginx
 	sudo mv /tmp/uncompressed/configuration/nginx.conf /etc/nginx/.
