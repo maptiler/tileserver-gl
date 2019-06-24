@@ -60,6 +60,20 @@ jobs:
               echo "Bucket is here"
             }
             aws s3 cp "/tmp/repo/artifact/${DEPLOYABLE}" "s3://${BUCKET}/tileserver-gl/${DEPLOYABLE}"
+      - run:
+          name: Upload Artifact Prod
+          command: |
+            ENVIRONMENT="prod"
+            aws configure set aws_access_key_id "${AWS_PROD_ACCESS_KEY}"
+            aws configure set aws_secret_access_key "${AWS_PROD_SECRET_KEY}"
+            BUCKET="mono-deployment-${ENVIRONMENT}"
+            DEPLOYABLE="${CIRCLE_PROJECT_REPONAME}-${CIRCLE_SHA1}.tar.gz"
+            {
+              aws s3api create-bucket --bucket "${BUCKET}"
+            } || {
+              echo "Bucket is here"
+            }
+            aws s3 cp "/tmp/repo/artifact/${DEPLOYABLE}" "s3://${BUCKET}/tileserver-gl/${DEPLOYABLE}"
       - persist_to_workspace:
           root: /tmp/repo
           paths:
@@ -93,6 +107,35 @@ jobs:
               -var="aws_secret_key=$AWS_DEV_SECRET_KEY" \
               -var="repo_version=$CIRCLE_SHA1" \
               --terragrunt-non-interactive -auto-approve
+  deploy-to-prod:
+    docker:
+      - image: monosolutions/terraform:1.0.4
+    working_directory: /tmp/repo/artifact/deployment
+    environment:
+      REGION: "eu-central-1"
+      ENVIRONMENT: "prod"
+    steps:
+      - attach_workspace:
+          at: /tmp/repo
+      - run:
+          name: Configure deployment
+          command: |
+            aws configure set aws_access_key_id "${AWS_PROD_ACCESS_KEY}"
+            aws configure set aws_secret_access_key "${AWS_PROD_SECRET_KEY}"
+            aws configure set region "${REGION}"
+            wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.14.10/terragrunt_linux_amd64 -O terragrunt
+            chmod a+x terragrunt
+            mv terragrunt /bin/
+            # sed -i -e "s%repo_version =%repo_version = \"${CIRCLE_SHA1}\"%g" "${REGION}/${ENVIRONMENT}/tileserver/terraform.tfvars"
+      - run:
+          name: Deploy tileserver to fra prod
+          command: |
+            cd /tmp/repo/artifact/deployment/eu-central-1/prod/tileserver && \
+            terragrunt apply \
+              -var="aws_access_key=$AWS_DEV_ACCESS_KEY" \
+              -var="aws_secret_key=$AWS_DEV_SECRET_KEY" \
+              -var="repo_version=$CIRCLE_SHA1" \
+              --terragrunt-non-interactive -auto-approve
 workflows:
   version: 2
   deploy:
@@ -109,3 +152,10 @@ workflows:
       - deploy-to-dev:
           requires:
             - upload-package
+      - approve-for-live:
+          requires:
+            - deploy-to-dev
+          type: approval
+      - deploy-to-prod:
+          requires:
+            - approve-for-live
