@@ -140,12 +140,7 @@ workflows:
   version: 2
   deploy:
     jobs:
-      - build-package:
-          filters:
-            branches:
-              only:
-                - master
-                - MODE-11365
+      - build-package
       - upload-package:
           requires:
             - build-package
@@ -155,6 +150,10 @@ workflows:
       - approve-for-live:
           requires:
             - deploy-to-dev
+          filters:
+            branches:
+              only:
+                - master
           type: approval
       - deploy-to-prod:
           requires:
