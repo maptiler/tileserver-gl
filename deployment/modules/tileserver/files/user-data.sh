@@ -12,6 +12,7 @@ DEPLOYABLE="tileserver-gl-$REPO_VERSION.tar.gz"
 FULL_BUCKET_URI="s3://$BUCKET/tileserver-gl/$DEPLOYABLE"
 DATA_VERSION="2019-05-20"
 # Setup dependencies
+sudo service nginx stop
 sudo rm /var/lib/dpkg/lock
 curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
 sudo apt install -y apt-transport-https \
