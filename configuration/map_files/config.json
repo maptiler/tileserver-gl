@@ -9,7 +9,7 @@
     }
   },
   "styles": {
-    "updated-mono": {
+    "mono": {
       "style": "mono.json"
     },
     "mono-bw": {
