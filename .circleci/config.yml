@@ -144,8 +144,8 @@ jobs:
           command: |
             cd /tmp/repo/artifact/deployment/eu-central-1/prod/tileserver && \
             terragrunt apply \
-              -var="aws_access_key=$AWS_DEV_ACCESS_KEY" \
-              -var="aws_secret_key=$AWS_DEV_SECRET_KEY" \
+              -var="aws_access_key=$AWS_PROD_ACCESS_KEY" \
+              -var="aws_secret_key=$AWS_PROD_SECRET_KEY" \
               -var="repo_version=$CIRCLE_SHA1" \
               --terragrunt-non-interactive -auto-approve
 workflows:
