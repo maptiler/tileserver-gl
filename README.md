@@ -69,6 +69,6 @@ Updated the "image-icon" reference in the styles from {maki}-11 to {class}-11.
 The name of each icon to be shown is the same as the class name.
 
 
-## NOTE:
+### NOTE:
 When uploading a local JSON file to the the Maputnik editor, change the source URL, the sprite and glyphs to URLs.
 Fx: ["sprite": "mono"] to ["sprite": "https://maps.monomaps.com/styles/updated-mono/sprite"]
