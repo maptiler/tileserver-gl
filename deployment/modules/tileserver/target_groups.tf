@@ -11,7 +11,7 @@ resource "aws_alb_target_group" "target_group_this" {
     cookie_duration = "300"
   }
   health_check {
-    interval            = "60"
+    interval            = "30"
     path                = "/health"
     port                = "80"
     healthy_threshold   = "2"
