@@ -2,8 +2,6 @@ It is great you want to help us making TileServer GL project better!
 
 This is the right place only for a software bug report or a new software feature request.
 
-NOTE: Questions about OpenMapTiles data, OpenMapTiles Server, TileHosting and other software/products do not belong here (and will not be answered)!
-
 The usage and installation questions belongs to https://stackoverflow.com/questions/tagged/openmaptiles
 A guaranteed support and consulting from the core developers via https://openmaptiles.com/support/
 

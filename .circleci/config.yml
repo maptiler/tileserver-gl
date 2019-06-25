@@ -1,0 +1,172 @@
+version: 2
+jobs:
+  build-package:
+    working_directory: /usr/src/app
+    docker:
+      - image: monosolutions/ubuntu-nodejs
+    steps:
+      - checkout
+      - restore_cache:
+          key: node-dependencies-{{ checksum "package.json" }}
+      - run: npm install
+      - save_cache:
+          paths:
+            - node_modules
+          key: node-dependencies-{{ checksum "package.json" }}
+      - run:
+          name: Build Artifact
+          command: |
+            mkdir ./artifact
+            DEPLOYABLE="${CIRCLE_PROJECT_REPONAME}-${CIRCLE_SHA1}.tar.gz"
+            cp -rf configuration \
+              node_modules \
+              src \
+              run.sh \
+              package.json \
+              public \
+              docs \
+              publish.js \
+              ./artifact/
+            pushd ./artifact
+              echo "Taring ${DEPLOYABLE}"
+              tar -zcvf $DEPLOYABLE *
+            popd
+            cp -rf ./deployment ./artifact/
+            mkdir -p /tmp/repo && mv artifact /tmp/repo/
+      - persist_to_workspace:
+          root: /tmp/repo
+          paths:
+            - artifact
+  upload-package:
+    environment:
+      ENVIRONMENT: "dev"
+      REGION: "eu-central-1"
+    working_directory: /tmp/repo
+    docker:
+      - image: monosolutions/awscli:latest
+    steps:
+      - attach_workspace:
+          at: /tmp/repo
+      - run:
+          name: Upload Artifact Dev
+          command: |
+            aws configure set aws_access_key_id "${AWS_DEV_ACCESS_KEY}"
+            aws configure set aws_secret_access_key "${AWS_DEV_SECRET_KEY}"
+            BUCKET="mono-deployment-${ENVIRONMENT}"
+            DEPLOYABLE="${CIRCLE_PROJECT_REPONAME}-${CIRCLE_SHA1}.tar.gz"
+            {
+              aws s3api create-bucket --bucket "${BUCKET}"
+            } || {
+              echo "Bucket is here"
+            }
+            aws s3 cp "/tmp/repo/artifact/${DEPLOYABLE}" "s3://${BUCKET}/tileserver-gl/${DEPLOYABLE}"
+      - run:
+          name: Upload Artifact Prod
+          command: |
+            ENVIRONMENT="prod"
+            aws configure set aws_access_key_id "${AWS_PROD_ACCESS_KEY}"
+            aws configure set aws_secret_access_key "${AWS_PROD_SECRET_KEY}"
+            BUCKET="mono-deployment-${ENVIRONMENT}"
+            DEPLOYABLE="${CIRCLE_PROJECT_REPONAME}-${CIRCLE_SHA1}.tar.gz"
+            {
+              aws s3api create-bucket --bucket "${BUCKET}"
+            } || {
+              echo "Bucket is here"
+            }
+            aws s3 cp "/tmp/repo/artifact/${DEPLOYABLE}" "s3://${BUCKET}/tileserver-gl/${DEPLOYABLE}"
+      - persist_to_workspace:
+          root: /tmp/repo
+          paths:
+            - artifact
+  deploy-to-dev:
+    docker:
+      - image: monosolutions/terraform:1.0.4
+    working_directory: /tmp/repo/artifact/deployment
+    environment:
+      REGION: "eu-central-1"
+      ENVIRONMENT: "dev"
+    steps:
+      - attach_workspace:
+          at: /tmp/repo
+      - run:
+          name: Configure deployment
+          command: |
+            aws configure set aws_access_key_id "${AWS_DEV_ACCESS_KEY}"
+            aws configure set aws_secret_access_key "${AWS_DEV_SECRET_KEY}"
+            aws configure set region "${REGION}"
+            ssh -T -oStrictHostKeyChecking=no git@github.com || true
+            mkdir ~/.ssh &&  ssh-keyscan github.com >> ~/.ssh/known_hosts
+            wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.14.10/terragrunt_linux_amd64 -O terragrunt
+            chmod a+x terragrunt
+            mv terragrunt /bin/
+      - run:
+          name: Deploy tileserver-alb to fra dev
+          command: |
+            cd /tmp/repo/artifact/deployment/eu-central-1/dev/tileserver-alb && \
+            terragrunt apply --terragrunt-non-interactive -auto-approve
+      - run:
+          name: Deploy tileserver to fra dev
+          command: |
+            cd /tmp/repo/artifact/deployment/eu-central-1/dev/tileserver && \
+            terragrunt apply \
+              -var="aws_access_key=$AWS_DEV_ACCESS_KEY" \
+              -var="aws_secret_key=$AWS_DEV_SECRET_KEY" \
+              -var="repo_version=$CIRCLE_SHA1" \
+              --terragrunt-non-interactive -auto-approve
+  deploy-to-prod:
+    docker:
+      - image: monosolutions/terraform:1.0.4
+    working_directory: /tmp/repo/artifact/deployment
+    environment:
+      REGION: "eu-central-1"
+      ENVIRONMENT: "prod"
+    steps:
+      - attach_workspace:
+          at: /tmp/repo
+      - run:
+          name: Configure deployment
+          command: |
+            aws configure set aws_access_key_id "${AWS_PROD_ACCESS_KEY}"
+            aws configure set aws_secret_access_key "${AWS_PROD_SECRET_KEY}"
+            aws configure set region "${REGION}"
+            ssh -T -oStrictHostKeyChecking=no git@github.com || true
+            mkdir ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
+            wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.14.10/terragrunt_linux_amd64 -O terragrunt
+            chmod a+x terragrunt
+            mv terragrunt /bin/
+      - run:
+          name: Deploy tileserver-alb to fra prod
+          command: |
+            cd /tmp/repo/artifact/deployment/eu-central-1/prod/tileserver-alb && \
+            terragrunt apply --terragrunt-non-interactive -auto-approve
+      - run:
+          name: Deploy tileserver to fra prod
+          command: |
+            cd /tmp/repo/artifact/deployment/eu-central-1/prod/tileserver && \
+            terragrunt apply \
+              -var="aws_access_key=$AWS_DEV_ACCESS_KEY" \
+              -var="aws_secret_key=$AWS_DEV_SECRET_KEY" \
+              -var="repo_version=$CIRCLE_SHA1" \
+              --terragrunt-non-interactive -auto-approve
+workflows:
+  version: 2
+  deploy:
+    jobs:
+      - build-package
+      - upload-package:
+          requires:
+            - build-package
+      - deploy-to-dev:
+          requires:
+            - upload-package
+      - approve-for-live:
+          requires:
+            - deploy-to-dev
+          filters:
+            branches:
+              only:
+                - master
+          type: approval
+      - deploy-to-prod:
+          requires:
+            - approve-for-live

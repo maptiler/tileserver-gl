@@ -4,5 +4,4 @@ test_data
 data
 light
 plugins
-config.json
 *.mbtiles

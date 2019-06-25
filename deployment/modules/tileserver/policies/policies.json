@@ -1,0 +1,56 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "",
+            "Effect": "Allow",
+            "Action": [
+                "ssm:ListInventoryEntries",
+                "ec2:Describe*",
+                "autoscaling:Describe*",
+                "ssm:ListCommands",
+                "ssm:DescribeParameters",
+                "route53:ChangeResourceRecordSets",
+                "ssm:ListDocuments",
+                "ssm:GetInventory"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "",
+            "Effect": "Allow",
+            "Action": [
+                "ssm:GetDocument",
+                "ssm:GetParameters",
+                "ssm:GetParameter"
+            ],
+            "Resource": [
+                "arn:aws:ssm:${region}:*:document/*",
+                "arn:aws:ssm:${region}:*:parameter/*",
+            ]
+        },
+        {
+            "Sid": "",
+            "Effect": "Allow",
+            "Action": "cloudwatch:*",
+            "Resource": "*"
+        },
+        {
+            "Sid": "",
+            "Effect": "Allow",
+            "Action": "logs:*",
+            "Resource": "*"
+        },
+        {
+            "Sid": "",
+            "Effect": "Allow",
+            "Action": [
+                "s3:*"
+            ],
+            "Resource": [
+                "arn:aws:s3:::mono-deployment-${environment}",
+                "arn:aws:s3:::mono-deployment-${environment}/*"
+            ]
+        }
+    ]
+}

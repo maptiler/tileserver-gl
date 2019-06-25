@@ -20,7 +20,7 @@ npm install -g tileserver-gl
 Now download vector tiles from [OpenMapTiles](https://openmaptiles.org/downloads/).
 
 ```bash
-curl -o zurich_switzerland.mbtiles https://[GET-YOUR-LINK]/extracts/zurich_switzerland.mbtiles
+curl -o zurich_switzerland.mbtiles https://openmaptiles.os.zhdk.cloud.switch.ch/v3.3/extracts/zurich_switzerland.mbtiles
 ```
 
 Start `tileserver-gl` with the downloaded vector tiles.
@@ -46,3 +46,29 @@ On laptop you can use [Docker Kitematic](https://kitematic.com/) and search "til
 ## Documentation
 
 You can read full documentation of this project at http://tileserver.readthedocs.io/.
+
+## Offline development to fix styles
+
+Tool and instructions: https://openmaptiles.org/docs/style/maputnik/
+Run the `maputnik` executable to start a server on `localhost:8000`, open your browser and visit the address.
+
+To  inspect and make temporary changes to our styles you can load them using the live tileJSON URLs either for dev or prod.
+To load the map data that we use make sure you use the live URL that points to the data OSM2Vector tileJSON.
+
+Latest tilserver README: https://buildmedia.readthedocs.org/media/pdf/tileserver/latest/tileserver.pdf
+
+### Updating Styles/Sprites
+
+Updated the point label groups, grouping by rank and zoom level.
+
+Fixed some landuse colors of class pitch (Fx #15.65/55.698642/12.572399).
+
+Railway lines added to each style.
+
+Updated the "image-icon" reference in the styles from {maki}-11 to {class}-11.
+The name of each icon to be shown is the same as the class name.
+
+
+### NOTE:
+When uploading a local JSON file to the the Maputnik editor, change the source URL, the sprite and glyphs to URLs.
+Fx: ["sprite": "mono"] to ["sprite": "https://maps.monomaps.com/styles/updated-mono/sprite"]
