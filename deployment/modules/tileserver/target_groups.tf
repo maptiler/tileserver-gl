@@ -3,8 +3,8 @@ resource "aws_alb_target_group" "target_group_this" {
   port = "80"
   protocol = "HTTP"
   vpc_id = "${data.terraform_remote_state.mono_vpc.vpc_id[0]}"
-  slow_start = 120
-  deregistration_delay = 150
+  slow_start = 180
+  deregistration_delay = 120
   stickiness {
     type            = "lb_cookie"
     enabled         = true
