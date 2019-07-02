@@ -312,7 +312,7 @@
             ]
         ],
         "paint": {
-            "fill-color": "#f0e8f8"
+            "fill-color": "#CCE5A6"
         }
         },
         {
@@ -331,6 +331,27 @@
             "paint": {
                 "fill-color": "#6a4",
                 "fill-opacity": 0.2
+            }
+        },
+        {
+            "id": "landuse_farmland",
+            "type": "fill",
+            "metadata": {
+              "mapbox:group": "1444849388993.3071"
+            },
+            "source": "mapbox",
+            "source-layer": "landcover",
+            "filter": [
+              "all",
+              [
+                "==",
+                "class",
+                "farmland"
+              ]
+            ],
+            "paint": {
+              "fill-color": "#6a4",
+              "fill-opacity": 0.2
             }
         },
         {
@@ -1243,8 +1264,25 @@
                     "mapbox:group": "1444849345966.4436"
             },
             "paint": {
-                    "line-color": "rgba(255, 255, 255, 1)",
-                "line-width": 2
+                "line-color": "rgba(255, 255, 255, 1)",
+                "line-width": {
+                    "base": 1.2,
+                    "stops": [
+                        [
+                            12,
+                            0
+                        ],
+                        [
+                            14,
+                            2
+                        ],
+                        [
+                            20,
+                            11.5
+                        ]
+                    ]
+                },
+                "line-opacity": 1
             },
             "type": "line",
             "source": "mapbox",
@@ -1270,6 +1308,7 @@
             },
             "source": "mapbox",
             "source-layer": "transportation",
+            "minzoom": 13,
             "filter": [
                 "all",
                 [
@@ -1538,6 +1577,7 @@
             },
             "source": "mapbox",
             "source-layer": "transportation",
+            "minzoom": 14,
             "filter": [
                 "all",
                 [
@@ -2545,6 +2585,11 @@
                     ">=",
                     "admin_level",
                     3
+                ],
+                [
+                    "<",
+                    "admin_level",
+                    5
                 ]
             ],
             "layout": {
@@ -2787,7 +2832,7 @@
                 "mapbox:group": "1444849320558.5054"
             },
             "source": "mapbox",
-            "source-layer": "water",
+            "source-layer": "water_name",
             "filter": [
                 "==",
                 "$type",
@@ -2797,7 +2842,7 @@
                 "text-font": [
                     "Open Sans Italic"
                 ],
-                "text-field": "{name_en}",
+                "text-field": "{name}",
                 "text-max-width": 5,
                 "text-size": 12
             },
@@ -2806,45 +2851,6 @@
                 "text-halo-width": 1.5,
                 "text-halo-color": "rgba(255,255,255,0.7)"
             }
-        },
-        {
-            "id": "rail_station_label",
-            "type": "symbol",
-            "metadata": {
-                "mapbox:group": "1444849297111.495"
-            },
-            "source": "mapbox",
-            "source-layer": "poi",
-            "layout": {
-                "text-size": 12,
-                
-                "text-font": [
-                    "Open Sans Semibold"
-                ],
-                "text-padding": 2,
-                "visibility": "visible",
-                "text-offset": [
-                    0,
-                    0.6
-                ],
-                "text-anchor": "top",
-                "text-field": "{name_en}",
-                "text-max-width": 9
-            },
-            "paint": {
-                "text-color": "#666",
-                "text-halo-color": "#ffffff",
-                "text-halo-width": 1,
-                "text-halo-blur": 0.5
-            },
-            "filter": [
-            "all",
-            [
-                "==",
-                "class",
-                "railway"
-                ]
-            ]
         },
         {
             "id": "railway_line",
@@ -2877,6 +2883,46 @@
                 "visibility": "visible"
             }
         },
+        {
+            "id": "rail_station_label",
+            "type": "symbol",
+            "metadata": {
+                "mapbox:group": "1444849297111.495"
+            },
+            "source": "mapbox",
+            "source-layer": "poi",
+            "minzoom": 13,
+            "layout": {
+                "text-size": 12,
+                "icon-image": "rail-11",
+                "text-font": [
+                    "Open Sans Semibold"
+                ],
+                "text-padding": 2,
+                "visibility": "visible",
+                "text-offset": [
+                    0,
+                    0.6
+                ],
+                "text-anchor": "top",
+                "text-field": "{name}",
+                "text-max-width": 9
+            },
+            "paint": {
+                "text-color": "#666",
+                "text-halo-color": "#ffffff",
+                "text-halo-width": 1,
+                "text-halo-blur": 0.5
+            },
+            "filter": [
+            "all",
+            [
+                "==",
+                "class",
+                "railway"
+                ]
+            ]
+        },
 	    {
             "id": "airport_label",
             "type": "symbol",
@@ -2884,7 +2930,7 @@
                 "mapbox:group": "1444849297111.495"
             },
             "source": "mapbox",
-            "source-layer": "poi",
+            "source-layer": "aerodrome_label",
             "minzoom": 11,
             "filter": [
                 "all",
@@ -2892,21 +2938,14 @@
                     "==",
                     "$type",
                     "Point"
-                ],
-                [
-                    "in",
-                    "rank",
-                    1,
-                    2,
-                    3
                 ]
             ],
             "layout": {
-                
+                "icon-image": "airport-11",
                 "text-font": [
                     "Open Sans Semibold"
                 ],
-                "text-field": "{name_en}",
+                "text-field": "{name}",
                 "text-max-width": 9,
                 "text-padding": 2,
                 "text-offset": [
@@ -2931,13 +2970,18 @@
             },
             "source": "mapbox",
             "source-layer": "transportation_name",
+            "minzoom": 13,
             "filter": [
-                "!=",
-                "class",
-                "ferry"
+                "all",
+                [
+                    "!in",
+                    "class",
+                    "ferry",
+                    "path"
+                ]
             ],
             "layout": {
-                "text-field": "{name_en}",
+                "text-field": "{name}",
                 "text-font": [
                     "Open Sans Regular"
                 ],
@@ -2963,44 +3007,37 @@
             }
         },
         {
-            "id": "road_label_highway_shield",
+            "id": "road_shield",
             "type": "symbol",
             "metadata": {
-                "mapbox:group": "1456163609504.0715"
+              "mapbox:group": "1456163609504.0715"
             },
             "source": "mapbox",
-            "source-layer": "transportation",
+            "source-layer": "transportation_name",
             "minzoom": 8,
             "filter": [
-                "<=",
-                "reflen",
-                6
+              "all",
+              [
+                "==",
+                "class",
+                "motorway"
+              ]
             ],
             "layout": {
-                "text-field": "{ref}",
-                "text-font":  [
-		            "Open Sans Semibold"
-                ],
-                "text-size": 11,
-                "icon-image": "motorway_{reflen}",
-                "symbol-placement": {
-                    "base": 1,
-                    "stops": [
-                        [
-                            10,
-                            "point"
-                        ],
-                        [
-                            11,
-                            "line"
-                        ]
-                    ]
-                },
-                "symbol-spacing": 500,
-                "text-rotation-alignment": "viewport",
-                "icon-rotation-alignment": "viewport"
+              "text-field": "{ref}",
+              "text-font": [
+                "Open Sans Semibold"
+              ],
+              "text-size": 11,
+              "symbol-placement": "line",
+              "visibility": "visible",
+              "symbol-spacing": 500,
+              "text-rotation-alignment": "viewport",
+              "icon-rotation-alignment": "viewport",
+              "icon-image": "motorway_{ref_length}"
             },
-            "paint": {}
+            "paint": {},
+            "maxzoom": 24
         },
         {
             "id": "place_label_other",
@@ -3023,9 +3060,8 @@
                 "text-font": [
                     "Open Sans Bold"
                 ],
-                "text-transform": "uppercase",
                 "text-letter-spacing": 0.1,
-                "text-field": "{name_en}",
+                "text-field": "{name}",
                 "text-max-width": 9,
                 "text-size": {
                     "base": 1.2,
@@ -3064,7 +3100,7 @@
                 "text-font": [
                     "Open Sans Regular"
                 ],
-                "text-field": "{name_en}",
+                "text-field": "{name}",
                 "text-max-width": 8,
                 "text-size": {
                     "base": 1.2,
@@ -3103,7 +3139,7 @@
                 "text-font": [
                     "Open Sans Regular"
                 ],
-                "text-field": "{name_en}",
+                "text-field": "{name}",
                 "text-max-width": 8,
                 "text-size": {
                     "base": 1.2,
@@ -3142,7 +3178,7 @@
                 "text-font": [
                     "Open Sans Semibold"
                 ],
-                "text-field": "{name_en}",
+                "text-field": "{name}",
                 "text-max-width": 8,
                 "text-size": {
                     "base": 1.2,
@@ -3189,7 +3225,7 @@
                 "text-font": [
                     "Open Sans Italic"
                 ],
-                "text-field": "{name_en}",
+                "text-field": "{name}",
                 "text-letter-spacing": 0.2,
                 "symbol-placement": "line",
                 "text-size": {
@@ -3237,7 +3273,7 @@
                 "text-font": [
                     "Open Sans Italic"
                 ],
-                "text-field": "{name_en}",
+                "text-field": "{name}",
                 "text-max-width": 6,
                 "text-letter-spacing": 0.2,
                 "symbol-placement": "point",
@@ -3286,7 +3322,7 @@
                 "text-font": [
                     "Open Sans Italic"
                 ],
-                "text-field": "{name_en}",
+                "text-field": "{name}",
                 "text-letter-spacing": 0.2,
                 "symbol-placement": "line",
                 "text-size": {
@@ -3334,7 +3370,7 @@
                 "text-font": [
                     "Open Sans Italic"
                 ],
-                "text-field": "{name_en}",
+                "text-field": "{name}",
                 "text-max-width": 5,
                 "text-letter-spacing": 0.2,
                 "symbol-placement": "point",
@@ -3383,7 +3419,7 @@
                 "text-font": [
                     "Open Sans Italic"
                 ],
-                "text-field": "{name_en}",
+                "text-field": "{name}",
                 "text-letter-spacing": 0.2,
                 "symbol-placement": "line",
                 "text-size": {
@@ -3431,7 +3467,7 @@
                 "text-font": [
                     "Open Sans Italic"
                 ],
-                "text-field": "{name_en}",
+                "text-field": "{name}",
                 "text-max-width": 5,
                 "text-letter-spacing": 0.2,
                 "symbol-placement": "point",
@@ -3480,7 +3516,7 @@
                 "text-font": [
                     "Open Sans Italic"
               ],
-                "text-field": "{name_en}",
+                "text-field": "{name}",
                 "text-letter-spacing": 0.2,
                 "symbol-placement": "line",
                 "text-size": {
@@ -3528,7 +3564,7 @@
                 "text-font": [
                     "Open Sans Italic"
                 ],
-                "text-field": "{name_en}",
+                "text-field": "{name}",
                 "text-max-width": 5,
                 "text-letter-spacing": 0.2,
                 "text-line-height": 1.6,
@@ -3566,15 +3602,23 @@
             "source": "mapbox",
             "source-layer": "place",
             "filter": [
+                "all",
+                [
                 ">=",
                 "rank",
                 4
+                ],
+                [
+                "==",
+                "class",
+                "country"
+                ]
             ],
             "layout": {
                 "text-font": [
                     "Open Sans Bold"
                 ],
-                "text-field": "{name_en}",
+                "text-field": "{name}",
                 "text-max-width": 6.25,
                 "text-transform": "uppercase",
                 "text-size": {
@@ -3606,15 +3650,23 @@
             "source": "mapbox",
             "source-layer": "place",
             "filter": [
+                "all",
+                [
                 "==",
                 "rank",
                 3
+                ],
+                [
+                "==",
+                "class",
+                "country"
+                ]
             ],
             "layout": {
                 "text-font": [
                     "Open Sans Bold"
                 ],
-                "text-field": "{name_en}",
+                "text-field": "{name}",
                 "text-max-width": 6.25,
                 "text-transform": "uppercase",
                 "text-size": {
@@ -3646,15 +3698,23 @@
             "source": "mapbox",
             "source-layer": "place",
             "filter": [
+                "all",
+                [
                 "==",
                 "rank",
                 2
+                ],
+                [
+                "==",
+                "class",
+                "country"
+                ]
             ],
             "layout": {
                 "text-font": [
                     "Open Sans Bold"
                 ],
-                "text-field": "{name_en}",
+                "text-field": "{name}",
                 "text-max-width": 6.25,
                 "text-transform": "uppercase",
                 "text-size": {
@@ -3686,15 +3746,23 @@
             "source": "mapbox",
             "source-layer": "place",
             "filter": [
+                "all",
+                [
                 "==",
                 "rank",
                 1
+                ],
+                [
+                "==",
+                "class",
+                "country"
+                ]
             ],
             "layout": {
                 "text-font": [
                     "Open Sans Bold"
                 ],
-                "text-field": "{name_en}",
+                "text-field": "{name}",
                 "text-max-width": 6.25,
                 "text-transform": "uppercase",
                 "text-size": {
@@ -3737,13 +3805,19 @@
                 "==",
                 "rank",
                 1
+              ],
+              [
+                  "!in",
+                  "class",
+                  "railway",
+                  "attraction"
               ]
             ],
             "layout": {
               "text-font": [
                 "Open Sans Semibold"
               ],
-              "text-field": "{name_en}",
+              "text-field": "{name}",
               "text-max-width": 9,
               "text-padding": 2,
               "text-offset": [
@@ -3778,16 +3852,21 @@
                 "Point"
               ],
               [
-                "==",
+                "<=",
                 "rank",
                 2
+              ],
+              [
+                  "!=",
+                  "class",
+                  "railway"
               ]
             ],
             "layout": {
               "text-font": [
                 "Open Sans Semibold"
               ],
-              "text-field": "{name_en}",
+              "text-field": "{name}",
               "text-max-width": 9,
               "text-padding": 2,
               "text-offset": [
@@ -3813,7 +3892,7 @@
             },
             "source": "mapbox",
             "source-layer": "poi",
-            "minzoom": 15,
+            "minzoom": 16,
             "filter": [
               "all",
               [
@@ -3830,13 +3909,18 @@
                 "<",
                 "rank",
                 10
+              ],
+              [
+                  "!=",
+                  "class",
+                  "railway"
               ]
             ],
             "layout": {
               "text-font": [
                 "Open Sans Semibold"
               ],
-              "text-field": "{name_en}",
+              "text-field": "{name}",
               "text-max-width": 9,
               "text-padding": 2,
               "text-offset": [
@@ -3862,7 +3946,7 @@
             },
             "source": "mapbox",
             "source-layer": "poi",
-            "minzoom": 16,
+            "minzoom": 17,
             "filter": [
               "all",
               [
@@ -3876,16 +3960,16 @@
                 10
               ],
               [
-                "<",
-                "rank",
-                20
+                  "!=",
+                  "class",
+                  "railway"
               ]
             ],
             "layout": {
               "text-font": [
                 "Open Sans Semibold"
               ],
-              "text-field": "{name_en}",
+              "text-field": "{name}",
               "text-max-width": 9,
               "text-padding": 2,
               "text-offset": [
