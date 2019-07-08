@@ -3349,7 +3349,7 @@
               "text-font": [
                 "Open Sans Italic"
               ],
-              "text-field": "{name:latin}",
+              "text-field": "{name:en}",
               "text-max-width": 5,
               "text-size": 12
             },
@@ -3367,7 +3367,7 @@
             },
             "source": "mapbox",
             "source-layer": "poi",
-            "minzoom": 17,
+            "minzoom": 16,
             "filter": [
               "all",
               [
@@ -3766,6 +3766,7 @@
             },
             "source": "mapbox",
             "source-layer": "place",
+            "minzoom": 10,
             "filter": [
               "in",
               "class",
@@ -3780,7 +3781,7 @@
                 "Open Sans Bold"
               ],
               "text-letter-spacing": 0.1,
-              "text-field": "{name:en}",
+              "text-field": "{name}",
               "text-max-width": 9,
               "text-size": {
                 "base": 1.2,
@@ -4320,6 +4321,7 @@
             },
             "source": "mapbox",
             "source-layer": "place",
+            "minzoom": 2,
             "filter": [
               "all",
               [
@@ -4368,6 +4370,7 @@
             },
             "source": "mapbox",
             "source-layer": "place",
+            "minzoom": 2,
             "filter": [
               "all",
               [
@@ -4416,6 +4419,7 @@
             },
             "source": "mapbox",
             "source-layer": "place",
+            "minzoom": 2,
             "filter": [
               "all",
               [
@@ -4464,6 +4468,7 @@
             },
             "source": "mapbox",
             "source-layer": "place",
+            "minzoom": 1,
             "filter": [
               "all",
               [
