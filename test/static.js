@@ -12,6 +12,36 @@ var testStatic = function(prefix, q, format, status, scale, type, query) {
   });
 };
 
+var testStaticPathCustomHeaders = function(path, expectCenterLat, expectCenterLng, expectZoom) {
+  it(path + ' returns headers tileserver-center and tileserver-zoom', function(done) {
+    var test = supertest(app).get(path);
+    test.expect(200);
+    test.end(function(err, res) {
+      if (err) {
+        return done(err);
+      }
+      res.headers['tileserver-center'].should.be.ok();
+      res.headers['tileserver-zoom'].should.be.ok();
+
+      var epsilon = 0.000005;
+      var match = /^lat=([^,]+),lon=(.*)/.exec(res.headers['tileserver-center']);
+      match.should.be.ok()
+      match.should.have.lengthOf(3);
+
+      var lat = parseFloat(match[1])
+      lat.should.be.within(expectCenterLat - epsilon, expectCenterLat + epsilon);
+
+      var lng = parseFloat(match[2])
+      lng.should.be.within(expectCenterLng - epsilon, expectCenterLng + epsilon);
+
+      var zoom = parseFloat(res.headers['tileserver-zoom'])
+      zoom.should.be.within(expectZoom - epsilon, expectZoom + epsilon)
+
+      done();
+    })
+  })
+}
+
 var prefix = 'test-style';
 
 describe('Static endpoints', function() {
@@ -90,6 +120,30 @@ describe('Static endpoints', function() {
       describe('different parameters', function() {
         testStatic(prefix, 'auto/20x20', 'png', 200, 2, /image\/png/, '?path=10,10|20,20');
         testStatic(prefix, 'auto/200x200', 'png', 200, 3, /image\/png/, '?path=-10,-10|-20,-20');
+      });
+
+      describe('custom response headers', function() {
+        var url = '/styles/' + prefix + '/static/auto/800x600.png'
+          + '?path=33.060812,-117.183899|48.759505,-98.151760|24.815825,-80.524364'
+          + '&latlng=true&padding=0.2'
+          ;
+        testStaticPathCustomHeaders(
+          url,
+          37.746285, // expected lat
+          -98.854131, // exected lng
+          4.310567 // exected zoom
+        );
+
+        var url = '/styles/' + prefix + '/static/auto/800x600.png'
+          + '?path=53.225355,-168.610992|69.559099,-141.079404'
+          + '&latlng=true&padding=0.2'
+          ;
+        testStaticPathCustomHeaders(
+          url,
+          62.487815, // expected lat
+          -154.845198, // exected lng
+          4.103840 // exected zoom
+        );
       });
     });
 

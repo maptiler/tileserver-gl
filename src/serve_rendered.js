@@ -387,7 +387,7 @@ module.exports = function(options, repo, params, id, publicUrl, dataResolver) {
 
   var respondImage = function(z, lon, lat, bearing, pitch,
                               width, height, scale, format, res, next,
-                              opt_overlay, opt_bbox) {
+                              opt_overlay) {
     if (Math.abs(lon) > 180 || Math.abs(lat) > 85.06 ||
         lon != lon || lat != lat) {
       return res.status(400).send('Invalid center');
@@ -419,7 +419,7 @@ module.exports = function(options, repo, params, id, publicUrl, dataResolver) {
         params.width *= 2;
         params.height *= 2;
       }
-
+      
       var tileMargin = Math.max(options.tileMargin || 0, 0);
       if (z > 2 && tileMargin > 0) {
         params.width += tileMargin * 2 * scale;
@@ -440,7 +440,7 @@ module.exports = function(options, repo, params, id, publicUrl, dataResolver) {
             channels: 4
           }
         });
-
+        
         if (z > 2 && tileMargin > 0) {
             image.extract({ left: tileMargin * scale, top: tileMargin * scale, width: width * scale, height: height * scale });
         }
@@ -481,12 +481,12 @@ module.exports = function(options, repo, params, id, publicUrl, dataResolver) {
           if (!buffer) {
             return res.status(404).send('Not found');
           }
-
-          if (opt_bbox) {
-          	console.log(opt_bbox)
-          }
-
+          var hdr_center = 'lat=$lat,lon=$lon'
+            .replace('$lat', lat)
+            .replace('$lon', lon);
           res.set({
+            'tileserver-Center': hdr_center,
+            'tileserver-Zoom': z,
             'Last-Modified': lastModified,
             'Content-Type': 'image/' + format
           });
