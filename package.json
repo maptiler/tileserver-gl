@@ -31,7 +31,7 @@
     "cors": "2.8.5",
     "express": "4.16.4",
     "glyph-pbf-composite": "0.0.2",
-    "handlebars": "4.1.2",
+    "handlebars": "4.5.3",
     "http-shutdown": "^1.2.0",
     "morgan": "1.9.1",
     "pbf": "3.1.0",
