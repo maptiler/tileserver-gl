@@ -160,7 +160,7 @@ function start(opts) {
             let mbtilesFile;
             for (const id of Object.keys(data)) {
               if (id === mbtiles) {
-                mbtilesFile = data[id].mbtiles;
+                mbtilesFile = data[id].mbtiles || data[id].remote_tilejson;
               }
             }
             return mbtilesFile;
@@ -190,8 +190,8 @@ function start(opts) {
 
   for (const id of Object.keys(data)) {
     const item = data[id];
-    if (!item.mbtiles || item.mbtiles.length === 0) {
-      console.log(`Missing "mbtiles" property for ${id}`);
+    if ((!item.mbtiles || item.mbtiles.length === 0) && (!item.remote_tilejson || item.remote_tilejson.length === 0)) {
+      console.log(`Missing "mbtiles" or "remote_tilejson" property for ${id}`);
       continue;
     }
 
