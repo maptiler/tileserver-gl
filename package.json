@@ -10,7 +10,7 @@
   },
   "license": "BSD-2-Clause",
   "engines": {
-    "node": ">=10 <11"
+    "node": ">=10"
   },
   "scripts": {
     "test": "mocha test/**.js --timeout 10000",
