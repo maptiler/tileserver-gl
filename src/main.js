@@ -118,7 +118,7 @@ const startWithMBTiles = (mbtilesFile) => {
       }
       const bounds = info.bounds;
 
-      const styleDir = path.resolve(__dirname, "../node_modules/tileserver-gl-styles/");
+      const styleDir = path.dirname(require.resolve('tileserver-gl-styles/package.json'));
 
       const config = {
         "options": {
