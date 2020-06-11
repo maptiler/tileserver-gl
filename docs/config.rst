@@ -28,6 +28,7 @@ Example::
       "pbfAlias": "pbf",
       "serveAllFonts": false,
       "serveAllStyles": false,
+      "serveAllData": false,
       "serveStaticMaps": true,
       "tileMargin": 0
     },
@@ -131,6 +132,12 @@ Default is ``[16, 8, 4]``.
 If this option is enabled, all the styles from the ``paths.styles`` will be served. (No recursion, only ``.json`` files are used.)
 The process will also watch for changes in this directory and remove/add more styles dynamically.
 It is recommended to also use the ``serveAllFonts`` option when using this option.
+
+``serveAllData``
+------------------------
+
+Similar to ``serveAllStyles`` above, if this option is enabled, all the tiles from the ``paths.mbtiles`` will be served. (No recursion, only ``.mbtiles`` files are used.)
+The process will also watch for changes in this directory and remove/add more tiles dynamically.
 
 ``watermark``
 -----------
