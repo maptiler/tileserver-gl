@@ -230,10 +230,7 @@ function start(opts) {
           let id = path.basename(filename, '.mbtiles');
           console.log(`Data "${id}" changed, updating...`);
 
-          serve_style.remove(serving.styles, id);
-          if (serve_rendered) {
-            serve_rendered.remove(serving.rendered, id);
-          }
+          serve_data.remove(serving.data, id);
 
           if (eventType == "add" || eventType == "change") {
             let item = {
