@@ -40,6 +40,9 @@ module.exports = {
       for (const name of Object.keys(styleJSON_.sources)) {
         const source = styleJSON_.sources[name];
         source.url = fixUrl(req, source.url, item.publicUrl);
+        if (source.tiles) {
+          source.tiles = source.tiles.map(url => fixUrl(req, url, item.publicUrl))
+        }
       }
       // mapbox-gl-js viewer cannot handle sprite urls with query
       if (styleJSON_.sprite) {
