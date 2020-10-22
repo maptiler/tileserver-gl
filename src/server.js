@@ -250,7 +250,8 @@ function start(opts) {
         version: styleJSON.version,
         name: styleJSON.name,
         id: id,
-        url: `${utils.getPublicUrl(opts.publicUrl, req)}styles/${id}/style.json${query}`
+        url: `${utils.getPublicUrl(opts.publicUrl, req)}styles/${id}/style.json${query}`,
+        'source:url': styleJSON.metadata ? styleJSON.metadata['openmaptiles:mapbox:source:url'] : undefined,
       });
     }
     res.send(result);
