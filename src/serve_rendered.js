@@ -356,7 +356,7 @@ module.exports = {
       });
     };
 
-    app.get(`/:id/:z(\\d+)/:x(\\d+)/:y(\\d+):scale(${scalePattern})?.:format([\\w]+)`, (req, res, next) => {
+    app.get(`/:id/:tileSize(256|512)/:z(\\d+)/:x(\\d+)/:y(\\d+):scale(${scalePattern})?.:format([\\w]+)`, (req, res, next) => {
       const item = repo[req.params.id];
       if (!item) {
         return res.sendStatus(404);
@@ -373,16 +373,19 @@ module.exports = {
         x = req.params.x | 0,
         y = req.params.y | 0,
         scale = getScale(req.params.scale),
-        format = req.params.format;
+        format = req.params.format,
+        tileSize = parseInt(req.params.tileSize, 10) || 256;
+
       if (z < 0 || x < 0 || y < 0 ||
         z > 22 || x >= Math.pow(2, z) || y >= Math.pow(2, z)) {
         return res.status(404).send('Out of bounds');
-      }
-      const tileSize = 256;
+      };
+
       const tileCenter = mercator.ll([
-        ((x + 0.5) / (1 << z)) * (256 << z),
-        ((y + 0.5) / (1 << z)) * (256 << z)
+        ((x + 0.5) / (1 << z)) * (tileSize << z),
+        ((y + 0.5) / (1 << z)) * (tileSize << z)
       ], z);
+
       return respondImage(item, z, tileCenter[0], tileCenter[1], 0, 0,
         tileSize, tileSize, scale, format, res, next);
     });
