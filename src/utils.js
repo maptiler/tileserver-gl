@@ -68,19 +68,17 @@ export const getTileUrls = (req, domains, path, tileSize, format, publicUrl, ali
   }
 
   let tileParams = '{z}/{x}/{y}';
-  if (['png', 'jpg', 'jpeg', 'webp'].includes(format) && tileSize) {
-    tileParams = `${tileSize}/{z}/{x}/{y}`;
+  if (['png', 'jpg', 'jpeg', 'webp'].includes(format)) {
+    tileParams = '256/{z}/{x}/{y}';
   }
 
   const uris = [];
   if (!publicUrl) {
     for (const domain of domains) {
-      uris.push(
-        `${req.protocol}://${domain}/${path}/${tileParams}.${format}${query}`,
-      );
+      uris.push(`${req.protocol}://${domain}/${path}/${tileParams}.${format}${query}`);
     }
   } else {
-    uris.push(`${publicUrl}${path}/${tileParams}.${format}${query}`);
+    uris.push(`${publicUrl}${path}/${tileParams}.${format}${query}`)
   }
 
   return uris;
