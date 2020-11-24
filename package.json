@@ -38,7 +38,7 @@
     "pbf": "3.2.1",
     "proj4": "2.6.0",
     "request": "2.88.2",
-    "sharp": "0.25.1",
+    "sharp": "0.26.2",
     "tileserver-gl-styles": "2.0.0"
   },
   "devDependencies": {

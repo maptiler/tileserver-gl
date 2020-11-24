@@ -375,7 +375,7 @@ module.exports = {
         scale = getScale(req.params.scale),
         format = req.params.format;
       if (z < 0 || x < 0 || y < 0 ||
-        z > 20 || x >= Math.pow(2, z) || y >= Math.pow(2, z)) {
+        z > 22 || x >= Math.pow(2, z) || y >= Math.pow(2, z)) {
         return res.status(404).send('Out of bounds');
       }
       const tileSize = 256;

@@ -4,7 +4,9 @@ Configuration file
 
 The configuration file defines the behavior of the application. It's a regular JSON file.
 
-Example::
+Example:
+
+.. code-block:: json
 
   {
     "options": {
@@ -109,7 +111,7 @@ Default is ``2048``.
 --------------
 
 Additional image side length added during tile rendering that is cropped from the delivered tile. This is useful for resolving the issue with cropped labels,
-but it does come with a performance degradation, because additional, adjacent vector tiles need to be loaded to genenrate a single tile.
+but it does come with a performance degradation, because additional, adjacent vector tiles need to be loaded to generate a single tile.
 Default is ``0`` to disable this processing.
 
 ``minRendererPoolSizes``
@@ -154,7 +156,7 @@ Each item in this object defines one style (map). It can have the following opti
 
 * ``style`` -- name of the style json file [required]
 * ``serve_rendered`` -- whether to render the raster tiles for this style or not
-* ``serve_data`` -- whether to allow acces to the original tiles, sprites and required glyphs
+* ``serve_data`` -- whether to allow access to the original tiles, sprites and required glyphs
 * ``tilejson`` -- properties to add to the TileJSON created for the raster data
 
   * ``format`` and ``bounds`` can be especially useful

@@ -140,7 +140,7 @@ function start(opts) {
             return dataItemId;
           } else {
             if (fromData || !allowMoreData) {
-              console.log(`ERROR: style "${file.name}" using unknown mbtiles "${mbtiles}"! Skipping...`);
+              console.log(`ERROR: style "${item.style}" using unknown mbtiles "${mbtiles}"! Skipping...`);
               return undefined;
             } else {
               let id = mbtiles.substr(0, mbtiles.lastIndexOf('.')) || mbtiles;
