@@ -69,6 +69,10 @@ function start(opts) {
   }
 
   const options = config.options || {};
+
+  options.auth = options.auth || {};
+  options.auth.keyName = options.auth.keyName || 'key';
+
   const paths = options.paths || {};
   options.paths = paths;
   paths.root = path.resolve(
@@ -243,7 +247,9 @@ function start(opts) {
 
   app.get('/styles.json', (req, res, next) => {
     const result = [];
-    const query = req.query.key ? (`?key=${encodeURIComponent(req.query.key)}`) : '';
+    const query = req.query[options.auth.keyName]
+      ? `?${options.auth.keyName}=${encodeURIComponent(req.query[options.auth.keyName])}`
+      : '';
     for (const id of Object.keys(serving.styles)) {
       const styleJSON = serving.styles[id].styleJSON;
       result.push({
@@ -267,7 +273,7 @@ function start(opts) {
       }
       info.tiles = utils.getTileUrls(req, info.tiles, path, info.format, opts.publicUrl, {
         'pbf': options.pbfAlias
-      });
+      }, options);
       arr.push(info);
     }
     return arr;
@@ -318,9 +324,12 @@ function start(opts) {
           data['server_version'] = `${packageJson.name} v${packageJson.version}`;
           data['public_url'] = opts.publicUrl || '/';
           data['is_light'] = isLight;
-          data['key_query_part'] =
-            req.query.key ? `key=${encodeURIComponent(req.query.key)}&amp;` : '';
-          data['key_query'] = req.query.key ? `?key=${encodeURIComponent(req.query.key)}` : '';
+          data['key_query_part'] = req.query[options.auth.keyName]
+            ? `${options.auth.keyName}=${encodeURIComponent(req.query[options.auth.keyName])}&amp;`
+            : '';
+          data['key_query'] = req.query[options.auth.keyName]
+            ? `?${options.auth.keyName}=${encodeURIComponent(req.query[options.auth.keyName])}`
+            : '';
           if (template === 'wmts') res.set('Content-Type', 'text/xml');
           return res.status(200).send(compiled(data));
         });
@@ -347,7 +356,7 @@ function start(opts) {
 
         style.xyz_link = utils.getTileUrls(
           req, style.serving_rendered.tileJSON.tiles,
-          `styles/${id}`, style.serving_rendered.tileJSON.format, opts.publicUrl)[0];
+          `styles/${id}`, style.serving_rendered.tileJSON.format, opts.publicUrl, null, options)[0];
       }
     }
     const data = clone(serving.data || {});
@@ -368,7 +377,7 @@ function start(opts) {
         data_.xyz_link = utils.getTileUrls(
           req, tilejson.tiles, `data/${id}`, tilejson.format, opts.publicUrl, {
             'pbf': options.pbfAlias
-          })[0];
+          }, options)[0];
       }
       if (data_.filesize) {
         let suffix = 'kB';

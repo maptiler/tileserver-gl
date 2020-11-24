@@ -9,7 +9,7 @@ const glyphCompose = require('@mapbox/glyph-pbf-composite');
 
 module.exports.getPublicUrl = (publicUrl, req) => publicUrl || `${req.protocol}://${req.headers.host}/`;
 
-module.exports.getTileUrls = (req, domains, path, format, publicUrl, aliases) => {
+module.exports.getTileUrls = (req, domains, path, format, publicUrl, aliases, options) => {
 
   if (domains) {
     if (domains.constructor === String && domains.length > 0) {
@@ -37,10 +37,9 @@ module.exports.getTileUrls = (req, domains, path, format, publicUrl, aliases) =>
     domains = [req.headers.host];
   }
 
-  const key = req.query.key;
   const queryParams = [];
-  if (req.query.key) {
-    queryParams.push(`key=${encodeURIComponent(req.query.key)}`);
+  if (req.query[options.auth.keyName]) {
+    queryParams.push(`${options.auth.keyName}=${encodeURIComponent(req.query[options.auth.keyName])}`);
   }
   if (req.query.style) {
     queryParams.push(`style=${encodeURIComponent(req.query.style)}`);
