@@ -174,24 +174,33 @@ const renderOverlay = (z, x, y, bearing, pitch, w, h, scale,
 };
 
 const calcZForBBox = (bbox, w, h, query) => {
-  let z = 25;
+  // Use equation for horizontal distance per tile given zoom and latitude
+  // see https://wiki.openstreetmap.org/wiki/Zoom_levels#Distance_per_pixel_math
+  //
+  // S_pixel * T = S_tile = C * cos(l) / (2^z) =
+  //   S_tile  := horizontal distance per tile
+  //   S_pixel := horizontal distance per pixel
+  //   T := tile size
+  //   C := Equatorial circumference of Earth
+  //   l := centered latitude of bbox
+  //   z := zoom level
+  //
+  // => z = log2( C * cos(l) / (S_pixel*T) )
 
-  const padding = query.padding !== undefined ?
-    parseFloat(query.padding) : 0.1;
+  // points (use centered latitude of bbox)
+  const latCenter = bbox[1]+(bbox[3]-bbox[1])/2;
+  const latRadian = latCenter*Math.PI/180;
+  const east = [bbox[0], latCenter];
+  const west = [bbox[2], latCenter];
 
-  const minCorner = mercator.px([bbox[0], bbox[3]], z),
-    maxCorner = mercator.px([bbox[2], bbox[1]], z);
-  const w_ = w / (1 + 2 * padding);
-  const h_ = h / (1 + 2 * padding);
+  // calculate zoom
+  const distancePerPixel = haversine(east, west) / w;
+  const distancePerTile = distancePerPixel * 256;
+  const circumferenceEarth = 2 * Math.PI * 6378137;
+  const z = Math.log2(Math.abs(circumferenceEarth * Math.cos(latRadian) / distancePerTile));
 
-  z -= Math.max(
-    Math.log((maxCorner[0] - minCorner[0]) / w_),
-    Math.log((maxCorner[1] - minCorner[1]) / h_)
-  ) / Math.LN2;
-
-  z = Math.max(Math.log(Math.max(w, h) / 256) / Math.LN2, Math.min(25, z));
-
-  return z;
+  // bounds enforcement [0,25]
+  return Math.min(Math.abs(z), 25)
 };
 
 const existingFonts = {};
