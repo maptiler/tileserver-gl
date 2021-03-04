@@ -27,6 +27,8 @@ const utils = require('./utils');
 const FLOAT_PATTERN = '[+-]?(?:\\d+|\\d+\.?\\d+)';
 const httpTester = /^(http(s)?:)?\/\//;
 
+const RADIUS_EARTH_EQUATORIAL_IN_M = 6378137;
+
 const getScale = scale => (scale || '@1x').slice(1, 2) | 0;
 
 mbgl.on('message', e => {
@@ -173,6 +175,19 @@ const renderOverlay = (z, x, y, bearing, pitch, w, h, scale,
   return canvas.toBuffer();
 };
 
+const toRadian = (deg) => deg*Math.PI/180;
+
+const getDistanceForPoints = (a, b) => {
+  // calculates great-circle distance between two points on a sphere in
+  // meters (see https://en.wikipedia.org/wiki/Haversine_formula)
+  const phi = [toRadian(a[1]), toRadian(b[1])];     // latitudes
+  const lambda = [toRadian(a[0]), toRadian(b[0])];  // longitudes
+  const h = (Math.sin((phi[1]-phi[0])/2))**2 +
+             Math.cos(phi[0]) * Math.cos(phi[1]) *
+            (Math.sin((lambda[1]-lambda[0])/2))**2;
+  return 2 * RADIUS_EARTH_EQUATORIAL_IN_M * Math.asin(Math.sqrt(h));
+};
+
 const calcZForBBox = (bbox, w, h, query) => {
   // Use equation for horizontal distance per tile given zoom and latitude
   // see https://wiki.openstreetmap.org/wiki/Zoom_levels#Distance_per_pixel_math
@@ -189,15 +204,14 @@ const calcZForBBox = (bbox, w, h, query) => {
 
   // points (use centered latitude of bbox)
   const latCenter = bbox[1]+(bbox[3]-bbox[1])/2;
-  const latRadian = latCenter*Math.PI/180;
   const east = [bbox[0], latCenter];
   const west = [bbox[2], latCenter];
 
   // calculate zoom
-  const distancePerPixel = haversine(east, west) / w;
+  const distancePerPixel = getDistanceForPoints(east, west) / w;
   const distancePerTile = distancePerPixel * 256;
-  const circumferenceEarth = 2 * Math.PI * 6378137;
-  const z = Math.log2(Math.abs(circumferenceEarth * Math.cos(latRadian) / distancePerTile));
+  const circumferenceEarth = 2 * Math.PI * RADIUS_EARTH_EQUATORIAL_IN_M;
+  const z = Math.log2(Math.abs(circumferenceEarth * Math.cos(toRadian(latCenter)) / distancePerTile));
 
   // bounds enforcement [0,25]
   return Math.min(Math.abs(z), 25)
