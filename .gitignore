@@ -6,3 +6,6 @@ light
 plugins
 config.json
 *.mbtiles
+
+#visual studio IDE
+**/.vs/

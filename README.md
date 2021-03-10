@@ -43,6 +43,14 @@ This will download and start a ready to use container on your computer and the m
 
 On laptop you can use [Docker Kitematic](https://kitematic.com/) and search "tileserver-gl" and run it, then drop in the 'data' folder the MBTiles.
 
+## Using Kubernetes/helm
+
+```bash
+helm install tileserver-gl .\tileserver-gl\ -n default
+```
+
+you can now access the service (kubectl get svc) via port-forward or you can change the service type configuration to LoadBalancer or even activate the ingres/traefik routing.
+
 ## Documentation
 
 You can read full documentation of this project at https://tileserver.readthedocs.io/.
