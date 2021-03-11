@@ -330,7 +330,7 @@ function start(opts) {
   };
 
   serveTemplate('/$', 'index', req => {
-    const styles = clone(serving.styles || {});
+    const styles = Object.assign({}, serving.styles || {}, {});
     for (const id of Object.keys(styles)) {
       const style = styles[id];
       style.name = (serving.styles[id] || serving.rendered[id] || {}).name;
@@ -350,7 +350,7 @@ function start(opts) {
           `styles/${id}`, style.serving_rendered.tileJSON.format, opts.publicUrl)[0];
       }
     }
-    const data = clone(serving.data || {});
+    const data = Object.assign({}, serving.data || {}, {});
     for (const id of Object.keys(data)) {
       const data_ = data[id];
       const tilejson = data[id].tileJSON;
