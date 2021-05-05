@@ -14,6 +14,7 @@ Example:
         "root": "",
         "fonts": "fonts",
         "sprites": "sprites",
+        "icons": "icons",
         "styles": "styles",
         "mbtiles": ""
       },

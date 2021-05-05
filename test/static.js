@@ -95,7 +95,7 @@ describe('Static endpoints', function() {
 
     describe('invalid requests return 4xx', function() {
       testStatic(prefix, 'auto/256x256', 'png', 400);
-      testStatic(prefix, 'auto/256x256', 'png', 400, undefined, undefined, '?path=10,10');
+      testStatic(prefix, 'auto/256x256', 'png', 400, undefined, undefined, '?path=invalid');
       testStatic(prefix, 'auto/2560x2560', 'png', 400, undefined, undefined, '?path=10,10|20,20');
     });
   });
