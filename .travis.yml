@@ -28,4 +28,4 @@ jobs:
         - docker build -t aktionskarten/tileserver-gl .
       script:
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-        - docker push
+        - docker push aktionskarten/tileserver-gl
