@@ -26,9 +26,9 @@ jobs:
         - docker
       before_install:
         - docker build -t aktionskarten/tileserver-gl .
-        - docker run -d -p 127.0.0.1:80:4567 aktionskarten/tileserver-gl /bin/sh -c "cd /root/sinatra; bundle exec foreman start;"
+        - docker run -d -p 127.0.0.1:80:4567 aktionskarten/tileserver-gl /bin/sh -c "cd /root/tileserver-gl; bundle exec foreman start;"
         - docker ps -a
-        - docker run aktionskarten/tileserver-gl /bin/sh -c "cd /root/sinatra; bundle exec rake test"
+        - docker run aktionskarten/tileserver-gl /bin/sh -c "cd /root/tileserver-gl; bundle exec rake test"
       script:
         - bundle exec rake test
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
