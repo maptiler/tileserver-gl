@@ -1,21 +1,35 @@
-language: node_js
-node_js:
-  - "10"
-env:
-  - CXX=g++-4.8
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - g++-4.8
-before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
-  - sudo apt-get install -qq xvfb libgles2-mesa-dev libgbm-dev libxxf86vm-dev
-install:
-  - npm install
-  - wget -O test_data.zip https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
-  - unzip -q test_data.zip -d test_data
-script:
-  - xvfb-run --server-args="-screen 0 1024x768x24" npm test
+jobs:
+  include:
+    - language: node_js
+      node_js:
+        - "10"
+      env:
+        - CXX=g++-4.8
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-4.8
+      before_install:
+        - sudo apt-get update -qq
+        - sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
+        - sudo apt-get install -qq xvfb libgles2-mesa-dev libgbm-dev libxxf86vm-dev
+      install:
+        - npm install
+        - wget -O test_data.zip https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
+        - unzip -q test_data.zip -d test_data
+      script:
+        - xvfb-run --server-args="-screen 0 1024x768x24" npm test
+    - language: ruby
+      services:
+        - docker
+      before_install:
+        - docker build -t aktionskarten/tileserver-gl
+        - docker run -d -p 127.0.0.1:80:4567 aktionskarten/tileserver-gl /bin/sh -c "cd /root/sinatra; bundle exec foreman start;"
+        - docker ps -a
+        - docker run aktionskarten/tileserver-gl /bin/sh -c "cd /root/sinatra; bundle exec rake test"
+      script:
+        - bundle exec rake test
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        - docker push
