@@ -17,7 +17,7 @@ RUN export DEBIAN_FRONTEND=noninteractive \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-COPY . /usr/src/app
+COPY package.json /usr/src/app/package.json
 
 ENV NODE_ENV="production"
 
@@ -37,7 +37,9 @@ RUN export DEBIAN_FRONTEND=noninteractive \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /usr/src/app /app
+RUN mkdir /app
+COPY --from=builder /usr/src/app/node_modules /app/node_modules
+COPY . /app
 
 ENV NODE_ENV="production"
 ENV CHOKIDAR_USEPOLLING=1
