@@ -33,4 +33,8 @@ Reloading configuration
 ======
 
 It is possible to reload the configuration file without restarting the whole process by sending a SIGHUP signal to the node process.
-However, this does not currently work when running the tileserver-gl docker container (the signal is not passed to the subprocess, see https://github.com/maptiler/tileserver-gl/issues/420#issuecomment-597507663).
+
+When running the tileserver-gl docker container, the signal must be sent from within the container:
+::
+
+  docker exec tileserver-gl bash -c 'kill -HUP $(ls -l /proc/*/exe | sed -n "/\/node$/s/.*proc\/\([0-9]\+\)\/exe .*/\1/p")'
