@@ -7,7 +7,16 @@ const clone = require('clone');
 const glyphCompose = require('@mapbox/glyph-pbf-composite');
 
 
-module.exports.getPublicUrl = (publicUrl, req) => publicUrl || `${req.protocol}://${req.headers.host}/`;
+module.exports.getPublicUrl = (publicUrl, req) => {
+  if (publicUrl) {
+    const isRelative = !publicUrl.startsWith('http');
+    if (isRelative && process.env.TILESERVER_GL_RESOLVE_RELATIVE_PUBLIC_URL === 'true') {
+      return `${req.protocol}://${req.headers.host}${publicUrl}`;
+    }
+    return publicUrl;
+  }
+  return `${req.protocol}://${req.headers.host}/`;
+}
 
 module.exports.getTileUrls = (req, domains, path, format, publicUrl, aliases) => {
 
