@@ -8,6 +8,8 @@ on:
 jobs:
   all:
     runs-on: ubuntu-latest
+    env:
+      CXX: g++-4.8
     steps:
       -
         name: Checkout repo and subrepos
@@ -19,24 +21,21 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '10'
-      - 
-        name: Install g++
-        run: |
-             sudo apt update -qq
-             sudo apt install g++-4.8
-      - 
-        name: Install dependencies
-        run: |
-             sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
-             sudo apt-get install -qq xvfb libgles2-mesa-dev libgbm-dev libxxf86vm-dev 
       -
-        name: Install npm packages
+        name: Update packages
+        run: sudo apt update -qq
+      - 
+        name: Install apt packages
+        run: sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++ xvfb libgles2-mesa-dev libgbm-dev libxxf86vm-dev
+      -
+        name: Install node dependencies
         run: npm install
       - 
-        name: Get and unzip test data
-        run: |
-             wget -O test_data.zip https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
-             unzip -q test_data.zip -d test_data
+        name: Download test data
+        run: wget -O test_data.zip https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
+      -
+        name: Unzip test data
+        run: unzip -q test_data.zip -d test_data
       -
         name: Run tests
         run: xvfb-run --server-args="-screen 0 1024x768x24" npm test
