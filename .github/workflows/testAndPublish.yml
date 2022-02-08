@@ -1,0 +1,58 @@
+name: tests and publish docker container
+
+on:
+  push:
+    tags:
+      - '**'
+
+jobs:
+  all:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout repo and subrepos
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      -
+        name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Set up node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '10'
+      - 
+        name: Install g++
+        run: |
+             sudo apt update -qq
+             sudo apt install g++-4.8
+      - 
+        name: Install dependencies
+        run: |
+             sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
+             sudo apt-get install -qq xvfb libgles2-mesa-dev libgbm-dev libxxf86vm-dev 
+      -
+        name: Install npm packages
+        run: npm install
+      - 
+        name: Get and unzip test data
+        run: |
+             wget -O test_data.zip https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
+             unzip -q test_data.zip -d test_data
+      -
+        name: Run tests
+        run: xvfb-run --server-args="-screen 0 1024x768x24" npm test
+      -
+        name: Build and publish to Docker Hub
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: kombinat451/tileserver-gl:latest, kombinat451/tileserver-gl:${{github.ref_name}}
