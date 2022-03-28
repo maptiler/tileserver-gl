@@ -22,12 +22,13 @@
 
 .mapbox-gl-inspect_property-value {
   display: table-cell;
-
+  word-break: break-all;
 }
 
 .mapbox-gl-inspect_property-name {
   display: table-cell;
   padding-right: 10px;
+  word-break: break-all;
 }
 
 .mapboxgl-ctrl-inspect {
