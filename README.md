@@ -39,7 +39,11 @@ An alternative to npm to start the packed software easier is to install [Docker]
 docker run --rm -it -v $(pwd):/data -p 8080:80 maptiler/tileserver-gl
 ```
 
-This will download and start a ready to use container on your computer and the maps are going to be available in webbrowser on localhost:8080.
+This will download and start a ready to use container on your computer and the maps are going to be available in webbrowser on localhost:8080. It will pick the first MBTiles file from the current folder. Use the `--mbtiles` flag to specify the file direclty.
+
+```bash
+docker run --rm -it -v $(pwd):/data -p 8080:8080 maptiler/tileserver-gl --mbtiles zurich_switzerland.mbtiles
+```
 
 On laptop you can use [Docker Kitematic](https://kitematic.com/) and search "tileserver-gl" and run it, then drop in the 'data' folder the MBTiles.
 
