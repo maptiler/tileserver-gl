@@ -41,7 +41,7 @@
                 {{#if serving_data}}| {{/if}}<a href="{{public_url}}styles/{{@key}}.json{{&../key_query}}">TileJSON</a>
               {{/if}}
               {{#if serving_rendered}}
-                | <a href="/styles/{{@key}}/wmts.xml{{&../key_query}}">WMTS</a>
+                | <a href="{{public_url}}styles/{{@key}}/wmts.xml{{&../key_query}}">WMTS</a>
               {{/if}}
               {{#if xyz_link}}
                 | <a href="#" onclick="return toggle_xyz('xyz_style_{{@key}}');">XYZ</a>
