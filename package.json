@@ -32,7 +32,7 @@
     "cors": "2.8.5",
     "esm": "3.2.25",
     "express": "4.17.1",
-    "handlebars": "4.7.3",
+    "handlebars": "^4.7.7",
     "http-shutdown": "1.2.2",
     "morgan": "1.9.1",
     "pbf": "3.2.1",
