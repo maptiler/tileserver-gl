@@ -35,14 +35,19 @@ export const serve_data = {
       }
       if (z < item.tileJSON.minzoom || 0 || x < 0 || y < 0 ||
           z > item.tileJSON.maxzoom ||
-          x >= Math.pow(2, z) || y >= Math.pow(2, z)) {
-        return res.status(404).send('Out of bounds');
-      }
-      item.source.getTile(z, x, y, (err, data, headers) => {
-        let isGzipped;
-        if (err) {
-          if (/does not exist/.test(err.message)) {
-            return res.status(204).send();
+          x >= Math.pow(2, z) ||
+          y >= Math.pow(2, z)
+        ) {
+          return res.status(404).send('Out of bounds');
+        }
+        item.source.getTile(z, x, y, (err, data, headers) => {
+          let isGzipped;
+          if (err) {
+            if (/does not exist/.test(err.message)) {
+              return res.status(204).send();
+            } else {
+              return res.status(500).send(err.message);
+            }
           } else {
             return res.status(500).send(err.message);
           }
@@ -58,13 +63,6 @@ export const serve_data = {
                   data = zlib.unzipSync(data);
                   isGzipped = false;
                 }
-                data = options.dataDecoratorFunc(id, 'data', data, z, x, y);
-              }
-            }
-            if (format === 'pbf') {
-              headers['Content-Type'] = 'application/x-protobuf';
-            } else if (format === 'geojson') {
-              headers['Content-Type'] = 'application/json';
 
               if (isGzipped) {
                 data = zlib.unzipSync(data);
@@ -84,23 +82,23 @@ export const serve_data = {
                   featureGeoJSON.properties.layer = layerName;
                   geojson.features.push(featureGeoJSON);
                 }
+                data = JSON.stringify(geojson);
               }
-              data = JSON.stringify(geojson);
-            }
-            delete headers['ETag']; // do not trust the tile ETag -- regenerate
-            headers['Content-Encoding'] = 'gzip';
-            res.set(headers);
+              delete headers['ETag']; // do not trust the tile ETag -- regenerate
+              headers['Content-Encoding'] = 'gzip';
+              res.set(headers);
 
-            if (!isGzipped) {
-              data = zlib.gzipSync(data);
-              isGzipped = true;
-            }
+              if (!isGzipped) {
+                data = zlib.gzipSync(data);
+                isGzipped = true;
+              }
 
-            return res.status(200).send(data);
+              return res.status(200).send(data);
+            }
           }
-        }
-      });
-    });
+        });
+      },
+    );
 
     app.get('/:id.json', (req, res, next) => {
       const item = repo[req.params.id];
@@ -120,7 +118,7 @@ export const serve_data = {
   add: (options, repo, params, id, publicUrl) => {
     const mbtilesFile = path.resolve(options.paths.mbtiles, params.mbtiles);
     let tileJSON = {
-      'tiles': params.domains || options.domains
+      tiles: params.domains || options.domains,
     };
 
     const mbtilesFileStats = fs.statSync(mbtilesFile);
@@ -167,5 +165,5 @@ export const serve_data = {
         source
       };
     });
-  }
+  },
 };
