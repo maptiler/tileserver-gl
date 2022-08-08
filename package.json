@@ -5,16 +5,17 @@
   "main": "src/main.js",
   "bin": "src/main.js",
   "type": "module",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/maptiler/tileserver-gl.git"
-  },
   "license": "BSD-2-Clause",
   "engines": {
     "node": ">=14.15.0 <17"
   },
   "scripts": {
     "test": "mocha test/**.js --timeout 10000",
+    "lint:yml": "yamllint --schema=CORE_SCHEMA *.{yml,yaml}",
+    "lint:prettier": "prettier --check \"{,!(node_modules|dist|static)/**/}*.{js,ts,cjs,mjs,json}\" --ignore-path .gitignore",
+    "lint:prettier:fix": "prettier --write \"{,!(node_modules|dist|static)/**/}*.{js,ts,cjs,mjs,json}\" --ignore-path .gitignore",
+    "lint": "npm run lint:prettier",
+    "lintfix": "npm run lint:prettier:fix",
     "docker": "docker build -f Dockerfile . && docker run --rm -i -p 8080:80 $(docker build -q .)"
   },
   "dependencies": {
@@ -44,6 +45,24 @@
   "devDependencies": {
     "chai": "4.3.6",
     "mocha": "^10.0.0",
-    "supertest": "^6.2.4"
-  }
+    "prettier": "^2.7.1",
+    "should": "^13.2.3",
+    "supertest": "^6.2.4",
+    "yaml-lint": "^1.7.0"
+  },
+  "repository": {
+    "url": "git+https://github.com/maptiler/tileserver-gl.git",
+    "type": "git"
+  },
+  "contributors": [
+    {
+      "name": "Vinayak Kulkarni",
+      "email": "inbox.vinayak@gmail.com",
+      "url": "https://vinayakkulkarni.dev"
+    }
+  ],
+  "bugs": {
+    "url": "https://github.com/maptiler/tileserver-gl/issues"
+  },
+  "homepage": "https://github.com/maptiler/tileserver-gl#readme"
 }

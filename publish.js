@@ -26,7 +26,8 @@ const __dirname = path.dirname(__filename);
 const packageJson = JSON.parse(fs.readFileSync(__dirname + '/package.json', 'utf8'))
 
 packageJson.name += '-light';
-packageJson.description = 'Map tile server for JSON GL styles - serving vector tiles';
+packageJson.description =
+  'Map tile server for JSON GL styles - serving vector tiles';
 delete packageJson.dependencies['canvas'];
 delete packageJson.dependencies['@maplibre/maplibre-gl-native'];
 delete packageJson.dependencies['sharp'];
