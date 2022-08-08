@@ -18,9 +18,11 @@
 
 .mapbox-gl-inspect_property {
   display: table-row;
+  line-height: 120%;
 }
 
 .mapbox-gl-inspect_property-value {
+  padding-bottom: 6px;
   display: table-cell;
 
 }
