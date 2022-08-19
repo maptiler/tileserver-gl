@@ -19,6 +19,7 @@ const express = require('express');
 const mercator = new (require('@mapbox/sphericalmercator'))();
 const mbgl = require('@mapbox/mapbox-gl-native');
 const MBTiles = require('@mapbox/mbtiles');
+const TileJSON = require('@mapbox/tilejson');
 const proj4 = require('proj4');
 const request = require('request');
 
@@ -756,6 +757,38 @@ module.exports = {
             console.error(`ERROR: data "${mbtilesFile}" not found!`);
             process.exit(1);
           }
+        }
+
+        if (mbtilesFile.startsWith('http')) {
+          queue.push(new Promise((resolve, reject) => {
+            map.sources[name] = new TileJSON(mbtilesFile, (err, _) => {
+              map.sources[name].getInfo((err, info) => {
+                if (err) {
+                  console.error(err);
+                  return;
+                }
+
+                const type = source.type;
+                Object.assign(source, info);
+                source.type = type;
+                source.url = mbtilesFile;
+
+                if (options.dataDecoratorFunc) {
+                  source = options.dataDecoratorFunc(name, 'tilejson', source);
+                }
+
+                if (!attributionOverride &&
+                  source.attribution && source.attribution.length > 0) {
+                  if (tileJSON.attribution.length > 0) {
+                    tileJSON.attribution += '; ';
+                  }
+                  tileJSON.attribution += source.attribution;
+                }
+                resolve();
+              });
+            });
+          }));
+          continue;
         }
 
         queue.push(new Promise((resolve, reject) => {
