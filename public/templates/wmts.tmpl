@@ -11,7 +11,7 @@
     <ows:Operation name="GetCapabilities">
       <ows:DCP>
         <ows:HTTP>
-          <ows:Get xlink:href="{{baseUrl}}/wmts/{{id}}/">
+          <ows:Get xlink:href="{{baseUrl}}wmts/{{id}}/">
             <ows:Constraint name="GetEncoding">
               <ows:AllowedValues>
                 <ows:Value>RESTful</ows:Value>
@@ -24,7 +24,7 @@
     <ows:Operation name="GetTile">
       <ows:DCP>
         <ows:HTTP>
-          <ows:Get xlink:href="{{baseUrl}}/styles/">
+          <ows:Get xlink:href="{{baseUrl}}styles/">
             <ows:Constraint name="GetEncoding">
               <ows:AllowedValues>
                 <ows:Value>RESTful</ows:Value>
@@ -50,7 +50,7 @@
       <TileMatrixSetLink>
         <TileMatrixSet>GoogleMapsCompatible</TileMatrixSet>
       </TileMatrixSetLink>
-      <ResourceURL format="image/png" resourceType="tile" template="{{baseUrl}}/styles/{{id}}/{TileMatrix}/{TileCol}/{TileRow}.png{{key_query}}"/>
+      <ResourceURL format="image/png" resourceType="tile" template="{{baseUrl}}styles/{{id}}/{TileMatrix}/{TileCol}/{TileRow}.png{{key_query}}"/>
     </Layer><TileMatrixSet>
       <ows:Title>GoogleMapsCompatible</ows:Title>
       <ows:Abstract>GoogleMapsCompatible EPSG:3857</ows:Abstract>
@@ -403,5 +403,5 @@
         <MatrixHeight>262144</MatrixHeight>
       </TileMatrix></TileMatrixSet>
   </Contents>
-  <ServiceMetadataURL xlink:href="{{baseUrl}}/wmts/{{id}}/"/>
+  <ServiceMetadataURL xlink:href="{{baseUrl}}wmts/{{id}}/"/>
 </Capabilities>

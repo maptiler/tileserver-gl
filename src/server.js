@@ -423,7 +423,7 @@ function start(opts) {
       wmts.baseUrl = opts.publicUrl;
     }
     else {
-      wmts.baseUrl = `${req.get('X-Forwarded-Protocol') ? req.get('X-Forwarded-Protocol') : req.protocol}://${req.get('host')}`;
+      wmts.baseUrl = `${req.get('X-Forwarded-Protocol') ? req.get('X-Forwarded-Protocol') : req.protocol}://${req.get('host')}/`;
     }
     return wmts;
   });
