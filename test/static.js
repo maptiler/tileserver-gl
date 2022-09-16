@@ -1,18 +1,18 @@
-var testStatic = function(prefix, q, format, status, scale, type, query) {
+const testStatic = function(prefix, q, format, status, scale, type, query) {
   if (scale) q += '@' + scale + 'x';
-  var path = '/styles/' + prefix + '/static/' + q + '.' + format;
+  let path = '/styles/' + prefix + '/static/' + q + '.' + format;
   if (query) {
     path += query;
   }
   it(path + ' returns ' + status, function(done) {
-    var test = supertest(app).get(path);
+    const test = supertest(app).get(path);
     if (status) test.expect(status);
     if (type) test.expect('Content-Type', type);
     test.end(done);
   });
 };
 
-var prefix = 'test-style';
+const prefix = 'test-style';
 
 describe('Static endpoints', function() {
   describe('center-based', function() {
