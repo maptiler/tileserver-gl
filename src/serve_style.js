@@ -1,13 +1,13 @@
 'use strict';
 
-const path = require('path');
-const fs = require('fs');
+import path from 'path';
+import fs from 'fs';
 
-const clone = require('clone');
-const express = require('express');
+import clone from 'clone';
+import express from 'express';
 import {validate} from '@maplibre/maplibre-gl-style-spec';
 
-const utils = require('./utils');
+import {getPublicUrl} from './utils.js';
 
 const httpTester = /^(http(s)?:)?\/\//;
 
@@ -24,10 +24,10 @@ const fixUrl = (req, url, publicUrl, opt_nokey) => {
     query = `?${queryParams.join('&')}`;
   }
   return url.replace(
-    'local://', utils.getPublicUrl(publicUrl, req)) + query;
+      'local://', getPublicUrl(publicUrl, req)) + query;
 };
 
-module.exports = {
+export const serve_style = {
   init: (options, repo) => {
     const app = express().disable('x-powered-by');
 
@@ -56,8 +56,8 @@ module.exports = {
       if (!item || !item.spritePath) {
         return res.sendStatus(404);
       }
-      const scale = req.params.scale,
-        format = req.params.format;
+      const scale = req.params.scale;
+      const format = req.params.format;
       const filename = `${item.spritePath + (scale || '')}.${format}`;
       return fs.readFile(filename, (err, data) => {
         if (err) {
@@ -87,7 +87,7 @@ module.exports = {
       return false;
     }
 
-    let validationErrors = validate(styleFileData);
+    const validationErrors = validate(styleFileData);
     if (validationErrors.length > 0) {
       console.log(`The file "${params.style}" is not valid a valid style file:`);
       for (const err of validationErrors) {
@@ -95,7 +95,7 @@ module.exports = {
       }
       return false;
     }
-    let styleJSON = JSON.parse(styleFileData);
+    const styleJSON = JSON.parse(styleFileData);
 
     for (const name of Object.keys(styleJSON.sources)) {
       const source = styleJSON.sources[name];
@@ -120,7 +120,7 @@ module.exports = {
       }
     }
 
-    for (let obj of styleJSON.layers) {
+    for (const obj of styleJSON.layers) {
       if (obj['type'] === 'symbol') {
         const fonts = (obj['layout'] || {})['text-font'];
         if (fonts && fonts.length) {
@@ -136,9 +136,9 @@ module.exports = {
 
     if (styleJSON.sprite && !httpTester.test(styleJSON.sprite)) {
       spritePath = path.join(options.paths.sprites,
-        styleJSON.sprite
-          .replace('{style}', path.basename(styleFile, '.json'))
-          .replace('{styleJsonFolder}', path.relative(options.paths.sprites, path.dirname(styleFile)))
+          styleJSON.sprite
+              .replace('{style}', path.basename(styleFile, '.json'))
+              .replace('{styleJsonFolder}', path.relative(options.paths.sprites, path.dirname(styleFile))),
       );
       styleJSON.sprite = `local://styles/${id}/sprite`;
     }
@@ -150,9 +150,9 @@ module.exports = {
       styleJSON,
       spritePath,
       publicUrl,
-      name: styleJSON.name
+      name: styleJSON.name,
     };
 
     return true;
-  }
+  },
 };

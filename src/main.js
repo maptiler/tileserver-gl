@@ -2,22 +2,25 @@
 
 'use strict';
 
-require = require('esm')(module);
+import fs from 'fs';
+import path from 'path';
+import {fileURLToPath} from 'url';
+import request from 'request';
+import {server} from './server.js';
 
-const fs = require('fs');
-const path = require('path');
-const request = require('request');
+import MBTiles from '@mapbox/mbtiles';
 
-const MBTiles = require('@mapbox/mbtiles');
-
-const packageJson = require('../package');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const packageJson = JSON.parse(fs.readFileSync(__dirname + '/../package.json', 'utf8'));
 
 const args = process.argv;
 if (args.length >= 3 && args[2][0] !== '-') {
   args.splice(2, 0, '--mbtiles');
 }
 
-const opts = require('commander')
+import { program } from 'commander';
+program
   .description('tileserver-gl startup options')
   .usage('tileserver-gl [mbtiles] [options]')
   .option(
@@ -68,8 +71,8 @@ const opts = require('commander')
     packageJson.version,
     '-v, --version'
   )
-  .parse(args);
-
+program.parse(process.argv);
+const opts = program.opts();
 console.log(`Starting ${packageJson.name} v${packageJson.version}`);
 
 const startServer = (configPath, config) => {
@@ -77,7 +80,7 @@ const startServer = (configPath, config) => {
   if (publicUrl && publicUrl.lastIndexOf('/') !== publicUrl.length - 1) {
     publicUrl += '/';
   }
-  return require('./server')({
+  return server({
     configPath: configPath,
     config: config,
     bind: opts.bind,
@@ -87,7 +90,7 @@ const startServer = (configPath, config) => {
     silent: opts.silent,
     logFile: opts.log_file,
     logFormat: opts.log_format,
-    publicUrl: publicUrl
+    publicUrl: publicUrl,
   });
 };
 
@@ -118,49 +121,48 @@ const startWithMBTiles = (mbtilesFile) => {
       }
       const bounds = info.bounds;
 
-      const styleDir = path.resolve(__dirname, "../node_modules/tileserver-gl-styles/");
+      const styleDir = path.resolve(__dirname, '../node_modules/tileserver-gl-styles/');
 
       const config = {
-        "options": {
-          "paths": {
-            "root": styleDir,
-            "fonts": "fonts",
-            "styles": "styles",
-            "mbtiles": path.dirname(mbtilesFile)
-          }
+        'options': {
+          'paths': {
+            'root': styleDir,
+            'fonts': 'fonts',
+            'styles': 'styles',
+            'mbtiles': path.dirname(mbtilesFile),
+          },
         },
-        "styles": {},
-        "data": {}
+        'styles': {},
+        'data': {},
       };
 
       if (info.format === 'pbf' &&
         info.name.toLowerCase().indexOf('openmaptiles') > -1) {
-
         config['data'][`v3`] = {
-          "mbtiles": path.basename(mbtilesFile)
+          'mbtiles': path.basename(mbtilesFile),
         };
 
 
         const styles = fs.readdirSync(path.resolve(styleDir, 'styles'));
-        for (let styleName of styles) {
+        for (const styleName of styles) {
           const styleFileRel = styleName + '/style.json';
           const styleFile = path.resolve(styleDir, 'styles', styleFileRel);
           if (fs.existsSync(styleFile)) {
             config['styles'][styleName] = {
-              "style": styleFileRel,
-              "tilejson": {
-                "bounds": bounds
-              }
+              'style': styleFileRel,
+              'tilejson': {
+                'bounds': bounds,
+              },
             };
           }
         }
       } else {
         console.log(`WARN: MBTiles not in "openmaptiles" format. Serving raw data only...`);
         config['data'][(info.id || 'mbtiles')
-                           .replace(/\//g, '_')
-                           .replace(/:/g, '_')
-                           .replace(/\?/g, '_')] = {
-          "mbtiles": path.basename(mbtilesFile)
+            .replace(/\//g, '_')
+            .replace(/:/g, '_')
+            .replace(/\?/g, '_')] = {
+          'mbtiles': path.basename(mbtilesFile),
         };
       }
 
@@ -181,7 +183,7 @@ fs.stat(path.resolve(opts.config), (err, stats) => {
     if (!mbtiles) {
       // try to find in the cwd
       const files = fs.readdirSync(process.cwd());
-      for (let filename of files) {
+      for (const filename of files) {
         if (filename.endsWith('.mbtiles')) {
           const mbTilesStats = fs.statSync(filename);
           if (mbTilesStats.isFile() && mbTilesStats.size > 0) {
