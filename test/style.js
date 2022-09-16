@@ -18,13 +18,13 @@ describe('Styles', function() {
       supertest(app)
         .get('/styles/' + prefix + '/style.json')
         .expect(function(res) {
-          res.body.version.should.equal(8);
-          res.body.name.should.be.String();
-          res.body.sources.should.be.Object();
-          res.body.glyphs.should.be.String();
-          res.body.sprite.should.be.String();
-          res.body.sprite.should.equal('/test/styles/test-style/sprite');
-          res.body.layers.should.be.Array();
+          expect(res.body.version).to.be.equal(8);
+          expect(res.body.name).to.be.a('string');
+          expect(res.body.sources).to.be.a('object');
+          expect(res.body.glyphs).to.be.a('string');
+          expect(res.body.sprite).to.be.a('string');
+          expect(res.body.sprite).to.be.equal('/test/styles/test-style/sprite');
+          expect(res.body.layers).to.be.a('array');
         }).end(done);
     });
   });

@@ -11,8 +11,8 @@ var testTileJSONArray = function(url) {
       supertest(app)
         .get(url)
         .expect(function(res) {
-          res.body.should.be.Array();
-          res.body.length.should.be.greaterThan(0);
+          expect(res.body).to.be.a('array');
+          expect(res.body.length).to.be.greaterThan(0);
         }).end(done);
     });
   });
@@ -31,7 +31,7 @@ var testTileJSON = function(url) {
       supertest(app)
         .get(url)
         .expect(function(res) {
-          res.body.tiles.length.should.be.greaterThan(0);
+          expect(res.body.tiles.length).to.be.greaterThan(0);
         }).end(done);
     });
   });
@@ -62,11 +62,11 @@ describe('Metadata', function() {
       supertest(app)
         .get('/styles.json')
         .expect(function(res) {
-          res.body.should.be.Array();
-          res.body.length.should.be.greaterThan(0);
-          res.body[0].version.should.equal(8);
-          res.body[0].id.should.be.String();
-          res.body[0].name.should.be.String();
+          expect(res.body).to.be.a('array');
+          expect(res.body.length).to.be.greaterThan(0);
+          expect(res.body[0].version).to.be.equal(8);
+          expect(res.body[0].id).to.be.a('string');
+          expect(res.body[0].name).to.be.a('string');
         }).end(done);
     });
   });
