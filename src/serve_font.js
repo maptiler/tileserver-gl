@@ -1,7 +1,7 @@
 'use strict';
 
 import express from 'express';
-import fs from 'fs';
+import fs from 'node:fs';
 import path from 'path';
 
 import {getFontsPbf} from './utils.js';

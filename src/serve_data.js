@@ -1,6 +1,6 @@
 'use strict';
 
-import fs from 'fs';
+import fs from 'node:fs';
 import path from 'path';
 import zlib from 'zlib';
 

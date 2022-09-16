@@ -1,7 +1,7 @@
 'use strict';
 
 import advancedPool from 'advanced-pool';
-import fs from 'fs';
+import fs from 'node:fs';
 import path from 'path';
 import url from 'url';
 import util from 'util';

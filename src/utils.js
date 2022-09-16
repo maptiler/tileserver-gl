@@ -1,7 +1,7 @@
 'use strict';
 
 import path from 'path';
-import fs from 'fs';
+import fs from 'node:fs';
 
 import clone from 'clone';
 import glyphCompose from '@mapbox/glyph-pbf-composite';

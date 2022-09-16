@@ -5,7 +5,7 @@ import os from 'os';
 process.env.UV_THREADPOOL_SIZE =
     Math.ceil(Math.max(4, os.cpus().length * 1.5));
 
-import fs from 'fs';
+import fs from 'node:fs';
 import path from 'path';
 
 import chokidar from 'chokidar';

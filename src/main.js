@@ -2,7 +2,7 @@
 
 'use strict';
 
-import fs from 'fs';
+import fs from 'node:fs';
 import path from 'path';
 import {fileURLToPath} from 'url';
 import request from 'request';
