@@ -298,11 +298,9 @@ export const serve_rendered = {
           });
 
           if (z > 2 && tileMargin > 0) {
-            const [_, y] = mercator.px(params.center, z);
-            const yoffset = Math.max(Math.min(0, y - 128 - tileMargin), y + 128 + tileMargin - Math.pow(2, z + 8));
             image.extract({
               left: tileMargin * scale,
-              top: (tileMargin + yoffset) * scale,
+              top: tileMargin * scale,
               width: width * scale,
               height: height * scale
             });
@@ -437,8 +435,7 @@ export const serve_rendered = {
           return res.sendStatus(404);
         }
         const raw = req.params.raw;
-        const bbox = [+req.params.minx, +req.params.miny,
-          +req.params.maxx, +req.params.maxy];
+        const bbox = [+req.params.minx, +req.params.miny, +req.params.maxx, +req.params.maxy];
         let center = [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2];
 
         const transformer = raw ?
@@ -466,10 +463,8 @@ export const serve_rendered = {
         const pitch = 0;
 
         const path = extractPathFromQuery(req.query, transformer);
-        const overlay = renderOverlay(z, x, y, bearing, pitch, w, h, scale,
-            path, req.query);
-        return respondImage(item, z, x, y, bearing, pitch, w, h, scale, format,
-            res, next, overlay);
+        const overlay = renderOverlay(z, x, y, bearing, pitch, w, h, scale, path, req.query);
+        return respondImage(item, z, x, y, bearing, pitch, w, h, scale, format, res, next, overlay);
       };
 
       const boundsPattern =
