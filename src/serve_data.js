@@ -145,7 +145,6 @@ export const serve_data = {
           Object.assign(tileJSON, info);
 
           tileJSON['tilejson'] = '2.0.0';
-          tileJSON['id'] = id;
           delete tileJSON['filesize'];
           delete tileJSON['mtime'];
           delete tileJSON['scheme'];

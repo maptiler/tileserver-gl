@@ -704,7 +704,6 @@ export const serve_rendered = {
     const tileJSON = {
       'tilejson': '2.0.0',
       'name': styleJSON.name,
-      'id': id,
       'attribution': '',
       'minzoom': 0,
       'maxzoom': 20,
