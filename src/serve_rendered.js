@@ -38,7 +38,7 @@ const extensionToFormat = {
   '.jpg': 'jpeg',
   '.jpeg': 'jpeg',
   '.png': 'png',
-  '.webp': 'webp',
+  '.webp': 'webp'
 };
 
 /**
@@ -46,7 +46,7 @@ const extensionToFormat = {
  * string is for unknown or unsupported formats.
  */
 const cachedEmptyResponses = {
-  '': Buffer.alloc(0),
+  '': Buffer.alloc(0)
 };
 
 /**
@@ -83,8 +83,8 @@ function createEmptyResponse(format, color, callback) {
     raw: {
       width: 1,
       height: 1,
-      channels: channels,
-    },
+      channels: channels
+    }
   }).toFormat(format).toBuffer((err, buffer, info) => {
     if (!err) {
       cachedEmptyResponses[cacheKey] = buffer;
@@ -182,7 +182,7 @@ const calcZForBBox = (bbox, w, h, query) => {
 
   z -= Math.max(
       Math.log((maxCorner[0] - minCorner[0]) / w_),
-      Math.log((maxCorner[1] - minCorner[1]) / h_),
+      Math.log((maxCorner[1] - minCorner[1]) / h_)
   ) / Math.LN2;
 
   z = Math.max(Math.log(Math.max(w, h) / 256) / Math.LN2, Math.min(25, z));
@@ -253,7 +253,7 @@ export const serve_rendered = {
           bearing: bearing,
           pitch: pitch,
           width: width,
-          height: height,
+          height: height
         };
         if (z === 0) {
           params.width *= 2;
@@ -293,8 +293,8 @@ export const serve_rendered = {
             raw: {
               width: params.width * scale,
               height: params.height * scale,
-              channels: 4,
-            },
+              channels: 4
+            }
           });
 
           if (z > 2 && tileMargin > 0) {
@@ -304,7 +304,7 @@ export const serve_rendered = {
               left: tileMargin * scale,
               top: (tileMargin + yoffset) * scale,
               width: width * scale,
-              height: height * scale,
+              height: height * scale
             });
           }
 
@@ -346,7 +346,7 @@ export const serve_rendered = {
 
             res.set({
               'Last-Modified': item.lastModified,
-              'Content-Type': `image/${format}`,
+              'Content-Type': `image/${format}`
             });
             return res.status(200).send(buffer);
           });
@@ -379,7 +379,7 @@ export const serve_rendered = {
       const tileSize = 256;
       const tileCenter = mercator.ll([
         ((x + 0.5) / (1 << z)) * (256 << z),
-        ((y + 0.5) / (1 << z)) * (256 << z),
+        ((y + 0.5) / (1 << z)) * (256 << z)
       ], z);
       return respondImage(item, z, tileCenter[0], tileCenter[1], 0, 0,
           tileSize, tileSize, scale, format, res, next);
@@ -533,7 +533,7 @@ export const serve_rendered = {
 
         const bbox_ = mercator.convert(bbox, '900913');
         const center = mercator.inverse(
-            [(bbox_[0] + bbox_[2]) / 2, (bbox_[1] + bbox_[3]) / 2],
+            [(bbox_[0] + bbox_[2]) / 2, (bbox_[1] + bbox_[3]) / 2]
         );
 
         const z = calcZForBBox(bbox, w, h, req.query);
@@ -564,7 +564,7 @@ export const serve_rendered = {
   add: (options, repo, params, id, publicUrl, dataResolver) => {
     const map = {
       renderers: [],
-      sources: {},
+      sources: {}
     };
 
     let styleJSON;
@@ -587,7 +587,7 @@ export const serve_rendered = {
               const fontstack = unescape(parts[2]);
               const range = parts[3].split('.')[0];
               getFontsPbf(
-                  null, options.paths[protocol], fontstack, range, existingFonts,
+                  null, options.paths[protocol], fontstack, range, existingFonts
               ).then((concated) => {
                 callback(null, {data: concated});
               }, (err) => {
@@ -634,7 +634,7 @@ export const serve_rendered = {
               request({
                 url: req.url,
                 encoding: null,
-                gzip: true,
+                gzip: true
               }, (err, res, body) => {
                 const parts = url.parse(req.url);
                 const extension = path.extname(parts.pathname).toLowerCase();
@@ -660,7 +660,7 @@ export const serve_rendered = {
                 callback(null, response);
               });
             }
-          },
+          }
         });
         renderer.load(styleJSON);
         createCallback(null, renderer);
@@ -671,7 +671,7 @@ export const serve_rendered = {
         create: createRenderer.bind(null, ratio),
         destroy: (renderer) => {
           renderer.release();
-        },
+        }
       });
     };
 
@@ -715,7 +715,7 @@ export const serve_rendered = {
       'maxzoom': 20,
       'bounds': [-180, -85.0511, 180, 85.0511],
       'format': 'png',
-      'type': 'baselayer',
+      'type': 'baselayer'
     };
     const attributionOverride = params.tilejson && params.tilejson.attribution;
     Object.assign(tileJSON, params.tilejson || {});
@@ -728,7 +728,7 @@ export const serve_rendered = {
       map,
       dataProjWGStoInternalWGS: null,
       lastModified: new Date().toUTCString(),
-      watermark: params.watermark || options.watermark,
+      watermark: params.watermark || options.watermark
     };
     repo[id] = repoobj;
 
@@ -783,7 +783,7 @@ export const serve_rendered = {
               source.type = type;
               source.tiles = [
                 // meta url which will be detected when requested
-                `mbtiles://${name}/{z}/{x}/{y}.${info.format || 'pbf'}`,
+                `mbtiles://${name}/{z}/{x}/{y}.${info.format || 'pbf'}`
               ];
               delete source.scheme;
 
@@ -830,5 +830,5 @@ export const serve_rendered = {
       });
     }
     delete repo[id];
-  },
+  }
 };

@@ -12,7 +12,7 @@
 
 // SYNC THE `light` FOLDER
 require('child_process').execSync('rsync -av --exclude="light" --exclude=".git" --exclude="node_modules" --delete . light', {
-  stdio: 'inherit',
+  stdio: 'inherit'
 });
 
 // PATCH `package.json`
@@ -45,10 +45,10 @@ if (process.argv.length > 2 && process.argv[2] == '--no-publish') {
 
 // tileserver-gl
 require('child_process').execSync('npm publish .', {
-  stdio: 'inherit',
+  stdio: 'inherit'
 });
 
 // tileserver-gl-light
 require('child_process').execSync('npm publish light', {
-  stdio: 'inherit',
+  stdio: 'inherit'
 });

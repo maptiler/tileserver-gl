@@ -70,8 +70,8 @@ export const fixTileJSONCenter = (tileJSON) => {
       (tileJSON.bounds[1] + tileJSON.bounds[3]) / 2,
       Math.round(
           -Math.log((tileJSON.bounds[2] - tileJSON.bounds[0]) / 360 / tiles) /
-          Math.LN2,
-      ),
+          Math.LN2
+      )
     ];
   }
 };
@@ -121,7 +121,7 @@ export const getFontsPbf = (allowedFonts, fontPath, names, range, fallbacks) => 
   const queue = [];
   for (const font of fonts) {
     queue.push(
-        getFontPbf(allowedFonts, fontPath, font, range, clone(allowedFonts || fallbacks)),
+        getFontPbf(allowedFonts, fontPath, font, range, clone(allowedFonts || fallbacks))
     );
   }
 

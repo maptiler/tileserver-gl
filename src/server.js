@@ -38,7 +38,7 @@ export function server(opts) {
     styles: {},
     rendered: {},
     data: {},
-    fonts: {},
+    fonts: {}
   };
 
   app.enable('trust proxy');
@@ -48,7 +48,7 @@ export function server(opts) {
     const logFormat = opts.logFormat || defaultLogFormat;
     app.use(morgan(logFormat, {
       stream: opts.logFile ? fs.createWriteStream(opts.logFile, {flags: 'a'}) : process.stdout,
-      skip: (req, res) => opts.silent && (res.statusCode === 200 || res.statusCode === 304),
+      skip: (req, res) => opts.silent && (res.statusCode === 200 || res.statusCode === 304)
     }));
   }
 
@@ -112,7 +112,7 @@ export function server(opts) {
         serve_rendered.init(options, serving.rendered)
             .then((sub) => {
               app.use('/styles/', sub);
-            }),
+            })
     );
   }
 
@@ -143,7 +143,7 @@ export function server(opts) {
                 let id = mbtiles.substr(0, mbtiles.lastIndexOf('.')) || mbtiles;
                 while (data[id]) id += '_';
                 data[id] = {
-                  'mbtiles': mbtiles,
+                  'mbtiles': mbtiles
                 };
                 return id;
               }
@@ -165,7 +165,7 @@ export function server(opts) {
                 }
               }
               return mbtilesFile;
-            },
+            }
         ));
       } else {
         item.serve_rendered = false;
@@ -186,7 +186,7 @@ export function server(opts) {
   startupPromises.push(
       serve_font(options, serving.fonts).then((sub) => {
         app.use('/', sub);
-      }),
+      })
   );
 
   for (const id of Object.keys(data)) {
@@ -197,7 +197,7 @@ export function server(opts) {
     }
 
     startupPromises.push(
-        serve_data.add(options, serving.data, item, id, opts.publicUrl),
+        serve_data.add(options, serving.data, item, id, opts.publicUrl)
     );
   }
 
@@ -211,7 +211,7 @@ export function server(opts) {
             path.extname(file.name).toLowerCase() == '.json') {
           const id = path.basename(file.name, '.json');
           const item = {
-            style: file.name,
+            style: file.name
           };
           addStyle(id, item, false, false);
         }
@@ -234,7 +234,7 @@ export function server(opts) {
 
             if (eventType == 'add' || eventType == 'change') {
               const item = {
-                style: filename,
+                style: filename
               };
               addStyle(id, item, false, false);
             }
@@ -251,7 +251,7 @@ export function server(opts) {
         version: styleJSON.version,
         name: styleJSON.name,
         id: id,
-        url: `${getPublicUrl(opts.publicUrl, req)}styles/${id}/style.json${query}`,
+        url: `${getPublicUrl(opts.publicUrl, req)}styles/${id}/style.json${query}`
       });
     }
     res.send(result);
@@ -267,7 +267,7 @@ export function server(opts) {
         path = `${type}/${id}`;
       }
       info.tiles = getTileUrls(req, info.tiles, path, info.format, opts.publicUrl, {
-        'pbf': options.pbfAlias,
+        'pbf': options.pbfAlias
       });
       arr.push(info);
     }
@@ -368,7 +368,7 @@ export function server(opts) {
 
         data_.xyz_link = getTileUrls(
             req, tilejson.tiles, `data/${id}`, tilejson.format, opts.publicUrl, {
-              'pbf': options.pbfAlias,
+              'pbf': options.pbfAlias
             })[0];
       }
       if (data_.filesize) {
@@ -387,7 +387,7 @@ export function server(opts) {
     }
     return {
       styles: Object.keys(styles).length ? styles : null,
-      data: Object.keys(data).length ? data : null,
+      data: Object.keys(data).length ? data : null
     };
   });
 
@@ -462,7 +462,7 @@ export function server(opts) {
   return {
     app: app,
     server: server,
-    startupPromise: startupPromise,
+    startupPromise: startupPromise
   };
 }
 

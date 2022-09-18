@@ -13,7 +13,7 @@ before(function() {
   const running = server({
     configPath: 'config.json',
     port: 8888,
-    publicUrl: '/test/',
+    publicUrl: '/test/'
   });
   global.app = running.app;
   global.server = running.server;

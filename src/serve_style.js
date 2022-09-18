@@ -138,7 +138,7 @@ export const serve_style = {
       spritePath = path.join(options.paths.sprites,
           styleJSON.sprite
               .replace('{style}', path.basename(styleFile, '.json'))
-              .replace('{styleJsonFolder}', path.relative(options.paths.sprites, path.dirname(styleFile))),
+              .replace('{styleJsonFolder}', path.relative(options.paths.sprites, path.dirname(styleFile)))
       );
       styleJSON.sprite = `local://styles/${id}/sprite`;
     }
@@ -150,9 +150,9 @@ export const serve_style = {
       styleJSON,
       spritePath,
       publicUrl,
-      name: styleJSON.name,
+      name: styleJSON.name
     };
 
     return true;
-  },
+  }
 };

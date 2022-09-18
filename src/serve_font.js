@@ -45,14 +45,14 @@ export const serve_font = (options, allowedFonts) => {
       res.header('Content-type', 'application/x-protobuf');
       res.header('Last-Modified', lastModified);
       return res.send(concated);
-    }, (err) => res.status(400).send(err),
+    }, (err) => res.status(400).send(err)
     );
   });
 
   app.get('/fonts.json', (req, res, next) => {
     res.header('Content-type', 'application/json');
     return res.send(
-        Object.keys(options.serveAllFonts ? existingFonts : allowedFonts).sort(),
+        Object.keys(options.serveAllFonts ? existingFonts : allowedFonts).sort()
     );
   });
 

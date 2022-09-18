@@ -74,7 +74,7 @@ export const serve_data = {
               const tile = new VectorTile(new Pbf(data));
               const geojson = {
                 'type': 'FeatureCollection',
-                'features': [],
+                'features': []
               };
               for (const layerName in tile.layers) {
                 const layer = tile.layers[layerName];
@@ -110,7 +110,7 @@ export const serve_data = {
       const info = clone(item.tileJSON);
       info.tiles = getTileUrls(req, info.tiles,
           `data/${req.params.id}`, info.format, item.publicUrl, {
-            'pbf': options.pbfAlias,
+            'pbf': options.pbfAlias
           });
       return res.send(info);
     });
@@ -120,7 +120,7 @@ export const serve_data = {
   add: (options, repo, params, id, publicUrl) => {
     const mbtilesFile = path.resolve(options.paths.mbtiles, params.mbtiles);
     let tileJSON = {
-      'tiles': params.domains || options.domains,
+      'tiles': params.domains || options.domains
     };
 
     const mbtilesFileStats = fs.statSync(mbtilesFile);
@@ -165,8 +165,8 @@ export const serve_data = {
       repo[id] = {
         tileJSON,
         publicUrl,
-        source,
+        source
       };
     });
-  },
+  }
 };

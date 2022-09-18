@@ -8,4 +8,7 @@ parserOptions:
   sourceType: module
 ignorePatterns:
   - /public/resources
-rules: {}
+rules:
+  comma-dangle:
+    - error
+    - never

@@ -6,5 +6,5 @@ export const serve_rendered = {
   add: (options, repo, params, id, publicUrl, dataResolver) => {
   },
   remove: (repo, id) => {
-  },
+  }
 };
