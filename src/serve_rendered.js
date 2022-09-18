@@ -758,7 +758,7 @@ export const serve_rendered = {
           if (!mbtilesFileStats.isFile() || mbtilesFileStats.size === 0) {
             throw Error(`Not valid MBTiles file: ${mbtilesFile}`);
           }
-          map.sources[name] = new MBTiles(mbtilesFile + '?mode=ro', (err) => {
+          map.sources[name] = new MBTiles(mbtilesFile, (err) => {
             map.sources[name].getInfo((err, info) => {
               if (err) {
                 console.error(err);
