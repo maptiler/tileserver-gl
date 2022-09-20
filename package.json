@@ -10,8 +10,8 @@
     "lint:yml": "yamllint --schema=CORE_SCHEMA *.{yml,yaml}",
     "lint:js": "npm run lint:prettier",
     "lint:js:fix": "npm run lint:prettier:fix",
-    "lint:prettier": "prettier --check \"{,!(node_modules|dist|static)/**/}*.{js,ts,cjs,mjs,json}\" --ignore-path .gitignore",
-    "lint:prettier:fix": "prettier --write \"{,!(node_modules|dist|static)/**/}*.{js,ts,cjs,mjs,json}\" --ignore-path .gitignore",
+    "lint:prettier": "prettier --check \"{,!(node_modules|dist|static|public)/**/}*.{js,ts,cjs,mjs,json}\" --ignore-path .gitignore",
+    "lint:prettier:fix": "prettier --write \"{,!(node_modules|dist|static|public)/**/}*.{js,ts,cjs,mjs,json}\" --ignore-path .gitignore",
     "docker": "docker build -f Dockerfile . && docker run --rm -i -p 8080:80 $(docker build -q .)",
     "prepare": "husky install"
   },
