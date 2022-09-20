@@ -5,10 +5,6 @@
   "main": "src/main.js",
   "bin": "src/main.js",
   "type": "module",
-  "license": "BSD-2-Clause",
-  "engines": {
-    "node": ">=14.15.0 <17"
-  },
   "scripts": {
     "test": "mocha test/**.js --timeout 10000",
     "lint:yml": "yamllint --schema=CORE_SCHEMA *.{yml,yaml}",
@@ -50,17 +46,20 @@
     "supertest": "^6.2.4",
     "yaml-lint": "^1.7.0"
   },
+  "keywords": [
+    "maptiler",
+    "tileserver-gl",
+    "maplibre-gl",
+    "tileserver"
+  ],
+  "license": "BSD-2-Clause",
+  "engines": {
+    "node": ">=14.15.0 <17"
+  },
   "repository": {
     "url": "git+https://github.com/maptiler/tileserver-gl.git",
     "type": "git"
   },
-  "contributors": [
-    {
-      "name": "Vinayak Kulkarni",
-      "email": "inbox.vinayak@gmail.com",
-      "url": "https://vinayakkulkarni.dev"
-    }
-  ],
   "bugs": {
     "url": "https://github.com/maptiler/tileserver-gl/issues"
   },
