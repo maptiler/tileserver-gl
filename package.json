@@ -8,11 +8,12 @@
   "scripts": {
     "test": "mocha test/**.js --timeout 10000",
     "lint:yml": "yamllint --schema=CORE_SCHEMA *.{yml,yaml}",
+    "lint:js": "npm run lint:prettier",
+    "lint:js:fix": "npm run lint:prettier:fix",
     "lint:prettier": "prettier --check \"{,!(node_modules|dist|static)/**/}*.{js,ts,cjs,mjs,json}\" --ignore-path .gitignore",
     "lint:prettier:fix": "prettier --write \"{,!(node_modules|dist|static)/**/}*.{js,ts,cjs,mjs,json}\" --ignore-path .gitignore",
-    "lint": "npm run lint:prettier",
-    "lintfix": "npm run lint:prettier:fix",
-    "docker": "docker build -f Dockerfile . && docker run --rm -i -p 8080:80 $(docker build -q .)"
+    "docker": "docker build -f Dockerfile . && docker run --rm -i -p 8080:80 $(docker build -q .)",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@mapbox/glyph-pbf-composite": "0.0.3",
@@ -39,7 +40,10 @@
     "tileserver-gl-styles": "2.0.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^17.1.2",
+    "@commitlint/config-conventional": "^17.1.0",
     "chai": "4.3.6",
+    "husky": "^8.0.1",
     "mocha": "^10.0.0",
     "prettier": "^2.7.1",
     "should": "^13.2.3",
