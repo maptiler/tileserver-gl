@@ -21,14 +21,14 @@ Once installed, you can use it like the following examples.
 
 using a mbtiles file
 ```bash
-curl -o zurich_switzerland.mbtiles https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/zurich_switzerland.mbtiles
+wget https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/zurich_switzerland.mbtiles
 tileserver-gl --mbtiles zurich_switzerland.mbtiles
 [in your browser, visit http://[server ip]:8080]
 ```
 
 using a config.json + style + mbtiles file
 ```bash
-curl -o test_data.zip https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
+wget https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
 unzip test_data.zip
 tileserver-gl
 [in your browser, visit http://[server ip]:8080]
@@ -42,14 +42,14 @@ An alternative to npm to start the packed software easier is to install [Docker]
 
 Example using a mbtiles file
 ```bash
-curl -o zurich_switzerland.mbtiles https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/zurich_switzerland.mbtiles
+wget https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/zurich_switzerland.mbtiles
 docker run --rm -it -v $(pwd):/data -p 8080:80 maptiler/tileserver-gl --mbtiles zurich_switzerland.mbtiles
 [in your browser, visit http://[server ip]:8080]
 ```
 
 Example using a config.json + style + mbtiles file
 ```bash
-curl -o test_data.zip https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
+wget https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
 unzip test_data.zip
 docker run --rm -it -v $(pwd):/data -p 8080:80 maptiler/tileserver-gl
 [in your browser, visit http://[server ip]:8080]
@@ -68,7 +68,7 @@ Alternatively, you can use the `maptiler/tileserver-gl-light` docker image inste
 
 Test from command line
 ```bash
-curl -o test_data.zip https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
+wget https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
 unzip -q test_data.zip -d test_data
 xvfb-run --server-args="-screen 0 1024x768x24" npm test
 ```
