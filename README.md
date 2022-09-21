@@ -81,7 +81,7 @@ xvfb-run --server-args="-screen 0 1024x768x24" node .
 
 ## Documentation
 
-You can read full documentation of this project at https://tileserver.readthedocs.io/.
+You can read the full documentation of this project at https://tileserver.readthedocs.io/.
 
 ## Alternative
 
