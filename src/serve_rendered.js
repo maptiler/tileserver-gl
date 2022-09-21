@@ -225,9 +225,7 @@ export const serve_rendered = {
 
     const app = express().disable('x-powered-by');
 
-    const respondImage = (item, z, lon, lat, bearing, pitch,
-        width, height, scale, format, res, next,
-        opt_overlay) => {
+    const respondImage = (item, z, lon, lat, bearing, pitch, width, height, scale, format, res, next, opt_overlay, opt_mode='tile') => {
       if (Math.abs(lon) > 180 || Math.abs(lat) > 85.06 ||
         lon !== lon || lat !== lat) {
         return res.status(400).send('Invalid center');
@@ -244,7 +242,12 @@ export const serve_rendered = {
         return res.status(400).send('Invalid format');
       }
 
-      const pool = item.map.renderers[scale];
+      let pool;
+      if (opt_mode === 'tile') {
+        pool = item.map.renderers[scale];
+      } else {
+        pool = item.map.renderers_static[scale];
+      }
       pool.acquire((err, renderer) => {
         const mlglZ = Math.max(0, z - 1);
         const params = {
@@ -379,8 +382,7 @@ export const serve_rendered = {
         ((x + 0.5) / (1 << z)) * (256 << z),
         ((y + 0.5) / (1 << z)) * (256 << z)
       ], z);
-      return respondImage(item, z, tileCenter[0], tileCenter[1], 0, 0,
-          tileSize, tileSize, scale, format, res, next);
+      return respondImage(item, z, tileCenter[0], tileCenter[1], 0, 0, tileSize, tileSize, scale, format, res, next);
     });
 
     if (options.serveStaticMaps !== false) {
@@ -422,11 +424,9 @@ export const serve_rendered = {
         }
 
         const path = extractPathFromQuery(req.query, transformer);
-        const overlay = renderOverlay(z, x, y, bearing, pitch, w, h, scale,
-            path, req.query);
+        const overlay = renderOverlay(z, x, y, bearing, pitch, w, h, scale, path, req.query);
 
-        return respondImage(item, z, x, y, bearing, pitch, w, h, scale, format,
-            res, next, overlay);
+        return respondImage(item, z, x, y, bearing, pitch, w, h, scale, format, res, next, overlay, 'static');
       });
 
       const serveBounds = (req, res, next) => {
@@ -464,7 +464,8 @@ export const serve_rendered = {
 
         const path = extractPathFromQuery(req.query, transformer);
         const overlay = renderOverlay(z, x, y, bearing, pitch, w, h, scale, path, req.query);
-        return respondImage(item, z, x, y, bearing, pitch, w, h, scale, format, res, next, overlay);
+
+        return respondImage(item, z, x, y, bearing, pitch, w, h, scale, format, res, next, overlay, 'static');
       };
 
       const boundsPattern =
@@ -535,11 +536,9 @@ export const serve_rendered = {
         const x = center[0];
         const y = center[1];
 
-        const overlay = renderOverlay(z, x, y, bearing, pitch, w, h, scale,
-            path, req.query);
+        const overlay = renderOverlay(z, x, y, bearing, pitch, w, h, scale, path, req.query);
 
-        return respondImage(item, z, x, y, bearing, pitch, w, h, scale, format,
-            res, next, overlay);
+        return respondImage(item, z, x, y, bearing, pitch, w, h, scale, format, res, next, overlay, 'static');
       });
     }
 
@@ -559,14 +558,15 @@ export const serve_rendered = {
   add: (options, repo, params, id, publicUrl, dataResolver) => {
     const map = {
       renderers: [],
+      renderers_static: [],
       sources: {}
     };
 
     let styleJSON;
-    const createPool = (ratio, min, max) => {
+    const createPool = (ratio, mode, min, max) => {
       const createRenderer = (ratio, createCallback) => {
-        const renderer = new mlgl.Map({
-          mode: 'tile',
+        const renderer = new mbgl.Map({
+          mode: mode,
           ratio: ratio,
           request: (req, callback) => {
             const protocol = req.url.split(':')[0];
@@ -810,7 +810,8 @@ export const serve_rendered = {
         const j = Math.min(maxPoolSizes.length - 1, s - 1);
         const minPoolSize = minPoolSizes[i];
         const maxPoolSize = Math.max(minPoolSize, maxPoolSizes[j]);
-        map.renderers[s] = createPool(s, minPoolSize, maxPoolSize);
+        map.renderers[s] = createPool(s, 'tile', minPoolSize, maxPoolSize);
+        map.renderers_static[s] = createPool(s, 'static', minPoolSize, maxPoolSize);
       }
     });
 
@@ -820,6 +821,9 @@ export const serve_rendered = {
     const item = repo[id];
     if (item) {
       item.map.renderers.forEach((pool) => {
+        pool.close();
+      });
+      item.map.renderers_static.forEach(pool => {
         pool.close();
       });
     }
