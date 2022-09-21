@@ -823,7 +823,7 @@ export const serve_rendered = {
       item.map.renderers.forEach((pool) => {
         pool.close();
       });
-      item.map.renderers_static.forEach(pool => {
+      item.map.renderers_static.forEach((pool) => {
         pool.close();
       });
     }
