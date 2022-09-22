@@ -565,7 +565,7 @@ export const serve_rendered = {
     let styleJSON;
     const createPool = (ratio, mode, min, max) => {
       const createRenderer = (ratio, createCallback) => {
-        const renderer = new mbgl.Map({
+        const renderer = new mlgl.Map({
           mode: mode,
           ratio: ratio,
           request: (req, callback) => {
