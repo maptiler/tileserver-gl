@@ -301,9 +301,11 @@ export const serve_rendered = {
           });
 
           if (z > 2 && tileMargin > 0) {
+            const [_, y] = mercator.px(params.center, z);
+            let yoffset = Math.max(Math.min(0, y - 128 - tileMargin), y + 128 + tileMargin - Math.pow(2, z + 8));
             image.extract({
               left: tileMargin * scale,
-              top: tileMargin * scale,
+              top: (tileMargin + yoffset) * scale,
               width: width * scale,
               height: height * scale
             });
