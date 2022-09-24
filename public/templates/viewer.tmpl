@@ -4,11 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{name}} - TileServer GL</title>
-  <link rel="stylesheet" type="text/css" href="{{public_url}}mapbox-gl.css{{&key_query}}" />
-  <script src="{{public_url}}mapbox-gl.js{{&key_query}}"></script>
-  <link rel="stylesheet" type="text/css" href="{{public_url}}mapbox.css{{&key_query}}" />
-  <script src="{{public_url}}mapbox.js{{&key_query}}"></script>
+  <link rel="stylesheet" type="text/css" href="{{public_url}}maplibre-gl.css{{&key_query}}" />
+  <link rel="stylesheet" type="text/css" href="{{public_url}}maplibre-gl-inspect.css{{&key_query}}" />
+  <link rel="stylesheet" type="text/css" href="{{public_url}}leaflet.css{{&key_query}}" />
+  <script>if (typeof Symbol !== 'undefined') { document.write('<script src="{{public_url}}maplibre-gl.js{{&key_query}}"><\/script>'); } else { document.write('<script src="{{public_url}}maplibre-gl-compat.js{{&key_query}}"><\/script>'); }</script>
+  <script>if (typeof Symbol !== 'undefined') { document.write('<script src="{{public_url}}maplibre-gl-inspect.min.js{{&key_query}}"><\/script>'); } else { document.write('<script src="{{public_url}}maplibre-gl-inspect-compat.min.js{{&key_query}}"><\/script>'); }</script>
+  <script src="{{public_url}}leaflet.js{{&key_query}}"></script>
   <script src="{{public_url}}leaflet-hash.js{{&key_query}}"></script>
+  <script src="{{public_url}}L.TileLayer.NoGap.js{{&key_query}}"></script>
   <style>
     body { margin:0; padding:0; }
     #map { position:absolute; top:0; bottom:0; width:100%; }
@@ -22,21 +25,72 @@
     var preference =
       q.indexOf('vector') >= 0 ? 'vector' :
         (q.indexOf('raster') >= 0 ? 'raster' :
-          (mapboxgl.supported() ? 'vector' : 'raster'));
+          (maplibregl.supported() ? 'vector' : 'raster'));
     if (preference == 'vector') {
-      mapboxgl.setRTLTextPlugin('{{public_url}}mapbox-gl-rtl-text.js{{&key_query}}');
-      var map = new mapboxgl.Map({
+      maplibregl.setRTLTextPlugin('{{public_url}}mapbox-gl-rtl-text.js{{&key_query}}');
+      var map = new maplibregl.Map({
         container: 'map',
         style: '{{public_url}}styles/{{id}}/style.json{{&key_query}}',
-        hash: true
+        hash: true,
+        maplibreLogo: true
       });
-      map.addControl(new mapboxgl.NavigationControl());
+      map.addControl(new maplibregl.NavigationControl({
+         visualizePitch: true,
+         showZoom: true,
+         showCompass: true
+      }));
+      map.addControl(new MaplibreInspect({
+         showMapPopupOnHover: false,
+         showInspectMapPopupOnHover: false,
+         selectThreshold: 5
+      }));
     } else {
-      var map = L.mapbox.map('map', '{{public_url}}styles/{{id}}.json{{&key_query}}', { zoomControl: false });
-      new L.Control.Zoom({ position: 'topright' }).addTo(map);
-      setTimeout(function() {
-        new L.Hash(map);
-      }, 0);
+		var map = L.map('map', { zoomControl: false });
+		new L.Control.Zoom({ position: 'topright' }).addTo(map);
+		
+		var tile_urls = [], tile_attribution, tile_minzoom, tile_maxzoom;
+		var url = '{{public_url}}styles/{{id}}.json{{&key_query}}';
+		var req = new XMLHttpRequest();
+		req.overrideMimeType("application/json");
+		req.open('GET', url, true);
+		req.onload = function() {
+			var jsonResponse = JSON.parse(req.responseText);
+			for (key in jsonResponse) {
+			  var keyl = key.toLowerCase();
+				switch(keyl) {
+				  case "tiles":
+					tile_urls = jsonResponse[key];
+					break;
+				  case "attribution":
+					tile_attribution = jsonResponse[key];
+					break;
+				  case "minzoom":
+					tile_minzoom = jsonResponse[key];
+					break;
+				  case "maxzoom":
+					tile_maxzoom = jsonResponse[key];
+					break;
+				}
+			}
+
+			for (tile_url in tile_urls) {
+				L.tileLayer(tile_urls[tile_url], {
+					minZoom: tile_minzoom,
+					maxZoom: tile_maxzoom,
+					attribution: tile_attribution
+				}).addTo(map);
+			}
+		
+			map.eachLayer(function(layer) {
+			  // do not add scale prefix even if retina display is detected
+			  layer.scalePrefix = '.';
+			});
+		};
+		req.send(null);
+      
+		setTimeout(function() {
+			new L.Hash(map);
+		}, 0);
     }
   </script>
 </body>

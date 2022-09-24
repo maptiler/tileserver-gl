@@ -35,4 +35,4 @@ Reloading the configuration
 It is possible to reload the configuration file without restarting the whole process by sending a SIGHUP signal to the node process.
 
 - The `docker kill -s HUP tileserver-gl` command can be used when running the tileserver-gl docker container.
-- The `docker-compose -s HUP tileserver-gl-service-name` can be used when tileserver-gl is run as a docker-compose service.
+- The `docker-compose kill -s HUP tileserver-gl-service-name` can be used when tileserver-gl is run as a docker-compose service.

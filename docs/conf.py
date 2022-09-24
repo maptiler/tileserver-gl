@@ -44,7 +44,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'TileServer GL'
-copyright = u'2016, Klokan Technologies GmbH'
+copyright = u'2022, MapTiler.com'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -197,7 +197,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   ('index', 'TileServerGL.tex', u'TileServer GL Documentation',
-   u'Klokan Technologies GmbH', 'manual'),
+   u'MapTiler.com', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -227,7 +227,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'tileservergl', u'TileServer GL Documentation',
-     [u'Klokan Technologies GmbH'], 1)
+     [u'MapTiler.com'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -241,7 +241,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'TileServerGL', u'TileServer GL Documentation',
-   u'Klokan Technologies GmbH', 'TileServerGL', 'One line description of project.',
+   u'MapTiler.com', 'TileServerGL', 'One line description of project.',
    'Miscellaneous'),
 ]
 

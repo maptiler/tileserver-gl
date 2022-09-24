@@ -2,7 +2,7 @@
 Deployment
 ==========
 
-Typically - you should use nginx/lighttpd/apache on the frontend - and the tileserver-gl server is hidden behind it in production deployment.
+Typically, you should use nginx, lighttpd or apache on the frontend. The tileserver-gl server is hidden behind it in production deployment.
 
 Caching
 =======
@@ -17,4 +17,4 @@ Nginx can be used to add protection via https, password, referrer, IP address re
 Running behind a proxy or a load-balancer
 =========================================
 
-If you need to run TileServer GL behind a proxy, make sure the proxy sends ``X-Forwarded-*`` headers to the server (most importantly ``X-Forwarded-Host`` and ``X-Forwarded-Proto``) to ensures the URLs generated inside TileJSON etc. are using the desired domain and protocol.
+If you need to run TileServer GL behind a proxy, make sure the proxy sends ``X-Forwarded-*`` headers to the server (most importantly ``X-Forwarded-Host`` and ``X-Forwarded-Proto``) to ensure the URLs generated inside TileJSON, etc. are using the desired domain and protocol.
