@@ -792,10 +792,12 @@ module.exports = {
 
               if (!attributionOverride &&
                 source.attribution && source.attribution.length > 0) {
-                if (tileJSON.attribution.length > 0) {
-                  tileJSON.attribution += '; ';
+                if (!tileJSON.attribution.includes(source.attribution)) {
+                  if (tileJSON.attribution.length > 0) {
+                    tileJSON.attribution += ' | ';
+                  }
+                  tileJSON.attribution += source.attribution;
                 }
-                tileJSON.attribution += source.attribution;
               }
               resolve();
             });
