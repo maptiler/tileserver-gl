@@ -22,12 +22,13 @@
 
 .maplibregl-inspect_property-value {
   display: table-cell;
-
+  word-break: break-all;
 }
 
 .maplibregl-inspect_property-name {
   display: table-cell;
   padding-right: 10px;
+  word-break: break-all;
 }
 
 .maplibregl-ctrl-inspect {
