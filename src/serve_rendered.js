@@ -722,7 +722,7 @@ module.exports = {
     tileJSON.tiles = params.domains || options.domains;
     utils.fixTileJSONCenter(tileJSON);
 
-    repo[id] = {
+    const repoobj = {
       tileJSON,
       publicUrl,
       map,
@@ -730,6 +730,7 @@ module.exports = {
       lastModified: new Date().toUTCString(),
       watermark: params.watermark || options.watermark
     };
+    repo[id] = repoobj;
 
     const queue = [];
     for (const name of Object.keys(styleJSON.sources)) {
@@ -770,11 +771,11 @@ module.exports = {
                 return;
               }
 
-              if (!repo[id].dataProjWGStoInternalWGS && info.proj4) {
+              if (!repoobj.dataProjWGStoInternalWGS && info.proj4) {
                 // how to do this for multiple sources with different proj4 defs?
                 const to3857 = proj4('EPSG:3857');
                 const toDataProj = proj4(info.proj4);
-                repo[id].dataProjWGStoInternalWGS = xy => to3857.inverse(toDataProj.forward(xy));
+                repoobj.dataProjWGStoInternalWGS = xy => to3857.inverse(toDataProj.forward(xy));
               }
 
               const type = source.type;
