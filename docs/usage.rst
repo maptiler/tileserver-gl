@@ -22,6 +22,12 @@ Getting started
     -s, --silent          Less verbose output
     -v, --version         Version info
 
+Resolve relative public url into an absolute url
+=====
+
+- Define environment variable TILESERVER_GL_RESOLVE_RELATIVE_PUBLIC_URL=true
+- Using this configuration will cause relative resource urls to be converted to absolute urls. This is needed for example to use tileserver-gl with mapbox-gl.
+- The absolute url will be resolved from the request protocol and host header and prepending them to the public_url option.
 
 Default preview style and configuration
 ======
