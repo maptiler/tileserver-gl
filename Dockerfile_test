@@ -2,7 +2,7 @@
 # Simply run "docker build -f Dockerfile_test ."
 # WARNING: sometimes it fails with a core dumped exception
 
-FROM node:10-stretch
+FROM node:16-bullseye
 
 RUN apt-get -qq update \
 && DEBIAN_FRONTEND=noninteractive apt-get -y install \
@@ -17,6 +17,7 @@ RUN apt-get -qq update \
     libllvm3.9 \
     libprotobuf-dev \
     libxxf86vm-dev \
+    libopengl0 \
     xvfb \
 && apt-get clean
 

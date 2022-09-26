@@ -129,7 +129,7 @@ module.exports = {
     }
     let source;
     const sourceInfoPromise = new Promise((resolve, reject) => {
-      source = new MBTiles(mbtilesFile, err => {
+      source = new MBTiles(mbtilesFile + '?mode=ro', err => {
         if (err) {
           reject(err);
           return;

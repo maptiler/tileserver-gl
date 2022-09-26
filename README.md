@@ -5,43 +5,79 @@
 [![Build Status](https://travis-ci.org/maptiler/tileserver-gl.svg?branch=master)](https://travis-ci.org/maptiler/tileserver-gl)
 [![Docker Hub](https://img.shields.io/badge/docker-hub-blue.svg)](https://hub.docker.com/r/maptiler/tileserver-gl/)
 
-Vector and raster maps with GL styles. Server-side rendering by Mapbox GL Native. Map tile server for MapLibre GL JS, Android, iOS, Leaflet, OpenLayers, GIS via WMTS, etc.
+Vector and raster maps with GL styles. Server-side rendering by MapLibre GL Native. Map tile server for MapLibre GL JS, Android, iOS, Leaflet, OpenLayers, GIS via WMTS, etc.
 
-## Get Started
+Download vector tiles from [OpenMapTiles](https://data.maptiler.com/downloads/planet/).
+## Getting Started with Node
 
-Make sure you have Node.js version **10** installed (running `node -v` it should output something like `v10.17.0`).
+Make sure you have Node.js version **14.20.0** or above installed. Node 16 is recommended. (running `node -v` it should output something like `v16.x.x`). Running without docker requires [Native dependencies](https://tileserver.readthedocs.io/en/latest/installation.html#npm) to be installed first.
 
-Install `tileserver-gl` with server-side raster rendering of vector tiles with npm
+Install `tileserver-gl` with server-side raster rendering of vector tiles with npm. 
 
 ```bash
 npm install -g tileserver-gl
 ```
 
-Now download vector tiles from [OpenMapTiles](https://data.maptiler.com/downloads/planet/).
+Once installed, you can use it like the following examples.
 
+using a mbtiles file
 ```bash
-curl -o zurich_switzerland.mbtiles https://[GET-YOUR-LINK]/extracts/zurich_switzerland.mbtiles
+wget https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/zurich_switzerland.mbtiles
+tileserver-gl --mbtiles zurich_switzerland.mbtiles
+[in your browser, visit http://[server ip]:8080]
 ```
 
-Start `tileserver-gl` with the downloaded vector tiles.
-
+using a config.json + style + mbtiles file
 ```bash
-tileserver-gl zurich_switzerland.mbtiles
+wget https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
+unzip test_data.zip
+tileserver-gl
+[in your browser, visit http://[server ip]:8080]
 ```
 
-Alternatively, you can use the `tileserver-gl-light` package instead, which is pure javascript (does not have any native dependencies) and can run anywhere, but does not contain rasterization on the server side made with MapBox GL Native.
+Alternatively, you can use the `tileserver-gl-light` npm package instead, which is pure javascript, does not have any native dependencies, and can run anywhere, but does not contain rasterization on the server side made with Maplibre GL Native.
 
-## Using Docker
+## Getting Started with Docker
 
-An alternative to npm to start the packed software easier is to install [Docker](https://www.docker.com/) on your computer and then run in the directory with the downloaded MBTiles the command:
+An alternative to npm to start the packed software easier is to install [Docker](https://www.docker.com/) on your computer and then run from the tileserver-gl directory
 
+Example using a mbtiles file
 ```bash
+wget https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/zurich_switzerland.mbtiles
+docker run --rm -it -v $(pwd):/data -p 8080:80 maptiler/tileserver-gl --mbtiles zurich_switzerland.mbtiles
+[in your browser, visit http://[server ip]:8080]
+```
+
+Example using a config.json + style + mbtiles file
+```bash
+wget https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
+unzip test_data.zip
 docker run --rm -it -v $(pwd):/data -p 8080:80 maptiler/tileserver-gl
+[in your browser, visit http://[server ip]:8080]
 ```
 
-This will download and start a ready to use container on your computer and the maps are going to be available in webbrowser on localhost:8080.
+Example using a different path
+```bash
+docker run --rm -it -v /your/local/config/path:/data -p 8080:80 maptiler/tileserver-gl
+```
+replace '/your/local/config/path' with the path to your config file
 
-On laptop, you can use [Docker Kitematic](https://kitematic.com/) and search "tileserver-gl" and run it, then drop in the 'data' folder the MBTiles.
+
+Alternatively, you can use the `maptiler/tileserver-gl-light` docker image instead, which is pure javascript, does not have any native dependencies, and can run anywhere, but does not contain rasterization on the server side made with Maplibre GL Native.
+
+## Getting Started with Linux cli
+
+Test from command line
+```bash
+wget https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
+unzip -q test_data.zip -d test_data
+xvfb-run --server-args="-screen 0 1024x768x24" npm test
+```
+
+Run from command line
+```bash
+xvfb-run --server-args="-screen 0 1024x768x24" node .
+```
 
 ## Documentation
 
@@ -50,3 +86,4 @@ You can read the full documentation of this project at https://tileserver.readth
 ## Alternative
 
 Discover MapTiler Server if you need a [map server with easy setup and user-friendly interface](https://www.maptiler.com/server/).
+

@@ -17,7 +17,7 @@ const clone = require('clone');
 const Color = require('color');
 const express = require('express');
 const mercator = new (require('@mapbox/sphericalmercator'))();
-const mbgl = require('@mapbox/mapbox-gl-native');
+const mbgl = require('@maplibre/maplibre-gl-native');
 const MBTiles = require('@mapbox/mbtiles');
 const proj4 = require('proj4');
 const request = require('request');
@@ -229,9 +229,7 @@ module.exports = {
 
     const app = express().disable('x-powered-by');
 
-    const respondImage = (item, z, lon, lat, bearing, pitch,
-      width, height, scale, format, res, next,
-      opt_overlay) => {
+    const respondImage = (item, z, lon, lat, bearing, pitch, width, height, scale, format, res, next, opt_overlay, opt_mode='tile') => {
       if (Math.abs(lon) > 180 || Math.abs(lat) > 85.06 ||
         lon !== lon || lat !== lat) {
         return res.status(400).send('Invalid center');
@@ -248,7 +246,12 @@ module.exports = {
         return res.status(400).send('Invalid format');
       }
 
-      const pool = item.map.renderers[scale];
+      let pool;
+      if (opt_mode === 'tile') {
+        pool = item.map.renderers[scale];
+      } else {
+        pool = item.map.renderers_static[scale];
+      }
       pool.acquire((err, renderer) => {
         const mbglZ = Math.max(0, z - 1);
         const params = {
@@ -302,9 +305,11 @@ module.exports = {
           });
 
           if (z > 2 && tileMargin > 0) {
+            const [_, y] = mercator.px(params.center, z);
+            let yoffset = Math.max(Math.min(0, y - 128 - tileMargin), y + 128 + tileMargin - Math.pow(2, z + 8));
             image.extract({
               left: tileMargin * scale,
-              top: tileMargin * scale,
+              top: (tileMargin + yoffset) * scale,
               width: width * scale,
               height: height * scale
             });
@@ -383,8 +388,7 @@ module.exports = {
         ((x + 0.5) / (1 << z)) * (256 << z),
         ((y + 0.5) / (1 << z)) * (256 << z)
       ], z);
-      return respondImage(item, z, tileCenter[0], tileCenter[1], 0, 0,
-        tileSize, tileSize, scale, format, res, next);
+      return respondImage(item, z, tileCenter[0], tileCenter[1], 0, 0, tileSize, tileSize, scale, format, res, next);
     });
 
     if (options.serveStaticMaps !== false) {
@@ -426,11 +430,9 @@ module.exports = {
         }
 
         const path = extractPathFromQuery(req.query, transformer);
-        const overlay = renderOverlay(z, x, y, bearing, pitch, w, h, scale,
-          path, req.query);
+        const overlay = renderOverlay(z, x, y, bearing, pitch, w, h, scale, path, req.query);
 
-        return respondImage(item, z, x, y, bearing, pitch, w, h, scale, format,
-          res, next, overlay);
+        return respondImage(item, z, x, y, bearing, pitch, w, h, scale, format, res, next, overlay, 'static');
       });
 
       const serveBounds = (req, res, next) => {
@@ -468,10 +470,8 @@ module.exports = {
           pitch = 0;
 
         const path = extractPathFromQuery(req.query, transformer);
-        const overlay = renderOverlay(z, x, y, bearing, pitch, w, h, scale,
-          path, req.query);
-        return respondImage(item, z, x, y, bearing, pitch, w, h, scale, format,
-          res, next, overlay);
+        const overlay = renderOverlay(z, x, y, bearing, pitch, w, h, scale, path, req.query);
+        return respondImage(item, z, x, y, bearing, pitch, w, h, scale, format, res, next, overlay, 'static');
       };
 
       const boundsPattern =
@@ -542,11 +542,9 @@ module.exports = {
           x = center[0],
           y = center[1];
 
-        const overlay = renderOverlay(z, x, y, bearing, pitch, w, h, scale,
-          path, req.query);
+        const overlay = renderOverlay(z, x, y, bearing, pitch, w, h, scale, path, req.query);
 
-        return respondImage(item, z, x, y, bearing, pitch, w, h, scale, format,
-          res, next, overlay);
+        return respondImage(item, z, x, y, bearing, pitch, w, h, scale, format, res, next, overlay, 'static');
       });
     }
 
@@ -566,14 +564,15 @@ module.exports = {
   add: (options, repo, params, id, publicUrl, dataResolver) => {
     const map = {
       renderers: [],
+      renderers_static: [],
       sources: {}
     };
 
     let styleJSON;
-    const createPool = (ratio, min, max) => {
+    const createPool = (ratio, mode, min, max) => {
       const createRenderer = (ratio, createCallback) => {
         const renderer = new mbgl.Map({
-          mode: "tile",
+          mode: mode,
           ratio: ratio,
           request: (req, callback) => {
             const protocol = req.url.split(':')[0];
@@ -764,7 +763,7 @@ module.exports = {
           if (!mbtilesFileStats.isFile() || mbtilesFileStats.size === 0) {
             throw Error(`Not valid MBTiles file: ${mbtilesFile}`);
           }
-          map.sources[name] = new MBTiles(mbtilesFile, err => {
+          map.sources[name] = new MBTiles(mbtilesFile + '?mode=ro', err => {
             map.sources[name].getInfo((err, info) => {
               if (err) {
                 console.error(err);
@@ -793,10 +792,12 @@ module.exports = {
 
               if (!attributionOverride &&
                 source.attribution && source.attribution.length > 0) {
-                if (tileJSON.attribution.length > 0) {
-                  tileJSON.attribution += '; ';
+                if (!tileJSON.attribution.includes(source.attribution)) {
+                  if (tileJSON.attribution.length > 0) {
+                    tileJSON.attribution += ' | ';
+                  }
+                  tileJSON.attribution += source.attribution;
                 }
-                tileJSON.attribution += source.attribution;
               }
               resolve();
             });
@@ -814,7 +815,8 @@ module.exports = {
         const j = Math.min(maxPoolSizes.length - 1, s - 1);
         const minPoolSize = minPoolSizes[i];
         const maxPoolSize = Math.max(minPoolSize, maxPoolSizes[j]);
-        map.renderers[s] = createPool(s, minPoolSize, maxPoolSize);
+        map.renderers[s] = createPool(s, 'tile', minPoolSize, maxPoolSize);
+        map.renderers_static[s] = createPool(s, 'static', minPoolSize, maxPoolSize);
       }
     });
 
@@ -824,6 +826,9 @@ module.exports = {
     let item = repo[id];
     if (item) {
       item.map.renderers.forEach(pool => {
+        pool.close();
+      });
+      item.map.renderers_static.forEach(pool => {
         pool.close();
       });
     }

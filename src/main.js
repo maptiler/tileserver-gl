@@ -17,7 +17,8 @@ if (args.length >= 3 && args[2][0] !== '-') {
   args.splice(2, 0, '--mbtiles');
 }
 
-const opts = require('commander')
+const { program } = require('commander');
+program
   .description('tileserver-gl startup options')
   .usage('tileserver-gl [mbtiles] [options]')
   .option(
@@ -68,7 +69,8 @@ const opts = require('commander')
     packageJson.version,
     '-v, --version'
   )
-  .parse(args);
+program.parse(process.argv);
+const opts = program.opts();
 
 console.log(`Starting ${packageJson.name} v${packageJson.version}`);
 
@@ -103,7 +105,7 @@ const startWithMBTiles = (mbtilesFile) => {
     console.log(`ERROR: Not valid MBTiles file: ${mbtilesFile}`);
     process.exit(1);
   }
-  const instance = new MBTiles(mbtilesFile, (err) => {
+  const instance = new MBTiles(mbtilesFile + '?mode=ro', (err) => {
     if (err) {
       console.log('ERROR: Unable to open MBTiles.');
       console.log(`       Make sure ${path.basename(mbtilesFile)} is valid MBTiles.`);
