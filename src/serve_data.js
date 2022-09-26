@@ -127,7 +127,7 @@ export const serve_data = {
     }
     let source;
     const sourceInfoPromise = new Promise((resolve, reject) => {
-      source = new MBTiles(mbtilesFile + '?mode=ro', err => {
+      source = new MBTiles(mbtilesFile + '?mode=ro', (err) => {
         if (err) {
           reject(err);
           return;
