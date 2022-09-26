@@ -10,6 +10,9 @@ Example:
 
   {
     "options": {
+      "auth": {
+        "keyName": "api_key"
+      },
       "paths": {
         "root": "",
         "fonts": "fonts",
@@ -59,6 +62,11 @@ Example:
 
 ``options``
 ===========
+
+``auth``
+---------
+
+Defines another name for the key query parameter in ``keyName``. Default is ``key``.
 
 ``paths``
 ---------

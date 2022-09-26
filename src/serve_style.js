@@ -11,13 +11,13 @@ const utils = require('./utils');
 
 const httpTester = /^(http(s)?:)?\/\//;
 
-const fixUrl = (req, url, publicUrl, opt_nokey) => {
+const fixUrl = (req, url, publicUrl, opt_nokey, options) => {
   if (!url || (typeof url !== 'string') || url.indexOf('local://') !== 0) {
     return url;
   }
   const queryParams = [];
-  if (!opt_nokey && req.query.key) {
-    queryParams.unshift(`key=${encodeURIComponent(req.query.key)}`);
+  if (!opt_nokey && req.query[options.auth.keyName]) {
+    queryParams.unshift(`${options.auth.keyName}=${encodeURIComponent(req.query[options.auth.keyName])}`);
   }
   let query = '';
   if (queryParams.length) {
@@ -39,14 +39,14 @@ module.exports = {
       const styleJSON_ = clone(item.styleJSON);
       for (const name of Object.keys(styleJSON_.sources)) {
         const source = styleJSON_.sources[name];
-        source.url = fixUrl(req, source.url, item.publicUrl);
+        source.url = fixUrl(req, source.url, item.publicUrl, false, options);
       }
       // mapbox-gl-js viewer cannot handle sprite urls with query
       if (styleJSON_.sprite) {
-        styleJSON_.sprite = fixUrl(req, styleJSON_.sprite, item.publicUrl, false);
+        styleJSON_.sprite = fixUrl(req, styleJSON_.sprite, item.publicUrl, false, options);
       }
       if (styleJSON_.glyphs) {
-        styleJSON_.glyphs = fixUrl(req, styleJSON_.glyphs, item.publicUrl, false);
+        styleJSON_.glyphs = fixUrl(req, styleJSON_.glyphs, item.publicUrl, false, options);
       }
       return res.send(styleJSON_);
     });
