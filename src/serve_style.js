@@ -15,16 +15,25 @@ const fixUrl = (req, url, publicUrl, opt_nokey) => {
   if (!url || (typeof url !== 'string') || url.indexOf('local://') !== 0) {
     return url;
   }
+
+  return url.replace(
+    'local://', utils.getPublicUrl(publicUrl, req)) + getQuery(req, opt_nokey);
+};
+
+
+// Return the query suffix from the original request
+const getQuery = (req, opt_nokey) => {
   const queryParams = [];
   if (!opt_nokey && req.query.key) {
     queryParams.unshift(`key=${encodeURIComponent(req.query.key)}`);
   }
+
   let query = '';
   if (queryParams.length) {
     query = `?${queryParams.join('&')}`;
   }
-  return url.replace(
-    'local://', utils.getPublicUrl(publicUrl, req)) + query;
+
+  return query;
 };
 
 module.exports = {
@@ -40,6 +49,13 @@ module.exports = {
       for (const name of Object.keys(styleJSON_.sources)) {
         const source = styleJSON_.sources[name];
         source.url = fixUrl(req, source.url, item.publicUrl);
+
+        // Apply the query parameters to the tile urls
+        if (source.tiles) {
+          for (let i = 0; i < source.tiles.length; i++) {
+            source.tiles[i] = source.tiles[i] + getQuery(req);
+          }
+        }
       }
       // mapbox-gl-js viewer cannot handle sprite urls with query
       if (styleJSON_.sprite) {
