@@ -50,11 +50,11 @@ if (process.argv.length > 2 && process.argv[2] == '--no-publish') {
 /* PUBLISH */
 
 // tileserver-gl
-require('child_process').execSync('npm publish . --access public', {
+child_process.execSync('npm publish . --access public', {
   stdio: 'inherit'
 });
 
 // tileserver-gl-light
-require('child_process').execSync('npm publish light --access public', {
+child_process.execSync('npm publish light --access public', {
   stdio: 'inherit'
 });
