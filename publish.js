@@ -55,6 +55,6 @@ child_process.execSync('npm publish . --access public', {
 });
 
 // tileserver-gl-light
-child_process.execSync('npm publish light --access public', {
+child_process.execSync('npm publish ./light --access public', {
   stdio: 'inherit'
 });
