@@ -11,13 +11,19 @@
 /* CREATE tileserver-gl-light */
 
 // SYNC THE `light` FOLDER
-require('child_process').execSync('rsync -av --exclude="light" --exclude=".git" --exclude="node_modules" --delete . light', {
+
+import child_process from 'child_process'
+child_process.execSync('rsync -av --exclude="light" --exclude=".git" --exclude="node_modules" --delete . light', {
   stdio: 'inherit'
 });
 
 // PATCH `package.json`
-const fs = require('fs');
-const packageJson = require('./package');
+import fs from 'fs';
+import path from 'path';
+import {fileURLToPath} from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const packageJson = JSON.parse(fs.readFileSync(__dirname + '/package.json', 'utf8'))
 
 packageJson.name += '-light';
 packageJson.description = 'Map tile server for JSON GL styles - serving vector tiles';
@@ -28,7 +34,7 @@ delete packageJson.dependencies['sharp'];
 delete packageJson.optionalDependencies;
 delete packageJson.devDependencies;
 
-packageJson.engines.node = '>= 10';
+packageJson.engines.node = '>= 14.15.0';
 
 const str = JSON.stringify(packageJson, undefined, 2);
 fs.writeFileSync('light/package.json', str);
@@ -44,11 +50,11 @@ if (process.argv.length > 2 && process.argv[2] == '--no-publish') {
 /* PUBLISH */
 
 // tileserver-gl
-require('child_process').execSync('npm publish .', {
+require('child_process').execSync('npm publish . --access public', {
   stdio: 'inherit'
 });
 
 // tileserver-gl-light
-require('child_process').execSync('npm publish light', {
+require('child_process').execSync('npm publish light --access public', {
   stdio: 'inherit'
 });
