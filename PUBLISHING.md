@@ -5,7 +5,7 @@
 - `git push --tags`
 - `docker buildx build --platform linux/amd64 -t maptiler/tileserver-gl:latest -t maptiler/tileserver-gl:[version] .`
 - `docker push maptiler/tileserver-gl --all-tags`
-- ` npm publish --access public` or `node publish.js` 
+- `npm publish --access public` or `node publish.js` 
 - `node publish.js --no-publish`
 - `cd light`
 - `docker buildx build --platform linux/amd64 -t maptiler/tileserver-gl-light:latest -t maptiler/tileserver-gl-light:[version] .`
