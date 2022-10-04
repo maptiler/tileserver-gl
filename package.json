@@ -39,7 +39,8 @@
     "proj4": "2.8.0",
     "request": "2.88.2",
     "sharp": "0.31.0",
-    "tileserver-gl-styles": "2.0.0"
+    "tileserver-gl-styles": "2.0.0",
+    "sanitize-filename": "1.6.3"
   },
   "devDependencies": {
     "chai": "4.3.6",

@@ -8,10 +8,10 @@ import util from 'util';
 import zlib from 'zlib';
 import sharp from 'sharp'; // sharp has to be required before node-canvas. see https://github.com/lovell/sharp/issues/371
 import pkg from 'canvas';
-import Image from 'canvas';
 import clone from 'clone';
 import Color from 'color';
 import express from 'express';
+import sanitize from "sanitize-filename";
 import SphericalMercator from '@mapbox/sphericalmercator';
 import mlgl from '@maplibre/maplibre-gl-native';
 import MBTiles from '@mapbox/mbtiles';
@@ -22,7 +22,7 @@ import {getFontsPbf, getTileUrls, fixTileJSONCenter} from './utils.js';
 const FLOAT_PATTERN = '[+-]?(?:\\d+|\\d+\.?\\d+)';
 const httpTester = /^(http(s)?:)?\/\//;
 
-const {createCanvas} = pkg;
+const {createCanvas, Image} = pkg;
 const mercator = new SphericalMercator();
 const getScale = (scale) => (scale || '@1x').slice(1, 2) | 0;
 
@@ -231,11 +231,20 @@ const extractMarkersFromQuery = (query, options, transformer) => {
     // Check if icon is served via http otherwise marker icons are expected to
     // be provided as filepaths relative to configured icon path
     if (!(iconURI.startsWith('http://') || iconURI.startsWith('https://'))) {
-      iconURI = path.resolve(options.paths.icons, iconURI);
-      // Ensure icon exists at provided path
-      if (!fs.existsSync(iconURI)) {
+      // Sanitize URI with sanitize-filename
+      // https://www.npmjs.com/package/sanitize-filename#details
+      iconURI = sanitize(iconURI)
+
+      // If the selected icon is not part of available icons skip it
+      if (!options.paths.availableIcons.includes(iconURI)) {
         continue;
       }
+
+      iconURI = path.resolve(options.paths.icons, iconURI);
+
+    // When we encounter a remote icon check if the configuration explicitly allows them.
+    } else if (options.allowRemoteMarkerIcons !== true) {
+      continue;
     }
 
     // Ensure marker location could be parsed
