@@ -5,14 +5,14 @@ import fs from 'node:fs';
 
 import clone from 'clone';
 import express from 'express';
-import {validate} from '@maplibre/maplibre-gl-style-spec';
+import { validate } from '@maplibre/maplibre-gl-style-spec';
 
-import {getPublicUrl} from './utils.js';
+import { getPublicUrl } from './utils.js';
 
 const httpTester = /^(http(s)?:)?\/\//;
 
 const fixUrl = (req, url, publicUrl, opt_nokey) => {
-  if (!url || (typeof url !== 'string') || url.indexOf('local://') !== 0) {
+  if (!url || typeof url !== 'string' || url.indexOf('local://') !== 0) {
     return url;
   }
   const queryParams = [];
@@ -23,8 +23,7 @@ const fixUrl = (req, url, publicUrl, opt_nokey) => {
   if (queryParams.length) {
     query = `?${queryParams.join('&')}`;
   }
-  return url.replace(
-      'local://', getPublicUrl(publicUrl, req)) + query;
+  return url.replace('local://', getPublicUrl(publicUrl, req)) + query;
 };
 
 export const serve_style = {
@@ -43,10 +42,20 @@ export const serve_style = {
       }
       // mapbox-gl-js viewer cannot handle sprite urls with query
       if (styleJSON_.sprite) {
-        styleJSON_.sprite = fixUrl(req, styleJSON_.sprite, item.publicUrl, false);
+        styleJSON_.sprite = fixUrl(
+          req,
+          styleJSON_.sprite,
+          item.publicUrl,
+          false,
+        );
       }
       if (styleJSON_.glyphs) {
-        styleJSON_.glyphs = fixUrl(req, styleJSON_.glyphs, item.publicUrl, false);
+        styleJSON_.glyphs = fixUrl(
+          req,
+          styleJSON_.glyphs,
+          item.publicUrl,
+          false,
+        );
       }
       return res.send(styleJSON_);
     });
@@ -89,7 +98,9 @@ export const serve_style = {
 
     const validationErrors = validate(styleFileData);
     if (validationErrors.length > 0) {
-      console.log(`The file "${params.style}" is not valid a valid style file:`);
+      console.log(
+        `The file "${params.style}" is not valid a valid style file:`,
+      );
       for (const err of validationErrors) {
         console.log(`${err.line}: ${err.message}`);
       }
@@ -102,8 +113,8 @@ export const serve_style = {
       const url = source.url;
       if (url && url.lastIndexOf('mbtiles:', 0) === 0) {
         let mbtilesFile = url.substring('mbtiles://'.length);
-        const fromData = mbtilesFile[0] === '{' &&
-          mbtilesFile[mbtilesFile.length - 1] === '}';
+        const fromData =
+          mbtilesFile[0] === '{' && mbtilesFile[mbtilesFile.length - 1] === '}';
 
         if (fromData) {
           mbtilesFile = mbtilesFile.substr(1, mbtilesFile.length - 2);
@@ -135,10 +146,14 @@ export const serve_style = {
     let spritePath;
 
     if (styleJSON.sprite && !httpTester.test(styleJSON.sprite)) {
-      spritePath = path.join(options.paths.sprites,
-          styleJSON.sprite
-              .replace('{style}', path.basename(styleFile, '.json'))
-              .replace('{styleJsonFolder}', path.relative(options.paths.sprites, path.dirname(styleFile)))
+      spritePath = path.join(
+        options.paths.sprites,
+        styleJSON.sprite
+          .replace('{style}', path.basename(styleFile, '.json'))
+          .replace(
+            '{styleJsonFolder}',
+            path.relative(options.paths.sprites, path.dirname(styleFile)),
+          ),
       );
       styleJSON.sprite = `local://styles/${id}/sprite`;
     }
@@ -150,9 +165,9 @@ export const serve_style = {
       styleJSON,
       spritePath,
       publicUrl,
-      name: styleJSON.name
+      name: styleJSON.name,
     };
 
     return true;
-  }
+  },
 };
