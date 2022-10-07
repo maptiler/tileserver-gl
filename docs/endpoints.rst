@@ -43,7 +43,8 @@ Static images
   * ``fill`` - color to use as the fill (e.g. ``red``, ``rgba(255,255,255,0.5)``, ``#0000ff``)
   * ``stroke`` - color of the path stroke
   * ``width`` - width of the stroke
-  * ``linecap`` - line cap of the path stroke
+  * ``linecap`` - rendering style for the start and end points of the path
+  * ``linejoin`` - rendering style for overlapping segments of the path with differing directions
   * ``border`` - color of the optional border path stroke
   * ``borderwidth`` - width of the border stroke (default 10% of width)
   * ``marker`` - Marker in format ``lng,lat|iconPath|option|option|...``

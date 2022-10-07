@@ -410,8 +410,13 @@ const drawPath = async (ctx, path, query, z) => {
     const borderWidth = query.borderwidth !== undefined ?
       parseFloat(query.borderwidth) : lineWidth * 0.1;
 
-    // Set line start/endpoint style
+    // Set rendering style for the start and end points of the path
+    // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineCap
     ctx.lineCap = query.linecap || 'butt';
+
+    // Set rendering style for overlapping segments of the path with differing directions
+    // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineJoin
+    ctx.lineJoin = query.linejoin || 'miter';
 
     // In order to simulate a border we draw the path two times with the first
     // beeing the wider border part.
