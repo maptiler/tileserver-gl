@@ -135,23 +135,57 @@ const parseCoordinates = (coordinatePair, query, transformer) => {
   return parsedCoordinates;
 };
 
-const extractPathFromQuery = (query, transformer) => {
-  const pathParts = (query.path || '').split('|');
-  const path = [];
-  for (const pair of pathParts) {
-    const pairParts = pair.split(',');
-    if (pairParts.length === 2) {
-      const pair = parseCoordinates(pairParts, query, transformer);
 
-      // Ensure coordinates could be parsed and skip them if not
-      if (pair === null) {
-        continue;
-      }
-
-      path.push(pair);
-    }
+/**
+ * Parses paths provided via query into a list of path objects.
+ * @param {Object} query Request query parameters.
+ * @param {Function} transformer Optional transform function.
+ */
+const extractPathsFromQuery = (query, transformer) => {
+  // Return an empty list if no paths have been provided
+  if (!query.path) {
+    return [];
   }
-  return path;
+
+  const paths = [];
+
+  // Check if multiple paths have been provided and mimic a list if it's a
+  // single path.
+  const providedPaths = Array.isArray(query.path) ? query.path : [query.path];
+
+  // Iterate through paths, parse and validate them
+  for (const provided_path of providedPaths) {
+    const currentPath = [];
+
+    // Extract coordinate-list from path
+    const pathParts = (provided_path || '').split('|');
+
+    // Iterate through coordinate-list, parse the coordinates and validate them
+    for (const pair of pathParts) {
+      // Extract coordinates from coordinate pair
+      const pairParts = pair.split(',');
+
+      // Ensure we have two coordinates
+      if (pairParts.length === 2) {
+        const pair = parseCoordinates(pairParts, query, transformer);
+
+        // Ensure coordinates could be parsed and skip them if not
+        if (pair === null) {
+          continue;
+        }
+
+        // Add the coordinate-pair to the current path if they are valid
+        currentPath.push(pair);
+      }
+    }
+
+    // Extend list of paths with current path if it contains coordinates
+    if (currentPath.length) {
+      paths.push(currentPath)
+    }
+
+  }
+  return paths;
 };
 
 /**
@@ -371,11 +405,11 @@ const drawMarkers = async (ctx, markers, z) => {
 /**
  * Draws a list of coordinates onto a canvas and styles the resulting path.
  * @param {Object} ctx Canvas context object.
- * @param {List[Number]} path List of coordinates parsed by extractPathFromQuery.
+ * @param {List[Number]} path List of coordinates.
  * @param {Object} query Request query parameters.
  * @param {Number} z Map zoom level.
  */
-const drawPath = async (ctx, path, query, z) => {
+const drawPath = (ctx, path, query, z) => {
   if (!path || path.length < 2) {
     return null;
   }
@@ -435,8 +469,8 @@ const drawPath = async (ctx, path, query, z) => {
   }
 }
 
-const renderOverlay = async (z, x, y, bearing, pitch, w, h, scale, path, markers, query) => {
-  if ((!path || path.length < 2) && (!markers || markers.length === 0)) {
+const renderOverlay = async (z, x, y, bearing, pitch, w, h, scale, paths, markers, query) => {
+  if ((!paths || paths.length === 0) && (!markers || markers.length === 0)) {
     return null;
   }
 
@@ -463,7 +497,10 @@ const renderOverlay = async (z, x, y, bearing, pitch, w, h, scale, path, markers
     ctx.translate(-center[0] + w / 2, -center[1] + h / 2);
   }
 
-  drawPath(ctx, path, query, z);
+  // Draw provided paths if any
+  for (const path of paths) {
+    drawPath(ctx, path, query, z);
+  }
 
   // Await drawing of markers before rendering the canvas
   await drawMarkers(ctx, markers, z);
@@ -727,9 +764,9 @@ export const serve_rendered = {
           y = ll[1];
         }
 
-        const path = extractPathFromQuery(req.query, transformer);
+        const paths = extractPathsFromQuery(req.query, transformer);
         const markers = extractMarkersFromQuery(req.query, options, transformer);
-        const overlay = await renderOverlay(z, x, y, bearing, pitch, w, h, scale, path, markers, req.query);
+        const overlay = await renderOverlay(z, x, y, bearing, pitch, w, h, scale, paths, markers, req.query);
 
         return respondImage(item, z, x, y, bearing, pitch, w, h, scale, format, res, next, overlay, 'static');
       });
@@ -767,9 +804,9 @@ export const serve_rendered = {
         const bearing = 0;
         const pitch = 0;
 
-        const path = extractPathFromQuery(req.query, transformer);
+        const paths = extractPathsFromQuery(req.query, transformer);
         const markers = extractMarkersFromQuery(req.query, options, transformer);
-        const overlay = await renderOverlay(z, x, y, bearing, pitch, w, h, scale, path, markers, req.query);
+        const overlay = await renderOverlay(z, x, y, bearing, pitch, w, h, scale, paths, markers, req.query);
         return respondImage(item, z, x, y, bearing, pitch, w, h, scale, format, res, next, overlay, 'static');
       };
 
@@ -819,7 +856,7 @@ export const serve_rendered = {
         const transformer = raw ?
           mercator.inverse.bind(mercator) : item.dataProjWGStoInternalWGS;
 
-        const path = extractPathFromQuery(req.query, transformer);
+        const paths = extractPathsFromQuery(req.query, transformer);
         const markers = extractMarkersFromQuery(req.query, options, transformer);
 
         // Extract coordinates from markers
@@ -829,7 +866,7 @@ export const serve_rendered = {
         }
 
         // Create array with coordinates from markers and path
-        const coords = new Array().concat(path).concat(markerCoordinates);
+        const coords = new Array().concat(paths.flat()).concat(markerCoordinates);
 
         // Check if we have at least one coordinate to calculate a bounding box
         if (coords.length < 1) {
@@ -859,7 +896,7 @@ export const serve_rendered = {
         const x = center[0];
         const y = center[1];
 
-        const overlay = await renderOverlay(z, x, y, bearing, pitch, w, h, scale, path, markers, req.query);
+        const overlay = await renderOverlay(z, x, y, bearing, pitch, w, h, scale, paths, markers, req.query);
 
         return respondImage(item, z, x, y, bearing, pitch, w, h, scale, format, res, next, overlay, 'static');
       });

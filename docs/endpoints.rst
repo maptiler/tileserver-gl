@@ -38,6 +38,7 @@ Static images
   * ``path`` - comma-separated ``lng,lat``, pipe-separated pairs
 
     * e.g. ``5.9,45.8|5.9,47.8|10.5,47.8|10.5,45.8|5.9,45.8``
+    * can be provided multiple times
 
   * ``latlng`` - indicates coordinates are in ``lat,lng`` order rather than the usual ``lng,lat``
   * ``fill`` - color to use as the fill (e.g. ``red``, ``rgba(255,255,255,0.5)``, ``#0000ff``)
@@ -63,8 +64,8 @@ Static images
         * scales with ``scale`` parameter since image placement is relative to it's size
         * e.g. ``2,-4`` - Image will be moved 2 pixel to the right and 4 pixel in the upwards direction from the provided location
 
-    * can be provided multiple times
     * e.g. ``5.9,45.8|marker-start.svg|scale:0.5|offset:2,-4``
+    * can be provided multiple times
 
   * ``padding`` - "percentage" padding for fitted endpoints (area-based and path autofit)
 
