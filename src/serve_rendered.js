@@ -7,7 +7,7 @@ import url from 'url';
 import util from 'util';
 import zlib from 'zlib';
 import sharp from 'sharp'; // sharp has to be required before node-canvas. see https://github.com/lovell/sharp/issues/371
-import pkg from 'canvas';
+import {createCanvas, Image} from 'canvas';
 import clone from 'clone';
 import Color from 'color';
 import express from 'express';
@@ -22,7 +22,6 @@ import {getFontsPbf, getTileUrls, fixTileJSONCenter} from './utils.js';
 const FLOAT_PATTERN = '[+-]?(?:\\d+|\\d+\.?\\d+)';
 const httpTester = /^(http(s)?:)?\/\//;
 
-const {createCanvas, Image} = pkg;
 const mercator = new SphericalMercator();
 const getScale = (scale) => (scale || '@1x').slice(1, 2) | 0;
 
