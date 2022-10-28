@@ -32,7 +32,7 @@ RUN set -ex; \
 RUN mkdir -p /usr/src/app
 COPY package* /usr/src/app/
 
-RUN cd /usr/src/app && npm install --omit=dev
+RUN cd /usr/src/app && npm ci --omit=dev
 
 FROM ubuntu:focal AS final
 
