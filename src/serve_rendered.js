@@ -993,25 +993,30 @@ export const serve_rendered = {
                 const parts = url.parse(req.url);
                 const extension = path.extname(parts.pathname).toLowerCase();
                 const format = extensionToFormat[extension] || '';
-                if (err || res.statusCode < 200 || res.statusCode >= 300) {
+                // send empty response with status code 500 if vector tile server errors
+                if (res.statusCode >= 500) {
+                  console.log('HTTP error when fetching vector tile', err || res.statusCode);
+                  return false;
+                }
+                else if (err || res.statusCode < 200 || res.statusCode >= 300) {
                   // console.log('HTTP error', err || res.statusCode);
                   createEmptyResponse(format, '', callback);
                   return;
-                }
+                } else {
+                  const response = {};
+                  if (res.headers.modified) {
+                    response.modified = new Date(res.headers.modified);
+                  }
+                  if (res.headers.expires) {
+                    response.expires = new Date(res.headers.expires);
+                  }
+                  if (res.headers.etag) {
+                    response.etag = res.headers.etag;
+                  }
 
-                const response = {};
-                if (res.headers.modified) {
-                  response.modified = new Date(res.headers.modified);
+                  response.data = body;
+                  callback(null, response);
                 }
-                if (res.headers.expires) {
-                  response.expires = new Date(res.headers.expires);
-                }
-                if (res.headers.etag) {
-                  response.etag = res.headers.etag;
-                }
-
-                response.data = body;
-                callback(null, response);
               });
             }
           }
