@@ -10,30 +10,38 @@ import MBTiles from '@mapbox/mbtiles';
 import Pbf from 'pbf';
 import VectorTile from '@mapbox/vector-tile';
 
-import {getTileUrls, fixTileJSONCenter} from './utils.js';
+import { getTileUrls, fixTileJSONCenter } from './utils.js';
 
 export const serve_data = {
   init: (options, repo) => {
     const app = express().disable('x-powered-by');
 
-    app.get('/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format([\\w.]+)', (req, res, next) => {
-      const item = repo[req.params.id];
-      if (!item) {
-        return res.sendStatus(404);
-      }
-      const tileJSONFormat = item.tileJSON.format;
-      const z = req.params.z | 0;
-      const x = req.params.x | 0;
-      const y = req.params.y | 0;
-      let format = req.params.format;
-      if (format === options.pbfAlias) {
-        format = 'pbf';
-      }
-      if (format !== tileJSONFormat &&
-          !(format === 'geojson' && tileJSONFormat === 'pbf')) {
-        return res.status(404).send('Invalid format');
-      }
-      if (z < item.tileJSON.minzoom || 0 || x < 0 || y < 0 ||
+    app.get(
+      '/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format([\\w.]+)',
+      (req, res, next) => {
+        const item = repo[req.params.id];
+        if (!item) {
+          return res.sendStatus(404);
+        }
+        const tileJSONFormat = item.tileJSON.format;
+        const z = req.params.z | 0;
+        const x = req.params.x | 0;
+        const y = req.params.y | 0;
+        let format = req.params.format;
+        if (format === options.pbfAlias) {
+          format = 'pbf';
+        }
+        if (
+          format !== tileJSONFormat &&
+          !(format === 'geojson' && tileJSONFormat === 'pbf')
+        ) {
+          return res.status(404).send('Invalid format');
+        }
+        if (
+          z < item.tileJSON.minzoom ||
+          0 ||
+          x < 0 ||
+          y < 0 ||
           z > item.tileJSON.maxzoom ||
           x >= Math.pow(2, z) ||
           y >= Math.pow(2, z)
@@ -49,38 +57,43 @@ export const serve_data = {
               return res.status(500).send(err.message);
             }
           } else {
-            return res.status(500).send(err.message);
-          }
-        } else {
-          if (data == null) {
-            return res.status(404).send('Not found');
-          } else {
-            if (tileJSONFormat === 'pbf') {
-              isGzipped = data.slice(0, 2).indexOf(
-                  Buffer.from([0x1f, 0x8b])) === 0;
-              if (options.dataDecoratorFunc) {
+            if (data == null) {
+              return res.status(404).send('Not found');
+            } else {
+              if (tileJSONFormat === 'pbf') {
+                isGzipped =
+                  data.slice(0, 2).indexOf(Buffer.from([0x1f, 0x8b])) === 0;
+                if (options.dataDecoratorFunc) {
+                  if (isGzipped) {
+                    data = zlib.unzipSync(data);
+                    isGzipped = false;
+                  }
+                  data = options.dataDecoratorFunc(id, 'data', data, z, x, y);
+                }
+              }
+              if (format === 'pbf') {
+                headers['Content-Type'] = 'application/x-protobuf';
+              } else if (format === 'geojson') {
+                headers['Content-Type'] = 'application/json';
+
                 if (isGzipped) {
                   data = zlib.unzipSync(data);
                   isGzipped = false;
                 }
 
-              if (isGzipped) {
-                data = zlib.unzipSync(data);
-                isGzipped = false;
-              }
-
-              const tile = new VectorTile(new Pbf(data));
-              const geojson = {
-                'type': 'FeatureCollection',
-                'features': []
-              };
-              for (const layerName in tile.layers) {
-                const layer = tile.layers[layerName];
-                for (let i = 0; i < layer.length; i++) {
-                  const feature = layer.feature(i);
-                  const featureGeoJSON = feature.toGeoJSON(x, y, z);
-                  featureGeoJSON.properties.layer = layerName;
-                  geojson.features.push(featureGeoJSON);
+                const tile = new VectorTile(new Pbf(data));
+                const geojson = {
+                  type: 'FeatureCollection',
+                  features: [],
+                };
+                for (const layerName in tile.layers) {
+                  const layer = tile.layers[layerName];
+                  for (let i = 0; i < layer.length; i++) {
+                    const feature = layer.feature(i);
+                    const featureGeoJSON = feature.toGeoJSON(x, y, z);
+                    featureGeoJSON.properties.layer = layerName;
+                    geojson.features.push(featureGeoJSON);
+                  }
                 }
                 data = JSON.stringify(geojson);
               }
@@ -106,10 +119,16 @@ export const serve_data = {
         return res.sendStatus(404);
       }
       const info = clone(item.tileJSON);
-      info.tiles = getTileUrls(req, info.tiles,
-          `data/${req.params.id}`, info.format, item.publicUrl, {
-            'pbf': options.pbfAlias
-          });
+      info.tiles = getTileUrls(
+        req,
+        info.tiles,
+        `data/${req.params.id}`,
+        info.format,
+        item.publicUrl,
+        {
+          pbf: options.pbfAlias,
+        },
+      );
       return res.send(info);
     });
 
@@ -162,7 +181,7 @@ export const serve_data = {
       repo[id] = {
         tileJSON,
         publicUrl,
-        source
+        source,
       };
     });
   },
