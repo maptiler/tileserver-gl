@@ -1,14 +1,14 @@
-var testIs = function(url, type, status) {
+const testIs = function(url, type, status) {
   it(url + ' return ' + (status || 200) + ' and is ' + type.toString(),
       function(done) {
-    supertest(app)
-      .get(url)
-      .expect(status || 200)
-      .expect('Content-Type', type, done);
-  });
+        supertest(app)
+            .get(url)
+            .expect(status || 200)
+            .expect('Content-Type', type, done);
+      });
 };
 
-var prefix = 'test-style';
+const prefix = 'test-style';
 
 describe('Styles', function() {
   describe('/styles/' + prefix + '/style.json is valid style', function() {
@@ -16,16 +16,16 @@ describe('Styles', function() {
 
     it('contains expected properties', function(done) {
       supertest(app)
-        .get('/styles/' + prefix + '/style.json')
-        .expect(function(res) {
-          res.body.version.should.equal(8);
-          res.body.name.should.be.String();
-          res.body.sources.should.be.Object();
-          res.body.glyphs.should.be.String();
-          res.body.sprite.should.be.String();
-          res.body.sprite.should.equal('/test/styles/test-style/sprite');
-          res.body.layers.should.be.Array();
-        }).end(done);
+          .get('/styles/' + prefix + '/style.json')
+          .expect(function(res) {
+            expect(res.body.version).to.be.equal(8);
+            expect(res.body.name).to.be.a('string');
+            expect(res.body.sources).to.be.a('object');
+            expect(res.body.glyphs).to.be.a('string');
+            expect(res.body.sprite).to.be.a('string');
+            expect(res.body.sprite).to.be.equal('/test/styles/test-style/sprite');
+            expect(res.body.layers).to.be.a('array');
+          }).end(done);
     });
   });
   describe('/styles/streets/style.json is not served', function() {
@@ -44,7 +44,7 @@ describe('Fonts', function() {
   testIs('/fonts/Open Sans Bold/0-255.pbf', /application\/x-protobuf/);
   testIs('/fonts/Open Sans Regular/65280-65535.pbf', /application\/x-protobuf/);
   testIs('/fonts/Open Sans Bold,Open Sans Regular/0-255.pbf',
-         /application\/x-protobuf/);
+      /application\/x-protobuf/);
   testIs('/fonts/Nonsense,Open Sans Bold/0-255.pbf', /./, 400);
 
   testIs('/fonts/Nonsense/0-255.pbf', /./, 400);

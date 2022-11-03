@@ -1,12 +1,12 @@
 'use strict';
 
-const express = require('express');
-const fs = require('fs');
-const path = require('path');
+import express from 'express';
+import fs from 'node:fs';
+import path from 'path';
 
-const utils = require('./utils');
+import {getFontsPbf} from './utils.js';
 
-module.exports = (options, allowedFonts) => {
+export const serve_font = (options, allowedFonts) => {
   const app = express().disable('x-powered-by');
 
   const lastModified = new Date().toUTCString();
@@ -40,19 +40,19 @@ module.exports = (options, allowedFonts) => {
     const fontstack = decodeURI(req.params.fontstack);
     const range = req.params.range;
 
-    utils.getFontsPbf(options.serveAllFonts ? null : allowedFonts,
-      fontPath, fontstack, range, existingFonts).then(concated => {
-        res.header('Content-type', 'application/x-protobuf');
-        res.header('Last-Modified', lastModified);
-        return res.send(concated);
-      }, err => res.status(400).send(err)
+    getFontsPbf(options.serveAllFonts ? null : allowedFonts,
+        fontPath, fontstack, range, existingFonts).then((concated) => {
+      res.header('Content-type', 'application/x-protobuf');
+      res.header('Last-Modified', lastModified);
+      return res.send(concated);
+    }, (err) => res.status(400).send(err)
     );
   });
 
   app.get('/fonts.json', (req, res, next) => {
     res.header('Content-type', 'application/json');
     return res.send(
-      Object.keys(options.serveAllFonts ? existingFonts : allowedFonts).sort()
+        Object.keys(options.serveAllFonts ? existingFonts : allowedFonts).sort()
     );
   });
 

@@ -1,14 +1,14 @@
-var testTile = function(prefix, z, x, y, status) {
-  var path = '/data/' + prefix + '/' + z + '/' + x + '/' + y + '.pbf';
+const testTile = function(prefix, z, x, y, status) {
+  const path = '/data/' + prefix + '/' + z + '/' + x + '/' + y + '.pbf';
   it(path + ' returns ' + status, function(done) {
-    var test = supertest(app).get(path);
+    const test = supertest(app).get(path);
     if (status) test.expect(status);
     if (status == 200) test.expect('Content-Type', /application\/x-protobuf/);
     test.end(done);
   });
 };
 
-var prefix = 'openmaptiles';
+const prefix = 'openmaptiles';
 
 describe('Vector tiles', function() {
   describe('existing tiles', function() {

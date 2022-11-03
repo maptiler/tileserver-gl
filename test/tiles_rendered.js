@@ -1,15 +1,15 @@
-var testTile = function(prefix, z, x, y, format, status, scale, type) {
+const testTile = function(prefix, z, x, y, format, status, scale, type) {
   if (scale) y += '@' + scale + 'x';
-  var path = '/styles/' + prefix + '/' + z + '/' + x + '/' + y + '.' + format;
+  const path = '/styles/' + prefix + '/' + z + '/' + x + '/' + y + '.' + format;
   it(path + ' returns ' + status, function(done) {
-    var test = supertest(app).get(path);
+    const test = supertest(app).get(path);
     test.expect(status);
     if (type) test.expect('Content-Type', type);
     test.end(done);
   });
 };
 
-var prefix = 'test-style';
+const prefix = 'test-style';
 
 describe('Raster tiles', function() {
   describe('valid requests', function() {
@@ -41,6 +41,6 @@ describe('Raster tiles', function() {
     testTile(prefix, 0, 0, 0, 'png', 404, 1);
     testTile(prefix, 0, 0, 0, 'png', 404, 5);
 
-    //testTile('hybrid', 0, 0, 0, 'png', 404); //TODO: test this
+    // testTile('hybrid', 0, 0, 0, 'png', 404); //TODO: test this
   });
 });

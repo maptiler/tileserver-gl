@@ -2,33 +2,43 @@
 # Simply run "docker build -f Dockerfile_test ."
 # WARNING: sometimes it fails with a core dumped exception
 
-FROM node:10-stretch
+FROM ubuntu:focal
 
-RUN apt-get -qq update \
-&& DEBIAN_FRONTEND=noninteractive apt-get -y install \
-    apt-transport-https \
-    curl \
-    unzip \
-    build-essential \
-    python \
-    libcairo2-dev \
-    libgles2-mesa-dev \
-    libgbm-dev \
-    libllvm3.9 \
-    libprotobuf-dev \
-    libxxf86vm-dev \
-    xvfb \
-&& apt-get clean
+ENV NODE_ENV="development"
+
+RUN set -ex; \
+    export DEBIAN_FRONTEND=noninteractive; \
+    apt-get -qq update; \
+    apt-get -y --no-install-recommends install \
+      unzip \
+      build-essential \
+      ca-certificates \
+      wget \
+      pkg-config \
+      xvfb \
+      libglfw3-dev \
+      libuv1-dev \
+      libjpeg-turbo8 \
+      libicu66 \
+      libcairo2-dev \
+      libpango1.0-dev \
+      libjpeg-dev \
+      libgif-dev \
+      librsvg2-dev \
+      libcurl4-openssl-dev \
+      libpixman-1-dev; \
+    wget -qO- https://deb.nodesource.com/setup_16.x | bash; \
+    apt-get install -y nodejs; \
+    apt-get clean;
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
-RUN wget -O test_data.zip https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
-RUN unzip -q test_data.zip -d test_data
-
-ENV NODE_ENV="test"
+RUN wget -O test_data.zip https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip; \
+    unzip -q test_data.zip -d test_data
 
 COPY package.json .
 RUN npm install
 COPY / .
+
 RUN xvfb-run --server-args="-screen 0 1024x768x24" npm test

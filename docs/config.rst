@@ -4,7 +4,9 @@ Configuration file
 
 The configuration file defines the behavior of the application. It's a regular JSON file.
 
-Example::
+Example:
+
+.. code-block:: json
 
   {
     "options": {
@@ -12,6 +14,7 @@ Example::
         "root": "",
         "fonts": "fonts",
         "sprites": "sprites",
+        "icons": "icons",
         "styles": "styles",
         "mbtiles": ""
       },
@@ -27,7 +30,9 @@ Example::
       "maxSize": 2048,
       "pbfAlias": "pbf",
       "serveAllFonts": false,
+      "serveAllStyles": false,
       "serveStaticMaps": true,
+      "allowRemoteMarkerIcons": true,
       "tileMargin": 0
     },
     "styles": {
@@ -99,9 +104,9 @@ Default is ``2048``.
 ``tileMargin``
 --------------
 
-Additional image side length added during tile rendering that is cropped from the delivered tile. This is useful for resolving the issue with cropped labels, 
-but it does come with a performance degradation, because additional, adjacent vector tiles need to be loaded to genenrate a single tile.
-Default is ``0`` to disable this processing. 
+Additional image side length added during tile rendering that is cropped from the delivered tile. This is useful for resolving the issue with cropped labels,
+but it does come with a performance degradation, because additional, adjacent vector tiles need to be loaded to generate a single tile.
+Default is ``0`` to disable this processing.
 
 ``minRendererPoolSizes``
 ------------------------
@@ -124,12 +129,26 @@ If you have plenty of memory, try setting these equal to or slightly above your 
 If you need to conserve memory, try lower values for scale factors that are less common.
 Default is ``[16, 8, 4]``.
 
+``serveAllStyles``
+------------------------
+
+If this option is enabled, all the styles from the ``paths.styles`` will be served. (No recursion, only ``.json`` files are used.)
+The process will also watch for changes in this directory and remove/add more styles dynamically.
+It is recommended to also use the ``serveAllFonts`` option when using this option.
+
 ``watermark``
 -----------
 
 Optional string to be rendered into the raster tiles (and static maps) as watermark (bottom-left corner).
 Can be used for hard-coding attributions etc. (can also be specified per-style).
 Not used by default.
+
+``allowRemoteMarkerIcons``
+--------------
+
+Allows the rendering of marker icons fetched via http(s) hyperlinks.
+For security reasons only allow this if you can control the origins from where the markers are fetched!
+Default is to disallow fetching of icons from remote sources.
 
 ``styles``
 ==========
@@ -138,7 +157,7 @@ Each item in this object defines one style (map). It can have the following opti
 
 * ``style`` -- name of the style json file [required]
 * ``serve_rendered`` -- whether to render the raster tiles for this style or not
-* ``serve_data`` -- whether to allow acces to the original tiles, sprites and required glyphs
+* ``serve_data`` -- whether to allow access to the original tiles, sprites and required glyphs
 * ``tilejson`` -- properties to add to the TileJSON created for the raster data
 
   * ``format`` and ``bounds`` can be especially useful
