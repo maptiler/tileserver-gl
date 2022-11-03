@@ -5,6 +5,7 @@ VOLUME /data
 WORKDIR /data
 EXPOSE 80
 ENTRYPOINT ["/bin/bash", "/usr/src/app/run.sh"]
+HEALTHCHECK CMD node /usr/src/app/src/healthcheck.js
 
 RUN apt-get -qq update \
 && DEBIAN_FRONTEND=noninteractive apt-get -y install \

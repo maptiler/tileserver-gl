@@ -5,6 +5,7 @@ EXPOSE 80
 VOLUME /data
 WORKDIR /data
 ENTRYPOINT ["node", "/usr/src/app/", "-p", "80"]
+HEALTHCHECK CMD node /usr/src/app/src/healthcheck.js
 
 RUN mkdir -p /usr/src/app
 COPY / /usr/src/app
