@@ -91,9 +91,7 @@ const startWithMBTiles = (mbtilesFile) => {
   const instance = new MBTiles(mbtilesFile + '?mode=ro', (err) => {
     if (err) {
       console.log('ERROR: Unable to open MBTiles.');
-      console.log(
-        `       Make sure ${path.basename(mbtilesFile)} is valid MBTiles.`,
-      );
+      console.log(`Make sure ${path.basename(mbtilesFile)} is valid MBTiles.`);
       process.exit(1);
     }
 
@@ -101,7 +99,7 @@ const startWithMBTiles = (mbtilesFile) => {
       if (err || !info) {
         console.log('ERROR: Metadata missing in the MBTiles.');
         console.log(
-          `       Make sure ${path.basename(mbtilesFile)} is valid MBTiles.`,
+          `Make sure ${path.basename(mbtilesFile)} is valid MBTiles.`,
         );
         process.exit(1);
       }
