@@ -76,7 +76,7 @@ RUN mkdir -p /data && chown node:node /data
 VOLUME /data
 WORKDIR /data
 
-EXPOSE 80
+EXPOSE 8080
 
 USER node:node
 
