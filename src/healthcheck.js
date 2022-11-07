@@ -1,4 +1,4 @@
-var http = require("http");
+import * as http from 'http';
 var options = {
   timeout: 2000,
 };
