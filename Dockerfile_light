@@ -21,6 +21,8 @@ RUN set -ex; \
     rm -rf /var/lib/apt/lists/*;
 
 EXPOSE 80
+
+RUN mkdir -p /data && chown node:node /data
 VOLUME /data
 WORKDIR /data
 ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
