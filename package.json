@@ -15,7 +15,7 @@
   },
   "scripts": {
     "test": "mocha test/**.js --timeout 10000",
-    "docker": "docker build -f Dockerfile . && docker run --rm -i -p 8080:80 $(docker build -q .)"
+    "docker": "docker build -f Dockerfile . && docker run --rm -i -p 8080:8080 $(docker build -q .)"
   },
   "dependencies": {
     "@mapbox/glyph-pbf-composite": "0.0.3",
