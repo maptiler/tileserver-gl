@@ -10,97 +10,108 @@ import MBTiles from '@mapbox/mbtiles';
 import Pbf from 'pbf';
 import VectorTile from '@mapbox/vector-tile';
 
-import {getTileUrls, fixTileJSONCenter} from './utils.js';
+import { getTileUrls, fixTileJSONCenter } from './utils.js';
 
 export const serve_data = {
   init: (options, repo) => {
     const app = express().disable('x-powered-by');
 
-    app.get('/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format([\\w.]+)', (req, res, next) => {
-      const item = repo[req.params.id];
-      if (!item) {
-        return res.sendStatus(404);
-      }
-      const tileJSONFormat = item.tileJSON.format;
-      const z = req.params.z | 0;
-      const x = req.params.x | 0;
-      const y = req.params.y | 0;
-      let format = req.params.format;
-      if (format === options.pbfAlias) {
-        format = 'pbf';
-      }
-      if (format !== tileJSONFormat &&
-          !(format === 'geojson' && tileJSONFormat === 'pbf')) {
-        return res.status(404).send('Invalid format');
-      }
-      if (z < item.tileJSON.minzoom || 0 || x < 0 || y < 0 ||
+    app.get(
+      '/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format([\\w.]+)',
+      (req, res, next) => {
+        const item = repo[req.params.id];
+        if (!item) {
+          return res.sendStatus(404);
+        }
+        const tileJSONFormat = item.tileJSON.format;
+        const z = req.params.z | 0;
+        const x = req.params.x | 0;
+        const y = req.params.y | 0;
+        let format = req.params.format;
+        if (format === options.pbfAlias) {
+          format = 'pbf';
+        }
+        if (
+          format !== tileJSONFormat &&
+          !(format === 'geojson' && tileJSONFormat === 'pbf')
+        ) {
+          return res.status(404).send('Invalid format');
+        }
+        if (
+          z < item.tileJSON.minzoom ||
+          0 ||
+          x < 0 ||
+          y < 0 ||
           z > item.tileJSON.maxzoom ||
-          x >= Math.pow(2, z) || y >= Math.pow(2, z)) {
-        return res.status(404).send('Out of bounds');
-      }
-      item.source.getTile(z, x, y, (err, data, headers) => {
-        let isGzipped;
-        if (err) {
-          if (/does not exist/.test(err.message)) {
-            return res.status(204).send();
+          x >= Math.pow(2, z) ||
+          y >= Math.pow(2, z)
+        ) {
+          return res.status(404).send('Out of bounds');
+        }
+        item.source.getTile(z, x, y, (err, data, headers) => {
+          let isGzipped;
+          if (err) {
+            if (/does not exist/.test(err.message)) {
+              return res.status(204).send();
+            } else {
+              return res.status(500).send(err.message);
+            }
           } else {
-            return res.status(500).send(err.message);
-          }
-        } else {
-          if (data == null) {
-            return res.status(404).send('Not found');
-          } else {
-            if (tileJSONFormat === 'pbf') {
-              isGzipped = data.slice(0, 2).indexOf(
-                  Buffer.from([0x1f, 0x8b])) === 0;
-              if (options.dataDecoratorFunc) {
+            if (data == null) {
+              return res.status(404).send('Not found');
+            } else {
+              if (tileJSONFormat === 'pbf') {
+                isGzipped =
+                  data.slice(0, 2).indexOf(Buffer.from([0x1f, 0x8b])) === 0;
+                if (options.dataDecoratorFunc) {
+                  if (isGzipped) {
+                    data = zlib.unzipSync(data);
+                    isGzipped = false;
+                  }
+                  data = options.dataDecoratorFunc(id, 'data', data, z, x, y);
+                }
+              }
+              if (format === 'pbf') {
+                headers['Content-Type'] = 'application/x-protobuf';
+              } else if (format === 'geojson') {
+                headers['Content-Type'] = 'application/json';
+
                 if (isGzipped) {
                   data = zlib.unzipSync(data);
                   isGzipped = false;
                 }
-                data = options.dataDecoratorFunc(id, 'data', data, z, x, y);
-              }
-            }
-            if (format === 'pbf') {
-              headers['Content-Type'] = 'application/x-protobuf';
-            } else if (format === 'geojson') {
-              headers['Content-Type'] = 'application/json';
 
-              if (isGzipped) {
-                data = zlib.unzipSync(data);
-                isGzipped = false;
-              }
-
-              const tile = new VectorTile(new Pbf(data));
-              const geojson = {
-                'type': 'FeatureCollection',
-                'features': []
-              };
-              for (const layerName in tile.layers) {
-                const layer = tile.layers[layerName];
-                for (let i = 0; i < layer.length; i++) {
-                  const feature = layer.feature(i);
-                  const featureGeoJSON = feature.toGeoJSON(x, y, z);
-                  featureGeoJSON.properties.layer = layerName;
-                  geojson.features.push(featureGeoJSON);
+                const tile = new VectorTile(new Pbf(data));
+                const geojson = {
+                  type: 'FeatureCollection',
+                  features: [],
+                };
+                for (const layerName in tile.layers) {
+                  const layer = tile.layers[layerName];
+                  for (let i = 0; i < layer.length; i++) {
+                    const feature = layer.feature(i);
+                    const featureGeoJSON = feature.toGeoJSON(x, y, z);
+                    featureGeoJSON.properties.layer = layerName;
+                    geojson.features.push(featureGeoJSON);
+                  }
                 }
+                data = JSON.stringify(geojson);
               }
-              data = JSON.stringify(geojson);
-            }
-            delete headers['ETag']; // do not trust the tile ETag -- regenerate
-            headers['Content-Encoding'] = 'gzip';
-            res.set(headers);
+              delete headers['ETag']; // do not trust the tile ETag -- regenerate
+              headers['Content-Encoding'] = 'gzip';
+              res.set(headers);
 
-            if (!isGzipped) {
-              data = zlib.gzipSync(data);
-              isGzipped = true;
-            }
+              if (!isGzipped) {
+                data = zlib.gzipSync(data);
+                isGzipped = true;
+              }
 
-            return res.status(200).send(data);
+              return res.status(200).send(data);
+            }
           }
-        }
-      });
-    });
+        });
+      },
+    );
 
     app.get('/:id.json', (req, res, next) => {
       const item = repo[req.params.id];
@@ -108,10 +119,16 @@ export const serve_data = {
         return res.sendStatus(404);
       }
       const info = clone(item.tileJSON);
-      info.tiles = getTileUrls(req, info.tiles,
-          `data/${req.params.id}`, info.format, item.publicUrl, {
-            'pbf': options.pbfAlias
-          });
+      info.tiles = getTileUrls(
+        req,
+        info.tiles,
+        `data/${req.params.id}`,
+        info.format,
+        item.publicUrl,
+        {
+          pbf: options.pbfAlias,
+        },
+      );
       return res.send(info);
     });
 
@@ -120,7 +137,7 @@ export const serve_data = {
   add: (options, repo, params, id, publicUrl) => {
     const mbtilesFile = path.resolve(options.paths.mbtiles, params.mbtiles);
     let tileJSON = {
-      'tiles': params.domains || options.domains
+      tiles: params.domains || options.domains,
     };
 
     const mbtilesFileStats = fs.statSync(mbtilesFile);
@@ -129,7 +146,7 @@ export const serve_data = {
     }
     let source;
     const sourceInfoPromise = new Promise((resolve, reject) => {
-      source = new MBTiles(mbtilesFile + '?mode=ro', err => {
+      source = new MBTiles(mbtilesFile + '?mode=ro', (err) => {
         if (err) {
           reject(err);
           return;
@@ -164,8 +181,8 @@ export const serve_data = {
       repo[id] = {
         tileJSON,
         publicUrl,
-        source
+        source,
       };
     });
-  }
+  },
 };

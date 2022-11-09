@@ -12,21 +12,27 @@
 
 // SYNC THE `light` FOLDER
 
-import child_process from 'child_process'
-child_process.execSync('rsync -av --exclude="light" --exclude=".git" --exclude="node_modules" --delete . light', {
-  stdio: 'inherit'
-});
+import child_process from 'child_process';
+child_process.execSync(
+  'rsync -av --exclude="light" --exclude=".git" --exclude="node_modules" --delete . light',
+  {
+    stdio: 'inherit',
+  },
+);
 
 // PATCH `package.json`
 import fs from 'fs';
 import path from 'path';
-import {fileURLToPath} from 'url';
+import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const packageJson = JSON.parse(fs.readFileSync(__dirname + '/package.json', 'utf8'))
+const packageJson = JSON.parse(
+  fs.readFileSync(__dirname + '/package.json', 'utf8'),
+);
 
 packageJson.name += '-light';
-packageJson.description = 'Map tile server for JSON GL styles - serving vector tiles';
+packageJson.description =
+  'Map tile server for JSON GL styles - serving vector tiles';
 delete packageJson.dependencies['canvas'];
 delete packageJson.dependencies['@maplibre/maplibre-gl-native'];
 delete packageJson.dependencies['sharp'];
@@ -51,10 +57,10 @@ if (process.argv.length > 2 && process.argv[2] == '--no-publish') {
 
 // tileserver-gl
 child_process.execSync('npm publish . --access public', {
-  stdio: 'inherit'
+  stdio: 'inherit',
 });
 
 // tileserver-gl-light
 child_process.execSync('npm publish ./light --access public', {
-  stdio: 'inherit'
+  stdio: 'inherit',
 });
