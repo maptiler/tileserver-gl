@@ -7,6 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import request from 'request';
 import { server } from './server.js';
+import chokidar from 'chokidar';
 
 import MBTiles from '@mapbox/mbtiles';
 
@@ -49,6 +50,7 @@ program
     '-f|--log_format <format>',
     'define the log format:  https://github.com/expressjs/morgan#morganformat-options',
   )
+  .option('-w, --watch', 'Reload MBTiles file on change')
   .version(packageJson.version, '-v, --version');
 program.parse(process.argv);
 const opts = program.opts();
@@ -74,7 +76,98 @@ const startServer = (configPath, config) => {
   });
 };
 
-const startWithMBTiles = (mbtilesFile) => {
+const readMBTiles = async (filename) =>
+  new Promise((resolve, reject) => {
+    const stat = fs.statSync(filename);
+    if (!stat.isFile() || stat.size === 0) {
+      console.log(`ERROR: Not valid MBTiles file: ${filename}`);
+      return reject(new Error('invalid MBTiles file'));
+    }
+
+    const instance = new MBTiles(filename + '?mode=ro', (err) => {
+      if (err) {
+        console.log('ERROR: Unable to open MBTiles.');
+        console.log(`Make sure ${path.basename(filename)} is valid MBTiles.`);
+        return reject(err);
+      }
+
+      instance.getInfo((err, info) => {
+        if (err || !info) {
+          console.log('ERROR: Metadata missing in the MBTiles.');
+          console.log(`Make sure ${path.basename(filename)} is valid MBTiles.`);
+          return reject(err);
+        }
+
+        return resolve(info);
+      });
+    });
+  });
+
+const buildServerConfig = async (mbtilesFile) => {
+  const mbtilesInfo = await readMBTiles(mbtilesFile);
+  const styleDir = path.resolve(
+    __dirname,
+    '../node_modules/tileserver-gl-styles/',
+  );
+
+  const config = {
+    options: {
+      paths: {
+        root: styleDir,
+        fonts: 'fonts',
+        styles: 'styles',
+        mbtiles: path.dirname(mbtilesFile),
+      },
+    },
+    styles: {},
+    data: {},
+  };
+
+  if (
+    mbtilesInfo.format === 'pbf' &&
+    mbtilesInfo.name.toLowerCase().indexOf('openmaptiles') > -1
+  ) {
+    config['data'][`v3`] = {
+      mbtiles: path.basename(mbtilesFile),
+    };
+
+    const styles = fs.readdirSync(path.resolve(styleDir, 'styles'));
+    for (const styleName of styles) {
+      const styleFileRel = styleName + '/style.json';
+      const styleFile = path.resolve(styleDir, 'styles', styleFileRel);
+      if (fs.existsSync(styleFile)) {
+        config['styles'][styleName] = {
+          style: styleFileRel,
+          tilejson: {
+            bounds: mbtilesInfo.bounds,
+          },
+        };
+      }
+    }
+  } else {
+    console.log(
+      `WARN: MBTiles not in "openmaptiles" format. Serving raw data only...`,
+    );
+    config['data'][
+      (mbtilesInfo.id || 'mbtiles')
+        .replace(/\//g, '_')
+        .replace(/:/g, '_')
+        .replace(/\?/g, '_')
+    ] = {
+      mbtiles: path.basename(mbtilesFile),
+    };
+  }
+
+  if (opts.verbose) {
+    console.log(JSON.stringify(config, undefined, 2));
+  } else {
+    console.log('Run with --verbose to see the config file here.');
+  }
+
+  return config;
+};
+
+const startWithMBTiles = async (mbtilesFile) => {
   console.log(`[INFO] Automatically creating config file for ${mbtilesFile}`);
   console.log(`[INFO] Only a basic preview style will be used.`);
   console.log(
@@ -83,90 +176,38 @@ const startWithMBTiles = (mbtilesFile) => {
 
   mbtilesFile = path.resolve(process.cwd(), mbtilesFile);
 
-  const mbtilesStats = fs.statSync(mbtilesFile);
-  if (!mbtilesStats.isFile() || mbtilesStats.size === 0) {
-    console.log(`ERROR: Not valid MBTiles file: ${mbtilesFile}`);
-    process.exit(1);
-  }
-  const instance = new MBTiles(mbtilesFile + '?mode=ro', (err) => {
-    if (err) {
-      console.log('ERROR: Unable to open MBTiles.');
-      console.log(`Make sure ${path.basename(mbtilesFile)} is valid MBTiles.`);
+  let tileServer = await buildServerConfig(mbtilesFile)
+    .catch((err) => {
+      console.log('ERROR: failed to configure server:', err);
       process.exit(1);
-    }
+    })
+    .then((config) => startServer(null, config));
 
-    instance.getInfo((err, info) => {
-      if (err || !info) {
-        console.log('ERROR: Metadata missing in the MBTiles.');
-        console.log(
-          `Make sure ${path.basename(mbtilesFile)} is valid MBTiles.`,
-        );
-        process.exit(1);
-      }
-      const bounds = info.bounds;
+  if (opts.watch) {
+    console.log(`[INFO] watching ${mbtilesFile} for changes...`);
 
-      const styleDir = path.resolve(
-        __dirname,
-        '../node_modules/tileserver-gl-styles/',
-      );
-
-      const config = {
-        options: {
-          paths: {
-            root: styleDir,
-            fonts: 'fonts',
-            styles: 'styles',
-            mbtiles: path.dirname(mbtilesFile),
-          },
+    chokidar
+      .watch(mbtilesFile, {
+        ignoreInitial: true,
+        // The file can be written to many times while tile generation is
+        // running, we want to wait until it's stable.
+        awaitWriteFinish: {
+          stabilityThreshold: 5000,
+          pollInterval: 500,
         },
-        styles: {},
-        data: {},
-      };
-
-      if (
-        info.format === 'pbf' &&
-        info.name.toLowerCase().indexOf('openmaptiles') > -1
-      ) {
-        config['data'][`v3`] = {
-          mbtiles: path.basename(mbtilesFile),
-        };
-
-        const styles = fs.readdirSync(path.resolve(styleDir, 'styles'));
-        for (const styleName of styles) {
-          const styleFileRel = styleName + '/style.json';
-          const styleFile = path.resolve(styleDir, 'styles', styleFileRel);
-          if (fs.existsSync(styleFile)) {
-            config['styles'][styleName] = {
-              style: styleFileRel,
-              tilejson: {
-                bounds: bounds,
-              },
-            };
-          }
-        }
-      } else {
-        console.log(
-          `WARN: MBTiles not in "openmaptiles" format. Serving raw data only...`,
-        );
-        config['data'][
-          (info.id || 'mbtiles')
-            .replace(/\//g, '_')
-            .replace(/:/g, '_')
-            .replace(/\?/g, '_')
-        ] = {
-          mbtiles: path.basename(mbtilesFile),
-        };
-      }
-
-      if (opts.verbose) {
-        console.log(JSON.stringify(config, undefined, 2));
-      } else {
-        console.log('Run with --verbose to see the config file here.');
-      }
-
-      return startServer(null, config);
-    });
-  });
+      })
+      .on('all', (eventType, filename) => {
+        if (!filename) return;
+        console.log(`[INFO] ${filename} changed, restarting server...`);
+        buildServerConfig(filename)
+          .then((config) =>
+            tileServer.server.shutdown(() => {
+              tileServer = startServer(null, config);
+            }),
+          )
+          .catch((err) => console.log(`WARN: restart failed`, err));
+      });
+  }
 };
 
 fs.stat(path.resolve(opts.config), (err, stats) => {
