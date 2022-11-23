@@ -602,11 +602,8 @@ export function server(opts) {
     process.exit(1);
   });
 
-  process.on('SIGINT', () => {
-    process.exit();
-  });
-
-  process.on('SIGHUP', () => {
+  const handleSIGINT = () => process.exit();
+  const handleSIGHUP = () => {
     console.log('Stopping server and reloading config');
 
     running.server.shutdown(() => {
@@ -614,6 +611,15 @@ export function server(opts) {
       running.server = restarted.server;
       running.app = restarted.app;
     });
+  };
+
+  process.on('SIGINT', handleSIGINT);
+  process.on('SIGHUP', handleSIGHUP);
+
+  // Clean up when we close the server to prevent listener leaks on restart
+  running.server.on('close', () => {
+    process.removeListener('SIGINT', handleSIGINT);
+    process.removeListener('SIGHUP', handleSIGHUP);
   });
 
   return running;
