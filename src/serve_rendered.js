@@ -15,6 +15,7 @@ import sanitize from 'sanitize-filename';
 import SphericalMercator from '@mapbox/sphericalmercator';
 import mlgl from '@maplibre/maplibre-gl-native';
 import MBTiles from '@mapbox/mbtiles';
+import polyline from '@mapbox/polyline';
 import proj4 from 'proj4';
 import request from 'request';
 import { getFontsPbf, getTileUrls, fixTileJSONCenter } from './utils.js';
@@ -147,47 +148,59 @@ const parseCoordinates = (coordinatePair, query, transformer) => {
  * @param {Function} transformer Optional transform function.
  */
 const extractPathsFromQuery = (query, transformer) => {
-  // Return an empty list if no paths have been provided
-  if (!query.path) {
-    return [];
-  }
-
   const paths = [];
+  // Return an empty list if no paths have been provided
+  if (
+    ('path' in query && !query.path) ||
+    ('encodedpath' in query && !query.encodedpath)
+  ) {
+    return paths;
+  }
+  // Parse paths provided via path query argument
+  if ('path' in query) {
+    // Check if multiple paths have been provided and mimic a list if it's a
+    // single path.
+    const providedPaths = Array.isArray(query.path) ? query.path : [query.path];
 
-  // Check if multiple paths have been provided and mimic a list if it's a
-  // single path.
-  const providedPaths = Array.isArray(query.path) ? query.path : [query.path];
+    // Iterate through paths, parse and validate them
+    for (const providedPath of providedPaths) {
+      const currentPath = [];
 
-  // Iterate through paths, parse and validate them
-  for (const provided_path of providedPaths) {
-    const currentPath = [];
+      // Extract coordinate-list from path
+      const pathParts = (providedPath || '').split('|');
 
-    // Extract coordinate-list from path
-    const pathParts = (provided_path || '').split('|');
+      // Iterate through coordinate-list, parse the coordinates and validate them
+      for (const pair of pathParts) {
+        // Extract coordinates from coordinate pair
+        const pairParts = pair.split(',');
 
-    // Iterate through coordinate-list, parse the coordinates and validate them
-    for (const pair of pathParts) {
-      // Extract coordinates from coordinate pair
-      const pairParts = pair.split(',');
+        // Ensure we have two coordinates
+        if (pairParts.length === 2) {
+          const pair = parseCoordinates(pairParts, query, transformer);
 
-      // Ensure we have two coordinates
-      if (pairParts.length === 2) {
-        const pair = parseCoordinates(pairParts, query, transformer);
+          // Ensure coordinates could be parsed and skip them if not
+          if (pair === null) {
+            continue;
+          }
 
-        // Ensure coordinates could be parsed and skip them if not
-        if (pair === null) {
-          continue;
+          // Add the coordinate-pair to the current path if they are valid
+          currentPath.push(pair);
         }
+      }
 
-        // Add the coordinate-pair to the current path if they are valid
-        currentPath.push(pair);
+      // Extend list of paths with current path if it contains coordinates
+      if (currentPath.length) {
+        paths.push(currentPath);
       }
     }
-
-    // Extend list of paths with current path if it contains coordinates
-    if (currentPath.length) {
-      paths.push(currentPath);
-    }
+  }
+  // Check if encoded paths have been provided
+  if ('encodedpath' in query) {
+    // silly lat/lng switch 🤷‍♂️
+    const coords = polyline
+      .decode(query.encodedpath)
+      .map(([lat, lng]) => [lng, lat]);
+    paths.push(coords);
   }
   return paths;
 };
