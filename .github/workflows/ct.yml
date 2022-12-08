@@ -16,11 +16,6 @@ jobs:
   ct:
     runs-on: ubuntu-20.04
     steps:
-      - name: Install dependencies (Ubuntu)
-        run: |-
-          sudo apt-get update
-          sudo apt-get install -y g++-9
-
       - name: Check out repository ✨ (non-dependabot)
         if: ${{ github.actor != 'dependabot[bot]' }}
         uses: actions/checkout@v3
@@ -31,6 +26,15 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: Update apt-get 🚀
+        run: sudo apt-get update -qq
+
+      - name: Install dependencies (Ubuntu) 🚀
+        run: >-
+          sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev
+          libgif-dev build-essential g++ xvfb libgles2-mesa-dev libgbm-dev
+          libxxf86vm-dev
+
       - name: Setup node env 📦
         uses: actions/setup-node@v3
         with:
@@ -40,15 +44,6 @@ jobs:
 
       - name: Install dependencies 🚀
         run: npm ci --prefer-offline --no-audit --omit=optional
-
-      - name: Update apt-get 🚀
-        run: sudo apt-get update -qq
-
-      - name: Install required packages 🚀
-        run: >-
-          sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev
-          libgif-dev build-essential g++ xvfb libgles2-mesa-dev libgbm-dev
-          libxxf86vm-dev
 
       - name: Pull test data 📦
         run: >-
