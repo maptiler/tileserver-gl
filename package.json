@@ -31,7 +31,7 @@
     "color": "4.2.3",
     "commander": "9.4.1",
     "cors": "2.8.5",
-    "express": "4.18.1",
+    "express": "4.18.2",
     "handlebars": "4.7.7",
     "http-shutdown": "1.2.2",
     "morgan": "1.10.0",
