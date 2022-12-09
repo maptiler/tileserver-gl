@@ -7,7 +7,7 @@ Docker
 
 When running docker image, no special installation is needed -- the docker will automatically download the image if not present.
 
-Just run ``docker run --rm -it -v $(pwd):/data -p 8080:80 maptiler/tileserver-gl``.
+Just run ``docker run --rm -it -v $(pwd):/data -p 8080:8080 maptiler/tileserver-gl``.
 
 Additional options (see :doc:`/usage`) can be passed to the TileServer GL by appending them to the end of this command. You can, for example, do the following:
 

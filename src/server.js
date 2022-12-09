@@ -2,8 +2,7 @@
 'use strict';
 
 import os from 'os';
-process.env.UV_THREADPOOL_SIZE =
-    Math.ceil(Math.max(4, os.cpus().length * 1.5));
+process.env.UV_THREADPOOL_SIZE = Math.ceil(Math.max(4, os.cpus().length * 1.5));
 
 import fs from 'node:fs';
 import path from 'path';
@@ -17,20 +16,28 @@ import handlebars from 'handlebars';
 import SphericalMercator from '@mapbox/sphericalmercator';
 const mercator = new SphericalMercator();
 import morgan from 'morgan';
-import {serve_data} from './serve_data.js';
-import {serve_style} from './serve_style.js';
-import {serve_font} from './serve_font.js';
-import {getTileUrls, getPublicUrl} from './utils.js';
+import { serve_data } from './serve_data.js';
+import { serve_style } from './serve_style.js';
+import { serve_font } from './serve_font.js';
+import { getTileUrls, getPublicUrl } from './utils.js';
 
-import {fileURLToPath} from 'url';
+import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const packageJson = JSON.parse(fs.readFileSync(__dirname + '/../package.json', 'utf8'));
+const packageJson = JSON.parse(
+  fs.readFileSync(__dirname + '/../package.json', 'utf8'),
+);
 
 const isLight = packageJson.name.slice(-6) === '-light';
-const serve_rendered = (await import(`${!isLight ? `./serve_rendered.js` : `./serve_light.js`}`)).serve_rendered;
+const serve_rendered = (
+  await import(`${!isLight ? `./serve_rendered.js` : `./serve_light.js`}`)
+).serve_rendered;
 
-export function server(opts) {
+/**
+ *
+ * @param opts
+ */
+function start(opts) {
   console.log('Starting server');
 
   const app = express().disable('x-powered-by');
@@ -38,18 +45,24 @@ export function server(opts) {
     styles: {},
     rendered: {},
     data: {},
-    fonts: {}
+    fonts: {},
   };
 
   app.enable('trust proxy');
 
   if (process.env.NODE_ENV !== 'test') {
-    const defaultLogFormat = process.env.NODE_ENV === 'production' ? 'tiny' : 'dev';
+    const defaultLogFormat =
+      process.env.NODE_ENV === 'production' ? 'tiny' : 'dev';
     const logFormat = opts.logFormat || defaultLogFormat;
-    app.use(morgan(logFormat, {
-      stream: opts.logFile ? fs.createWriteStream(opts.logFile, {flags: 'a'}) : process.stdout,
-      skip: (req, res) => opts.silent && (res.statusCode === 200 || res.statusCode === 304)
-    }));
+    app.use(
+      morgan(logFormat, {
+        stream: opts.logFile
+          ? fs.createWriteStream(opts.logFile, { flags: 'a' })
+          : process.stdout,
+        skip: (req, res) =>
+          opts.silent && (res.statusCode === 200 || res.statusCode === 304),
+      }),
+    );
   }
 
   let config = opts.config || null;
@@ -74,17 +87,21 @@ export function server(opts) {
   options.paths = paths;
   paths.root = path.resolve(
     configPath ? path.dirname(configPath) : process.cwd(),
-    paths.root || '');
+    paths.root || '',
+  );
   paths.styles = path.resolve(paths.root, paths.styles || '');
   paths.fonts = path.resolve(paths.root, paths.fonts || '');
   paths.sprites = path.resolve(paths.root, paths.sprites || '');
   paths.mbtiles = path.resolve(paths.root, paths.mbtiles || '');
+  paths.icons = path.resolve(paths.root, paths.icons || '');
 
   const startupPromises = [];
 
   const checkPath = (type) => {
     if (!fs.existsSync(paths[type])) {
-      console.error(`The specified path for "${type}" does not exist (${paths[type]}).`);
+      console.error(
+        `The specified path for "${type}" does not exist (${paths[type]}).`,
+      );
       process.exit(1);
     }
   };
@@ -92,10 +109,51 @@ export function server(opts) {
   checkPath('fonts');
   checkPath('sprites');
   checkPath('mbtiles');
+  checkPath('icons');
+
+  /**
+   * Recursively get all files within a directory.
+   * Inspired by https://stackoverflow.com/a/45130990/10133863
+   *
+   * @param {string} directory Absolute path to a directory to get files from.
+   */
+  const getFiles = async (directory) => {
+    // Fetch all entries of the directory and attach type information
+    const dirEntries = await fs.promises.readdir(directory, {
+      withFileTypes: true,
+    });
+
+    // Iterate through entries and return the relative file-path to the icon directory if it is not a directory
+    // otherwise initiate a recursive call
+    const files = await Promise.all(
+      dirEntries.map((dirEntry) => {
+        const entryPath = path.resolve(directory, dirEntry.name);
+        return dirEntry.isDirectory()
+          ? getFiles(entryPath)
+          : entryPath.replace(paths.icons + path.sep, '');
+      }),
+    );
+
+    // Flatten the list of files to a single array
+    return files.flat();
+  };
+
+  // Load all available icons into a settings object
+  startupPromises.push(
+    new Promise((resolve) => {
+      getFiles(paths.icons).then((files) => {
+        paths.availableIcons = files;
+        resolve();
+      });
+    }),
+  );
 
   if (options.dataDecorator) {
     try {
-      options.dataDecoratorFunc = require(path.resolve(paths.root, options.dataDecorator));
+      options.dataDecoratorFunc = require(path.resolve(
+        paths.root,
+        options.dataDecorator,
+      ));
     } catch (e) {}
   }
 
@@ -109,54 +167,69 @@ export function server(opts) {
   app.use('/styles/', serve_style.init(options, serving.styles));
   if (!isLight) {
     startupPromises.push(
-        serve_rendered.init(options, serving.rendered)
-            .then((sub) => {
-              app.use('/styles/', sub);
-            })
+      serve_rendered.init(options, serving.rendered).then((sub) => {
+        app.use('/styles/', sub);
+      }),
     );
   }
 
   const addStyle = (id, item, allowMoreData, reportFonts) => {
     let success = true;
     if (item.serve_data !== false) {
-      success = serve_style.add(options, serving.styles, item, id, opts.publicUrl,
-          (mbtiles, fromData) => {
-            let dataItemId;
-            for (const id of Object.keys(data)) {
-              if (fromData) {
-                if (id === mbtiles) {
-                  dataItemId = id;
-                }
-              } else {
-                if (data[id].mbtiles === mbtiles) {
-                  dataItemId = id;
-                }
+      success = serve_style.add(
+        options,
+        serving.styles,
+        item,
+        id,
+        opts.publicUrl,
+        (mbtiles, fromData) => {
+          let dataItemId;
+          for (const id of Object.keys(data)) {
+            if (fromData) {
+              if (id === mbtiles) {
+                dataItemId = id;
               }
-            }
-            if (dataItemId) { // mbtiles exist in the data config
-              return dataItemId;
             } else {
-              if (fromData || !allowMoreData) {
-                console.log(`ERROR: style "${item.style}" using unknown mbtiles "${mbtiles}"! Skipping...`);
-                return undefined;
-              } else {
-                let id = mbtiles.substr(0, mbtiles.lastIndexOf('.')) || mbtiles;
-                while (data[id]) id += '_';
-                data[id] = {
-                  'mbtiles': mbtiles
-                };
-                return id;
+              if (data[id].mbtiles === mbtiles) {
+                dataItemId = id;
               }
             }
-          }, (font) => {
-            if (reportFonts) {
-              serving.fonts[font] = true;
+          }
+          if (dataItemId) {
+            // mbtiles exist in the data config
+            return dataItemId;
+          } else {
+            if (fromData || !allowMoreData) {
+              console.log(
+                `ERROR: style "${item.style}" using unknown mbtiles "${mbtiles}"! Skipping...`,
+              );
+              return undefined;
+            } else {
+              let id = mbtiles.substr(0, mbtiles.lastIndexOf('.')) || mbtiles;
+              while (data[id]) id += '_';
+              data[id] = {
+                mbtiles: mbtiles,
+              };
+              return id;
             }
-          });
+          }
+        },
+        (font) => {
+          if (reportFonts) {
+            serving.fonts[font] = true;
+          }
+        },
+      );
     }
     if (success && item.serve_rendered !== false) {
       if (!isLight) {
-        startupPromises.push(serve_rendered.add(options, serving.rendered, item, id, opts.publicUrl,
+        startupPromises.push(
+          serve_rendered.add(
+            options,
+            serving.rendered,
+            item,
+            id,
+            opts.publicUrl,
             (mbtiles) => {
               let mbtilesFile;
               for (const id of Object.keys(data)) {
@@ -165,8 +238,9 @@ export function server(opts) {
                 }
               }
               return mbtilesFile;
-            }
-        ));
+            },
+          ),
+        );
       } else {
         item.serve_rendered = false;
       }
@@ -184,9 +258,9 @@ export function server(opts) {
   }
 
   startupPromises.push(
-      serve_font(options, serving.fonts).then((sub) => {
-        app.use('/', sub);
-      })
+    serve_font(options, serving.fonts).then((sub) => {
+      app.use('/', sub);
+    }),
   );
 
   for (const id of Object.keys(data)) {
@@ -197,61 +271,65 @@ export function server(opts) {
     }
 
     startupPromises.push(
-        serve_data.add(options, serving.data, item, id, opts.publicUrl)
+      serve_data.add(options, serving.data, item, id, opts.publicUrl),
     );
   }
 
   if (options.serveAllStyles) {
-    fs.readdir(options.paths.styles, {withFileTypes: true}, (err, files) => {
+    fs.readdir(options.paths.styles, { withFileTypes: true }, (err, files) => {
       if (err) {
         return;
       }
       for (const file of files) {
-        if (file.isFile() &&
-            path.extname(file.name).toLowerCase() == '.json') {
+        if (file.isFile() && path.extname(file.name).toLowerCase() == '.json') {
           const id = path.basename(file.name, '.json');
           const item = {
-            style: file.name
+            style: file.name,
           };
           addStyle(id, item, false, false);
         }
       }
     });
 
-    const watcher = chokidar.watch(path.join(options.paths.styles, '*.json'),
-        {
-        });
-    watcher.on('all',
-        (eventType, filename) => {
-          if (filename) {
-            const id = path.basename(filename, '.json');
-            console.log(`Style "${id}" changed, updating...`);
+    const watcher = chokidar.watch(
+      path.join(options.paths.styles, '*.json'),
+      {},
+    );
+    watcher.on('all', (eventType, filename) => {
+      if (filename) {
+        const id = path.basename(filename, '.json');
+        console.log(`Style "${id}" changed, updating...`);
 
-            serve_style.remove(serving.styles, id);
-            if (!isLight) {
-              serve_rendered.remove(serving.rendered, id);
-            }
+        serve_style.remove(serving.styles, id);
+        if (!isLight) {
+          serve_rendered.remove(serving.rendered, id);
+        }
 
-            if (eventType == 'add' || eventType == 'change') {
-              const item = {
-                style: filename
-              };
-              addStyle(id, item, false, false);
-            }
-          }
-        });
+        if (eventType == 'add' || eventType == 'change') {
+          const item = {
+            style: filename,
+          };
+          addStyle(id, item, false, false);
+        }
+      }
+    });
   }
 
   app.get('/styles.json', (req, res, next) => {
     const result = [];
-    const query = req.query.key ? (`?key=${encodeURIComponent(req.query.key)}`) : '';
+    const query = req.query.key
+      ? `?key=${encodeURIComponent(req.query.key)}`
+      : '';
     for (const id of Object.keys(serving.styles)) {
       const styleJSON = serving.styles[id].styleJSON;
       result.push({
         version: styleJSON.version,
         name: styleJSON.name,
         id: id,
-        url: `${getPublicUrl(opts.publicUrl, req)}styles/${id}/style.json${query}`
+        url: `${getPublicUrl(
+          opts.publicUrl,
+          req,
+        )}styles/${id}/style.json${query}`,
       });
     }
     res.send(result);
@@ -266,9 +344,16 @@ export function server(opts) {
       } else {
         path = `${type}/${id}`;
       }
-      info.tiles = getTileUrls(req, info.tiles, path, info.format, opts.publicUrl, {
-        'pbf': options.pbfAlias
-      });
+      info.tiles = getTileUrls(
+        req,
+        info.tiles,
+        path,
+        info.format,
+        opts.publicUrl,
+        {
+          pbf: options.pbfAlias,
+        },
+      );
       arr.push(info);
     }
     return arr;
@@ -294,40 +379,49 @@ export function server(opts) {
     if (template === 'index') {
       if (options.frontPage === false) {
         return;
-      } else if (options.frontPage &&
-        options.frontPage.constructor === String) {
+      } else if (
+        options.frontPage &&
+        options.frontPage.constructor === String
+      ) {
         templateFile = path.resolve(paths.root, options.frontPage);
       }
     }
-    startupPromises.push(new Promise((resolve, reject) => {
-      fs.readFile(templateFile, (err, content) => {
-        if (err) {
-          err = new Error(`Template not found: ${err.message}`);
-          reject(err);
-          return;
-        }
-        const compiled = handlebars.compile(content.toString());
-
-        app.use(urlPath, (req, res, next) => {
-          let data = {};
-          if (dataGetter) {
-            data = dataGetter(req);
-            if (!data) {
-              return res.status(404).send('Not found');
-            }
+    startupPromises.push(
+      new Promise((resolve, reject) => {
+        fs.readFile(templateFile, (err, content) => {
+          if (err) {
+            err = new Error(`Template not found: ${err.message}`);
+            reject(err);
+            return;
           }
-          data['server_version'] = `${packageJson.name} v${packageJson.version}`;
-          data['public_url'] = opts.publicUrl || '/';
-          data['is_light'] = isLight;
-          data['key_query_part'] =
-            req.query.key ? `key=${encodeURIComponent(req.query.key)}&amp;` : '';
-          data['key_query'] = req.query.key ? `?key=${encodeURIComponent(req.query.key)}` : '';
-          if (template === 'wmts') res.set('Content-Type', 'text/xml');
-          return res.status(200).send(compiled(data));
+          const compiled = handlebars.compile(content.toString());
+
+          app.use(urlPath, (req, res, next) => {
+            let data = {};
+            if (dataGetter) {
+              data = dataGetter(req);
+              if (!data) {
+                return res.status(404).send('Not found');
+              }
+            }
+            data[
+              'server_version'
+            ] = `${packageJson.name} v${packageJson.version}`;
+            data['public_url'] = opts.publicUrl || '/';
+            data['is_light'] = isLight;
+            data['key_query_part'] = req.query.key
+              ? `key=${encodeURIComponent(req.query.key)}&amp;`
+              : '';
+            data['key_query'] = req.query.key
+              ? `?key=${encodeURIComponent(req.query.key)}`
+              : '';
+            if (template === 'wmts') res.set('Content-Type', 'text/xml');
+            return res.status(200).send(compiled(data));
+          });
+          resolve();
         });
-        resolve();
-      });
-    }));
+      }),
+    );
   };
 
   serveTemplate('/$', 'index', (req) => {
@@ -340,15 +434,23 @@ export function server(opts) {
       if (style.serving_rendered) {
         const center = style.serving_rendered.tileJSON.center;
         if (center) {
-          style.viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
+          style.viewer_hash = `#${center[2]}/${center[1].toFixed(
+            5,
+          )}/${center[0].toFixed(5)}`;
 
           const centerPx = mercator.px([center[0], center[1]], center[2]);
-          style.thumbnail = `${center[2]}/${Math.floor(centerPx[0] / 256)}/${Math.floor(centerPx[1] / 256)}.png`;
+          style.thumbnail = `${center[2]}/${Math.floor(
+            centerPx[0] / 256,
+          )}/${Math.floor(centerPx[1] / 256)}.png`;
         }
 
         style.xyz_link = getTileUrls(
-            req, style.serving_rendered.tileJSON.tiles,
-            `styles/${id}`, style.serving_rendered.tileJSON.format, opts.publicUrl)[0];
+          req,
+          style.serving_rendered.tileJSON.tiles,
+          `styles/${id}`,
+          style.serving_rendered.tileJSON.format,
+          opts.publicUrl,
+        )[0];
       }
     }
     const data = clone(serving.data || {});
@@ -357,19 +459,29 @@ export function server(opts) {
       const tilejson = data[id].tileJSON;
       const center = tilejson.center;
       if (center) {
-        data_.viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
+        data_.viewer_hash = `#${center[2]}/${center[1].toFixed(
+          5,
+        )}/${center[0].toFixed(5)}`;
       }
       data_.is_vector = tilejson.format === 'pbf';
       if (!data_.is_vector) {
         if (center) {
           const centerPx = mercator.px([center[0], center[1]], center[2]);
-          data_.thumbnail = `${center[2]}/${Math.floor(centerPx[0] / 256)}/${Math.floor(centerPx[1] / 256)}.${data_.tileJSON.format}`;
+          data_.thumbnail = `${center[2]}/${Math.floor(
+            centerPx[0] / 256,
+          )}/${Math.floor(centerPx[1] / 256)}.${data_.tileJSON.format}`;
         }
 
         data_.xyz_link = getTileUrls(
-            req, tilejson.tiles, `data/${id}`, tilejson.format, opts.publicUrl, {
-              'pbf': options.pbfAlias
-            })[0];
+          req,
+          tilejson.tiles,
+          `data/${id}`,
+          tilejson.format,
+          opts.publicUrl,
+          {
+            pbf: options.pbfAlias,
+          },
+        )[0];
       }
       if (data_.filesize) {
         let suffix = 'kB';
@@ -387,7 +499,7 @@ export function server(opts) {
     }
     return {
       styles: Object.keys(styles).length ? styles : null,
-      data: Object.keys(data).length ? data : null
+      data: Object.keys(data).length ? data : null,
     };
   });
 
@@ -422,9 +534,12 @@ export function server(opts) {
     wmts.name = (serving.styles[id] || serving.rendered[id]).name;
     if (opts.publicUrl) {
       wmts.baseUrl = opts.publicUrl;
-    }
-    else {
-      wmts.baseUrl = `${req.get('X-Forwarded-Protocol') ? req.get('X-Forwarded-Protocol') : req.protocol}://${req.get('host')}/`;
+    } else {
+      wmts.baseUrl = `${
+        req.get('X-Forwarded-Protocol')
+          ? req.get('X-Forwarded-Protocol')
+          : req.protocol
+      }://${req.get('host')}/`;
     }
     return wmts;
   });
@@ -453,13 +568,17 @@ export function server(opts) {
     }
   });
 
-  const server = app.listen(process.env.PORT || opts.port, process.env.BIND || opts.bind, function() {
-    let address = this.address().address;
-    if (address.indexOf('::') === 0) {
-      address = `[${address}]`; // literal IPv6 address
-    }
-    console.log(`Listening at http://${address}:${this.address().port}/`);
-  });
+  const server = app.listen(
+    process.env.PORT || opts.port,
+    process.env.BIND || opts.bind,
+    function () {
+      let address = this.address().address;
+      if (address.indexOf('::') === 0) {
+        address = `[${address}]`; // literal IPv6 address
+      }
+      console.log(`Listening at http://${address}:${this.address().port}/`);
+    },
+  );
 
   // add server.shutdown() to gracefully stop serving
   enableShutdown(server);
@@ -467,11 +586,15 @@ export function server(opts) {
   return {
     app: app,
     server: server,
-    startupPromise: startupPromise
+    startupPromise: startupPromise,
   };
 }
 
-export const exports = (opts) => {
+/**
+ *
+ * @param opts
+ */
+export function server(opts) {
   const running = start(opts);
 
   running.startupPromise.catch((err) => {
@@ -487,10 +610,6 @@ export const exports = (opts) => {
     console.log('Stopping server and reloading config');
 
     running.server.shutdown(() => {
-      for (const key in require.cache) {
-        delete require.cache[key];
-      }
-
       const restarted = start(opts);
       running.server = restarted.server;
       running.app = restarted.app;
@@ -498,4 +617,4 @@ export const exports = (opts) => {
   });
 
   return running;
-};
+}

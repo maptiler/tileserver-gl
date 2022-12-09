@@ -1,21 +1,21 @@
 {
   "name": "tileserver-gl",
-  "version": "4.1.1",
+  "version": "4.2.1",
   "description": "Map tile server for JSON GL styles - vector and server side generated raster tiles",
   "main": "src/main.js",
   "bin": "src/main.js",
   "type": "module",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/maptiler/tileserver-gl.git"
-  },
-  "license": "BSD-2-Clause",
-  "engines": {
-    "node": ">=14.15.0 <17"
-  },
   "scripts": {
     "test": "mocha test/**.js --timeout 10000",
-    "docker": "docker build -f Dockerfile . && docker run --rm -i -p 8080:80 $(docker build -q .)"
+    "lint:yml": "yamllint --schema=CORE_SCHEMA *.{yml,yaml}",
+    "lint:js": "npm run lint:eslint && npm run lint:prettier",
+    "lint:js:fix": "npm run lint:eslint:fix && npm run lint:prettier:fix",
+    "lint:eslint": "eslint \"{,!(node_modules|dist|static|public)/**/}*.{js,ts,cjs,mjs}\" --ignore-path .gitignore",
+    "lint:eslint:fix": "eslint --fix \"{,!(node_modules|dist|static|public)/**/}*.{js,ts,cjs,mjs}\" --ignore-path .gitignore",
+    "lint:prettier": "prettier --check \"{,!(node_modules|dist|static|public)/**/}*.{js,ts,cjs,mjs,json}\" --ignore-path .gitignore",
+    "lint:prettier:fix": "prettier --write \"{,!(node_modules|dist|static|public)/**/}*.{js,ts,cjs,mjs,json}\" --ignore-path .gitignore",
+    "docker": "docker build -f Dockerfile . && docker run --rm -i -p 8080:8080 $(docker build -q .)",
+    "prepare": "node -e \"if (process.env.NODE_ENV !== 'production'){ process.exit(1) } \" || husky install"
   },
   "dependencies": {
     "@mapbox/glyph-pbf-composite": "0.0.3",
@@ -29,9 +29,9 @@
     "chokidar": "3.5.3",
     "clone": "2.1.2",
     "color": "4.2.3",
-    "commander": "9.4.0",
+    "commander": "9.4.1",
     "cors": "2.8.5",
-    "express": "4.18.1",
+    "express": "4.18.2",
     "handlebars": "4.7.7",
     "http-shutdown": "1.2.2",
     "morgan": "1.10.0",
@@ -39,11 +39,44 @@
     "proj4": "2.8.0",
     "request": "2.88.2",
     "sharp": "0.31.0",
-    "tileserver-gl-styles": "2.0.0"
+    "tileserver-gl-styles": "2.0.0",
+    "sanitize-filename": "1.6.3"
   },
   "devDependencies": {
-    "chai": "4.3.6",
+    "@commitlint/cli": "^17.3.0",
+    "@commitlint/config-conventional": "^17.3.0",
+    "@typescript-eslint/eslint-plugin": "^5.46.0",
+    "@typescript-eslint/parser": "^5.38.0",
+    "chai": "4.3.7",
+    "eslint": "^8.24.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-jsdoc": "^39.6.4",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-security": "^1.5.0",
+    "husky": "^8.0.1",
+    "lint-staged": "^13.1.0",
     "mocha": "^10.0.0",
-    "supertest": "^6.2.4"
-  }
+    "prettier": "^2.8.1",
+    "should": "^13.2.3",
+    "supertest": "^6.3.3",
+    "yaml-lint": "^1.7.0"
+  },
+  "keywords": [
+    "maptiler",
+    "tileserver-gl",
+    "maplibre-gl",
+    "tileserver"
+  ],
+  "license": "BSD-2-Clause",
+  "engines": {
+    "node": ">=14.15.0 <17"
+  },
+  "repository": {
+    "url": "git+https://github.com/maptiler/tileserver-gl.git",
+    "type": "git"
+  },
+  "bugs": {
+    "url": "https://github.com/maptiler/tileserver-gl/issues"
+  },
+  "homepage": "https://github.com/maptiler/tileserver-gl#readme"
 }

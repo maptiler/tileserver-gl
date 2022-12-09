@@ -36,3 +36,9 @@ It is possible to reload the configuration file without restarting the whole pro
 
 - The `docker kill -s HUP tileserver-gl` command can be used when running the tileserver-gl docker container.
 - The `docker-compose kill -s HUP tileserver-gl-service-name` can be used when tileserver-gl is run as a docker-compose service.
+
+Docker and `--port`
+======
+
+When running tileserver-gl in a Docker container, using the `--port` option would make the container incorrectly seem unhealthy.
+Instead, it is advised to use Docker's port mapping and map the default port 8080 to the desired external port.

@@ -1,10 +1,10 @@
-const testStatic = function(prefix, q, format, status, scale, type, query) {
+const testStatic = function (prefix, q, format, status, scale, type, query) {
   if (scale) q += '@' + scale + 'x';
   let path = '/styles/' + prefix + '/static/' + q + '.' + format;
   if (query) {
     path += query;
   }
-  it(path + ' returns ' + status, function(done) {
+  it(path + ' returns ' + status, function (done) {
     const test = supertest(app).get(path);
     if (status) test.expect(status);
     if (type) test.expect('Content-Type', type);
@@ -14,17 +14,45 @@ const testStatic = function(prefix, q, format, status, scale, type, query) {
 
 const prefix = 'test-style';
 
-describe('Static endpoints', function() {
-  describe('center-based', function() {
-    describe('valid requests', function() {
-      describe('various formats', function() {
-        testStatic(prefix, '0,0,0/256x256', 'png', 200, undefined, /image\/png/);
-        testStatic(prefix, '0,0,0/256x256', 'jpg', 200, undefined, /image\/jpeg/);
-        testStatic(prefix, '0,0,0/256x256', 'jpeg', 200, undefined, /image\/jpeg/);
-        testStatic(prefix, '0,0,0/256x256', 'webp', 200, undefined, /image\/webp/);
+describe('Static endpoints', function () {
+  describe('center-based', function () {
+    describe('valid requests', function () {
+      describe('various formats', function () {
+        testStatic(
+          prefix,
+          '0,0,0/256x256',
+          'png',
+          200,
+          undefined,
+          /image\/png/,
+        );
+        testStatic(
+          prefix,
+          '0,0,0/256x256',
+          'jpg',
+          200,
+          undefined,
+          /image\/jpeg/,
+        );
+        testStatic(
+          prefix,
+          '0,0,0/256x256',
+          'jpeg',
+          200,
+          undefined,
+          /image\/jpeg/,
+        );
+        testStatic(
+          prefix,
+          '0,0,0/256x256',
+          'webp',
+          200,
+          undefined,
+          /image\/webp/,
+        );
       });
 
-      describe('different parameters', function() {
+      describe('different parameters', function () {
         testStatic(prefix, '0,0,0/300x300', 'png', 200, 2);
         testStatic(prefix, '0,0,0/300x300', 'png', 200, 3);
 
@@ -42,7 +70,7 @@ describe('Static endpoints', function() {
       });
     });
 
-    describe('invalid requests return 4xx', function() {
+    describe('invalid requests return 4xx', function () {
       testStatic(prefix, '190,0,0/256x256', 'png', 400);
       testStatic(prefix, '0,86,0/256x256', 'png', 400);
       testStatic(prefix, '80,40,20/0x0', 'png', 400);
@@ -57,16 +85,44 @@ describe('Static endpoints', function() {
     });
   });
 
-  describe('area-based', function() {
-    describe('valid requests', function() {
-      describe('various formats', function() {
-        testStatic(prefix, '-180,-80,180,80/10x10', 'png', 200, undefined, /image\/png/);
-        testStatic(prefix, '-180,-80,180,80/10x10', 'jpg', 200, undefined, /image\/jpeg/);
-        testStatic(prefix, '-180,-80,180,80/10x10', 'jpeg', 200, undefined, /image\/jpeg/);
-        testStatic(prefix, '-180,-80,180,80/10x10', 'webp', 200, undefined, /image\/webp/);
+  describe('area-based', function () {
+    describe('valid requests', function () {
+      describe('various formats', function () {
+        testStatic(
+          prefix,
+          '-180,-80,180,80/10x10',
+          'png',
+          200,
+          undefined,
+          /image\/png/,
+        );
+        testStatic(
+          prefix,
+          '-180,-80,180,80/10x10',
+          'jpg',
+          200,
+          undefined,
+          /image\/jpeg/,
+        );
+        testStatic(
+          prefix,
+          '-180,-80,180,80/10x10',
+          'jpeg',
+          200,
+          undefined,
+          /image\/jpeg/,
+        );
+        testStatic(
+          prefix,
+          '-180,-80,180,80/10x10',
+          'webp',
+          200,
+          undefined,
+          /image\/webp/,
+        );
       });
 
-      describe('different parameters', function() {
+      describe('different parameters', function () {
         testStatic(prefix, '-180,-90,180,90/20x20', 'png', 200, 2);
         testStatic(prefix, '0,0,1,1/200x200', 'png', 200, 3);
 
@@ -74,7 +130,7 @@ describe('Static endpoints', function() {
       });
     });
 
-    describe('invalid requests return 4xx', function() {
+    describe('invalid requests return 4xx', function () {
       testStatic(prefix, '0,87,1,88/5x2', 'png', 400);
 
       testStatic(prefix, '0,0,1,1/1x1', 'gif', 400);
@@ -83,20 +139,60 @@ describe('Static endpoints', function() {
     });
   });
 
-  describe('autofit path', function() {
-    describe('valid requests', function() {
-      testStatic(prefix, 'auto/256x256', 'png', 200, undefined, /image\/png/, '?path=10,10|20,20');
+  describe('autofit path', function () {
+    describe('valid requests', function () {
+      testStatic(
+        prefix,
+        'auto/256x256',
+        'png',
+        200,
+        undefined,
+        /image\/png/,
+        '?path=10,10|20,20',
+      );
 
-      describe('different parameters', function() {
-        testStatic(prefix, 'auto/20x20', 'png', 200, 2, /image\/png/, '?path=10,10|20,20');
-        testStatic(prefix, 'auto/200x200', 'png', 200, 3, /image\/png/, '?path=-10,-10|-20,-20');
+      describe('different parameters', function () {
+        testStatic(
+          prefix,
+          'auto/20x20',
+          'png',
+          200,
+          2,
+          /image\/png/,
+          '?path=10,10|20,20',
+        );
+        testStatic(
+          prefix,
+          'auto/200x200',
+          'png',
+          200,
+          3,
+          /image\/png/,
+          '?path=-10,-10|-20,-20',
+        );
       });
     });
 
-    describe('invalid requests return 4xx', function() {
+    describe('invalid requests return 4xx', function () {
       testStatic(prefix, 'auto/256x256', 'png', 400);
-      testStatic(prefix, 'auto/256x256', 'png', 400, undefined, undefined, '?path=10,10');
-      testStatic(prefix, 'auto/2560x2560', 'png', 400, undefined, undefined, '?path=10,10|20,20');
+      testStatic(
+        prefix,
+        'auto/256x256',
+        'png',
+        400,
+        undefined,
+        undefined,
+        '?path=invalid',
+      );
+      testStatic(
+        prefix,
+        'auto/2560x2560',
+        'png',
+        400,
+        undefined,
+        undefined,
+        '?path=10,10|20,20',
+      );
     });
   });
 });

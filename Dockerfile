@@ -30,9 +30,9 @@ RUN set -ex; \
     rm -rf /var/lib/apt/lists/*;
 
 RUN mkdir -p /usr/src/app
-COPY package.json /usr/src/app
+COPY package* /usr/src/app/
 
-RUN cd /usr/src/app && npm install --production
+RUN cd /usr/src/app && npm ci --omit=dev
 
 FROM ubuntu:focal AS final
 
@@ -72,11 +72,14 @@ COPY --from=builder /usr/src/app /usr/src/app
 
 COPY . /usr/src/app
 
+RUN mkdir -p /data && chown node:node /data
 VOLUME /data
 WORKDIR /data
 
-EXPOSE 80
+EXPOSE 8080
 
 USER node:node
 
 ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
+
+HEALTHCHECK CMD node /usr/src/app/src/healthcheck.js
