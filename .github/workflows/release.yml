@@ -61,6 +61,11 @@ jobs:
         env:
           NPM_TOKEN: ${{ github.event.inputs.npm_token }}
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: 'arm64'
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -76,7 +81,7 @@ jobs:
           context: .
           push: true
           tags: maptiler/tileserver-gl:latest, maptiler/tileserver-gl:${{ env.PACKAGE_VERSION }}
-          platforms: linux/amd64
+          platforms: linux/arm64,linux/amd64
 
       - name: Create Tileserver Light Directory
         run: node publish.js --no-publish
@@ -100,4 +105,4 @@ jobs:
           file: ./light/Dockerfile
           push: true
           tags: maptiler/tileserver-gl-light:latest, maptiler/tileserver-gl-light:${{ env.PACKAGE_VERSION }}
-          platforms: linux/amd64
+          platforms: linux/arm64,linux/amd64
