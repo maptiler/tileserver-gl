@@ -5,14 +5,15 @@ on:
     branches:
       - master
 
+permissions:
+  pull-requests: write
+  contents: write
+
 jobs:
   automerge:
     runs-on: ubuntu-latest
     if: >
       github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]'
-    permissions:
-      pull-requests: write
-      contents: write
     steps:
       - uses: fastify/github-action-merge-dependabot@v3
         with:
