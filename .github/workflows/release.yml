@@ -37,10 +37,6 @@ jobs:
           check-latest: true
           cache: 'npm'
 
-      - name: Get version
-        run: |
-          echo "PACKAGE_VERSION=$(grep '"version"' package.json | cut -d '"' -f 4 | head -n 1)" >> $GITHUB_ENV
-
       - name: Install dependencies 🚀
         run: npm ci --prefer-offline --no-audit --omit=optional
 
@@ -64,6 +60,10 @@ jobs:
           npm publish --access public
         env:
           NPM_TOKEN: ${{ github.event.inputs.npm_token }}
+
+      - name: Get version
+        run: |
+          echo "PACKAGE_VERSION=$(grep '"version"' package.json | cut -d '"' -f 4 | head -n 1)" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
