@@ -54,7 +54,10 @@ export const serve_data = {
             if (/does not exist/.test(err.message)) {
               return res.status(204).send();
             } else {
-              return res.status(500).send(err.message);
+              return res
+                .status(500)
+                .header('Content-Type', 'text/plain')
+                .send(err.message);
             }
           } else {
             if (data == null) {

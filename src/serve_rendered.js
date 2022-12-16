@@ -661,7 +661,10 @@ export const serve_rendered = {
           pool.release(renderer);
           if (err) {
             console.error(err);
-            return res.status(500).send(err);
+            return res
+              .status(500)
+              .header('Content-Type', 'text/plain')
+              .send(err);
           }
 
           // Fix semi-transparent outlines on raw, premultiplied input

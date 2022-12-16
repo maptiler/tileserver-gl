@@ -1,0 +1,112 @@
+name: "Build, Test, Release"
+
+on: 
+  workflow_dispatch:
+    inputs:
+      docker_user:
+        description: 'Docker Username'     
+        required: true
+      docker_token:
+        description: 'Docker Token'     
+        required: true
+      npm_token:
+        description: 'NPM Token'
+        required: true
+
+jobs:
+  release:
+    name: "Build, Test, Publish"
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check out repository ✨
+        uses: actions/checkout@v3
+
+      - name: Update apt-get 🚀
+        run: sudo apt-get update -qq
+
+      - name: Install dependencies (Ubuntu) 🚀
+        run: >-
+          sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev
+          libgif-dev build-essential g++ xvfb libgles2-mesa-dev libgbm-dev
+          libxxf86vm-dev
+
+      - name: Setup node env 📦
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: 'package.json'
+          check-latest: true
+          cache: 'npm'
+
+      - name: Install dependencies 🚀
+        run: npm ci --prefer-offline --no-audit --omit=optional
+
+      - name: Pull test data 📦
+        run: >-
+          wget -O test_data.zip
+          https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
+
+      - name: Prepare test data 📦
+        run: unzip -q test_data.zip -d test_data
+
+      - name: Run tests 🧪
+        run: xvfb-run --server-args="-screen 0 1024x768x24" npm test
+
+      - name: Remove Test Data
+        run: rm -R test_data*
+
+      - name: Publish to Full Version NPM
+        run: |
+          npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
+          npm publish --access public
+        env:
+          NPM_TOKEN: ${{ github.event.inputs.npm_token }}
+
+      - name: Get version
+        run: |
+          echo "PACKAGE_VERSION=$(grep '"version"' package.json | cut -d '"' -f 4 | head -n 1)" >> $GITHUB_ENV
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: 'arm64'
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ github.event.inputs.docker_user }}
+          password: ${{ github.event.inputs.docker_token }}
+
+      - name: Build and publish Full Version to Docker Hub
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          tags: maptiler/tileserver-gl:latest, maptiler/tileserver-gl:v${{ env.PACKAGE_VERSION }}
+          platforms: linux/arm64,linux/amd64
+
+      - name: Create Tileserver Light Directory
+        run: node publish.js --no-publish
+
+      - name: Install node dependencies
+        run: npm install
+        working-directory: ./light
+
+      - name: Publish to Light Version NPM
+        working-directory: ./light
+        run: |
+          npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
+          npm publish --access public
+        env:
+          NPM_TOKEN: ${{ github.event.inputs.npm_token }}
+
+      - name: Build and publish Light Version to Docker Hub
+        uses: docker/build-push-action@v3
+        with:
+          context: ./light
+          file: ./light/Dockerfile
+          push: true
+          tags: maptiler/tileserver-gl-light:latest, maptiler/tileserver-gl-light:v${{ env.PACKAGE_VERSION }}
+          platforms: linux/arm64,linux/amd64

@@ -54,7 +54,7 @@ export const serve_font = (options, allowedFonts) => {
         res.header('Last-Modified', lastModified);
         return res.send(concated);
       },
-      (err) => res.status(400).send(err),
+      (err) => res.status(400).header('Content-Type', 'text/plain').send(err),
     );
   });
 
