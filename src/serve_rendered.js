@@ -634,7 +634,7 @@ export const serve_rendered = {
 
       const tileMargin = Math.max(options.tileMargin || 0, 0);
       let pool;
-      if (opt_mode === 'tile'&& tileMargin === 0) {
+      if (opt_mode === 'tile' && tileMargin === 0) {
         pool = item.map.renderers[scale];
       } else {
         pool = item.map.renderers_static[scale];
