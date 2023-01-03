@@ -615,6 +615,7 @@ export const serve_rendered = {
       ) {
         return res.status(400).send('Invalid center');
       }
+
       if (
         Math.min(width, height) <= 0 ||
         Math.max(width, height) * scale > (options.maxSize || 2048) ||
@@ -623,6 +624,7 @@ export const serve_rendered = {
       ) {
         return res.status(400).send('Invalid size');
       }
+
       if (format === 'png' || format === 'webp') {
       } else if (format === 'jpg' || format === 'jpeg') {
         format = 'jpeg';
@@ -630,8 +632,9 @@ export const serve_rendered = {
         return res.status(400).send('Invalid format');
       }
 
+      const tileMargin = Math.max(options.tileMargin || 0, 0);
       let pool;
-      if (opt_mode === 'tile') {
+      if (opt_mode === 'tile'&& tileMargin === 0) {
         pool = item.map.renderers[scale];
       } else {
         pool = item.map.renderers_static[scale];
@@ -646,12 +649,12 @@ export const serve_rendered = {
           width: width,
           height: height,
         };
+
         if (z === 0) {
           params.width *= 2;
           params.height *= 2;
         }
 
-        const tileMargin = Math.max(options.tileMargin || 0, 0);
         if (z > 2 && tileMargin > 0) {
           params.width += tileMargin * 2;
           params.height += tileMargin * 2;
