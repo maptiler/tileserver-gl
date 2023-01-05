@@ -21,6 +21,8 @@ import request from 'request';
 import { getFontsPbf, getTileUrls, fixTileJSONCenter } from './utils.js';
 
 const FLOAT_PATTERN = '[+-]?(?:\\d+|\\d+.?\\d+)';
+const PATH_PATTERN =
+  /^((fill|stroke|width)\:[^\|]+\|)*((enc:.+)|((-?\d+\.?\d*,-?\d+\.?\d*\|)+(-?\d+\.?\d*,-?\d+\.?\d*)))/;
 const httpTester = /^(http(s)?:)?\/\//;
 
 const mercator = new SphericalMercator();
@@ -150,57 +152,62 @@ const parseCoordinates = (coordinatePair, query, transformer) => {
 const extractPathsFromQuery = (query, transformer) => {
   const paths = [];
   // Return an empty list if no paths have been provided
-  if (
-    ('path' in query && !query.path) ||
-    ('encodedpath' in query && !query.encodedpath)
-  ) {
+  if ('path' in query && !query.path) {
     return paths;
   }
   // Parse paths provided via path query argument
-  if ('path' in query) {
-    // Check if multiple paths have been provided and mimic a list if it's a
-    // single path.
-    const providedPaths = Array.isArray(query.path) ? query.path : [query.path];
+  if ('path' in query && PATH_PATTERN.test(query.path)) {
+    if (query.path.includes('enc:')) {
+      const splitPaths = query.path.split('|');
+      const line = splitPaths
+        .filter(
+          (x) =>
+            !x.startsWith('fill') &&
+            !x.startsWith('stroke') &&
+            !x.startsWith('width'),
+        )
+        .join('')
+        .replace('enc:', '');
 
-    // Iterate through paths, parse and validate them
-    for (const providedPath of providedPaths) {
-      const currentPath = [];
+      const coords = polyline.decode(line).map(([lat, lng]) => [lng, lat]);
+      paths.push(coords);
+    } else {
+      // Check if multiple paths have been provided and mimic a list if it's a
+      // single path.
+      const providedPaths = Array.isArray(query.path)
+        ? query.path
+        : [query.path];
 
-      // Extract coordinate-list from path
-      const pathParts = (providedPath || '').split('|');
+      // Iterate through paths, parse and validate them
+      for (const providedPath of providedPaths) {
+        const currentPath = [];
 
-      // Iterate through coordinate-list, parse the coordinates and validate them
-      for (const pair of pathParts) {
-        // Extract coordinates from coordinate pair
-        const pairParts = pair.split(',');
+        // Extract coordinate-list from path
+        const pathParts = (providedPath || '').split('|');
 
-        // Ensure we have two coordinates
-        if (pairParts.length === 2) {
-          const pair = parseCoordinates(pairParts, query, transformer);
+        // Iterate through coordinate-list, parse the coordinates and validate them
+        for (const pair of pathParts) {
+          // Extract coordinates from coordinate pair
+          const pairParts = pair.split(',');
+          // Ensure we have two coordinates
+          if (pairParts.length === 2) {
+            const pair = parseCoordinates(pairParts, query, transformer);
 
-          // Ensure coordinates could be parsed and skip them if not
-          if (pair === null) {
-            continue;
+            // Ensure coordinates could be parsed and skip them if not
+            if (pair === null) {
+              continue;
+            }
+
+            // Add the coordinate-pair to the current path if they are valid
+            currentPath.push(pair);
           }
-
-          // Add the coordinate-pair to the current path if they are valid
-          currentPath.push(pair);
+        }
+        // Extend list of paths with current path if it contains coordinates
+        if (currentPath.length) {
+          paths.push(currentPath);
         }
       }
-
-      // Extend list of paths with current path if it contains coordinates
-      if (currentPath.length) {
-        paths.push(currentPath);
-      }
     }
-  }
-  // Check if encoded paths have been provided
-  if ('encodedpath' in query) {
-    // silly lat/lng switch 🤷‍♂️
-    const coords = polyline
-      .decode(query.encodedpath)
-      .map(([lat, lng]) => [lng, lat]);
-    paths.push(coords);
   }
   return paths;
 };
@@ -435,6 +442,9 @@ const drawMarkers = async (ctx, markers, z) => {
  * @param {number} z Map zoom level.
  */
 const drawPath = (ctx, path, query, z) => {
+  // Check if path in query is valid
+  const splitPaths = query.path.split('|');
+
   if (!path || path.length < 2) {
     return null;
   }
@@ -456,16 +466,36 @@ const drawPath = (ctx, path, query, z) => {
   }
 
   // Optionally fill drawn shape with a rgba color from query
-  if (query.fill !== undefined) {
-    ctx.fillStyle = query.fill;
+  const pathHasFill = splitPaths.filter((x) => x.startsWith('fill')).length > 0;
+  if (query.fill !== undefined || pathHasFill) {
+    if ('fill' in query) {
+      ctx.fillStyle = query.fill;
+    }
+    if (pathHasFill) {
+      ctx.fillStyle = splitPaths
+        .find((x) => x.startsWith('fill:'))
+        .replace('fill:', '');
+      console.log('path has fill', ctx.fillStyle);
+    }
     ctx.fill();
   }
 
   // Get line width from query and fall back to 1 if not provided
-  const lineWidth = query.width !== undefined ? parseFloat(query.width) : 1;
-
-  // Ensure line width is valid
-  if (lineWidth > 0) {
+  const pathHasWidth =
+    splitPaths.filter((x) => x.startsWith('width')).length > 0;
+  if (query.width !== undefined || pathHasWidth) {
+    let lineWidth = 1;
+    // Get line width from query
+    if ('width' in query) {
+      lineWidth = Number(query.width);
+    }
+    // Get line width from path in query
+    if (pathHasWidth) {
+      lineWidth = Number(
+        splitPaths.find((x) => x.startsWith('width:')).replace('width:', ''),
+      );
+      console.log('line width', lineWidth);
+    }
     // Get border width from query and fall back to 10% of line width
     const borderWidth =
       query.borderwidth !== undefined
@@ -490,9 +520,21 @@ const drawPath = (ctx, path, query, z) => {
       ctx.strokeStyle = query.border;
       ctx.stroke();
     }
-
     ctx.lineWidth = lineWidth;
-    ctx.strokeStyle = query.stroke || 'rgba(0,64,255,0.7)';
+  }
+
+  const pathHasStroke =
+    splitPaths.filter((x) => x.startsWith('stroke')).length > 0;
+  if (query.stroke !== undefined || pathHasStroke) {
+    if ('stroke' in query) {
+      ctx.strokeStyle = query.stroke || 'rgba(0,64,255,0.7)';
+    }
+    // Path Width gets higher priority
+    if (pathHasWidth) {
+      ctx.strokeStyle = splitPaths
+        .find((x) => x.startsWith('stroke:'))
+        .replace('stroke:', '');
+    }
     ctx.stroke();
   }
 };
