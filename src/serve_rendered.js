@@ -475,7 +475,6 @@ const drawPath = (ctx, path, query, z) => {
       ctx.fillStyle = splitPaths
         .find((x) => x.startsWith('fill:'))
         .replace('fill:', '');
-      console.log('path has fill', ctx.fillStyle);
     }
     ctx.fill();
   }
@@ -494,7 +493,6 @@ const drawPath = (ctx, path, query, z) => {
       lineWidth = Number(
         splitPaths.find((x) => x.startsWith('width:')).replace('width:', ''),
       );
-      console.log('line width', lineWidth);
     }
     // Get border width from query and fall back to 10% of line width
     const borderWidth =
