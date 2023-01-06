@@ -20,6 +20,7 @@
   "dependencies": {
     "@mapbox/glyph-pbf-composite": "0.0.3",
     "@mapbox/mbtiles": "0.12.1",
+    "@mapbox/polyline": "^1.1.1",
     "@mapbox/sphericalmercator": "1.2.0",
     "@mapbox/vector-tile": "1.3.1",
     "@maplibre/maplibre-gl-native": "5.1.1",
@@ -38,9 +39,9 @@
     "pbf": "3.2.1",
     "proj4": "2.8.0",
     "request": "2.88.2",
+    "sanitize-filename": "1.6.3",
     "sharp": "0.31.3",
-    "tileserver-gl-styles": "2.0.0",
-    "sanitize-filename": "1.6.3"
+    "tileserver-gl-styles": "2.0.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.4.1",
