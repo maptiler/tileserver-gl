@@ -13,7 +13,7 @@ RUN set -ex; \
     apt-get -y --no-install-recommends install \
       ca-certificates \
       wget; \
-    wget -qO- https://deb.nodesource.com/setup_16.x | bash; \
+    wget -qO- https://deb.nodesource.com/setup_18.x | bash; \
     apt-get install -y nodejs; \
     apt-get -y remove wget; \
     apt-get -y --purge autoremove; \

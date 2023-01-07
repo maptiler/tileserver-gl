@@ -22,7 +22,7 @@ RUN set -ex; \
       librsvg2-dev \
       libcurl4-openssl-dev \
       libpixman-1-dev; \
-    wget -qO- https://deb.nodesource.com/setup_16.x | bash; \
+    wget -qO- https://deb.nodesource.com/setup_18.x | bash; \
     apt-get install -y nodejs; \
     apt-get -y remove wget; \
     apt-get -y --purge autoremove; \
@@ -61,7 +61,7 @@ RUN set -ex; \
       libcurl4 \
       librsvg2-2 \
       libpango1.0; \
-    wget -qO- https://deb.nodesource.com/setup_16.x | bash; \
+    wget -qO- https://deb.nodesource.com/setup_18.x | bash; \
     apt-get install -y nodejs; \
     apt-get -y remove wget; \
     apt-get -y --purge autoremove; \
