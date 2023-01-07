@@ -55,3 +55,18 @@ jobs:
 
       - name: Run tests 🧪
         run: xvfb-run --server-args="-screen 0 1024x768x24" npm test
+        
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: 'arm64'
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        
+      - name: Test Docker Build
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: false
+          platforms: linux/arm64,linux/amd64
