@@ -150,14 +150,15 @@ const parseCoordinates = (coordinatePair, query, transformer) => {
  * @param {Function} transformer Optional transform function.
  */
 const extractPathsFromQuery = (query, transformer) => {
+  const reqPath = decodeURIComponent(query.path);
   const paths = [];
   // Return an empty list if no paths have been provided
   if ('path' in query && !query.path) {
     return paths;
   }
   // Parse paths provided via path query argument
-  if ('path' in query && PATH_PATTERN.test(query.path)) {
-    if (query.path.includes('enc:')) {
+  if ('path' in query && PATH_PATTERN.test(reqPath)) {
+    if (reqPath.includes('enc:')) {
       const splitPaths = query.path.split('|');
       const line = splitPaths
         .filter(
