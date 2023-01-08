@@ -469,7 +469,7 @@ const drawPath = (ctx, path, query, z) => {
   const pathHasFill = splitPaths.filter((x) => x.startsWith('fill')).length > 0;
   if (query.fill !== undefined || pathHasFill) {
     if ('fill' in query) {
-      ctx.fillStyle = query.fill;
+      ctx.fillStyle = query.fill || 'rgba(255,255,255,0.4)';
     }
     if (pathHasFill) {
       ctx.fillStyle = splitPaths
@@ -525,7 +525,7 @@ const drawPath = (ctx, path, query, z) => {
     splitPaths.filter((x) => x.startsWith('stroke')).length > 0;
   if (query.stroke !== undefined || pathHasStroke) {
     if ('stroke' in query) {
-      ctx.strokeStyle = query.stroke || 'rgba(0,64,255,0.7)';
+      ctx.strokeStyle = query.stroke;
     }
     // Path Width gets higher priority
     if (pathHasWidth) {
@@ -533,8 +533,10 @@ const drawPath = (ctx, path, query, z) => {
         .find((x) => x.startsWith('stroke:'))
         .replace('stroke:', '');
     }
-    ctx.stroke();
+  } else {
+    ctx.strokeStyle = 'rgba(0,64,255,0.7)';
   }
+  ctx.stroke();
 };
 
 const renderOverlay = async (
