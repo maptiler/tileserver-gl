@@ -39,6 +39,8 @@ Static images
 
     * e.g. ``5.9,45.8|5.9,47.8|10.5,47.8|10.5,45.8|5.9,45.8``
     * can be provided multiple times
+    * or pass the path as per [Maptiler Cloud API](https://docs.maptiler.com/cloud/api/static-maps/)
+    * Match pattern: ((fill|stroke|width)\:[^\|]+\|)*((enc:.+)|((-?\d+\.?\d*,-?\d+\.?\d*\|)+(-?\d+\.?\d*,-?\d+\.?\d*)))
 
   * ``latlng`` - indicates coordinates are in ``lat,lng`` order rather than the usual ``lng,lat``
   * ``fill`` - color to use as the fill (e.g. ``red``, ``rgba(255,255,255,0.5)``, ``#0000ff``)
