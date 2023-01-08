@@ -60,7 +60,7 @@ Alternatively, you can use ``tileserver-gl-light`` package instead, which is pur
 From source
 ===========
 
-Make sure you have Node v10 (nvm install 10) and run::
+Make sure you have Node v18 (nvm install 18) and run::
 
   npm install
   node .
