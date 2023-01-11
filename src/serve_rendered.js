@@ -443,101 +443,110 @@ const drawMarkers = async (ctx, markers, z) => {
  * @param {number} z Map zoom level.
  */
 const drawPath = (ctx, path, query, z) => {
+  const renderPath = (splitPaths) => {
+    if (!path || path.length < 2) {
+      return null;
+    }
+
+    ctx.beginPath();
+
+    // Transform coordinates to pixel on canvas and draw lines between points
+    for (const pair of path) {
+      const px = precisePx(pair, z);
+      ctx.lineTo(px[0], px[1]);
+    }
+
+    // Check if first coordinate matches last coordinate
+    if (
+      path[0][0] === path[path.length - 1][0] &&
+      path[0][1] === path[path.length - 1][1]
+    ) {
+      ctx.closePath();
+    }
+
+    // Optionally fill drawn shape with a rgba color from query
+    const pathHasFill =
+      splitPaths.filter((x) => x.startsWith('fill')).length > 0;
+    if (query.fill !== undefined || pathHasFill) {
+      if ('fill' in query) {
+        ctx.fillStyle = query.fill || 'rgba(255,255,255,0.4)';
+      }
+      if (pathHasFill) {
+        ctx.fillStyle = splitPaths
+          .find((x) => x.startsWith('fill:'))
+          .replace('fill:', '');
+      }
+      ctx.fill();
+    }
+
+    // Get line width from query and fall back to 1 if not provided
+    const pathHasWidth =
+      splitPaths.filter((x) => x.startsWith('width')).length > 0;
+    if (query.width !== undefined || pathHasWidth) {
+      let lineWidth = 1;
+      // Get line width from query
+      if ('width' in query) {
+        lineWidth = Number(query.width);
+      }
+      // Get line width from path in query
+      if (pathHasWidth) {
+        lineWidth = Number(
+          splitPaths.find((x) => x.startsWith('width:')).replace('width:', ''),
+        );
+      }
+      // Get border width from query and fall back to 10% of line width
+      const borderWidth =
+        query.borderwidth !== undefined
+          ? parseFloat(query.borderwidth)
+          : lineWidth * 0.1;
+
+      // Set rendering style for the start and end points of the path
+      // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineCap
+      ctx.lineCap = query.linecap || 'butt';
+
+      // Set rendering style for overlapping segments of the path with differing directions
+      // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineJoin
+      ctx.lineJoin = query.linejoin || 'miter';
+
+      // In order to simulate a border we draw the path two times with the first
+      // beeing the wider border part.
+      if (query.border !== undefined && borderWidth > 0) {
+        // We need to double the desired border width and add it to the line width
+        // in order to get the desired border on each side of the line.
+        ctx.lineWidth = lineWidth + borderWidth * 2;
+        // Set border style as rgba
+        ctx.strokeStyle = query.border;
+        ctx.stroke();
+      }
+      ctx.lineWidth = lineWidth;
+    }
+
+    const pathHasStroke =
+      splitPaths.filter((x) => x.startsWith('stroke')).length > 0;
+    if (query.stroke !== undefined || pathHasStroke) {
+      if ('stroke' in query) {
+        ctx.strokeStyle = query.stroke;
+      }
+      // Path Width gets higher priority
+      if (pathHasWidth) {
+        ctx.strokeStyle = splitPaths
+          .find((x) => x.startsWith('stroke:'))
+          .replace('stroke:', '');
+      }
+    } else {
+      ctx.strokeStyle = 'rgba(0,64,255,0.7)';
+    }
+    ctx.stroke();
+  };
+
   // Check if path in query is valid
-  const splitPaths = query.path.split('|');
-
-  if (!path || path.length < 2) {
-    return null;
-  }
-
-  ctx.beginPath();
-
-  // Transform coordinates to pixel on canvas and draw lines between points
-  for (const pair of path) {
-    const px = precisePx(pair, z);
-    ctx.lineTo(px[0], px[1]);
-  }
-
-  // Check if first coordinate matches last coordinate
-  if (
-    path[0][0] === path[path.length - 1][0] &&
-    path[0][1] === path[path.length - 1][1]
-  ) {
-    ctx.closePath();
-  }
-
-  // Optionally fill drawn shape with a rgba color from query
-  const pathHasFill = splitPaths.filter((x) => x.startsWith('fill')).length > 0;
-  if (query.fill !== undefined || pathHasFill) {
-    if ('fill' in query) {
-      ctx.fillStyle = query.fill || 'rgba(255,255,255,0.4)';
-    }
-    if (pathHasFill) {
-      ctx.fillStyle = splitPaths
-        .find((x) => x.startsWith('fill:'))
-        .replace('fill:', '');
-    }
-    ctx.fill();
-  }
-
-  // Get line width from query and fall back to 1 if not provided
-  const pathHasWidth =
-    splitPaths.filter((x) => x.startsWith('width')).length > 0;
-  if (query.width !== undefined || pathHasWidth) {
-    let lineWidth = 1;
-    // Get line width from query
-    if ('width' in query) {
-      lineWidth = Number(query.width);
-    }
-    // Get line width from path in query
-    if (pathHasWidth) {
-      lineWidth = Number(
-        splitPaths.find((x) => x.startsWith('width:')).replace('width:', ''),
-      );
-    }
-    // Get border width from query and fall back to 10% of line width
-    const borderWidth =
-      query.borderwidth !== undefined
-        ? parseFloat(query.borderwidth)
-        : lineWidth * 0.1;
-
-    // Set rendering style for the start and end points of the path
-    // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineCap
-    ctx.lineCap = query.linecap || 'butt';
-
-    // Set rendering style for overlapping segments of the path with differing directions
-    // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineJoin
-    ctx.lineJoin = query.linejoin || 'miter';
-
-    // In order to simulate a border we draw the path two times with the first
-    // beeing the wider border part.
-    if (query.border !== undefined && borderWidth > 0) {
-      // We need to double the desired border width and add it to the line width
-      // in order to get the desired border on each side of the line.
-      ctx.lineWidth = lineWidth + borderWidth * 2;
-      // Set border style as rgba
-      ctx.strokeStyle = query.border;
-      ctx.stroke();
-    }
-    ctx.lineWidth = lineWidth;
-  }
-
-  const pathHasStroke =
-    splitPaths.filter((x) => x.startsWith('stroke')).length > 0;
-  if (query.stroke !== undefined || pathHasStroke) {
-    if ('stroke' in query) {
-      ctx.strokeStyle = query.stroke;
-    }
-    // Path Width gets higher priority
-    if (pathHasWidth) {
-      ctx.strokeStyle = splitPaths
-        .find((x) => x.startsWith('stroke:'))
-        .replace('stroke:', '');
+  if (Array.isArray(query.path)) {
+    for (let i = 0; i < query.path.length; i += 1) {
+      renderPath(query.path.at(i).split('|'));
     }
   } else {
-    ctx.strokeStyle = 'rgba(0,64,255,0.7)';
+    renderPath(query.path.split('|'));
   }
-  ctx.stroke();
 };
 
 const renderOverlay = async (
