@@ -542,10 +542,10 @@ const drawPath = (ctx, path, query, z) => {
   // Check if path in query is valid
   if (Array.isArray(query.path)) {
     for (let i = 0; i < query.path.length; i += 1) {
-      renderPath(query.path.at(i).split('|'));
+      renderPath(decodeURIComponent(query.path.at(i)).split('|'));
     }
   } else {
-    renderPath(query.path.split('|'));
+    renderPath(decodeURIComponent(query.path).split('|'));
   }
 };
 
