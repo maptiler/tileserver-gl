@@ -150,37 +150,39 @@ const parseCoordinates = (coordinatePair, query, transformer) => {
  * @param {Function} transformer Optional transform function.
  */
 const extractPathsFromQuery = (query, transformer) => {
-  const reqPath = decodeURIComponent(query.path);
+  // Initiate paths array
   const paths = [];
   // Return an empty list if no paths have been provided
   if ('path' in query && !query.path) {
     return paths;
   }
   // Parse paths provided via path query argument
-  if ('path' in query && PATH_PATTERN.test(reqPath)) {
-    if (reqPath.includes('enc:')) {
-      const splitPaths = query.path.split('|');
-      const line = splitPaths
-        .filter(
-          (x) =>
-            !x.startsWith('fill') &&
-            !x.startsWith('stroke') &&
-            !x.startsWith('width'),
-        )
-        .join('')
-        .replace('enc:', '');
-
-      const coords = polyline.decode(line).map(([lat, lng]) => [lng, lat]);
-      paths.push(coords);
-    } else {
-      // Check if multiple paths have been provided and mimic a list if it's a
-      // single path.
-      const providedPaths = Array.isArray(query.path)
-        ? query.path
-        : [query.path];
-
-      // Iterate through paths, parse and validate them
-      for (const providedPath of providedPaths) {
+  if ('path' in query) {
+    const providedPaths = Array.isArray(query.path) ? query.path : [query.path];
+    // Iterate through paths, parse and validate them
+    for (const providedPath of providedPaths) {
+      // Logic for pushing coords to path when path includes google polyline
+      if (
+        providedPath.includes('enc:') &&
+        PATH_PATTERN.test(decodeURIComponent(providedPath))
+      ) {
+        const encodedPaths = providedPath.split(',');
+        for (const path of encodedPaths) {
+          const line = path
+            .split('|')
+            .filter(
+              (x) =>
+                !x.startsWith('fill') &&
+                !x.startsWith('stroke') &&
+                !x.startsWith('width'),
+            )
+            .join('')
+            .replace('enc:', '');
+          const coords = polyline.decode(line).map(([lat, lng]) => [lng, lat]);
+          paths.push(coords);
+        }
+      } else {
+        // Iterate through paths, parse and validate them
         const currentPath = [];
 
         // Extract coordinate-list from path
