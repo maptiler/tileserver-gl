@@ -1,13 +1,13 @@
-name: "Build, Test, Release"
+name: 'Build, Test, Release'
 
-on: 
+on:
   workflow_dispatch:
     inputs:
       docker_user:
-        description: 'Docker Username'     
+        description: 'Docker Username'
         required: true
       docker_token:
-        description: 'Docker Token'     
+        description: 'Docker Token'
         required: true
       npm_token:
         description: 'NPM Token'
@@ -15,7 +15,7 @@ on:
 
 jobs:
   release:
-    name: "Build, Test, Publish"
+    name: 'Build, Test, Publish'
     runs-on: ubuntu-20.04
     steps:
       - name: Check out repository ✨
@@ -86,6 +86,9 @@ jobs:
           push: true
           tags: maptiler/tileserver-gl:latest, maptiler/tileserver-gl:v${{ env.PACKAGE_VERSION }}
           platforms: linux/arm64,linux/amd64
+          # experimental: https://github.com/docker/build-push-action/blob/master/docs/advanced/cache.md#cache-backend-api
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Create Tileserver Light Directory
         run: node publish.js --no-publish
@@ -110,3 +113,6 @@ jobs:
           push: true
           tags: maptiler/tileserver-gl-light:latest, maptiler/tileserver-gl-light:v${{ env.PACKAGE_VERSION }}
           platforms: linux/arm64,linux/amd64
+          # experimental: https://github.com/docker/build-push-action/blob/master/docs/advanced/cache.md#cache-backend-api
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
