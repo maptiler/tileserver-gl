@@ -2,7 +2,7 @@
 
 
 # TileServer GL
-[![Build Status](https://github.com/maptiler/tileserver-gl/actions/workflows/pipeline.yml/badge.svg)](https://github.com/maptiler/tileserver-gl/actions/workflows/pipeline.yml)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/maptiler/tileserver-gl/pipeline.yml)](https://github.com/maptiler/tileserver-gl/actions/workflows/pipeline.yml)
 [![Docker Hub](https://img.shields.io/badge/docker-hub-blue.svg)](https://hub.docker.com/r/maptiler/tileserver-gl/)
 
 Vector and raster maps with GL styles. Server-side rendering by MapLibre GL Native. Map tile server for MapLibre GL JS, Android, iOS, Leaflet, OpenLayers, GIS via WMTS, etc.
