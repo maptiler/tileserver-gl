@@ -36,7 +36,7 @@
     var q = (location.search || '').substr(1).split('&');
     var preference = q.indexOf('raster') >= 0 ? 'raster' : 'vector';
     if (preference == 'vector') {
-      maplibregl.setRTLTextPlugin('{{public_url}}mapbox-gl-rtl-text.js' + keyParam);
+      maplibregl.setRTLTextPlugin('{{public_url}}mapbox-gl-rtl-text.js');
       var map = new maplibregl.Map({
         container: 'map',
         style: '{{public_url}}styles/{{id}}/style.json' + keyParam,
