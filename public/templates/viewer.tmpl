@@ -40,6 +40,7 @@
       var map = new maplibregl.Map({
         container: 'map',
         style: '{{public_url}}styles/{{id}}/style.json' + keyParam,
+        maplibreLogo: true,
         hash: true
       });
       map.addControl(new maplibregl.NavigationControl({
@@ -55,6 +56,7 @@
     } else {
       var map = new maplibregl.Map({
         container: 'map',
+        maplibreLogo: true,
         hash: true,
         style: {
           version: 8,
