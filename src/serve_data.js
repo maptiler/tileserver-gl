@@ -8,7 +8,7 @@ import clone from 'clone';
 import express from 'express';
 import MBTiles from '@mapbox/mbtiles';
 import Pbf from 'pbf';
-import VectorTile from '@mapbox/vector-tile';
+import { VectorTile } from '@mapbox/vector-tile';
 
 import { getTileUrls, fixTileJSONCenter } from './utils.js';
 
