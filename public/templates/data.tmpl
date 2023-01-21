@@ -65,7 +65,10 @@
   map.addControl(new maplibregl.NavigationControl());
   var inspect = new MaplibreInspect({
     showInspectMap: true,
-    showInspectButton: false
+    showInspectButton: false,
+    showMapPopupOnHover: false,
+    showInspectMapPopupOnHover: false,
+    selectThreshold: 5
   });
   map.addControl(inspect);
   map.on('styledata', function() {
