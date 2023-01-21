@@ -100,9 +100,10 @@
       version: 8,
       sources: {
         'RasterSource': {
-        type: 'raster',
-        url: '{{public_url}}data/{{id}}.json' + keyParam
-      }
+          type: 'raster',
+          url: '{{public_url}}data/{{id}}.json' + keyParam,
+          tileSize": 256
+        }
       },
       layers: [
         {
