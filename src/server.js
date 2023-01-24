@@ -371,7 +371,10 @@ function start(opts) {
 
   // ------------------------------------
   // serve web presentations
-  app.use('/', express.static(path.join(__dirname, '../public/resources')));
+  app.use(
+    '/assets',
+    express.static(path.join(__dirname, '../public/resources')),
+  );
 
   const templates = path.join(__dirname, '../public/templates');
   const serveTemplate = (urlPath, template, dataGetter) => {

@@ -5,27 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{name}} - TileServer GL</title>
   {{#is_vector}}
-  <link rel="stylesheet" type="text/css" href="{{public_url}}maplibre-gl.css" />
-  <link rel="stylesheet" type="text/css" href="{{public_url}}maplibre-gl-inspect.css" />
-  <script>if (typeof Symbol !== 'undefined') { document.write('<script src="{{public_url}}maplibre-gl.js"><\/script>'); } else { document.write('<script src="{{public_url}}maplibre-gl-compat.js"><\/script>'); }</script>
-  <script>if (typeof Symbol !== 'undefined') { document.write('<script src="{{public_url}}maplibre-gl-inspect.min.js"><\/script>'); } else { document.write('<script src="{{public_url}}maplibre-gl-inspect-compat.min.js"><\/script>'); }</script>
-  <style>
-    body {background:#fff;color:#333;font-family:Arial, sans-serif;}
-    #map {position:absolute;top:0;left:0;right:250px;bottom:0;}
-    h1 {position:absolute;top:5px;right:0;width:240px;margin:0;line-height:20px;font-size:20px;}
-    #layerList {position:absolute;top:35px;right:0;bottom:0;width:240px;overflow:auto;}
-    #layerList div div {width:15px;height:15px;display:inline-block;}
-  </style>
+    <link rel="stylesheet" type="text/css" href="../../assets/maplibre-gl.css" />
+    <link rel="stylesheet" type="text/css" href="../../assets/maplibre-gl-inspect.css" />
+
+    <script>if (typeof Symbol !== 'undefined') { document.write('<script src="../../assets/maplibre-gl.js"><\/script>'); } else { document.write('<script src="../../assets/maplibre-gl-compat.js"><\/script>'); }</script>
+    <script>if (typeof Symbol !== 'undefined') { document.write('<script src="../../assets/maplibre-gl-inspect.min.js"><\/script>'); } else { document.write('<script src="../../assets/maplibre-gl-inspect-compat.min.js"><\/script>'); }</script>
+
+    <style>
+      body {background:#fff;color:#333;font-family:Arial, sans-serif;}
+      #map {position:absolute;top:0;left:0;right:250px;bottom:0;}
+      h1 {position:absolute;top:5px;right:0;width:240px;margin:0;line-height:20px;font-size:20px;}
+      #layerList {position:absolute;top:35px;right:0;bottom:0;width:240px;overflow:auto;}
+      #layerList div div {width:15px;height:15px;display:inline-block;}
+    </style>
   {{/is_vector}}
   {{^is_vector}}
-  <link rel="stylesheet" type="text/css" href="{{public_url}}leaflet.css" />
-  <script src="{{public_url}}leaflet.js"></script>
-  <script src="{{public_url}}leaflet-hash.js"></script>
-  <script src="{{public_url}}L.TileLayer.NoGap.js"></script>
-  <style>
-    body { margin:0; padding:0; }
-    #map { position:absolute; top:0; bottom:0; width:100%; }
-  </style>
+    <link rel="stylesheet" type="text/css" href="../../assets/leaflet.css" />
+    <script src="../../assets/leaflet.js{"></script>
+    <script src="../../assets/leaflet-hash.js"></script>
+    <script src="../../assets/L.TileLayer.NoGap.js"></script>
+    <style>
+      body { margin:0; padding:0; }
+      #map { position:absolute; top:0; bottom:0; width:100%; }
+    </style>
   {{/is_vector}}
 </head>
 <body>
@@ -47,7 +49,7 @@
       sources: {
         'vector_layer_': {
           type: 'vector',
-          url: '{{public_url}}data/{{id}}.json' + keyParam
+          url: '../../data/{{id}}.json' + keyParam
         }
       },
       layers: []
@@ -86,7 +88,7 @@
 	new L.Control.Zoom({ position: 'topright' }).addTo(map);
 
 	var tile_urls = [], tile_attribution, tile_minzoom, tile_maxzoom;
-	var url = '{{public_url}}data/{{id}}.json' + keyParam;
+	var url = '../../data/{{id}}.json' + keyParam;
 	var req = new XMLHttpRequest();
 	req.overrideMimeType("application/json");
 	req.open('GET', url, true);
