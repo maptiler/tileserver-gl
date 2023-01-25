@@ -21,18 +21,6 @@
   <style>
     body { margin:0; padding:0; }
     #map { position:absolute; top:0; bottom:0; width:100%; }
-    .leaflet-control-layers-toggle {
-      background-image: url({{public_url}}images/layers.png{{&key_query}});
-      width: 36px;
-      height: 36px;
-    }
-    .leaflet-retina .leaflet-control-layers-toggle {
-      background-image: url({{public_url}}images/layers-2x.png{{&key_query}});
-      background-size: 26px 26px;
-    }
-    .leaflet-default-icon-path { /* used only in path-guessing heuristic, see L.Icon.Default */
-      background-image: url({{public_url}}images/marker-icon.png{{&key_query}});
-    }
   </style>
   {{/is_vector}}
 </head>
