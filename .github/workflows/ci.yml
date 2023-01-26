@@ -45,7 +45,7 @@ jobs:
           prettier_extensions: js,cjs,ts,json
 
       - name: Run hadolint 🐳
-        uses: hadolint/hadolint-action@v3.0.0
+        uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: Dockerfile
           ignore: DL3008,DL3015
