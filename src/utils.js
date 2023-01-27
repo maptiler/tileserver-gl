@@ -6,15 +6,31 @@ import fs from 'node:fs';
 import clone from 'clone';
 import glyphCompose from '@mapbox/glyph-pbf-composite';
 
-export const getPublicUrl = (publicUrl, req) =>
-  publicUrl || `${req.protocol}://${req.headers.host}/`;
+const getUrlObject = (urlString, req) => {
+  const urlObject = new URL(urlString);
+  // support overriding hostname by sending X-Forwarded-Host http header
+  urlObject.hostname = req.hostname;
+
+  return urlObject;
+};
+
+export const getPublicUrl = (publicUrl, req) => {
+  if (publicUrl) {
+    return publicUrl;
+  }
+
+  const urlObject = getUrlObject(`${req.protocol}://${req.headers.host}/`, req);
+  return urlObject.toString();
+};
 
 export const getTileUrls = (req, domains, path, format, publicUrl, aliases) => {
+  const urlObject = getUrlObject(`${req.protocol}://${req.headers.host}/`, req);
+  const host = urlObject.host;
+
   if (domains) {
     if (domains.constructor === String && domains.length > 0) {
       domains = domains.split(',');
     }
-    const host = req.headers.host;
     const hostParts = host.split('.');
     const relativeSubdomainsUsable =
       hostParts.length > 1 &&
@@ -34,7 +50,7 @@ export const getTileUrls = (req, domains, path, format, publicUrl, aliases) => {
     domains = newDomains;
   }
   if (!domains || domains.length == 0) {
-    domains = [req.headers.host];
+    domains = [host];
   }
 
   const queryParams = [];
