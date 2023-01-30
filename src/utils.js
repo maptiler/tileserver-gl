@@ -6,8 +6,8 @@ import fs from 'node:fs';
 import clone from 'clone';
 import glyphCompose from '@mapbox/glyph-pbf-composite';
 
-const getUrlObject = (urlString, req) => {
-  const urlObject = new URL(urlString);
+const getUrlObject = (req) => {
+  const urlObject = new URL(`${req.protocol}://${req.headers.host}/`);
   // support overriding hostname by sending X-Forwarded-Host http header
   urlObject.hostname = req.hostname;
 
@@ -19,12 +19,12 @@ export const getPublicUrl = (publicUrl, req) => {
     return publicUrl;
   }
 
-  const urlObject = getUrlObject(`${req.protocol}://${req.headers.host}/`, req);
+  const urlObject = getUrlObject(req);
   return urlObject.toString();
 };
 
 export const getTileUrls = (req, domains, path, format, publicUrl, aliases) => {
-  const urlObject = getUrlObject(`${req.protocol}://${req.headers.host}/`, req);
+  const urlObject = getUrlObject(req);
   const host = urlObject.host;
 
   if (domains) {
