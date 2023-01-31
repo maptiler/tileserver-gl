@@ -6,11 +6,15 @@ import fs from 'node:fs';
 import clone from 'clone';
 import glyphCompose from '@mapbox/glyph-pbf-composite';
 
+/**
+* Generate new URL object
+* @params {object} req - Express request
+* @returns {URL} object
+**/
 const getUrlObject = (req) => {
   const urlObject = new URL(`${req.protocol}://${req.headers.host}/`);
   // support overriding hostname by sending X-Forwarded-Host http header
   urlObject.hostname = req.hostname;
-
   return urlObject;
 };
 
