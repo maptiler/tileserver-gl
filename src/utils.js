@@ -50,7 +50,7 @@ export const getTileUrls = (req, domains, path, format, publicUrl, aliases) => {
     domains = newDomains;
   }
   if (!domains || domains.length == 0) {
-    domains = [host];
+    domains = [urlObject.host];
   }
 
   const queryParams = [];
