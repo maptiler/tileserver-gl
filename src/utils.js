@@ -27,8 +27,6 @@ export const getPublicUrl = (publicUrl, req) => {
 
 export const getTileUrls = (req, domains, path, format, publicUrl, aliases) => {
   const urlObject = getUrlObject(req);
-  const host = urlObject.host;
-
   if (domains) {
     if (domains.constructor === String && domains.length > 0) {
       domains = domains.split(',');
