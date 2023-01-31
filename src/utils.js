@@ -7,10 +7,10 @@ import clone from 'clone';
 import glyphCompose from '@mapbox/glyph-pbf-composite';
 
 /**
-* Generate new URL object
-* @params {object} req - Express request
-* @returns {URL} object
-**/
+ * Generate new URL object
+ * @params {object} req - Express request
+ * @returns {URL} object
+ **/
 const getUrlObject = (req) => {
   const urlObject = new URL(`${req.protocol}://${req.headers.host}/`);
   // support overriding hostname by sending X-Forwarded-Host http header
@@ -31,10 +31,10 @@ export const getTileUrls = (req, domains, path, format, publicUrl, aliases) => {
     if (domains.constructor === String && domains.length > 0) {
       domains = domains.split(',');
     }
-    const hostParts = host.split('.');
+    const hostParts = urlObject.host.split('.');
     const relativeSubdomainsUsable =
       hostParts.length > 1 &&
-      !/^([0-9]{1,3}\.){3}[0-9]{1,3}(\:[0-9]+)?$/.test(host);
+      !/^([0-9]{1,3}\.){3}[0-9]{1,3}(\:[0-9]+)?$/.test(urlObject.host);
     const newDomains = [];
     for (const domain of domains) {
       if (domain.indexOf('*') !== -1) {
