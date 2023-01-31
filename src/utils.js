@@ -22,9 +22,7 @@ export const getPublicUrl = (publicUrl, req) => {
   if (publicUrl) {
     return publicUrl;
   }
-
-  const urlObject = getUrlObject(req);
-  return urlObject.toString();
+  return getUrlObject(req).toString();
 };
 
 export const getTileUrls = (req, domains, path, format, publicUrl, aliases) => {
