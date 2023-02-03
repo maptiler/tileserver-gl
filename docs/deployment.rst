@@ -15,9 +15,16 @@ Cloudflare Cache Rules
 Cloudflare supports custom rules for configuring caching:
 https://developers.cloudflare.com/cache/about/cache-rules/
 
-You may want to cache default ``.pbf`` and ``.json`` responses. Create a rule which matches ``hostname (equal)`` and ``URI Path (ends with)`` for both of the .pbf and .json fields. Set cache status to eligible for cache to enable the caching and overwrite the ``Edge TTL`` with ``Browser TTL`` to be 7 days (depends on your application usage).
+tileserver-gl renders tiles in multiple formats - ``.png``, ``.jpg (jpeg)``, ``.webp`` for the raster endpoints, ``.pbf`` for vector endpoint. In addition, style information is generated with ``.json`` format.
+https://maptiler-tileserver.readthedocs.io/en/latest/endpoints.html#rendered-tiles
 
-This will ensure that cloudflare will cache your tiles on cloudflare side for seven days aswell on the client side. If the tileserver is down or user has no internet access it will try to use cached tiles from cloudflare or local.
+Endpoint data can be configured to be cached by Cloudflare. For example to cache vector endpoint you will need to configure Cloudflare rules for the ``.pbf`` and ``.json`` data.
+
+Create a rule which matches ``hostname (equal)`` and ``URI Path (ends with)`` for ``.pbf`` and ``.json`` fields. Set cache status to eligible for cache to enable the caching and overwrite the ``Edge TTL`` with ``Browser TTL`` to be 7 days (depends on your application usage).
+
+This will ensure that Cloudflare will cache your tiles on Cloudflare side for seven days aswell on the client side. If the tileserver is down or user has no internet access it will try to use cached tiles from Cloudflare or local.
+
+Note that ``Browser TTL`` will overwrite expiration dates on the client device. If you rebuild your maps, old tiles will be rendered until it expires or cache is cleared on the client device.
 
 Nginx Cache
 -----------
@@ -29,8 +36,8 @@ Configure the proxy cache path directive to initialize your cache store:
 ::
 
   proxy_cache_path /var/cache/nginx/tileserver
-                   keys_zone=TileserverCache:50m 
-                   levels=1:2 
+                   keys_zone=TileserverCache:50m
+                   levels=1:2
                    inactive=2w
                    max_size=10g;
 
@@ -43,8 +50,8 @@ Enable caching on specific proxy pass:
     include proxy_params; 
     proxy_pass http://127.0.0.1:8080/;
 
-    proxy_cache TileserverCache;         
-    proxy_cache_valid 200 1w;         
+    proxy_cache TileserverCache;
+    proxy_cache_valid 200 1w;
 
     # add_header X-Cache-Status $upstream_cache_status;
   }
@@ -74,7 +81,7 @@ An example nginx reverse proxy server configuration for HTTPS connections. It en
 
   proxy_cache_path /var/cache/nginx/tileserver
                    keys_zone=TileserverCache:50m 
-                   levels=1:2 
+                   levels=1:2
                    inactive=2w
                    max_size=1g;
 
@@ -118,8 +125,8 @@ An example nginx reverse proxy server configuration for HTTPS connections. It en
       proxy_hide_header Access-Control-Allow-Origin;
 
       # Enable proxy cache
-      proxy_cache TileserverCache;         
-      proxy_cache_valid 200 1w;         
+      proxy_cache TileserverCache;
+      proxy_cache_valid 200 1w;
 
       # Set our custom CORS
       add_header 'Access-Control-Allow-Origin' $allow_origin;
