@@ -16,7 +16,6 @@ Cloudflare supports custom rules for configuring caching:
 https://developers.cloudflare.com/cache/about/cache-rules/
 
 tileserver-gl renders tiles in multiple formats - ``.png``, ``.jpg (jpeg)``, ``.webp`` for the raster endpoints, ``.pbf`` for vector endpoint. In addition, style information is generated with ``.json`` format.
-https://maptiler-tileserver.readthedocs.io/en/latest/endpoints.html#rendered-tiles
 
 Endpoint data can be configured to be cached by Cloudflare. For example to cache vector endpoint you will need to configure Cloudflare rules for the ``.pbf`` and ``.json`` data.
 
