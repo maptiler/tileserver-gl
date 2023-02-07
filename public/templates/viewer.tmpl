@@ -70,52 +70,52 @@
          }
       }));
     } else {
-		var map = L.map('map', { zoomControl: false });
-		new L.Control.Zoom({ position: 'topright' }).addTo(map);
-		
-		var tile_urls = [], tile_attribution, tile_minzoom, tile_maxzoom;
-		var url = '{{public_url}}styles/{{id}}.json' + keyParam;
-		var req = new XMLHttpRequest();
-		req.overrideMimeType("application/json");
-		req.open('GET', url, true);
-		req.onload = function() {
-			var jsonResponse = JSON.parse(req.responseText);
-			for (key in jsonResponse) {
-			  var keyl = key.toLowerCase();
-				switch(keyl) {
-				  case "tiles":
-					tile_urls = jsonResponse[key];
-					break;
-				  case "attribution":
-					tile_attribution = jsonResponse[key];
-					break;
-				  case "minzoom":
-					tile_minzoom = jsonResponse[key];
-					break;
-				  case "maxzoom":
-					tile_maxzoom = jsonResponse[key];
-					break;
-				}
-			}
+        var map = L.map('map', { zoomControl: false });
+        new L.Control.Zoom({ position: 'topright' }).addTo(map);
+        
+        var tile_urls = [], tile_attribution, tile_minzoom, tile_maxzoom;
+        var url = '{{public_url}}styles/{{id}}.json' + keyParam;
+        var req = new XMLHttpRequest();
+        req.overrideMimeType("application/json");
+        req.open('GET', url, true);
+        req.onload = function() {
+            var jsonResponse = JSON.parse(req.responseText);
+            for (key in jsonResponse) {
+              var keyl = key.toLowerCase();
+                switch(keyl) {
+                  case "tiles":
+                    tile_urls = jsonResponse[key];
+                    break;
+                  case "attribution":
+                    tile_attribution = jsonResponse[key];
+                    break;
+                  case "minzoom":
+                    tile_minzoom = jsonResponse[key];
+                    break;
+                  case "maxzoom":
+                    tile_maxzoom = jsonResponse[key];
+                    break;
+                }
+            }
 
-			for (tile_url in tile_urls) {
-				L.tileLayer(tile_urls[tile_url], {
-					minZoom: tile_minzoom,
-					maxZoom: tile_maxzoom,
-					attribution: tile_attribution
-				}).addTo(map);
-			}
-		
-			map.eachLayer(function(layer) {
-			  // do not add scale prefix even if retina display is detected
-			  layer.scalePrefix = '.';
-			});
-		};
-		req.send(null);
+            for (tile_url in tile_urls) {
+                L.tileLayer(tile_urls[tile_url], {
+                    minZoom: tile_minzoom,
+                    maxZoom: tile_maxzoom,
+                    attribution: tile_attribution
+                }).addTo(map);
+            }
+        
+            map.eachLayer(function(layer) {
+              // do not add scale prefix even if retina display is detected
+              layer.scalePrefix = '.';
+            });
+        };
+        req.send(null);
       
-		setTimeout(function() {
-			new L.Hash(map);
-		}, 0);
+        setTimeout(function() {
+            new L.Hash(map);
+        }, 0);
     }
   </script>
 </body>
