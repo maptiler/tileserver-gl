@@ -55,10 +55,19 @@
          showZoom: true,
          showCompass: true
       }));
+      const inspectUrlTag = '&inspect';
       map.addControl(new MaplibreInspect({
          showMapPopupOnHover: false,
          showInspectMapPopupOnHover: false,
-         selectThreshold: 5
+         selectThreshold: 5,
+         showInspectMap: window.location.hash.includes(inspectUrlTag),
+         toggleCallback: function(showInspectMap) {
+             if (showInspectMap) {
+                 window.location.hash += inspectUrlTag;
+             } else {
+                 window.location.hash = window.location.hash.replace(inspectUrlTag, '');
+             }
+         }
       }));
     } else {
 		var map = L.map('map', { zoomControl: false });
