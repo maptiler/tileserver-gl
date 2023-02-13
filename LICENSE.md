@@ -30,7 +30,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ===========================================================================
 
-mapbox-gl-native copyright (c) 2014-2016 Mapbox.
+MapLibre-GL-Native - BSD 2-Clause License
+
+Copyright (c) 2021 MapLibre contributors
+Copyright (c) 2018-2021 MapTiler.com
+Copyright (c) 2014-2020 Mapbox
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -57,7 +61,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ===========================================================================
 
-Mapbox GL uses portions of Android Gesture Detectors Framework.
+MapLibre-GL-Native uses portions of Android Gesture Detectors Framework.
 
 Copyright (c) 2012, Almer Thie
 
@@ -85,7 +89,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ===========================================================================
 
-Mapbox GL uses portions of Android Support Library.
+MapLibre-GL-Native uses portions of Android Support Library.
 
 Copyright (c) 2005-2013, The Android Open Source Project
 
@@ -103,7 +107,7 @@ limitations under the License.
 
 ===========================================================================
 
-Mapbox GL uses portions of Boost.
+MapLibre-GL-Native uses portions of Boost.
 
 Distributed under the Boost Software License, Version 1.0.
 
@@ -111,7 +115,7 @@ http://www.boost.org/LICENSE_1_0.txt
 
 ===========================================================================
 
-Mapbox GL uses portions of Clipper.
+MapLibre-GL-Native uses portions of Clipper.
 
 Author    :  Angus Johnson
 Version   :  6.1.3a
@@ -144,7 +148,7 @@ http://www.me.berkeley.edu/~mcmains/pubs/DAC05OffsetPolygon.pdf
 
 ===========================================================================
 
-Mapbox GL uses portions of BugshotKit.
+MapLibre-GL-Native uses portions of BugshotKit.
 
 The MIT License (MIT)
 
@@ -169,7 +173,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ===========================================================================
 
-Mapbox GL uses portions of CSS Color Parser.
+MapLibre-GL-Native uses portions of CSS Color Parser.
 
 (c) Dean McNamee <dean@gmail.com>, 2012.
 C++ port by Konstantin Käfer <mail@kkaefer.com>, 2014.
@@ -197,7 +201,7 @@ IN THE SOFTWARE.
 
 ===========================================================================
 
-Mapbox GL uses portions of GLFW.
+MapLibre-GL-Native uses portions of GLFW.
 
 Copyright (c) 2002-2006 Marcus Geelnard
 Copyright (c) 2006-2010 Camilla Berglund <elmindreda@elmindreda.org>
@@ -223,7 +227,7 @@ freely, subject to the following restrictions:
 
 ===========================================================================
 
-Mapbox GL uses portions of libc++.
+MapLibre-GL-Native uses portions of libc++.
 
 The libc++ library is dual licensed under both the University of Illinois
 "BSD-Like" license and the MIT license.  As a user of this code you may choose
@@ -300,7 +304,7 @@ THE SOFTWARE.
 
 ===========================================================================
 
-Mapbox GL uses portions of libcurl.
+MapLibre-GL-Native uses portions of libcurl.
 
 COPYRIGHT AND PERMISSION NOTICE
 
@@ -326,7 +330,7 @@ in this Software without prior written authorization of the copyright holder.
 
 ===========================================================================
 
-Mapbox GL uses portions of libjpeg-turbo.
+MapLibre-GL-Native uses portions of libjpeg-turbo.
 
 This software is based in part on the work of the Independent JPEG Group.
 
@@ -360,7 +364,7 @@ TurboJPEG/LJT: this implements the TurboJPEG API using libjpeg or libjpeg-turbo
 
 ===========================================================================
 
-Mapbox GL uses portions of libpng.
+MapLibre-GL-Native uses portions of libpng.
 
 This copy of the libpng notices is provided for your convenience.  In case of
 any discrepancy between this copy and the notices in the file png.h that is
@@ -455,7 +459,7 @@ appreciated.
 
 ===========================================================================
 
-Mapbox GL uses portions of libuv.
+MapLibre-GL-Native uses portions of libuv.
 
 libuv is part of the Node project: http://nodejs.org/
 libuv may be distributed alone under Node's license:
@@ -506,7 +510,7 @@ The externally maintained libraries used by libuv are:
 
 ===========================================================================
 
-Mapbox GL uses portions of libzip.
+MapLibre-GL-Native uses portions of libzip.
 
 Copyright (C) 1999-2014 Dieter Baron and Thomas Klausner
 
@@ -542,7 +546,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ===========================================================================
 
-Mapbox GL uses portions of LOST.
+MapLibre-GL-Native uses portions of LOST.
 
 Copyright (c) 2014 Mapzen
 
@@ -560,7 +564,7 @@ limitations under the License.
 
 ===========================================================================
 
-Mapbox GL uses portions of the Mapbox iOS SDK, which was derived from the
+MapLibre-GL-Native uses portions of the Mapbox iOS SDK, which was derived from the
 Route-Me open source project, including the Alpstein fork of it.
 
 The Route-Me license appears below.
@@ -591,7 +595,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 ===========================================================================
 
-Mapbox GL uses portions of nunicode.
+MapLibre-GL-Native uses portions of nunicode.
 
 Copyright (c) 2013 Aleksey Tulinov <aleksey.tulinov@gmail.com>
 
@@ -615,7 +619,7 @@ THE SOFTWARE.
 
 ===========================================================================
 
-Mapbox GL uses portions of OkHTTP.
+MapLibre-GL-Native uses portions of OkHTTP.
 
 Copyright 2014 Square, Inc.
 
@@ -633,7 +637,7 @@ limitations under the License.
 
 ===========================================================================
 
-Mapbox GL uses portions of OpenSSL.
+MapLibre-GL-Native uses portions of OpenSSL.
 
 LICENSE ISSUES
 ==============
@@ -758,7 +762,7 @@ copied and put under another distribution licence
 
 ===========================================================================
 
-Mapbox GL uses portions of RapidJSON.
+MapLibre-GL-Native uses portions of RapidJSON.
 
 Tencent is pleased to support the open source community by making RapidJSON
 available.
@@ -865,7 +869,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ===========================================================================
 
-Mapbox GL uses portions of Reachability.
+MapLibre-GL-Native uses portions of Reachability.
 
 Copyright (c) 2011, Tony Million.
 All rights reserved.
@@ -894,7 +898,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 ===========================================================================
 
-Mapbox GL uses portions of SQLite.
+MapLibre-GL-Native uses portions of SQLite.
 
 2001 September 15
 
@@ -907,7 +911,7 @@ a legal notice, here is a blessing:
 
 ===========================================================================
 
-Mapbox GL uses portions of SVPulsingAnnotationView.
+MapLibre-GL-Native uses portions of SVPulsingAnnotationView.
 
 Copyright (c) 2013, Sam Vermette <hello@samvermette.com>
 
@@ -925,7 +929,7 @@ THIS SOFTWARE.
 
 ===========================================================================
 
-Mapbox GL uses portions of zlib.
+MapLibre-GL-Native uses portions of zlib.
 
 Acknowledgments:
 
@@ -959,7 +963,7 @@ freely, subject to the following restrictions:
 
 ===========================================================================
 
-Mapbox GL uses portions of Realm Objective-C.
+MapLibre-GL-Native uses portions of Realm Objective-C.
 
 Copyright 2015 Realm Inc.
 
