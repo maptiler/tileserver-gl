@@ -1,5 +1,5 @@
-TileServer GL
-=============
+## [TileServer GL](https://github.com/maptiler/tileserver-gl)
+```
 Copyright (c) 2023, MapTiler.com
 Copyright (c) 2016, Klokan Technologies GmbH
 
@@ -27,7 +27,7 @@ PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
 LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+```
 ===========================================================================
 
 ### [MapLibre-GL-Native](https://github.com/maplibre/maplibre-gl-native)
