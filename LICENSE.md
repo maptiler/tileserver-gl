@@ -63,7 +63,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ===========================================================================
 
-### [kdbush.hpp](https://github.com/mourner/kdbush.hpp) by Vladimir Agafonkin
+### MapLibre-GL-Native uses portions of [kdbush.hpp](https://github.com/mourner/kdbush.hpp) by Vladimir Agafonkin
 
 ```
 Copyright (c) 2016, Vladimir Agafonkin
@@ -84,7 +84,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ---
 
-### [supercluster.hpp](https://github.com/mapbox/supercluster.hpp) by Mapbox
+### MapLibre-GL-Native uses portions of [supercluster.hpp](https://github.com/mapbox/supercluster.hpp) by Mapbox
 
 ```
 Copyright (c) 2016, Mapbox
@@ -105,7 +105,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ---
 
-### [shelf-pack-cpp](https://github.com/mapbox/shelf-pack-cpp) by Mapbox
+### MapLibre-GL-Native uses portions of [shelf-pack-cpp](https://github.com/mapbox/shelf-pack-cpp) by Mapbox
 
 ```
 ISC License
@@ -128,7 +128,7 @@ THIS SOFTWARE.
 
 ---
 
-### [geojson-vt-cpp](https://github.com/mapbox/geojson-vt-cpp) by Mapbox
+### MapLibre-GL-Native uses portions of [geojson-vt-cpp](https://github.com/mapbox/geojson-vt-cpp) by Mapbox
 
 ```
 ISC License
@@ -151,7 +151,7 @@ THIS SOFTWARE.
 
 ---
 
-### [cheap-ruler-cpp](https://github.com/mapbox/cheap-ruler-cpp) by Mapbox
+### MapLibre-GL-Native uses portions of [cheap-ruler-cpp](https://github.com/mapbox/cheap-ruler-cpp) by Mapbox
 
 ```
 ISC License
@@ -174,7 +174,7 @@ THIS SOFTWARE.
 
 ---
 
-### [Boost C++ Libraries](https://www.boost.org) by Boost authors
+### MapLibre-GL-Native uses portions of [Boost C++ Libraries](https://www.boost.org) by Boost authors
 
 ```
 Boost Software License - Version 1.0 - August 17th, 2003
@@ -205,7 +205,7 @@ DEALINGS IN THE SOFTWARE.
 
 ---
 
-### [csscolorparser](https://github.com/mapbox/css-color-parser-cpp) by Dean McNamee and Konstantin Käfer
+### MapLibre-GL-Native uses portions of [csscolorparser](https://github.com/mapbox/css-color-parser-cpp) by Dean McNamee and Konstantin Käfer
 
 ```
 (c) Dean McNamee <dean@gmail.com>, 2012.
@@ -233,7 +233,7 @@ IN THE SOFTWARE.
 
 ---
 
-### [earcut.hpp](https://github.com/mapbox/earcut.hpp) by Mapbox
+### MapLibre-GL-Native uses portions of [earcut.hpp](https://github.com/mapbox/earcut.hpp) by Mapbox
 
 ```
 ISC License
@@ -256,7 +256,7 @@ THIS SOFTWARE.
 
 ---
 
-### [eternal](https://github.com/mapbox/eternal) by Mapbox
+### MapLibre-GL-Native uses portions of [eternal](https://github.com/mapbox/eternal) by Mapbox
 
 ```
 ISC License
@@ -279,7 +279,7 @@ THIS SOFTWARE.
 
 ---
 
-### [parsedate](https://curl.haxx.se) by Daniel Stenberg and others
+### MapLibre-GL-Native uses portions of [parsedate](https://curl.haxx.se) by Daniel Stenberg and others
 
 ```
 COPYRIGHT AND PERMISSION NOTICE
@@ -309,7 +309,7 @@ in this Software without prior written authorization of the copyright holder.
 
 ---
 
-### [polylabel](https://github.com/mapbox/polylabel) by Mapbox
+### MapLibre-GL-Native uses portions of [polylabel](https://github.com/mapbox/polylabel) by Mapbox
 
 ```
 ISC License
@@ -331,7 +331,7 @@ SOFTWARE.
 
 ---
 
-### [protozero](https://github.com/mapbox/protozero) by Mapbox
+### MapLibre-GL-Native uses portions of [protozero](https://github.com/mapbox/protozero) by Mapbox
 
 ```
 protozero copyright (c) Mapbox.
@@ -363,7 +363,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ---
 
-### [unique_resource](https://github.com/okdshin/unique_resource) by Shintarou Okada
+### MapLibre-GL-Native uses portions of [unique_resource](https://github.com/okdshin/unique_resource) by Shintarou Okada
 
 ```
 Boost Software License - Version 1.0 - August 17th, 2003
@@ -394,7 +394,7 @@ DEALINGS IN THE SOFTWARE.
 
 ---
 
-### [vector-tile](https://github.com/mapbox/vector-tile) by Mapbox
+### MapLibre-GL-Native uses portions of [vector-tile](https://github.com/mapbox/vector-tile) by Mapbox
 
 ```
 Copyright (c) 2016, Mapbox
@@ -415,7 +415,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ---
 
-### [wagyu](https://github.com/mapbox/wagyu.git) by Angus Johnson and Mapbox
+### MapLibre-GL-Native uses portions of [wagyu](https://github.com/mapbox/wagyu.git) by Angus Johnson and Mapbox
 
 ```
 Parts of the code in the Wagyu Library are derived from the version of the 
@@ -460,7 +460,7 @@ DEALINGS IN THE SOFTWARE.
 
 ---
 
-### [mapbox-base](https://github.com/mapbox/mapbox-base) by Mapbox
+### MapLibre-GL-Native uses portions of [mapbox-base](https://github.com/mapbox/mapbox-base) by Mapbox
 
 ```
 Copyright (c) MapBox
@@ -492,7 +492,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ---
 
-### [expected-lite](https://github.com/martinmoene/expected-lite) by Martin Moene
+### MapLibre-GL-Native uses portions of [expected-lite](https://github.com/martinmoene/expected-lite) by Martin Moene
 
 ```
 Boost Software License - Version 1.0 - August 17th, 2003
@@ -523,7 +523,7 @@ DEALINGS IN THE SOFTWARE.
 
 ---
 
-### [RapidJSON](https://rapidjson.org) by THL A29 Limited, a Tencent company, and Milo Yip
+### MapLibre-GL-Native uses portions of [RapidJSON](https://rapidjson.org) by THL A29 Limited, a Tencent company, and Milo Yip
 
 ```
 Tencent is pleased to support the open source community by making RapidJSON available. 
@@ -588,7 +588,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ---
 
-### [geojson.hpp](https://github.com/mapbox/geojson-cpp) by Mapbox
+### MapLibre-GL-Native uses portions of [geojson.hpp](https://github.com/mapbox/geojson-cpp) by Mapbox
 
 ```
 Copyright (c) 2016, Mapbox
@@ -609,7 +609,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ---
 
-### [geometry.hpp](https://github.com/mapbox/geometry.hpp) by Mapbox
+### MapLibre-GL-Native uses portions of [geometry.hpp](https://github.com/mapbox/geometry.hpp) by Mapbox
 
 ```
 Copyright (c) 2016, Mapbox
@@ -629,7 +629,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ---
 
-### [Optional](https://github.com/akrzemi1/Optional) by Andrzej Krzemienski
+### MapLibre-GL-Native uses portions of [Optional](https://github.com/akrzemi1/Optional) by Andrzej Krzemienski
 
 ```
 Boost Software License - Version 1.0 - August 17th, 2003
@@ -660,7 +660,7 @@ DEALINGS IN THE SOFTWARE.
 
 ---
 
-### [variant](https://github.com/mapbox/variant) by Mapbox
+### MapLibre-GL-Native uses portions of [variant](https://github.com/mapbox/variant) by Mapbox
 
 ```
 Copyright (c) MapBox
