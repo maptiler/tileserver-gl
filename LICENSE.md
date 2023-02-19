@@ -83,7 +83,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of [supercluster.hpp](https://github.com/mapbox/supercluster.hpp) by Mapbox
 
@@ -104,7 +104,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of [shelf-pack-cpp](https://github.com/mapbox/shelf-pack-cpp) by Mapbox
 
@@ -127,7 +127,7 @@ THIS SOFTWARE.
 
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of [geojson-vt-cpp](https://github.com/mapbox/geojson-vt-cpp) by Mapbox
 
@@ -150,7 +150,7 @@ THIS SOFTWARE.
 
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of [cheap-ruler-cpp](https://github.com/mapbox/cheap-ruler-cpp) by Mapbox
 
@@ -173,7 +173,7 @@ THIS SOFTWARE.
 
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of [Boost C++ Libraries](https://www.boost.org) by Boost authors
 
@@ -204,7 +204,7 @@ DEALINGS IN THE SOFTWARE.
 
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of [csscolorparser](https://github.com/mapbox/css-color-parser-cpp) by Dean McNamee and Konstantin Käfer
 
@@ -232,7 +232,7 @@ IN THE SOFTWARE.
 
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of [earcut.hpp](https://github.com/mapbox/earcut.hpp) by Mapbox
 
@@ -255,7 +255,7 @@ THIS SOFTWARE.
 
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of [eternal](https://github.com/mapbox/eternal) by Mapbox
 
@@ -278,7 +278,7 @@ THIS SOFTWARE.
 
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of [parsedate](https://curl.haxx.se) by Daniel Stenberg and others
 
@@ -308,7 +308,7 @@ in this Software without prior written authorization of the copyright holder.
 
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of [polylabel](https://github.com/mapbox/polylabel) by Mapbox
 
@@ -330,7 +330,7 @@ SOFTWARE.
 
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of [protozero](https://github.com/mapbox/protozero) by Mapbox
 
@@ -362,7 +362,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of [unique_resource](https://github.com/okdshin/unique_resource) by Shintarou Okada
 
@@ -393,7 +393,7 @@ DEALINGS IN THE SOFTWARE.
 
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of [vector-tile](https://github.com/mapbox/vector-tile) by Mapbox
 
@@ -414,7 +414,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of [wagyu](https://github.com/mapbox/wagyu.git) by Angus Johnson and Mapbox
 
@@ -459,7 +459,7 @@ DEALINGS IN THE SOFTWARE.
 
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of [mapbox-base](https://github.com/mapbox/mapbox-base) by Mapbox
 
@@ -491,7 +491,7 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of [expected-lite](https://github.com/martinmoene/expected-lite) by Martin Moene
 
@@ -522,7 +522,7 @@ DEALINGS IN THE SOFTWARE.
 
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of [RapidJSON](https://rapidjson.org) by THL A29 Limited, a Tencent company, and Milo Yip
 
@@ -538,7 +538,7 @@ A copy of the MIT License is included in this file.
 Other dependencies and licenses:
 
 Open Source Software Licensed Under the BSD License:
---------------------------------------------------------------------
+==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================--
 
 The msinttypes r29 
 Copyright (c) 2006-2013 Alexander Chemeris 
@@ -553,7 +553,7 @@ Redistribution and use in source and binary forms, with or without modification,
 THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES LOSS OF USE, DATA, OR PROFITS OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Open Source Software Licensed Under the JSON License:
---------------------------------------------------------------------
+==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================--
 
 json.org 
 Copyright (c) 2002 JSON.org
@@ -565,7 +565,7 @@ All Rights Reserved.
 
 	
 Terms of the JSON License:
----------------------------------------------------
+===========================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -577,7 +577,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 
 Terms of the MIT License:
---------------------------------------------------------------------
+==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================--
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -587,7 +587,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of [geojson.hpp](https://github.com/mapbox/geojson-cpp) by Mapbox
 
@@ -608,7 +608,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of [geometry.hpp](https://github.com/mapbox/geometry.hpp) by Mapbox
 
@@ -628,7 +628,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of [Optional](https://github.com/akrzemi1/Optional) by Andrzej Krzemienski
 
@@ -659,7 +659,7 @@ DEALINGS IN THE SOFTWARE.
 
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of [variant](https://github.com/mapbox/variant) by Mapbox
 
@@ -691,7 +691,7 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of GLFW.
 
@@ -719,7 +719,7 @@ freely, subject to the following restrictions:
    distribution.
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of libc++.
 
@@ -798,7 +798,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of libcurl.
 
@@ -862,7 +862,7 @@ POSSIBILITY OF SUCH DAMAGE.
 TurboJPEG/LJT: this implements the TurboJPEG API using libjpeg or libjpeg-turbo
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of libpng.
 
@@ -959,7 +959,7 @@ source code in a product, acknowledgment is not required but would be
 appreciated.
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of libuv.
 
@@ -1012,7 +1012,7 @@ The externally maintained libraries used by libuv are:
   n° 289016). Three clause BSD license.
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of libzip.
 
@@ -1050,7 +1050,7 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of LOST.
 
@@ -1102,7 +1102,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of nunicode.
 
@@ -1128,7 +1128,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of OkHTTP.
 
@@ -1148,7 +1148,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of OpenSSL.
 
@@ -1163,7 +1163,7 @@ Open Source licenses. In case of any license issues related to OpenSSL
 please contact openssl-core@openssl.org.
 
 OpenSSL License
----------------
+=======================================================================================================================================================================================================================================================================================================================================================================================
 
 Copyright (c) 1998-2011 The OpenSSL Project.  All rights reserved.
 
@@ -1216,7 +1216,7 @@ This product includes cryptographic software written by Eric Young
 Hudson (tjh@cryptsoft.com).
 
 Original SSLeay License
------------------------
+=============================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================--
 
 Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
 All rights reserved.
@@ -1275,7 +1275,7 @@ copied and put under another distribution licence
 [including the GNU Public Licence.]
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of Reachability.
 ```
@@ -1304,7 +1304,7 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
----
+===========================================================================
 
 MapLibre-GL-Native uses portions of SQLite.
 
@@ -1319,7 +1319,7 @@ a legal notice, here is a blessing:
 
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of SVPulsingAnnotationView.
 
@@ -1341,7 +1341,7 @@ THIS SOFTWARE.
 
 ```
 
----
+===========================================================================
 
 ### MapLibre-GL-Native uses portions of zlib.
 
@@ -1378,7 +1378,7 @@ freely, subject to the following restrictions:
   jloup@gzip.org          madler@alumni.caltech.edu
 ```
 
----
+===========================================================================
 
 MapLibre-GL-Native uses portions of Realm Objective-C.
 
