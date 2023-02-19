@@ -693,8 +693,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ---
 
-===========================================================================
-
 ### MapLibre-GL-Native uses portions of GLFW.
 
 ```
@@ -721,7 +719,7 @@ freely, subject to the following restrictions:
    distribution.
 ```
 
-===========================================================================
+---
 
 ### MapLibre-GL-Native uses portions of libc++.
 
@@ -800,7 +798,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-===========================================================================
+---
 
 ### MapLibre-GL-Native uses portions of libcurl.
 
@@ -864,7 +862,7 @@ POSSIBILITY OF SUCH DAMAGE.
 TurboJPEG/LJT: this implements the TurboJPEG API using libjpeg or libjpeg-turbo
 ```
 
-===========================================================================
+---
 
 ### MapLibre-GL-Native uses portions of libpng.
 
@@ -961,7 +959,7 @@ source code in a product, acknowledgment is not required but would be
 appreciated.
 ```
 
-===========================================================================
+---
 
 ### MapLibre-GL-Native uses portions of libuv.
 
@@ -1014,7 +1012,7 @@ The externally maintained libraries used by libuv are:
   n° 289016). Three clause BSD license.
 ```
 
-===========================================================================
+---
 
 ### MapLibre-GL-Native uses portions of libzip.
 
@@ -1052,7 +1050,7 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
-===========================================================================
+---
 
 ### MapLibre-GL-Native uses portions of LOST.
 
@@ -1104,7 +1102,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 ```
 
-===========================================================================
+---
 
 ### MapLibre-GL-Native uses portions of nunicode.
 
@@ -1130,7 +1128,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-===========================================================================
+---
 
 ### MapLibre-GL-Native uses portions of OkHTTP.
 
@@ -1150,7 +1148,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-===========================================================================
+---
 
 ### MapLibre-GL-Native uses portions of OpenSSL.
 
@@ -1277,10 +1275,10 @@ copied and put under another distribution licence
 [including the GNU Public Licence.]
 ```
 
-===========================================================================
+---
 
-MapLibre-GL-Native uses portions of Reachability.
-
+### MapLibre-GL-Native uses portions of Reachability.
+```
 Copyright (c) 2011, Tony Million.
 All rights reserved.
 
@@ -1306,7 +1304,7 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
-===========================================================================
+---
 
 MapLibre-GL-Native uses portions of SQLite.
 
@@ -1319,9 +1317,13 @@ a legal notice, here is a blessing:
     May you find forgiveness for yourself and forgive others.
     May you share freely, never taking more than you give.
 
-===========================================================================
+```
 
-MapLibre-GL-Native uses portions of SVPulsingAnnotationView.
+---
+
+### MapLibre-GL-Native uses portions of SVPulsingAnnotationView.
+
+```
 
 Copyright (c) 2013, Sam Vermette <hello@samvermette.com>
 
@@ -1337,9 +1339,13 @@ OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
 TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 
-===========================================================================
+```
 
-MapLibre-GL-Native uses portions of zlib.
+---
+
+### MapLibre-GL-Native uses portions of zlib.
+
+```
 
 Acknowledgments:
 
@@ -1370,11 +1376,13 @@ freely, subject to the following restrictions:
 
   Jean-loup Gailly        Mark Adler
   jloup@gzip.org          madler@alumni.caltech.edu
+```
 
-===========================================================================
+---
 
 MapLibre-GL-Native uses portions of Realm Objective-C.
 
+```
 Copyright 2015 Realm Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -1388,11 +1396,12 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-
+```
 ===========================================================================
 
-Leaflet - BSD 2-Clause License
-
+### [Leaflet](https://github.com/Leaflet/Leaflet)
+```
+BSD 2-Clause License
 Copyright (c) 2010-2023, Volodymyr Agafonkin
 Copyright (c) 2010-2011, CloudMade
 All rights reserved.
@@ -1417,3 +1426,4 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
