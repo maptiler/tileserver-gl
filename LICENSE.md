@@ -1,6 +1,6 @@
 TileServer GL
 =============
-
+Copyright (c) 2023, MapTiler.com
 Copyright (c) 2016, Klokan Technologies GmbH
 
 All rights reserved.
