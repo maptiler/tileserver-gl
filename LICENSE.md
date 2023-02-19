@@ -29,7 +29,7 @@ LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
-===========================================================================
+---
 
 ### [MapLibre-GL-Native](https://github.com/maplibre/maplibre-gl-native)
 ```
@@ -62,7 +62,7 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
-===========================================================================
+---
 
 ### MapLibre-GL-Native uses portions of [kdbush.hpp](https://github.com/mourner/kdbush.hpp) by Vladimir Agafonkin
 
@@ -826,7 +826,7 @@ be used in advertising or otherwise to promote the sale, use or other dealings
 in this Software without prior written authorization of the copyright holder.
 ```
 
-===========================================================================
+---
 
 ### MapLibre-GL-Native uses portions of libjpeg-turbo.
 
@@ -1070,7 +1070,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-===========================================================================
+---
 
 ### MapLibre-GL-Native uses portions of the Mapbox iOS SDK, which was derived from the Route-Me open source project, including the Alpstein fork of it.
 
@@ -1397,7 +1397,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ```
-===========================================================================
+---
 
 ### [Leaflet](https://github.com/Leaflet/Leaflet)
 ```
