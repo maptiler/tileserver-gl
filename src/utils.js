@@ -6,19 +6,35 @@ import fs from 'node:fs';
 import clone from 'clone';
 import glyphCompose from '@mapbox/glyph-pbf-composite';
 
-export const getPublicUrl = (publicUrl, req) =>
-  publicUrl || `${req.protocol}://${req.headers.host}/`;
+/**
+ * Generate new URL object
+ * @params {object} req - Express request
+ * @returns {URL} object
+ **/
+const getUrlObject = (req) => {
+  const urlObject = new URL(`${req.protocol}://${req.headers.host}/`);
+  // support overriding hostname by sending X-Forwarded-Host http header
+  urlObject.hostname = req.hostname;
+  return urlObject;
+};
+
+export const getPublicUrl = (publicUrl, req) => {
+  if (publicUrl) {
+    return publicUrl;
+  }
+  return getUrlObject(req).toString();
+};
 
 export const getTileUrls = (req, domains, path, format, publicUrl, aliases) => {
+  const urlObject = getUrlObject(req);
   if (domains) {
     if (domains.constructor === String && domains.length > 0) {
       domains = domains.split(',');
     }
-    const host = req.headers.host;
-    const hostParts = host.split('.');
+    const hostParts = urlObject.host.split('.');
     const relativeSubdomainsUsable =
       hostParts.length > 1 &&
-      !/^([0-9]{1,3}\.){3}[0-9]{1,3}(\:[0-9]+)?$/.test(host);
+      !/^([0-9]{1,3}\.){3}[0-9]{1,3}(\:[0-9]+)?$/.test(urlObject.host);
     const newDomains = [];
     for (const domain of domains) {
       if (domain.indexOf('*') !== -1) {
@@ -34,7 +50,7 @@ export const getTileUrls = (req, domains, path, format, publicUrl, aliases) => {
     domains = newDomains;
   }
   if (!domains || domains.length == 0) {
-    domains = [req.headers.host];
+    domains = [urlObject.host];
   }
 
   const queryParams = [];

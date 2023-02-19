@@ -41,11 +41,13 @@ RUN wget -qO- https://deb.nodesource.com/setup_18.x | bash; \
     rm -rf /var/lib/apt/lists/*;
 
 RUN mkdir -p /usr/src/app
-COPY package* /usr/src/app
 
 WORKDIR /usr/src/app
 
-RUN npm install --omit=dev
+COPY package.json /usr/src/app
+COPY package-lock.json /usr/src/app
+
+RUN npm ci --omit=dev
 
 FROM ubuntu:focal AS final
 
