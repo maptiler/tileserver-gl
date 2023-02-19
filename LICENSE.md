@@ -1380,7 +1380,7 @@ freely, subject to the following restrictions:
 
 ===========================================================================
 
-MapLibre-GL-Native uses portions of Realm Objective-C.
+### MapLibre-GL-Native uses portions of Realm Objective-C.
 
 ```
 Copyright 2015 Realm Inc.
