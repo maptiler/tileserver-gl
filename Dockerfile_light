@@ -22,14 +22,23 @@ RUN set -ex; \
 
 EXPOSE 8080
 
-RUN mkdir -p /data && chown node:node /data
+RUN mkdir -p /data; \
+    chown node:node /data; \
+    mkdir -p /usr/src/app;
+
 VOLUME /data
+
 WORKDIR /data
+
+COPY / /usr/src/app
+
+RUN cd /usr/src/app; \
+    npm install --omit=dev; \
+    chown -R root:root /usr/src/app; \
+    chmod +x /usr/src/app/docker-entrypoint.sh;
+
+USER node:node
+
 ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
 
-RUN mkdir -p /usr/src/app
-COPY / /usr/src/app
-RUN cd /usr/src/app && npm install --omit=dev
-RUN ["chmod", "+x", "/usr/src/app/docker-entrypoint.sh"]
-USER node:node
 HEALTHCHECK CMD node /usr/src/app/src/healthcheck.js
