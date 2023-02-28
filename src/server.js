@@ -606,6 +606,10 @@ export function server(opts) {
     process.exit();
   });
 
+  process.on('SIGTERM', () => {
+    process.exit();
+  });
+
   process.on('SIGHUP', () => {
     console.log('Stopping server and reloading config');
 
