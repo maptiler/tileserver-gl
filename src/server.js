@@ -592,11 +592,12 @@ function start(opts) {
 
 /**
  * Stop the server gracefully
+ *
  * @param {string} signal Name of the received signal
  */
 function stopGracefully(signal) {
-    console.log(`Caught signal ${signal}, stopping gracefully`);
-    process.exit();
+  console.log(`Caught signal ${signal}, stopping gracefully`);
+  process.exit();
 }
 
 /**
