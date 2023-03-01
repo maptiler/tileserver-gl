@@ -591,6 +591,16 @@ function start(opts) {
 }
 
 /**
+ * Stop the server gracefully
+ *
+ * @param {string} signal Name of the received signal
+ */
+function stopGracefully(signal) {
+  console.log(`Caught signal ${signal}, stopping gracefully`);
+  process.exit();
+}
+
+/**
  *
  * @param opts
  */
@@ -602,11 +612,11 @@ export function server(opts) {
     process.exit(1);
   });
 
-  process.on('SIGINT', () => {
-    process.exit();
-  });
+  process.on('SIGINT', stopGracefully);
+  process.on('SIGTERM', stopGracefully);
 
-  process.on('SIGHUP', () => {
+  process.on('SIGHUP', (signal) => {
+    console.log(`Caught signal ${signal}, refreshing`);
     console.log('Stopping server and reloading config');
 
     running.server.shutdown(() => {
