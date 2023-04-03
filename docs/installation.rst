@@ -17,29 +17,18 @@ Additional options (see :doc:`/usage`) can be passed to the TileServer GL by app
 npm
 ===
 
-Just run ``npm install -g tileserver-gl``.
+npm is supported on the following platforms with Native Dependencies installed.
+  * ``Ubuntu 20.04 (amd64/arm64)``
+  * ``MacOS 12 (amd64/arm64)``
+  * ``Windows (amd64)``
 
+Just run ``npm install -g tileserver-gl``.
 
 Native dependencies
 -------------------
 
-There are some native dependencies that you need to make sure are installed if you plan to run the TileServer GL natively without docker.
-The precise package names you need to install may differ on various platforms.
-
-These are required on Debian 11:
-  * ``libgles2-mesa``
-  * ``libegl1``
-  * ``xvfb``
-  * ``xauth``
-  * ``libopengl0``
-  * ``libcurl4``
-  * ``curl``
-  * ``libuv1-dev``
-  * ``libc6-dev``
-  * ``http://archive.ubuntu.com/ubuntu/pool/main/libj/libjpeg-turbo/libjpeg-turbo8_2.0.3-0ubuntu1_amd64.deb``
-  * ``http://archive.ubuntu.com/ubuntu/pool/main/i/icu/libicu66_66.1-2ubuntu2_amd64.deb``
-
-These are required on Ubuntu 20.04:
+Ubuntu 20.04 (amd64/arm64)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
   * ``libcairo2-dev``
   * ``libjpeg8-dev``
   * ``libpango1.0-dev``
@@ -51,27 +40,24 @@ These are required on Ubuntu 20.04:
   * ``libgbm-dev``
   * ``libxxf86vm-dev``
 
-``tileserver-gl-light`` on npm
-==============================
+MacOS 12 (amd64/arm64)
+~~~~~~~~~~~~~~~~~~~~~~
+  * ``brew install pkg-config cairo libpng jpeg giflib``
 
-Alternatively, you can use ``tileserver-gl-light`` package instead, which is pure javascript (does not have any native dependencies) and can run anywhere, but does not contain rasterization features.
-
+Windows (amd64)
+~~~~~~~~~~~~~~~~~~~~~~~~~
+  * ``Microsoft Visual C++ 2015-2022 Redistributable``
 
 From source
-===========
+-----------
 
 Make sure you have Node v18 (nvm install 18) and run::
 
   npm install
   node .
 
+``tileserver-gl-light`` on npm
+==============================
 
-On OSX
-======
+Alternatively, you can use ``tileserver-gl-light`` package instead, which is pure javascript (does not have any native dependencies) and can run anywhere, but does not contain rasterization features.
 
-Make sure to have dependencies of canvas_ package installed::
-
-  brew install pkg-config cairo libpng jpeg giflib
-
-
-.. _canvas: https://www.npmjs.com/package/canvas
