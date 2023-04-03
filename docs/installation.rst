@@ -26,12 +26,12 @@ npm is supported on the following platforms with Native Dependencies installed.
 - Node.js 14, 16, 18
   
 Install From npmjs repository.
------------
+------------------------------
   npm install -g tileserver-gl
   tileserver-gl
 
 Install From source
------------
+-------------------
   git clone https://github.com/maptiler/tileserver-gl.git
   cd tileserver-gl
   npm install
