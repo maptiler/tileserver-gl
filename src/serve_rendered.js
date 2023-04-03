@@ -6,8 +6,6 @@ import path from 'path';
 import url from 'url';
 import util from 'util';
 import zlib from 'zlib';
-import sharp from 'sharp'; // sharp has to be required before node-canvas. see https://github.com/lovell/sharp/issues/371
-import { createCanvas, Image } from 'canvas';
 import clone from 'clone';
 import Color from 'color';
 import express from 'express';
@@ -19,6 +17,10 @@ import polyline from '@mapbox/polyline';
 import proj4 from 'proj4';
 import request from 'request';
 import { getFontsPbf, getTileUrls, fixTileJSONCenter } from './utils.js';
+
+import Os from 'os'
+var ostype = (Os.platform() == 'win32') ? "windows":"unix";
+const { sharp, createCanvas, Image } = await import(`./render_import_${ostype}.js`);
 
 const FLOAT_PATTERN = '[+-]?(?:\\d+|\\d+.?\\d+)';
 const PATH_PATTERN =
