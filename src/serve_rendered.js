@@ -18,9 +18,11 @@ import proj4 from 'proj4';
 import request from 'request';
 import { getFontsPbf, getTileUrls, fixTileJSONCenter } from './utils.js';
 
-import Os from 'os'
-const ostype = (Os.platform() == 'win32') ? "windows":"unix";
-const { sharp, createCanvas, Image } = await import(`./render_import_${ostype}.js`);
+import Os from 'os';
+const ostype = Os.platform() == 'win32' ? 'windows' : 'unix';
+const { sharp, createCanvas, Image } = await import(
+  `./render_import_${ostype}.js`
+);
 
 const FLOAT_PATTERN = '[+-]?(?:\\d+|\\d+.?\\d+)';
 const PATH_PATTERN =
