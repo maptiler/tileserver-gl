@@ -26,7 +26,7 @@
     "@maplibre/maplibre-gl-native": "5.2.0",
     "@maplibre/maplibre-gl-style-spec": "18.0.0",
     "advanced-pool": "0.3.3",
-    "canvas": "2.11.0",
+    "canvas": "2.11.2",
     "chokidar": "3.5.3",
     "clone": "2.1.2",
     "color": "4.2.3",
