@@ -18,11 +18,24 @@ npm
 ===
 
 npm is supported on the following platforms with Native Dependencies installed.
-  * ``Ubuntu 20.04 (amd64/arm64)``
-  * ``MacOS 12 (amd64/arm64)``
-  * ``Windows (amd64)``
 
-Just run ``npm install -g tileserver-gl``.
+- Operating systems:
+  - Ubuntu 20.04 (amd64/arm64)
+  - macOS 12 (amd64/arm64)
+  - Windows (amd64)
+- Node.js 14, 16, 18
+  
+Install From npmjs repository.
+-----------
+  npm install -g tileserver-gl
+  tileserver-gl
+
+Install From source
+-----------
+  git clone https://github.com/maptiler/tileserver-gl.git
+  cd tileserver-gl
+  npm install
+  node .
 
 Native dependencies
 -------------------
@@ -47,14 +60,6 @@ MacOS 12 (amd64/arm64)
 Windows (amd64)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
   * ``Microsoft Visual C++ 2015-2022 Redistributable``
-
-From source
------------
-
-Make sure you have Node v18 (nvm install 18) and run::
-
-  npm install
-  node .
 
 ``tileserver-gl-light`` on npm
 ==============================
