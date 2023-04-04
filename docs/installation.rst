@@ -79,7 +79,7 @@ Windows (amd64)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 ::
 
-  Microsoft Visual C++ 2015-2022 Redistributable
+  `Microsoft Visual C++ 2015-2022 Redistributable <https://aka.ms/vs/17/release/vc_redist.x64.exe>`
 
 ``tileserver-gl-light`` on npm
 ==============================
