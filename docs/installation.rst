@@ -34,37 +34,52 @@ Install From npmjs repository.
   npm install -g tileserver-gl
   tileserver-gl
 
-
 Install From github source
 -------------------
-- git clone https://github.com/maptiler/tileserver-gl.git
-- cd tileserver-gl
-- npm install
-- node .
+::
+
+  git clone https://github.com/maptiler/tileserver-gl.git
+  cd tileserver-gl
+  npm install
+  node .
 
 Native dependencies
 -------------------
 
 Ubuntu 20.04 (amd64/arm64)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-- libcairo2-dev
-- libjpeg8-dev
-- libpango1.0-dev
-- libgif-dev
-- build-essential
-- g++
-- xvfb
-- libgles2-mesa-dev
-- libgbm-dev
-- libxxf86vm-dev
+::
+
+  build-essential \
+  pkg-config \
+  xvfb \
+  libglfw3-dev \
+  libuv1-dev \
+  libjpeg-turbo8 \
+  libicu66 \
+  libcairo2-dev \
+  libpango1.0-dev \
+  libjpeg-dev \
+  libgif-dev \
+  librsvg2-dev \
+  gir1.2-rsvg-2.0 \
+  librsvg2-2 \
+  librsvg2-common \
+  libcurl4-openssl-dev \
+  libpixman-1-dev \
+  libpixman-1-0; \
 
 MacOS 12 (amd64/arm64)
 ~~~~~~~~~~~~~~~~~~~~~~
-- brew install pkg-config cairo libpng jpeg giflib
+::
+
+  brew install pkg-config cairo libpng jpeg giflib
 
 Windows (amd64)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-- Microsoft Visual C++ 2015-2022 Redistributable
+::
+
+  Microsoft Visual C++ 2015-2022 Redistributable
 
 ``tileserver-gl-light`` on npm
 ==============================
