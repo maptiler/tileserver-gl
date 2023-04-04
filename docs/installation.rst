@@ -50,24 +50,7 @@ Ubuntu 20.04 (amd64/arm64)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 ::
 
-  build-essential \
-  pkg-config \
-  xvfb \
-  libglfw3-dev \
-  libuv1-dev \
-  libjpeg-turbo8 \
-  libicu66 \
-  libcairo2-dev \
-  libpango1.0-dev \
-  libjpeg-dev \
-  libgif-dev \
-  librsvg2-dev \
-  gir1.2-rsvg-2.0 \
-  librsvg2-2 \
-  librsvg2-common \
-  libcurl4-openssl-dev \
-  libpixman-1-dev \
-  libpixman-1-0; \
+  apt install build-essential pkg-config xvfb libglfw3-dev libuv1-dev libjpeg-turbo8 libicu66 libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev gir1.2-rsvg-2.0 librsvg2-2 librsvg2-common libcurl4-openssl-dev libpixman-1-dev libpixman-1-0
 
 MacOS 12 (amd64/arm64)
 ~~~~~~~~~~~~~~~~~~~~~~
