@@ -77,7 +77,7 @@ MacOS 12 (amd64/arm64)
 
 Windows (amd64)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-- `Microsoft Visual C++ Redistributable <https://aka.ms/vs/17/release/vc_redist.x64.exe>_`
+- `Microsoft Visual C++ Redistributable <https://aka.ms/vs/17/release/vc_redist.x64.exe>`_
 
 ``tileserver-gl-light`` on npm
 ==============================
