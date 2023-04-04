@@ -29,9 +29,10 @@ npm is supported on the following platforms with Native Dependencies installed.
   
 Install From npmjs repository.
 ------------------------------
-  code-block:: bash
+```
   npm install -g tileserver-gl
   tileserver-gl
+```
 
 Install From github source
 -------------------
