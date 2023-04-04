@@ -19,11 +19,11 @@ npm
 
 npm is supported on the following platforms with Native Dependencies installed.
 
-  * ``Operating systems:``
-    * ``Ubuntu 20.04 (amd64/arm64)``
-    * ``macOS 12 (amd64/arm64)``
-    * ``Windows (amd64)``
-  * ``Node.js 14, 16, 18``
+- Operating systems:
+  - Ubuntu 20.04 (amd64/arm64)
+  - macOS 12 (amd64/arm64)
+  - Windows (amd64)
+- Node.js 14, 16, 18
   
 Install From npmjs repository.
 ------------------------------
@@ -32,10 +32,10 @@ Install From npmjs repository.
 
 Install From source
 -------------------
-  git clone https://github.com/maptiler/tileserver-gl.git
-  cd tileserver-gl
-  npm install
-  node .
+  * ``git clone https://github.com/maptiler/tileserver-gl.git``
+  * ``cd tileserver-gl``
+  * ``npm install``
+  * ``node .``
 
 Native dependencies
 -------------------
