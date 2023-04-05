@@ -3,6 +3,7 @@
 import advancedPool from 'advanced-pool';
 import fs from 'node:fs';
 import path from 'path';
+import os from 'os';
 import url from 'url';
 import util from 'util';
 import zlib from 'zlib';
@@ -18,8 +19,7 @@ import proj4 from 'proj4';
 import request from 'request';
 import { getFontsPbf, getTileUrls, fixTileJSONCenter } from './utils.js';
 
-import Os from 'os';
-const ostype = Os.platform() == 'win32' ? 'windows' : 'unix';
+const ostype = os.platform() == 'win32' ? 'windows' : 'unix';
 const { sharp, createCanvas, Image } = await import(
   `./serve_rendered_${ostype}.js`
 );

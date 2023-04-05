@@ -4,6 +4,7 @@
 
 import fs from 'node:fs';
 import path from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import request from 'request';
 import { server } from './server.js';
@@ -54,6 +55,7 @@ program.parse(process.argv);
 const opts = program.opts();
 
 console.log(`Starting ${packageJson.name} v${packageJson.version}`);
+console.log(`${os.version()} ${os.arch}`);
 
 const startServer = (configPath, config) => {
   let publicUrl = opts.public_url;
