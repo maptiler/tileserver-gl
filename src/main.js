@@ -54,8 +54,7 @@ program
 program.parse(process.argv);
 const opts = program.opts();
 
-console.log(`Starting ${packageJson.name} v${packageJson.version}`);
-console.log(`${os.version()} ${os.arch}`);
+console.log(`Starting ${packageJson.name} v${packageJson.version} - ${os.version()} ${os.arch}`);
 
 const startServer = (configPath, config) => {
   let publicUrl = opts.public_url;
