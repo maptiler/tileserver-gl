@@ -6,6 +6,7 @@
   "bin": "src/main.js",
   "type": "module",
   "scripts": {
+    "install": "node install/canvas_sharp_compatibility",
     "test": "mocha test/**.js --timeout 10000",
     "lint:yml": "yamllint --schema=CORE_SCHEMA *.{yml,yaml}",
     "lint:js": "npm run lint:eslint && npm run lint:prettier",
