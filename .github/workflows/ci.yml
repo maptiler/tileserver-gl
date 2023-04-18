@@ -1,0 +1,51 @@
+name: 'Continuous Integration'
+
+on:
+  workflow_call:
+
+permissions:
+  checks: write
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check out repository ✨ (non-dependabot)
+        if: ${{ github.actor != 'dependabot[bot]' }}
+        uses: actions/checkout@v3
+
+      - name: Check out repository 🎉 (dependabot)
+        if: ${{ github.actor == 'dependabot[bot]' }}
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup node env 📦
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: 'package.json'
+          check-latest: true
+          cache: 'npm'
+
+      - name: Install dependencies 🚀
+        run: npm ci --prefer-offline --no-audit --omit=optional
+
+      - name: Run linter(s) 💅
+        uses: wearerequired/lint-action@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          continue_on_error: false
+          git_name: github-actions[bot]
+          git_email: github-actions[bot]@users.noreply.github.com
+          auto_fix: false
+          eslint: true
+          eslint_extensions: js,cjs,mjs,ts
+          prettier: true
+          prettier_extensions: js,cjs,ts,json
+
+      - name: Run hadolint 🐳
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          ignore: DL3008,DL3015

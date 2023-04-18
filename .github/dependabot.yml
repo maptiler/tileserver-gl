@@ -1,0 +1,19 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    versioning-strategy: increase
+    directory: '/'
+    schedule:
+      interval: daily
+    commit-message:
+      prefix: fix
+      prefix-development: chore
+      include: scope
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: fix
+      prefix-development: chore
+      include: scope

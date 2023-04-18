@@ -1,55 +1,108 @@
-FROM node:10-buster AS builder
+FROM ubuntu:focal AS builder
 
-RUN export DEBIAN_FRONTEND=noninteractive \
-  && apt-get -qq update \
-  && apt-get -y --no-install-recommends install \
-      apt-transport-https \
-      curl \
-      unzip \
+ENV NODE_ENV="production"
+
+RUN set -ex; \
+    export DEBIAN_FRONTEND=noninteractive; \
+    apt-get -qq update; \
+    apt-get -y --no-install-recommends install \
       build-essential \
-      python \
+      ca-certificates \
+      wget \
+      pkg-config \
+      xvfb \
+      libglfw3-dev \
+      libuv1-dev \
+      libjpeg-turbo8 \
+      libicu66 \
       libcairo2-dev \
-      libgles2-mesa-dev \
-      libgbm-dev \
-      libllvm7 \
-      libprotobuf-dev \
-  && apt-get -y --purge autoremove \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+      libpango1.0-dev \
+      libjpeg-dev \
+      libgif-dev \
+      librsvg2-dev \
+      gir1.2-rsvg-2.0 \
+      librsvg2-2 \
+      librsvg2-common \
+      libcurl4-openssl-dev \
+      libpixman-1-dev \
+      libpixman-1-0; \
+      apt-get -y --purge autoremove; \
+      apt-get clean; \
+      rm -rf /var/lib/apt/lists/*;
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+RUN wget -qO- https://deb.nodesource.com/setup_18.x | bash; \
+    apt-get install -y nodejs; \
+    npm i -g npm@latest; \
+    apt-get -y remove wget; \
+    apt-get -y --purge autoremove; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/*;
+
+RUN mkdir -p /usr/src/app
+
+WORKDIR /usr/src/app
+
+COPY package.json /usr/src/app
+COPY package-lock.json /usr/src/app
+
+RUN npm ci --omit=dev; \
+    chown -R root:root /usr/src/app;
+
+FROM ubuntu:focal AS final
+
+ENV \
+    NODE_ENV="production" \
+    CHOKIDAR_USEPOLLING=1 \
+    CHOKIDAR_INTERVAL=500
+
+RUN set -ex; \
+    export DEBIAN_FRONTEND=noninteractive; \
+    groupadd -r node; \
+    useradd -r -g node node; \
+    apt-get -qq update; \
+    apt-get -y --no-install-recommends install \
+      ca-certificates \
+      wget \
+      xvfb \
+      libglfw3 \
+      libuv1 \
+      libjpeg-turbo8 \
+      libicu66 \
+      libcairo2 \
+      libgif7 \
+      libopengl0 \
+      libpixman-1-0 \
+      libcurl4 \
+      librsvg2-2 \
+      libpango-1.0-0; \
+      apt-get -y --purge autoremove; \
+      apt-get clean; \
+      rm -rf /var/lib/apt/lists/*;
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+RUN wget -qO- https://deb.nodesource.com/setup_18.x | bash; \ 
+    apt-get install -y nodejs; \
+    npm i -g npm@latest; \
+    apt-get -y remove wget; \
+    apt-get -y --purge autoremove; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/*;
+
+COPY --from=builder /usr/src/app /usr/src/app
 
 COPY . /usr/src/app
 
-ENV NODE_ENV="production"
-
-RUN cd /usr/src/app && npm install --production
-
-
-FROM node:10-buster-slim AS final
-
-RUN export DEBIAN_FRONTEND=noninteractive \
-  && apt-get -qq update \
-  && apt-get -y --no-install-recommends install \
-      libgles2-mesa \
-      libegl1 \
-      xvfb \
-      xauth \
-  && apt-get -y --purge autoremove \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
-
-COPY --from=builder /usr/src/app /app
-
-ENV NODE_ENV="production"
-ENV CHOKIDAR_USEPOLLING=1
-ENV CHOKIDAR_INTERVAL=500
-
+RUN mkdir -p /data && chown node:node /data
 VOLUME /data
 WORKDIR /data
 
-EXPOSE 8000
+EXPOSE 8080
 
 USER node:node
 
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
 
-CMD ["-p", "8000"]
+HEALTHCHECK CMD node /usr/src/app/src/healthcheck.js

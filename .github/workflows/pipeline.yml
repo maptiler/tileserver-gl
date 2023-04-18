@@ -1,0 +1,43 @@
+name: 'The Pipeline'
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+concurrency:
+  group: ci-${{ github.ref }}-1
+  cancel-in-progress: true
+
+jobs:
+  extract-branch:
+    name: 'Fetch branch'
+    runs-on: ubuntu-latest
+    outputs:
+      current_branch: ${{ steps.get-branch.outputs.current_branch }}
+    steps:
+      - name: Extract branch name 🕊
+        id: get-branch
+        run: echo "current_branch=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+  ci:
+    name: 'CI'
+    needs:
+      - extract-branch
+    uses: maptiler/tileserver-gl/.github/workflows/ci.yml@master
+  ct:
+    name: 'CT'
+    needs:
+      - extract-branch
+    uses: maptiler/tileserver-gl/.github/workflows/ct.yml@master
+  automerger:
+    name: 'Automerge Dependabot PRs'
+    needs:
+      - ci
+      - ct
+      - extract-branch
+    if: >
+      github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]'
+    uses: maptiler/tileserver-gl/.github/workflows/automerger.yml@master

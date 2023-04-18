@@ -1,0 +1,70 @@
+name: 'Continuous Testing'
+
+on:
+  workflow_call:
+
+permissions:
+  checks: write
+  contents: read
+
+jobs:
+  ct:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check out repository ✨ (non-dependabot)
+        if: ${{ github.actor != 'dependabot[bot]' }}
+        uses: actions/checkout@v3
+
+      - name: Check out repository 🎉 (dependabot)
+        if: ${{ github.actor == 'dependabot[bot]' }}
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Update apt-get 🚀
+        run: sudo apt-get update -qq
+
+      - name: Install dependencies (Ubuntu) 🚀
+        run: >-
+          sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev
+          libgif-dev build-essential g++ xvfb libgles2-mesa-dev libgbm-dev
+          libxxf86vm-dev
+
+      - name: Setup node env 📦
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: 'package.json'
+          check-latest: true
+          cache: 'npm'
+
+      - name: Install dependencies 🚀
+        run: npm ci --prefer-offline --no-audit --omit=optional
+
+      - name: Pull test data 📦
+        run: >-
+          wget -O test_data.zip
+          https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
+
+      - name: Prepare test data 📦
+        run: unzip -q test_data.zip -d test_data
+
+      - name: Run tests 🧪
+        run: xvfb-run --server-args="-screen 0 1024x768x24" npm test
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: 'arm64'
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Test Docker Build
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: false
+          platforms: linux/arm64,linux/amd64
+          # experimental: https://github.com/docker/build-push-action/blob/master/docs/advanced/cache.md#cache-backend-api
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

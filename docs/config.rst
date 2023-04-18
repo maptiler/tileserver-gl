@@ -14,6 +14,7 @@ Example:
         "root": "",
         "fonts": "fonts",
         "sprites": "sprites",
+        "icons": "icons",
         "styles": "styles",
         "mbtiles": ""
       },
@@ -31,6 +32,7 @@ Example:
       "serveAllFonts": false,
       "serveAllStyles": false,
       "serveStaticMaps": true,
+      "allowRemoteMarkerIcons": true,
       "tileMargin": 0
     },
     "styles": {
@@ -140,6 +142,13 @@ It is recommended to also use the ``serveAllFonts`` option when using this optio
 Optional string to be rendered into the raster tiles (and static maps) as watermark (bottom-left corner).
 Can be used for hard-coding attributions etc. (can also be specified per-style).
 Not used by default.
+
+``allowRemoteMarkerIcons``
+--------------
+
+Allows the rendering of marker icons fetched via http(s) hyperlinks.
+For security reasons only allow this if you can control the origins from where the markers are fetched!
+Default is to disallow fetching of icons from remote sources.
 
 ``styles``
 ==========
