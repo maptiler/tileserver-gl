@@ -6,3 +6,5 @@ light
 plugins
 config.json
 *.mbtiles
+*.code-workspace
+.vs*
