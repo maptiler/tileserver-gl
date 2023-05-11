@@ -21,7 +21,7 @@ Endpoint data can be configured to be cached by Cloudflare. For example to cache
 
 Create a rule which matches ``hostname (equal)`` and ``URI Path (ends with)`` for ``.pbf`` and ``.json`` fields. Set cache status to eligible for cache to enable the caching and overwrite the ``Edge TTL`` with ``Browser TTL`` to be 7 days (depends on your application usage).
 
-This will ensure that Cloudflare will cache your tiles on Cloudflare side for seven days aswell on the client side. If the tileserver is down or user has no internet access it will try to use cached tiles from Cloudflare or local.
+This will ensure that Cloudflare will cache your tiles on Cloudflare side for seven days as well on the client side. If the tileserver is down or user has no internet access it will try to use cached tiles from Cloudflare or local.
 
 Note that ``Browser TTL`` will overwrite expiration dates on the client device. If you rebuild your maps, old tiles will be rendered until it expires or cache is cleared on the client device.
 
@@ -115,7 +115,7 @@ An example nginx reverse proxy server configuration for HTTPS connections. It en
 
     location / {
       # This include directive sets up required headers for proxy and proxy cache.
-      # Aswell it includes the required ``X-Forwarded-*`` headers for tileserver to propely generate tiles.
+      # As well it includes the required ``X-Forwarded-*`` headers for tileserver to properly generate tiles.
       include proxy_params;
 
       proxy_pass http://127.0.0.1:8080/;
