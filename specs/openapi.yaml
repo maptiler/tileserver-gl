@@ -1,0 +1,464 @@
+openapi: 3.0.3
+info:
+  title: Tileserver-GL API Specification
+  description: |-
+    Vector and raster maps with GL styles. Server side rendering by MapLibre GL Native. Map tile server for MapLibre GL JS, Android, iOS, Leaflet, OpenLayers, GIS via WMTS, etc.
+
+    Some useful links:
+    - [The Tileserver-GL repository](https://github.com/maptiler/tileserver-gl)
+    - [The source API definition for Tileserver-GL](https://github.com/maptiler/tileserver-gl/blob/master/swagger/openapi.yaml)
+  license:
+    name: BSD-2-Clause
+    url: https://github.com/maptiler/tileserver-gl/blob/master/LICENSE.md
+  version: 4.3.3
+externalDocs:
+  description: Find out more about Tileserver
+  url: https://maptiler-tileserver.readthedocs.io/
+servers:
+  - url: http://localhost:8080
+    description: local environment
+tags:
+  - name: tileserver
+    description: API's related to tileserver service
+paths:
+  /health:
+    get:
+      tags:
+        - tileserver
+      summary: Health check endpoint
+      description: >-
+        Health Check API for tileserver-gl service to check if the server is running or not
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Successful operation
+          headers:
+            Access-Control-Allow-Origin:
+              description: CORS settings
+              schema:
+                type: string
+                example: '*'
+            Content-Length:
+              description: calls per hour allowed by the user
+              schema:
+                type: integer
+                format: int32
+                example: 13869
+            ETag:
+              schema:
+                type: string
+                example: 'W/"362d-a4++GSTywgYpXh1Gt9dVKwTCqkc"'
+            Date:
+              description: Date string
+              schema:
+                type: string
+                example: 'Fri, 27 Jan 2023 18:10:46 GMT'
+            Connection:
+              description: Connection header
+              schema:
+                type: string
+                example: 'keep-alive'
+            Keep-Alive:
+              description: Keep Alive header timeout
+              schema:
+                type: string
+                example: 'timeout=5'
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Health'
+        '500':
+          description: Server starting
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Start'
+  /index.json:
+    get:
+      tags:
+        - tileserver
+      summary: Get all tilejsons & data metadata
+      description: >-
+        List of tilejsons along with data
+      operationId: indexJson
+      responses:
+        '200':
+          description: Successful operation
+          headers:
+            Access-Control-Allow-Origin:
+              description: CORS settings
+              schema:
+                type: string
+                example: '*'
+            Content-Length:
+              description: calls per hour allowed by the user
+              schema:
+                type: integer
+                format: int32
+                example: 13869
+            ETag:
+              schema:
+                type: string
+                example: 'W/"362d-a4++GSTywgYpXh1Gt9dVKwTCqkc"'
+            Date:
+              description: Date string
+              schema:
+                type: string
+                example: 'Fri, 27 Jan 2023 18:10:46 GMT'
+            Connection:
+              description: Connection header
+              schema:
+                type: string
+                example: 'keep-alive'
+            Keep-Alive:
+              description: Keep Alive header timeout
+              schema:
+                type: string
+                example: 'timeout=5'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndexJSON'
+        '500':
+          description: Server starting
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Start'
+  /data.json:
+    get:
+      tags:
+        - tileserver
+      summary: Get all tilejsons & data metadata
+      description: >-
+        List of tilejsons along with data
+      operationId: dataJson
+      responses:
+        '200':
+          description: Successful operation
+          headers:
+            Access-Control-Allow-Origin:
+              description: CORS settings
+              schema:
+                type: string
+                example: '*'
+            Content-Length:
+              description: calls per hour allowed by the user
+              schema:
+                type: integer
+                format: int32
+                example: 13869
+            ETag:
+              schema:
+                type: string
+                example: 'W/"362d-a4++GSTywgYpXh1Gt9dVKwTCqkc"'
+            Date:
+              description: Date string
+              schema:
+                type: string
+                example: 'Fri, 27 Jan 2023 18:10:46 GMT'
+            Connection:
+              description: Connection header
+              schema:
+                type: string
+                example: 'keep-alive'
+            Keep-Alive:
+              description: Keep Alive header timeout
+              schema:
+                type: string
+                example: 'timeout=5'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Data'
+        '500':
+          description: Server starting
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Start'
+  /styles.json:
+    get:
+      tags:
+        - tileserver
+      summary: Get all available styles
+      description: >-
+        List of style json(s) along with data
+      operationId: stylesJson
+      responses:
+        '200':
+          description: Successful operation
+          headers:
+            Access-Control-Allow-Origin:
+              description: CORS settings
+              schema:
+                type: string
+                example: '*'
+            Content-Length:
+              description: calls per hour allowed by the user
+              schema:
+                type: integer
+                format: int32
+                example: 13869
+            ETag:
+              schema:
+                type: string
+                example: 'W/"362d-a4++GSTywgYpXh1Gt9dVKwTCqkc"'
+            Date:
+              description: Date string
+              schema:
+                type: string
+                example: 'Fri, 27 Jan 2023 18:10:46 GMT'
+            Connection:
+              description: Connection header
+              schema:
+                type: string
+                example: 'keep-alive'
+            Keep-Alive:
+              description: Keep Alive header timeout
+              schema:
+                type: string
+                example: 'timeout=5'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StylesJSON'
+        '500':
+          description: Server starting
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Start'
+  /rendered.json:
+    get:
+      tags:
+        - tileserver
+      summary: Get all available raster style(s)
+      description: >-
+        List of TileJSON styles for raster rendering
+      operationId: renderedJson
+      responses:
+        '200':
+          description: Successful operation
+          headers:
+            Access-Control-Allow-Origin:
+              description: CORS settings
+              schema:
+                type: string
+                example: '*'
+            Content-Length:
+              description: calls per hour allowed by the user
+              schema:
+                type: integer
+                format: int32
+                example: 13869
+            ETag:
+              schema:
+                type: string
+                example: 'W/"362d-a4++GSTywgYpXh1Gt9dVKwTCqkc"'
+            Date:
+              description: Date string
+              schema:
+                type: string
+                example: 'Fri, 27 Jan 2023 18:10:46 GMT'
+            Connection:
+              description: Connection header
+              schema:
+                type: string
+                example: 'keep-alive'
+            Keep-Alive:
+              description: Keep Alive header timeout
+              schema:
+                type: string
+                example: 'timeout=5'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TileJSON'
+        '500':
+          description: Server starting
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Start'
+components:
+  schemas:
+    Start:
+      type: string
+      description: Starting the server up
+      example: starting tileserver-gl
+    Health:
+      type: string
+      description: String response OK
+      example: OK
+    Data:
+      description: Get list of data metadata
+      type: object
+      properties:
+        tiles:
+          type: array
+          example:
+            - 'http://localhost:8080/data/planet/{z}/{x}/{y}.pbf'
+          items:
+            type: string
+        name:
+          type: string
+          example: 'Tilemaker to OpenMapTiles schema'
+        format:
+          type: string
+          example: 'pbf'
+        basename:
+          type: string
+          example: 'zurich.mbtiles'
+        id:
+          type: string
+          example: 'zurich'
+        type:
+          type: string
+          example: 'baselayer'
+        version:
+          type: string
+          example: '3.0'
+        description:
+          type: string
+          example: 'Tile config based on OpenMapTiles schema'
+        minzoom:
+          type: integer
+          format: int32
+          example: 0
+        maxzoom:
+          type: integer
+          format: int32
+          example: 14
+        bounds:
+          type: array
+          items:
+            type: number
+          example:
+            - 90
+            - -180
+            - -90
+            - 180
+        center:
+          type: array
+          items:
+            type: number
+          example:
+            - 0
+            - 0
+            - 10
+        vector_layers:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                example: 'place'
+              fields:
+                type: object
+                properties:
+                  class:
+                    type: string
+                    example: 'String'
+                  iso_a2:
+                    type: string
+                    example: 'String'
+                  name:latin:
+                    type: string
+                    example: 'String'
+                  pop:
+                    type: string
+                    example: 'Number'
+                  rank:
+                    type: string
+                    example: 'Number'
+              minzoom:
+                type: integer
+                format: int32
+                example: 0
+              maxzoom:
+                type: integer
+                format: int32
+                example: 14
+        tilejson:
+          type: string
+          example: '2.0.0'
+    TileJSON:
+      description: Get list of all style TileJSONs
+      type: object
+      properties:
+        tilejson:
+          type: string
+          example: 2.0.0
+        name:
+          type: string
+          example: OSM Bright
+        attribution:
+          type: string
+          example: <a href='https://www.openstreetmap.org/copyright' target='_blank'>&copy; OpenStreetMap contributors</a>
+        minzoom:
+          type: integer
+          format: int32
+          example: 0
+        maxzoom:
+          type: integer
+          format: int32
+          example: 20
+        bounds:
+          type: array
+          items:
+            type: integer
+            format: int32
+          example:
+            - -180
+            - -85.0511
+            - 180
+            - 85.0511
+        format:
+          type: string
+          example: webp
+        type:
+          type: string
+          example: baselayer
+        tiles:
+          type: array
+          items:
+            type: string
+          example:
+            - 'http://localhost:8080/styles/osm-bright/{z}/{x}/{y}.webp'
+        center:
+          type: array
+          items:
+            type: integer
+            format: int32
+          example:
+            - 0
+            - 0
+            - 2
+    StylesJSON:
+      description: Styles JSON response
+      type: array
+      items:
+          type: object
+          properties:
+            version:
+              type: integer
+              format: int32
+              example: 8
+            name:
+              type: string
+              example: "Bright"
+            id:
+              type: string
+              example: "osm-bright"
+            url:
+              type: string
+              example: "http://localhost:8080/styles/osm-basic/style.json"
+    IndexJSON:
+      description: Index JSON response
+      type: array
+      items:
+        allOf:
+          - $ref: '#/components/schemas/TileJSON'
+          - $ref: '#/components/schemas/Data'

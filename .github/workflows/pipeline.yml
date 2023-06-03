@@ -32,6 +32,14 @@ jobs:
     needs:
       - extract-branch
     uses: maptiler/tileserver-gl/.github/workflows/ct.yml@master
+  publish-openapi-specs:
+    name: 'Publish OpenAPI specs'
+    needs:
+      - extract-branch
+      - ci
+      - ct
+    if: github.event_name == 'push' && needs.extract-branch.outputs.current_branch == 'master'
+    uses: maptiler/tileserver-gl/.github/workflows/publish-specs.yml@master
   automerger:
     name: 'Automerge Dependabot PRs'
     needs:
