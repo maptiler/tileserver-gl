@@ -48,7 +48,8 @@
         container: 'map',
         style: '{{public_url}}styles/{{id}}/style.json' + keyParam,
         hash: true,
-        maplibreLogo: true
+        maplibreLogo: true,
+        maxPitch: 85
       });
       map.addControl(new maplibregl.NavigationControl({
          visualizePitch: true,
