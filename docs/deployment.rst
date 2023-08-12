@@ -21,7 +21,7 @@ Endpoint data can be configured to be cached by Cloudflare. For example to cache
 
 Create a rule which matches ``hostname (equal)`` and ``URI Path (ends with)`` for ``.pbf`` and ``.json`` fields. Set cache status to eligible for cache to enable the caching and overwrite the ``Edge TTL`` with ``Browser TTL`` to be 7 days (depends on your application usage).
 
-This will ensure that Cloudflare will cache your tiles on Cloudflare side for seven days as well on the client side. If the tileserver is down or user has no internet access it will try to use cached tiles from Cloudflare or local.
+This will ensure that your tiles are cached on the client side and by Cloudflare for seven days. If the tileserver is down or user has no internet access it will try to use cached tiles.
 
 Note that ``Browser TTL`` will overwrite expiration dates on the client device. If you rebuild your maps, old tiles will be rendered until it expires or cache is cleared on the client device.
 
