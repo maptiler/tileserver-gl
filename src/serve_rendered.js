@@ -780,8 +780,9 @@ export const serve_rendered = {
             image.resize(width * scale, height * scale);
           }
 
+          var composite_array = [];
           if (opt_overlay) {
-            image.composite([{ input: opt_overlay }]);
+            composite_array.push({ input: opt_overlay });
           }
           if (item.watermark) {
             const canvas = createCanvas(scale * width, scale * height);
@@ -794,7 +795,11 @@ export const serve_rendered = {
             ctx.fillStyle = 'rgba(0,0,0,.4)';
             ctx.fillText(item.watermark, 5, height - 5);
 
-            image.composite([{ input: canvas.toBuffer() }]);
+            composite_array.push({ input: canvas.toBuffer() });
+          }
+
+          if (composite_array.length > 0) {
+            image.composite(composite_array);
           }
 
           const formatQuality = (options.formatQuality || {})[format];
@@ -1374,6 +1379,9 @@ export const serve_rendered = {
       type: 'baselayer',
     };
     const attributionOverride = params.tilejson && params.tilejson.attribution;
+    if (styleJSON.center && styleJSON.zoom) {
+      tileJSON.center = styleJSON.center.concat(Math.round(styleJSON.zoom));
+    }
     Object.assign(tileJSON, params.tilejson || {});
     tileJSON.tiles = params.domains || options.domains;
     fixTileJSONCenter(tileJSON);

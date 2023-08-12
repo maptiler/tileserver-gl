@@ -7,7 +7,7 @@ Typically, you should use nginx, lighttpd or apache on the frontend. The tileser
 Caching
 =======
 
-There is a plenty of options you can use to create proper caching infrastructure: Varnish, CloudFlare, ...
+There is a plenty of options you can use to create proper caching infrastructure: Varnish, Cloudflare, ...
 
 Cloudflare Cache Rules
 -----------

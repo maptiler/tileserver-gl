@@ -26,12 +26,12 @@ jobs:
     name: 'CI'
     needs:
       - extract-branch
-    uses: maptiler/tileserver-gl/.github/workflows/ci.yml@master
+    uses: ./.github/workflows/ci.yml
   ct:
     name: 'CT'
     needs:
       - extract-branch
-    uses: maptiler/tileserver-gl/.github/workflows/ct.yml@master
+    uses: ./.github/workflows/ct.yml
   automerger:
     name: 'Automerge Dependabot PRs'
     needs:
@@ -40,4 +40,4 @@ jobs:
       - extract-branch
     if: >
       github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]'
-    uses: maptiler/tileserver-gl/.github/workflows/automerger.yml@master
+    uses: ./.github/workflows/automerger.yml
