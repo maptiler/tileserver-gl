@@ -442,9 +442,10 @@ const drawMarkers = async (ctx, markers, z) => {
  * @param {object} ctx Canvas context object.
  * @param {List[Number]} path List of coordinates.
  * @param {object} query Request query parameters.
+ * @param {string} pathQuery Path query parameter.
  * @param {number} z Map zoom level.
  */
-const drawPath = (ctx, path, query, z) => {
+const drawPath = (ctx, path, query, pathQuery, z) => {
   const renderPath = (splitPaths) => {
     if (!path || path.length < 2) {
       return null;
@@ -541,14 +542,7 @@ const drawPath = (ctx, path, query, z) => {
     ctx.stroke();
   };
 
-  // Check if path in query is valid
-  if (Array.isArray(query.path)) {
-    for (let i = 0; i < query.path.length; i += 1) {
-      renderPath(decodeURIComponent(query.path.at(i)).split('|'));
-    }
-  } else {
-    renderPath(decodeURIComponent(query.path).split('|'));
-  }
+  renderPath(decodeURIComponent(pathQuery).split('|'));
 };
 
 const renderOverlay = async (
@@ -592,9 +586,10 @@ const renderOverlay = async (
   }
 
   // Draw provided paths if any
-  for (const path of paths) {
-    drawPath(ctx, path, query, z);
-  }
+  paths.forEach((path, i) => {
+    const pathQuery = Array.isArray(query.path) ? query.path.at(i) : query.path;
+    drawPath(ctx, path, query, pathQuery, z);
+  });
 
   // Await drawing of markers before rendering the canvas
   await drawMarkers(ctx, markers, z);
