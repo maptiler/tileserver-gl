@@ -51,7 +51,7 @@
     "chai": "4.3.8",
     "eslint": "^8.49.0",
     "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-jsdoc": "^46.5.1",
+    "eslint-plugin-jsdoc": "^46.6.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-security": "^1.7.1",
     "husky": "^8.0.3",
