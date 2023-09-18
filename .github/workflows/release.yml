@@ -80,7 +80,7 @@ jobs:
           password: ${{ github.event.inputs.docker_token }}
 
       - name: Build and publish Full Version to Docker Hub
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true
@@ -106,7 +106,7 @@ jobs:
           NPM_TOKEN: ${{ github.event.inputs.npm_token }}
 
       - name: Build and publish Light Version to Docker Hub
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: ./light
           file: ./light/Dockerfile
