@@ -54,7 +54,6 @@ const cachedEmptyResponses = {
 
 /**
  * Create an appropriate mlgl response for http errors.
- *
  * @param {string} format The format (a sharp format or 'pbf').
  * @param {string} color The background color (or empty string for transparent).
  * @param {Function} callback The mlgl callback.
@@ -102,7 +101,6 @@ function createEmptyResponse(format, color, callback) {
 /**
  * Parses coordinate pair provided to pair of floats and ensures the resulting
  * pair is a longitude/latitude combination depending on lnglat query parameter.
- *
  * @param {List} coordinatePair Coordinate pair.
  * @param coordinates
  * @param {object} query Request query parameters.
@@ -127,7 +125,6 @@ const parseCoordinatePair = (coordinates, query) => {
 
 /**
  * Parses a coordinate pair from query arguments and optionally transforms it.
- *
  * @param {List} coordinatePair Coordinate pair.
  * @param {object} query Request query parameters.
  * @param {Function} transformer Optional transform function.
@@ -145,7 +142,6 @@ const parseCoordinates = (coordinatePair, query, transformer) => {
 
 /**
  * Parses paths provided via query into a list of path objects.
- *
  * @param {object} query Request query parameters.
  * @param {Function} transformer Optional transform function.
  */
@@ -220,7 +216,6 @@ const extractPathsFromQuery = (query, transformer) => {
  * on marker object.
  * Options adhere to the following format
  * [optionName]:[optionValue]
- *
  * @param {List[String]} optionsList List of option strings.
  * @param {object} marker Marker object to configure.
  */
@@ -255,7 +250,6 @@ const parseMarkerOptions = (optionsList, marker) => {
 
 /**
  * Parses markers provided via query into a list of marker objects.
- *
  * @param {object} query Request query parameters.
  * @param {object} options Configuration options.
  * @param {Function} transformer Optional transform function.
@@ -335,7 +329,6 @@ const extractMarkersFromQuery = (query, options, transformer) => {
 
 /**
  * Transforms coordinates to pixels.
- *
  * @param {List[Number]} ll Longitude/Latitude coordinate pair.
  * @param {number} zoom Map zoom level.
  */
@@ -347,7 +340,6 @@ const precisePx = (ll, zoom) => {
 
 /**
  * Draws a marker in cavans context.
- *
  * @param {object} ctx Canvas context object.
  * @param {object} marker Marker object parsed by extractMarkersFromQuery.
  * @param {number} z Map zoom level.
@@ -419,7 +411,6 @@ const drawMarker = (ctx, marker, z) => {
  * Wraps drawing of markers into list of promises and awaits them.
  * It's required because images are expected to load asynchronous in canvas js
  * even when provided from a local disk.
- *
  * @param {object} ctx Canvas context object.
  * @param {List[Object]} markers Marker objects parsed by extractMarkersFromQuery.
  * @param {number} z Map zoom level.
@@ -438,7 +429,6 @@ const drawMarkers = async (ctx, markers, z) => {
 
 /**
  * Draws a list of coordinates onto a canvas and styles the resulting path.
- *
  * @param {object} ctx Canvas context object.
  * @param {List[Number]} path List of coordinates.
  * @param {object} query Request query parameters.
@@ -910,8 +900,8 @@ export const serve_rendered = {
             }
 
             const transformer = raw
-                ? mercator.inverse.bind(mercator)
-                : item.dataProjWGStoInternalWGS;
+              ? mercator.inverse.bind(mercator)
+              : item.dataProjWGStoInternalWGS;
 
             if (transformer) {
               const ll = transformer([x, y]);
@@ -921,39 +911,39 @@ export const serve_rendered = {
 
             const paths = extractPathsFromQuery(req.query, transformer);
             const markers = extractMarkersFromQuery(
-                req.query,
-                options,
-                transformer,
+              req.query,
+              options,
+              transformer,
             );
             const overlay = await renderOverlay(
-                z,
-                x,
-                y,
-                bearing,
-                pitch,
-                w,
-                h,
-                scale,
-                paths,
-                markers,
-                req.query,
+              z,
+              x,
+              y,
+              bearing,
+              pitch,
+              w,
+              h,
+              scale,
+              paths,
+              markers,
+              req.query,
             );
 
             return respondImage(
-                item,
-                z,
-                x,
-                y,
-                bearing,
-                pitch,
-                w,
-                h,
-                scale,
-                format,
-                res,
-                next,
-                overlay,
-                'static',
+              item,
+              z,
+              x,
+              y,
+              bearing,
+              pitch,
+              w,
+              h,
+              scale,
+              format,
+              res,
+              next,
+              overlay,
+              'static',
             );
           } catch (e) {
             next(e);
@@ -977,8 +967,8 @@ export const serve_rendered = {
           let center = [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2];
 
           const transformer = raw
-              ? mercator.inverse.bind(mercator)
-              : item.dataProjWGStoInternalWGS;
+            ? mercator.inverse.bind(mercator)
+            : item.dataProjWGStoInternalWGS;
 
           if (transformer) {
             const minCorner = transformer(bbox.slice(0, 2));
@@ -1003,38 +993,38 @@ export const serve_rendered = {
 
           const paths = extractPathsFromQuery(req.query, transformer);
           const markers = extractMarkersFromQuery(
-              req.query,
-              options,
-              transformer,
+            req.query,
+            options,
+            transformer,
           );
           const overlay = await renderOverlay(
-              z,
-              x,
-              y,
-              bearing,
-              pitch,
-              w,
-              h,
-              scale,
-              paths,
-              markers,
-              req.query,
+            z,
+            x,
+            y,
+            bearing,
+            pitch,
+            w,
+            h,
+            scale,
+            paths,
+            markers,
+            req.query,
           );
           return respondImage(
-              item,
-              z,
-              x,
-              y,
-              bearing,
-              pitch,
-              w,
-              h,
-              scale,
-              format,
-              res,
-              next,
-              overlay,
-              'static',
+            item,
+            z,
+            x,
+            y,
+            bearing,
+            pitch,
+            w,
+            h,
+            scale,
+            format,
+            res,
+            next,
+            overlay,
+            'static',
           );
         } catch (e) {
           next(e);
@@ -1092,14 +1082,14 @@ export const serve_rendered = {
             const format = req.params.format;
 
             const transformer = raw
-                ? mercator.inverse.bind(mercator)
-                : item.dataProjWGStoInternalWGS;
+              ? mercator.inverse.bind(mercator)
+              : item.dataProjWGStoInternalWGS;
 
             const paths = extractPathsFromQuery(req.query, transformer);
             const markers = extractMarkersFromQuery(
-                req.query,
-                options,
-                transformer,
+              req.query,
+              options,
+              transformer,
             );
 
             // Extract coordinates from markers
@@ -1141,34 +1131,34 @@ export const serve_rendered = {
             const y = center[1];
 
             const overlay = await renderOverlay(
-                z,
-                x,
-                y,
-                bearing,
-                pitch,
-                w,
-                h,
-                scale,
-                paths,
-                markers,
-                req.query,
+              z,
+              x,
+              y,
+              bearing,
+              pitch,
+              w,
+              h,
+              scale,
+              paths,
+              markers,
+              req.query,
             );
 
             return respondImage(
-                item,
-                z,
-                x,
-                y,
-                bearing,
-                pitch,
-                w,
-                h,
-                scale,
-                format,
-                res,
-                next,
-                overlay,
-                'static',
+              item,
+              z,
+              x,
+              y,
+              bearing,
+              pitch,
+              w,
+              h,
+              scale,
+              format,
+              res,
+              next,
+              overlay,
+              'static',
             );
           } catch (e) {
             next(e);
