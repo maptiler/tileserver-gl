@@ -164,7 +164,9 @@ const extractPathsFromQuery = (query, transformer) => {
       ) {
         // +4 because enc: are 4 characters, everything after enc: is considered to be part of the polyline
         const encIndex = providedPath.indexOf('enc:') + 4;
-        const coords = polyline.decode(providedPath.substring(encIndex)).map(([lat, lng]) => [lng, lat]);
+        const coords = polyline
+          .decode(providedPath.substring(encIndex))
+          .map(([lat, lng]) => [lng, lat]);
         paths.push(coords);
       } else {
         // Iterate through paths, parse and validate them
