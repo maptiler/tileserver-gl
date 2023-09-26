@@ -162,7 +162,7 @@ const extractPathsFromQuery = (query, transformer) => {
         providedPath.includes('enc:') &&
         PATH_PATTERN.test(decodeURIComponent(providedPath))
       ) {
-        // +4 because enc: are 4 characters, everything after enc: is considered to be part of the polyline
+        // +4 because 'enc:' is 4 characters, everything after 'enc:' is considered to be part of the polyline
         const encIndex = providedPath.indexOf('enc:') + 4;
         const coords = polyline
           .decode(providedPath.substring(encIndex))

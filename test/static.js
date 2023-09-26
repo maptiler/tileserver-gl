@@ -174,13 +174,13 @@ describe('Static endpoints', function () {
 
       describe('encoded path', function () {
         testStatic(
-            prefix,
-            'auto/20x20',
-            'png',
-            200,
-            2,
-            /image\/png/,
-            '?path='+decodeURIComponent('enc:{{biGwvyGoUi@s_A|{@'),
+          prefix,
+          'auto/20x20',
+          'png',
+          200,
+          2,
+          /image\/png/,
+          '?path=' + decodeURIComponent('enc:{{biGwvyGoUi@s_A|{@'),
         );
       });
     });
