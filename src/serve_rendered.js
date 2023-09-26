@@ -162,21 +162,9 @@ const extractPathsFromQuery = (query, transformer) => {
         providedPath.includes('enc:') &&
         PATH_PATTERN.test(decodeURIComponent(providedPath))
       ) {
-        const encodedPaths = providedPath.split(',');
-        for (const path of encodedPaths) {
-          const line = path
-            .split('|')
-            .filter(
-              (x) =>
-                !x.startsWith('fill') &&
-                !x.startsWith('stroke') &&
-                !x.startsWith('width'),
-            )
-            .join('')
-            .replace('enc:', '');
-          const coords = polyline.decode(line).map(([lat, lng]) => [lng, lat]);
-          paths.push(coords);
-        }
+        const encodedPaths = providedPath.replace('enc:', '');
+        const coords = polyline.decode(encodedPaths).map(([lat, lng]) => [lng, lat]);
+        paths.push(coords);
       } else {
         // Iterate through paths, parse and validate them
         const currentPath = [];

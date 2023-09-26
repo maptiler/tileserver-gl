@@ -171,6 +171,18 @@ describe('Static endpoints', function () {
           '?path=-10,-10|-20,-20',
         );
       });
+
+      describe('encoded path', function () {
+        testStatic(
+            prefix,
+            'auto/20x20',
+            'png',
+            200,
+            2,
+            /image\/png/,
+            '?path='+decodeURIComponent('enc:{{biGwvyGoUi@s_A|{@'),
+        );
+      });
     });
 
     describe('invalid requests return 4xx', function () {
