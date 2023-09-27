@@ -511,8 +511,8 @@ const drawPath = (ctx, path, query, pathQuery, z) => {
     if ('stroke' in query) {
       ctx.strokeStyle = query.stroke;
     }
-    // Path Width gets higher priority
-    if (pathHasWidth) {
+    // Path Stroke gets higher priority
+    if (pathHasStroke) {
       ctx.strokeStyle = splitPaths
         .find((x) => x.startsWith('stroke:'))
         .replace('stroke:', '');
