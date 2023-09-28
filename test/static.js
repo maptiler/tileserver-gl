@@ -180,7 +180,7 @@ describe('Static endpoints', function () {
           200,
           2,
           /image\/png/,
-          '?path=' + decodeURIComponent('enc:{{biGwvyGoUi@s_A|{@'),
+          '?path=' + encodeURIComponent('enc:{{biGwvyGoUi@s_A|{@'),
         );
       });
     });
