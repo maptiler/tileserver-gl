@@ -33,6 +33,7 @@ Example:
       "serveAllStyles": false,
       "serveStaticMaps": true,
       "allowRemoteMarkerIcons": true,
+      "languages": ["en", "fr", "it"],
       "tileMargin": 0
     },
     "styles": {
@@ -149,6 +150,13 @@ Not used by default.
 Allows the rendering of marker icons fetched via http(s) hyperlinks.
 For security reasons only allow this if you can control the origins from where the markers are fetched!
 Default is to disallow fetching of icons from remote sources.
+
+``languages``
+--------------
+
+Allows translating labels when rendering static maps. This is a list of allowed languages.
+Note that your vector tile source needs to contain the translated labels (e.g. ``name:en``, ``name:fr``...).
+Not used by default.
 
 ``styles``
 ==========

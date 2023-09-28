@@ -128,6 +128,18 @@ describe('Static endpoints', function () {
 
         testStatic(prefix, '-280,-80,0,80/280x160', 'png', 200);
       });
+
+      describe('ignores an unknown language gracefully', function () {
+        testStatic(
+          prefix,
+          '-180,-90,180,90/20x20',
+          'png',
+          200,
+          2,
+          undefined,
+          '?language=kr',
+        );
+      });
     });
 
     describe('invalid requests return 4xx', function () {

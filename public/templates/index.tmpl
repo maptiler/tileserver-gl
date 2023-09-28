@@ -43,6 +43,9 @@
               {{#if serving_rendered}}
                 | <a href="{{public_url}}styles/{{@key}}/wmts.xml{{&../key_query}}">WMTS</a>
               {{/if}}
+              {{#if serving_rendered}}
+                | <a href="{{public_url}}styles/{{@key}}/static/{{static_center}}/500x400@2x.png{{&../key_query}}">Static</a>
+              {{/if}}
               {{#if xyz_link}}
                 | <a href="#" onclick="return toggle_xyz('xyz_style_{{@key}}');">XYZ</a>
                   <input id="xyz_style_{{@key}}" type="text" value="{{&xyz_link}}" style="display:none;" />

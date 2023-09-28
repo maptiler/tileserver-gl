@@ -83,6 +83,7 @@ function start(opts) {
   }
 
   const options = config.options || {};
+  options.verbose = opts.verbose;
   const paths = options.paths || {};
   options.paths = paths;
   paths.root = path.resolve(
@@ -441,6 +442,10 @@ function start(opts) {
           style.thumbnail = `${center[2]}/${Math.floor(
             centerPx[0] / 256,
           )}/${Math.floor(centerPx[1] / 256)}.png`;
+
+          style.static_center = `${center[0].toFixed(5)},${center[1].toFixed(
+            5,
+          )},${center[2]}`;
         }
 
         style.xyz_link = getTileUrls(

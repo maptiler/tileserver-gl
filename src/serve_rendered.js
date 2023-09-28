@@ -19,6 +19,7 @@ import polyline from '@mapbox/polyline';
 import proj4 from 'proj4';
 import request from 'request';
 import { getFontsPbf, getTileUrls, fixTileJSONCenter } from './utils.js';
+import translateLayers from './translate_layers.js';
 
 const FLOAT_PATTERN = '[+-]?(?:\\d+|\\d+.?\\d+)';
 const PATH_PATTERN =
@@ -203,6 +204,19 @@ const extractPathsFromQuery = (query, transformer) => {
 };
 
 /**
+ * Parses language provided via query.
+ * @param {object} query Request query parameters.
+ * @param {object} options Configuration options.
+ */
+const extractLanguageFromQuery = (query, options) => {
+  const languages = options.languages || [];
+  if ('language' in query && languages.includes(query.language)) {
+    return query.language;
+  }
+  return null;
+};
+
+/**
  * Parses marker options provided via query and sets corresponding attributes
  * on marker object.
  * Options adhere to the following format
@@ -330,7 +344,7 @@ const precisePx = (ll, zoom) => {
 };
 
 /**
- * Draws a marker in cavans context.
+ * Draws a marker in canvas context.
  * @param {object} ctx Canvas context object.
  * @param {object} marker Marker object parsed by extractMarkersFromQuery.
  * @param {number} z Map zoom level.
@@ -646,6 +660,7 @@ export const serve_rendered = {
       next,
       opt_overlay,
       opt_mode = 'tile',
+      language = null,
     ) => {
       if (
         Math.abs(lon) > 180 ||
@@ -677,7 +692,7 @@ export const serve_rendered = {
       if (opt_mode === 'tile' && tileMargin === 0) {
         pool = item.map.renderers[scale];
       } else {
-        pool = item.map.renderers_static[scale];
+        pool = item.map.renderers_static[`${scale}${language}`];
       }
       pool.acquire((err, renderer) => {
         const mlglZ = Math.max(0, z - 1);
@@ -712,6 +727,7 @@ export const serve_rendered = {
 
           // Fix semi-transparent outlines on raw, premultiplied input
           // https://github.com/maptiler/tileserver-gl/issues/350#issuecomment-477857040
+          // FIXME: unnecessay now? https://github.com/lovell/sharp/issues/1599#issuecomment-837004081
           for (let i = 0; i < data.length; i += 4) {
             const alpha = data[i + 3];
             const norm = alpha / 255;
@@ -901,6 +917,7 @@ export const serve_rendered = {
             }
 
             const paths = extractPathsFromQuery(req.query, transformer);
+            const language = extractLanguageFromQuery(req.query, options);
             const markers = extractMarkersFromQuery(
               req.query,
               options,
@@ -935,6 +952,7 @@ export const serve_rendered = {
               next,
               overlay,
               'static',
+              language,
             );
           } catch (e) {
             next(e);
@@ -983,6 +1001,7 @@ export const serve_rendered = {
           const pitch = 0;
 
           const paths = extractPathsFromQuery(req.query, transformer);
+          const language = extractLanguageFromQuery(req.query, options);
           const markers = extractMarkersFromQuery(
             req.query,
             options,
@@ -1016,6 +1035,7 @@ export const serve_rendered = {
             next,
             overlay,
             'static',
+            language,
           );
         } catch (e) {
           next(e);
@@ -1077,6 +1097,7 @@ export const serve_rendered = {
               : item.dataProjWGStoInternalWGS;
 
             const paths = extractPathsFromQuery(req.query, transformer);
+            const language = extractLanguageFromQuery(req.query, options);
             const markers = extractMarkersFromQuery(
               req.query,
               options,
@@ -1150,6 +1171,7 @@ export const serve_rendered = {
               next,
               overlay,
               'static',
+              language,
             );
           } catch (e) {
             next(e);
@@ -1184,14 +1206,16 @@ export const serve_rendered = {
     };
 
     let styleJSON;
-    const createPool = (ratio, mode, min, max) => {
-      const createRenderer = (ratio, createCallback) => {
+    const createPool = (scale, mode, min, max, language) => {
+      const createRenderer = (createCallback) => {
         const renderer = new mlgl.Map({
           mode: mode,
-          ratio: ratio,
+          ratio: scale,
           request: (req, callback) => {
             const protocol = req.url.split(':')[0];
-            // console.log('Handling request:', req);
+            if (options.verbose) {
+              console.log('[VERBOSE] Handling request:', req);
+            }
             if (protocol === 'sprites') {
               const dir = options.paths[protocol];
               const file = unescape(req.url).substring(protocol.length + 3);
@@ -1282,7 +1306,9 @@ export const serve_rendered = {
                   const extension = path.extname(parts.pathname).toLowerCase();
                   const format = extensionToFormat[extension] || '';
                   if (err || res.statusCode < 200 || res.statusCode >= 300) {
-                    // console.log('HTTP error', err || res.statusCode);
+                    if (options.verbose) {
+                      console.log('HTTP error', err || res.statusCode);
+                    }
                     createEmptyResponse(format, '', callback);
                     return;
                   }
@@ -1305,13 +1331,37 @@ export const serve_rendered = {
             }
           },
         });
-        renderer.load(styleJSON);
+
+        if (options.verbose) {
+          console.log('[VERBOSE] createRenderer', scale, mode, language);
+        }
+
+        let rendererStyle = styleJSON;
+        if (language) {
+          const layers = [...styleJSON.layers];
+          rendererStyle = { ...rendererStyle, layers };
+
+          const translator = {
+            getLayoutProperty: (id, key) =>
+              layers.find((layer) => layer.id === id).layout[key],
+            setLayoutProperty: (id, key, value) => {
+              const i = layers.findIndex((layer) => layer.id === id);
+              const layer = { ...layers[i] };
+              layers[i] = layer;
+              layer.layout = { ...layer.layout, [key]: value };
+            },
+            translateLayers,
+          };
+          translator.translateLayers(layers, language);
+        }
+
+        renderer.load(rendererStyle);
         createCallback(null, renderer);
       };
       return new advancedPool.Pool({
         min: min,
         max: max,
-        create: createRenderer.bind(null, ratio),
+        create: createRenderer.bind(null),
         destroy: (renderer) => {
           renderer.release();
         },
@@ -1471,13 +1521,18 @@ export const serve_rendered = {
         const j = Math.min(maxPoolSizes.length - 1, s - 1);
         const minPoolSize = minPoolSizes[i];
         const maxPoolSize = Math.max(minPoolSize, maxPoolSizes[j]);
-        map.renderers[s] = createPool(s, 'tile', minPoolSize, maxPoolSize);
-        map.renderers_static[s] = createPool(
-          s,
-          'static',
-          minPoolSize,
-          maxPoolSize,
-        );
+        const languages = new Set([null, ...(options.languages || [])]);
+
+        map.renderers[s] = createPool(s, 'tile', minPoolSize, maxPoolSize, null);
+        for (const language of languages) {
+          map.renderers_static[`${s}${language}`] = createPool(
+            s,
+            'static',
+            language ? 1 : minPoolSize,
+            language ? 1 : maxPoolSize,
+            language,
+          );
+        }
       }
     });
 

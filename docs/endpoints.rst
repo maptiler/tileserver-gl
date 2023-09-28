@@ -27,13 +27,13 @@ WMTS Capabilities
 
 Static images
 =============
-* Several endpoints:
+* There are three endpoints depending on how you want to define the map location:
 
-  * ``/styles/{id}/static/{lon},{lat},{zoom}[@{bearing}[,{pitch}]]/{width}x{height}[@2x].{format}`` (center-based)
-  * ``/styles/{id}/static/{minx},{miny},{maxx},{maxy}/{width}x{height}[@2x].{format}`` (area-based)
-  * ``/styles/{id}/static/auto/{width}x{height}[@2x].{format}`` (autofit path -- see below)
+  * Center and zoom level: ``/styles/{id}/static/{lon},{lat},{zoom}[@{bearing}[,{pitch}]]/{width}x{height}[@2x].{format}``
+  * Bounds, e.g. latitude/longitude of corners: ``/styles/{id}/static/{minx},{miny},{maxx},{maxy}/{width}x{height}[@2x].{format}``
+  * Autofit to a path: ``/styles/{id}/static/auto/{width}x{height}[@2x].{format}``
 
-* All the static image endpoints additionally support following query parameters:
+* All these endpoints accept these query parameters:
 
   * ``path`` - ``((fill|stroke|width)\:[^\|]+\|)*((enc:.+)|((-?\d+\.?\d*,-?\d+\.?\d*\|)+(-?\d+\.?\d*,-?\d+\.?\d*)))``
 
@@ -50,7 +50,7 @@ Static images
 
       * e.g. ``path=stroke:yellow|width:2|fill:green|5.9,45.8|5.9,47.8|10.5,47.8|10.5,45.8|5.9,45.8`` or ``path=stroke:blue|width:1|fill:yellow|enc:_p~iF~ps|U_ulLnnqC_mqNvxq`@``
 
-    * can be provided multiple times  
+    * can be provided multiple times
 
   * ``latlng`` - indicates coordinates are in ``lat,lng`` order rather than the usual ``lng,lat``
   * ``fill`` - color to use as the fill (e.g. ``red``, ``rgba(255,255,255,0.5)``, ``#0000ff``)
@@ -84,6 +84,7 @@ Static images
     * value of ``0.1`` means "add 10% size to each side to make sure the area of interest is nicely visible"
 
   * ``maxzoom`` - Maximum zoom level (only for auto endpoint where zoom level is calculated and not provided)
+  * ``language`` - Language code to translate all labels from the selected style. If no language is set or if the language is not found in ``options.languages``, no translation happens.
 
 * You can also use (experimental) ``/styles/{id}/static/raw/...`` endpoints with raw spherical mercator coordinates (EPSG:3857) instead of WGS84.
 
