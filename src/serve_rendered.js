@@ -1523,7 +1523,13 @@ export const serve_rendered = {
         const maxPoolSize = Math.max(minPoolSize, maxPoolSizes[j]);
         const languages = new Set([null, ...(options.languages || [])]);
 
-        map.renderers[s] = createPool(s, 'tile', minPoolSize, maxPoolSize, null);
+        map.renderers[s] = createPool(
+          s,
+          'tile',
+          minPoolSize,
+          maxPoolSize,
+          null,
+        );
         for (const language of languages) {
           map.renderers_static[`${s}${language}`] = createPool(
             s,

@@ -34,6 +34,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
+/**
+ * Transform style layers to force labels in a specific language.
+ * @param {Array} layers Layers that must be transformed.
+ * @param {string} language Target language code.
+ */
 // prettier-ignore
 export default function translateLayers(layers, language) {
   /* eslint-disable */
