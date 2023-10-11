@@ -22,8 +22,8 @@ import { getFontsPbf, getTileUrls, fixTileJSONCenter } from './utils.js';
 
 const FLOAT_PATTERN = '[+-]?(?:\\d+|\\d+.?\\d+)';
 const PATH_PATTERN =
-  /^((fill|stroke|width)\:[^\|]+\|)*((enc:.+)|((-?\d+\.?\d*,-?\d+\.?\d*\|)+(-?\d+\.?\d*,-?\d+\.?\d*)))/;
-const httpTester = /^(http(s)?:)?\/\//;
+  /^((fill|stroke|width)\:[^\|]+\|)*(enc:.+|(-?\d+(\.\d*)?,-?\d+(\.\d*)?\|)+(-?\d+(\.\d*)?,-?\d+(\.\d*)?)*)/;
+const httpTester = /^\/\//;
 
 const mercator = new SphericalMercator();
 const getScale = (scale) => (scale || '@1x').slice(1, 2) | 0;
