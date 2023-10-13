@@ -235,7 +235,7 @@ function start(opts) {
               for (const id of Object.keys(data)) {
                 if (id === dataId) {
                   fileType = Object.keys(data[id])[0];
-                  if (isValidHttpUrl(inputFile)) {
+                  if (isValidHttpUrl(data[id][fileType])) {
                     inputFile = data[id][fileType];
                   } else {
                     inputFile = path.resolve(
