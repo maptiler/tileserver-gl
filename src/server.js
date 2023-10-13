@@ -557,7 +557,7 @@ function start(opts) {
       name: (serving.styles[id] || serving.rendered[id]).name,
       serving_data: serving.styles[id],
       serving_rendered: serving.rendered[id],
-      ...style
+      ...style,
     };
   });
 
@@ -608,7 +608,7 @@ function start(opts) {
     return {
       id,
       is_vector: data.tileJSON.format === 'pbf',
-      ...data
+      ...data,
     };
   });
 
