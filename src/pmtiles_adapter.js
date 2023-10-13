@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import PMTiles from 'pmtiles';
 import { isValidHttpUrl } from './utils.js';
 
-const PMTilesFileSource = class {
+class PMTilesFileSource {
   constructor(fd) {
     this.fd = fd;
   }
@@ -12,11 +12,12 @@ const PMTilesFileSource = class {
   async getBytes(offset, length) {
     const buffer = Buffer.alloc(length);
     await ReadFileBytes(this.fd, buffer, offset);
-    return { data: BufferToArrayBuffer(buffer) };
+    const ab = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
+    return { data: ab };
   }
 };
 
-const ReadFileBytes = async (fd, buffer, offset) => {
+async function ReadFileBytes(fd, buffer, offset) {
   return new Promise((resolve, reject) => {
     fs.read(fd, buffer, 0, buffer.length, offset, (err) => {
       if (err) {
@@ -27,7 +28,7 @@ const ReadFileBytes = async (fd, buffer, offset) => {
   });
 };
 
-export const PMtilesOpen = (FilePath) => {
+export function PMtilesOpen(FilePath) {
   let pmtiles = undefined;
   let fd = undefined;
 
@@ -42,11 +43,11 @@ export const PMtilesOpen = (FilePath) => {
   return { pmtiles: pmtiles, fd: fd };
 };
 
-export const PMtilesClose = (fd) => {
+export function PMtilesClose(fd) {
   fs.closeSync(fd);
 };
 
-export const GetPMtilesInfo = async (pmtiles) => {
+export async function GetPMtilesInfo(pmtiles) {
   const header = await pmtiles.getHeader();
   const metadata = await pmtiles.getMetadata();
 
@@ -83,19 +84,19 @@ export const GetPMtilesInfo = async (pmtiles) => {
   return metadata;
 };
 
-export const GetPMtilesTile = async (pmtiles, z, x, y) => {
+export async function GetPMtilesTile(pmtiles, z, x, y) {
   const header = await pmtiles.getHeader();
   const TileType = GetPmtilesTileType(header.tileType);
   let zxyTile = await pmtiles.getZxy(z, x, y);
   if (zxyTile && zxyTile.data) {
-    zxyTile = ArrayBufferToBuffer(zxyTile.data);
+    zxyTile = Buffer.from(zxyTile.data);
   } else {
     zxyTile = undefined;
   }
   return { data: zxyTile, header: TileType.header };
 };
 
-const GetPmtilesTileType = (typenum) => {
+function GetPmtilesTileType(typenum) {
   let head = {};
   let tileType;
   switch (typenum) {
@@ -124,22 +125,4 @@ const GetPmtilesTileType = (typenum) => {
       break;
   }
   return { type: tileType, header: head };
-};
-
-const BufferToArrayBuffer = (buffer) => {
-  const arrayBuffer = new ArrayBuffer(buffer.length);
-  const view = new Uint8Array(arrayBuffer);
-  for (let i = 0; i < buffer.length; ++i) {
-    view[i] = buffer[i];
-  }
-  return arrayBuffer;
-};
-
-const ArrayBufferToBuffer = (array_buffer) => {
-  var buffer = Buffer.alloc(array_buffer.byteLength);
-  var view = new Uint8Array(array_buffer);
-  for (var i = 0; i < buffer.length; ++i) {
-    buffer[i] = view[i];
-  }
-  return buffer;
 };
