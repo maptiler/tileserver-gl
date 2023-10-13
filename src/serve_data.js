@@ -225,10 +225,9 @@ export const serve_data = {
     let source;
     let source_type;
     if (inputType === 'pmtiles') {
-      let FileOpenInfo = PMtilesOpen(inputFile);
-      const metadata = await GetPMtilesInfo(FileOpenInfo.pmtiles);
-      source = FileOpenInfo.pmtiles;
+      source = PMtilesOpen(inputFile);
       source_type = 'pmtiles';
+      const metadata = await GetPMtilesInfo(source);
 
       tileJSON['name'] = id;
       tileJSON['format'] = 'pbf';

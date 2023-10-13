@@ -9,11 +9,7 @@ import request from 'request';
 import { server } from './server.js';
 import MBTiles from '@mapbox/mbtiles';
 import { isValidHttpUrl } from './utils.js';
-import {
-  PMtilesOpen,
-  PMtilesClose,
-  GetPMtilesInfo,
-} from './pmtiles_adapter.js';
+import { PMtilesOpen, GetPMtilesInfo } from './pmtiles_adapter.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -128,11 +124,7 @@ const StartWithInputFile = async (inputFile) => {
   const extension = inputFile.split('.').pop().toLowerCase();
   if (extension === 'pmtiles') {
     let FileOpenInfo = PMtilesOpen(inputFile);
-    const metadata = await GetPMtilesInfo(FileOpenInfo.pmtiles);
-    if (FileOpenInfo.fd !== undefined) {
-      PMtilesClose(FileOpenInfo.fd);
-    }
-    FileOpenInfo = null;
+    const metadata = await GetPMtilesInfo(FileOpenInfo);
 
     if (
       metadata.format === 'pbf' &&

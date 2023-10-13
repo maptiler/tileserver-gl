@@ -1507,10 +1507,9 @@ export const serve_rendered = {
         }
 
         if (source_type === 'pmtiles') {
-          let FileOpenInfo = PMtilesOpen(inputFile);
-          const metadata = await GetPMtilesInfo(FileOpenInfo.pmtiles);
-          map.sources[name] = FileOpenInfo.pmtiles;
+          map.sources[name] = PMtilesOpen(inputFile);
           map.source_types[name] = 'pmtiles';
+          const metadata = await GetPMtilesInfo(map.sources[name]);
 
           if (!repoobj.dataProjWGStoInternalWGS && metadata.proj4) {
             // how to do this for multiple sources with different proj4 defs?

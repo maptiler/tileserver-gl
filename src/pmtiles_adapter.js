@@ -43,25 +43,16 @@ async function ReadFileBytes(fd, buffer, offset) {
  */
 export function PMtilesOpen(FilePath) {
   let pmtiles = undefined;
-  let fd = undefined;
 
   if (isValidHttpUrl(FilePath)) {
     const source = new PMTiles.FetchSource(FilePath);
     pmtiles = new PMTiles.PMTiles(source);
   } else {
-    fd = fs.openSync(FilePath, 'r');
+    const fd = fs.openSync(FilePath, 'r');
     const source = new PMTilesFileSource(fd);
     pmtiles = new PMTiles.PMTiles(source);
   }
-  return { pmtiles: pmtiles, fd: fd };
-}
-
-/**
- *
- * @param fd
- */
-export function PMtilesClose(fd) {
-  fs.closeSync(fd);
+  return pmtiles;
 }
 
 /**
