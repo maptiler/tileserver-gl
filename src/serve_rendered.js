@@ -1469,27 +1469,22 @@ export const serve_rendered = {
       let source = styleJSON.sources[name];
       const url = source.url;
 
-      if (
-        url &&
-        (url.lastIndexOf('pmtiles:', 0) === 0 ||
-          url.lastIndexOf('mbtiles:', 0) === 0)
-      ) {
-        // found mbtiles source, replace with info from local file
+      if (url && (url.startsWith('pmtiles:') || url.startsWith('mbtiles:'))) {
+        // found pmtiles or mbtiles source, replace with info from local file
         delete source.url;
 
-        let inputFile = url.replace('pmtiles://', '').replace('mbtiles://', '');
-        const fromData =
-          inputFile[0] === '{' && inputFile[inputFile.length - 1] === '}';
+        let inputFile;
+        let dataId = url.replace('pmtiles://', '').replace('mbtiles://', '');
+        const fromData = dataId.startsWith('{') && dataId.endsWith('}');
 
         if (fromData) {
-          inputFile = inputFile.substr(1, inputFile.length - 2);
-          const mapsTo = (params.mapping || {})[inputFile];
+          dataId = dataId.slice(1, -1);
+          const mapsTo = (params.mapping || {})[dataId];
           if (mapsTo) {
-            inputFile = mapsTo;
+            dataId = mapsTo;
           }
 
-          let protocol = url.split(':')[0];
-          const DataInfo = dataResolver(inputFile, protocol);
+          const DataInfo = dataResolver(dataId);
           if (DataInfo.inputfile) {
             inputFile = DataInfo.inputfile;
             source_type = DataInfo.filetype;
@@ -1502,7 +1497,7 @@ export const serve_rendered = {
         if (!isValidHttpUrl(inputFile)) {
           const inputFileStats = fs.statSync(inputFile);
           if (!inputFileStats.isFile() || inputFileStats.size === 0) {
-            throw Error(`Not valid PMTiles file: ${inputFile}`);
+            throw Error(`Not valid PMTiles file: "${inputFile}"`);
           }
         }
 
@@ -1547,7 +1542,7 @@ export const serve_rendered = {
               inputFile = path.resolve(options.paths.mbtiles, inputFile);
               const inputFileStats = fs.statSync(inputFile);
               if (!inputFileStats.isFile() || inputFileStats.size === 0) {
-                throw Error(`Not valid MBTiles file: ${inputFile}`);
+                throw Error(`Not valid MBTiles file: "${inputFile}"`);
               }
               map.sources[name] = new MBTiles(inputFile + '?mode=ro', (err) => {
                 map.sources[name].getInfo((err, info) => {

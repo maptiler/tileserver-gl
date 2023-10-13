@@ -204,7 +204,7 @@ export const serve_data = {
       inputType = 'mbtiles';
       if (isValidHttpUrl(params.pmtiles)) {
         throw Error(
-          `ERROR: MBTiles does not support web based files: ${inputFile}`,
+          `ERROR: MBTiles does not support web based files: "${inputFile}"`,
         );
       } else {
         inputFile = path.resolve(options.paths.mbtiles, params.mbtiles);
@@ -218,7 +218,7 @@ export const serve_data = {
     if (!isValidHttpUrl(inputFile)) {
       const inputFileStats = fs.statSync(inputFile);
       if (!inputFileStats.isFile() || inputFileStats.size === 0) {
-        throw Error(`Not valid input file: ${inputFile}`);
+        throw Error(`Not valid input file: "${inputFile}"`);
       }
     }
 

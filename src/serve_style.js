@@ -111,26 +111,21 @@ export const serve_style = {
     for (const name of Object.keys(styleJSON.sources)) {
       const source = styleJSON.sources[name];
       const url = source.url;
-      if (
-        url &&
-        (url.lastIndexOf('pmtiles:', 0) === 0 ||
-          url.lastIndexOf('mbtiles:', 0) === 0)
-      ) {
-        let inputSource = url
-          .replace('pmtiles://', '')
-          .replace('mbtiles://', '');
+      const protocol = url.split(':')[0];
 
-        const fromData =
-          inputSource[0] === '{' && inputSource[inputSource.length - 1] === '}';
+      if (url && (url.startsWith('pmtiles:') || url.startsWith('mbtiles:'))) {
+        let dataId = url.replace('pmtiles://', '').replace('mbtiles://', '');
 
+        const fromData = dataId.startsWith('{') && dataId.endsWith('}');
         if (fromData) {
-          inputSource = inputSource.substr(1, inputSource.length - 2);
-          const mapsTo = (params.mapping || {})[inputSource];
+          dataId = dataId.slice(1, -1);
+          const mapsTo = (params.mapping || {})[dataId];
           if (mapsTo) {
-            inputSource = mapsTo;
+            dataId = mapsTo;
           }
         }
-        const identifier = reportTiles(inputSource, fromData);
+
+        const identifier = reportTiles(dataId, fromData, protocol);
         if (!identifier) {
           return false;
         }

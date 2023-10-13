@@ -183,42 +183,32 @@ function start(opts) {
         item,
         id,
         opts.publicUrl,
-        (fileid, fromData) => {
+        (dataId, fromData, protocol) => {
           let dataItemId;
           for (const id of Object.keys(data)) {
             if (fromData) {
-              if (id === fileid) {
+              if (id === dataId) {
                 dataItemId = id;
               }
             } else {
-              if (
-                data[id].mbtiles !== undefined &&
-                data[id].mbtiles === fileid
-              ) {
-                dataItemId = id;
-              } else if (
-                data[id].pmtiles !== undefined &&
-                data[id].pmtiles === fileid
-              ) {
+              const fileType = Object.keys(data[id])[0];
+              if (data[id][fileType] === dataId) {
                 dataItemId = id;
               }
             }
           }
           if (dataItemId) {
-            // mbtiles exist in the data config
+            // input files exists in the data config
             return dataItemId;
           } else {
             if (fromData || !allowMoreData) {
               console.log(
-                `ERROR: style "${item.style}" using unknown file "${fileid}"! Skipping...`,
+                `ERROR: style "${item.style}" using unknown file "${dataId}"! Skipping...`,
               );
               return undefined;
             } else {
-              let id = fileid.substr(0, fileid.lastIndexOf('.')) || fileid;
-              while (data[id]) id += '_';
-              data[id] = {
-                filename: fileid,
-              };
+              let id = dataId.substr(0, dataId.lastIndexOf('.')) || dataId;
+              data[id][protocol] = dataId;
               return id;
             }
           }
@@ -239,34 +229,19 @@ function start(opts) {
             item,
             id,
             opts.publicUrl,
-            (fileid, protocol) => {
-              //console.log(protocol);
-              let inputFile;
+            (dataId) => {
               let fileType;
+              let inputFile;
               for (const id of Object.keys(data)) {
-                if (id === fileid) {
-                  if (data[id].pmtiles !== undefined) {
-                    if (isValidHttpUrl(data[id].pmtiles)) {
-                      inputFile = data[id].pmtiles;
-                    } else {
-                      inputFile = path.resolve(
-                        options.paths.pmtiles,
-                        data[id].pmtiles,
-                      );
-                    }
-                    fileType = 'pmtiles';
-                  } else if (data[id].mbtiles !== undefined) {
+                fileType = Object.keys(data[id])[0];
+                if (id === dataId) {
+                  if (isValidHttpUrl(inputFile)) {
+                    inputFile = data[id][fileType];
+                  } else {
                     inputFile = path.resolve(
-                      options.paths.mbtiles,
-                      data[id].mbtiles,
+                      options.paths[fileType],
+                      data[id][fileType],
                     );
-                    fileType = 'mbtiles';
-                  } else if (data[id].filename !== undefined) {
-                    inputFile = path.resolve(
-                      options.paths[protocol],
-                      data[id].filename,
-                    );
-                    fileType = protocol;
                   }
                 }
               }
