@@ -457,63 +457,71 @@ function start(opts) {
   serveTemplate('/$', 'index', (req) => {
     let styles = {};
     for (const id of Object.keys(serving.styles || {})) {
-      styles[id] = Object.assign({}, serving.styles[id]);
-      styles[id].serving_data = serving.styles[id];
-      styles[id].serving_rendered = serving.rendered[id];
-      if (styles[id].serving_rendered) {
-        const center = styles[id].serving_rendered.tileJSON.center;
+      let style = {
+        ...serving.styles[id],
+        serving_data: serving.styles[id],
+        serving_rendered: serving.rendered[id],
+      };
+
+      if (style.serving_rendered) {
+        const { center } = style.serving_rendered.tileJSON;
         if (center) {
-          styles[id].viewer_hash = `#${center[2]}/${center[1].toFixed(
+          style.viewer_hash = `#${center[2]}/${center[1].toFixed(
             5,
           )}/${center[0].toFixed(5)}`;
 
           const centerPx = mercator.px([center[0], center[1]], center[2]);
-          styles[id].thumbnail = `${center[2]}/${Math.floor(
+          style.thumbnail = `${center[2]}/${Math.floor(
             centerPx[0] / 256,
           )}/${Math.floor(centerPx[1] / 256)}.png`;
         }
 
-        styles[id].xyz_link = getTileUrls(
+        style.xyz_link = getTileUrls(
           req,
-          styles[id].serving_rendered.tileJSON.tiles,
+          style.serving_rendered.tileJSON.tiles,
           `styles/${id}`,
-          styles[id].serving_rendered.tileJSON.format,
+          style.serving_rendered.tileJSON.format,
           opts.publicUrl,
         )[0];
       }
+
+      styles[id] = style;
     }
 
-    let data = {};
+    let datas = {};
     for (const id of Object.keys(serving.data || {})) {
-      data[id] = Object.assign({}, serving.data[id]);
-      let tilejson = Object.assign({}, serving.data[id].tileJSON);
-      const center = tilejson.center;
+      let data = Object.assign({}, serving.data[id]);
+
+      const { tileJSON } = serving.data[id];
+      const { center } = tileJSON;
+
       if (center) {
-        data[id].viewer_hash = `#${center[2]}/${center[1].toFixed(
+        data.viewer_hash = `#${center[2]}/${center[1].toFixed(
           5,
         )}/${center[0].toFixed(5)}`;
       }
-      data[id].is_vector = tilejson.format === 'pbf';
-      if (!data[id].is_vector) {
+
+      data.is_vector = tileJSON.format === 'pbf';
+      if (!data.is_vector) {
         if (center) {
           const centerPx = mercator.px([center[0], center[1]], center[2]);
-          data[id].thumbnail = `${center[2]}/${Math.floor(
+          data.thumbnail = `${center[2]}/${Math.floor(
             centerPx[0] / 256,
-          )}/${Math.floor(centerPx[1] / 256)}.${tilejson.format}`;
+          )}/${Math.floor(centerPx[1] / 256)}.${tileJSON.format}`;
         }
 
-        data[id].xyz_link = getTileUrls(
+        data.xyz_link = getTileUrls(
           req,
-          tilejson.tiles,
+          tileJSON.tiles,
           `data/${id}`,
-          tilejson.format,
+          tileJSON.format,
           opts.publicUrl,
           {
             pbf: options.pbfAlias,
           },
         )[0];
       }
-      if (data[id].filesize) {
+      if (data.filesize) {
         let suffix = 'kB';
         let size = parseInt(data_.filesize, 10) / 1024;
         if (size > 1024) {
@@ -524,27 +532,33 @@ function start(opts) {
           suffix = 'GB';
           size /= 1024;
         }
-        data[id].formatted_filesize = `${size.toFixed(2)} ${suffix}`;
+        data.formatted_filesize = `${size.toFixed(2)} ${suffix}`;
       }
+
+      datas[id] = data;
     }
 
     return {
       styles: Object.keys(styles).length ? styles : null,
-      data: Object.keys(data).length ? data : null,
+      data: Object.keys(datas).length ? datas : null,
     };
   });
 
   serveTemplate('/styles/:id/$', 'viewer', (req) => {
-    const id = req.params.id;
-    const style = clone(((serving.styles || {})[id] || {}).styleJSON);
+    const { id } = req.params;
+    const style = serving.styles?.[id]?.styleJSON;
+
     if (!style) {
       return null;
     }
-    style.id = id;
-    style.name = (serving.styles[id] || serving.rendered[id]).name;
-    style.serving_data = serving.styles[id];
-    style.serving_rendered = serving.rendered[id];
-    return style;
+
+    return {
+      id,
+      name: (serving.styles[id] || serving.rendered[id]).name,
+      serving_data: serving.styles[id],
+      serving_rendered: serving.rendered[id],
+      ...style
+    };
   });
 
   /*
@@ -553,37 +567,49 @@ function start(opts) {
   });
   */
   serveTemplate('/styles/:id/wmts.xml', 'wmts', (req) => {
-    const id = req.params.id;
-    const wmts = clone((serving.styles || {})[id]);
+    const { id } = req.params;
+    const wmts = serving.styles?.[id];
+
     if (!wmts) {
       return null;
     }
+
     if (wmts.hasOwnProperty('serve_rendered') && !wmts.serve_rendered) {
       return null;
     }
-    wmts.id = id;
-    wmts.name = (serving.styles[id] || serving.rendered[id]).name;
+
+    let baseUrl;
     if (opts.publicUrl) {
-      wmts.baseUrl = opts.publicUrl;
+      baseUrl = opts.publicUrl;
     } else {
-      wmts.baseUrl = `${
+      baseUrl = `${
         req.get('X-Forwarded-Protocol')
           ? req.get('X-Forwarded-Protocol')
           : req.protocol
       }://${req.get('host')}/`;
     }
-    return wmts;
+
+    return {
+      id,
+      name: (serving.styles[id] || serving.rendered[id]).name,
+      baseUrl,
+      ...wmts,
+    };
   });
 
   serveTemplate('/data/:id/$', 'data', (req) => {
-    const id = req.params.id;
-    const data = clone(serving.data[id]);
+    const { id } = req.params;
+    const data = serving.data[id];
+
     if (!data) {
       return null;
     }
-    data.id = id;
-    data.is_vector = data.tileJSON.format === 'pbf';
-    return data;
+
+    return {
+      id,
+      is_vector: data.tileJSON.format === 'pbf',
+      ...data
+    };
   });
 
   let startupComplete = false;
@@ -591,6 +617,7 @@ function start(opts) {
     console.log('Startup complete');
     startupComplete = true;
   });
+
   app.get('/health', (req, res, next) => {
     if (startupComplete) {
       return res.status(200).send('OK');
