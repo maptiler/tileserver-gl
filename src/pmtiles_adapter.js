@@ -12,11 +12,20 @@ class PMTilesFileSource {
   async getBytes(offset, length) {
     const buffer = Buffer.alloc(length);
     await ReadFileBytes(this.fd, buffer, offset);
-    const ab = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
+    const ab = buffer.buffer.slice(
+      buffer.byteOffset,
+      buffer.byteOffset + buffer.byteLength,
+    );
     return { data: ab };
   }
-};
+}
 
+/**
+ *
+ * @param fd
+ * @param buffer
+ * @param offset
+ */
 async function ReadFileBytes(fd, buffer, offset) {
   return new Promise((resolve, reject) => {
     fs.read(fd, buffer, 0, buffer.length, offset, (err) => {
@@ -26,8 +35,12 @@ async function ReadFileBytes(fd, buffer, offset) {
       resolve();
     });
   });
-};
+}
 
+/**
+ *
+ * @param FilePath
+ */
 export function PMtilesOpen(FilePath) {
   let pmtiles = undefined;
   let fd = undefined;
@@ -41,12 +54,20 @@ export function PMtilesOpen(FilePath) {
     pmtiles = new PMTiles.PMTiles(source);
   }
   return { pmtiles: pmtiles, fd: fd };
-};
+}
 
+/**
+ *
+ * @param fd
+ */
 export function PMtilesClose(fd) {
   fs.closeSync(fd);
-};
+}
 
+/**
+ *
+ * @param pmtiles
+ */
 export async function GetPMtilesInfo(pmtiles) {
   const header = await pmtiles.getHeader();
   const metadata = await pmtiles.getMetadata();
@@ -82,8 +103,15 @@ export async function GetPMtilesInfo(pmtiles) {
   }
 
   return metadata;
-};
+}
 
+/**
+ *
+ * @param pmtiles
+ * @param z
+ * @param x
+ * @param y
+ */
 export async function GetPMtilesTile(pmtiles, z, x, y) {
   const header = await pmtiles.getHeader();
   const TileType = GetPmtilesTileType(header.tileType);
@@ -94,8 +122,12 @@ export async function GetPMtilesTile(pmtiles, z, x, y) {
     zxyTile = undefined;
   }
   return { data: zxyTile, header: TileType.header };
-};
+}
 
+/**
+ *
+ * @param typenum
+ */
 function GetPmtilesTileType(typenum) {
   let head = {};
   let tileType;
@@ -125,4 +157,4 @@ function GetPmtilesTileType(typenum) {
       break;
   }
   return { type: tileType, header: head };
-};
+}
