@@ -19,7 +19,7 @@ import morgan from 'morgan';
 import { serve_data } from './serve_data.js';
 import { serve_style } from './serve_style.js';
 import { serve_font } from './serve_font.js';
-import { getTileUrls, getPublicUrl } from './utils.js';
+import { getTileUrls, getPublicUrl, isValidHttpUrl } from './utils.js';
 
 import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
@@ -245,10 +245,14 @@ function start(opts) {
               for (const id of Object.keys(data)) {
                 if (id === fileid) {
                   if (data[id].pmtiles !== undefined) {
-                    inputFile = path.resolve(
-                      options.paths.pmtiles,
-                      data[id].pmtiles,
-                    );
+                    if (isValidHttpUrl(data[id].pmtiles)) {
+                      inputFile = data[id].pmtiles;
+                    } else {
+                      inputFile = path.resolve(
+                        options.paths.pmtiles,
+                        data[id].pmtiles,
+                      );
+                    }
                     fileType = 'pmtiles';
                   } else if (data[id].mbtiles !== undefined) {
                     inputFile = path.resolve(
