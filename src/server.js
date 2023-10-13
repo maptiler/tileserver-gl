@@ -545,8 +545,8 @@ function start(opts) {
   });
 
   serveTemplate('/styles/:id/$', 'viewer', (req) => {
-    const { id } = req.params;
-    const style = serving.styles?.[id]?.styleJSON;
+    const id = req.params.id;
+    const style = clone(((serving.styles || {})[id] || {}).styleJSON);
 
     if (!style) {
       return null;
@@ -567,8 +567,8 @@ function start(opts) {
   });
   */
   serveTemplate('/styles/:id/wmts.xml', 'wmts', (req) => {
-    const { id } = req.params;
-    const wmts = serving.styles?.[id];
+    const id = req.params.id;
+    const wmts = clone((serving.styles || {})[id]);
 
     if (!wmts) {
       return null;
