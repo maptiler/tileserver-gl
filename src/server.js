@@ -273,12 +273,11 @@ function start(opts) {
 
   for (const id of Object.keys(data)) {
     const item = data[id];
-    if (item.pmtiles && item.pmtiles.length !== 0) {
-      // valid pmtiles
-    } else if (item.mbtiles && item.mbtiles.length !== 0) {
-      // valid mbtiles
-    } else {
-      console.log(`Missing "pmtiles" or "mbtiles" property for ${id}`);
+    const fileType = Object.keys(data[id])[0];
+    if (!fileType || !(fileType === 'pmtiles' || fileType === 'mbtiles')) {
+      console.log(
+        `Missing "pmtiles" or "mbtiles" property for ${id} data source`,
+      );
       continue;
     }
 
