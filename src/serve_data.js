@@ -202,9 +202,9 @@ export const serve_data = {
       }
     } else if (params.mbtiles) {
       inputType = 'mbtiles';
-      if (isValidHttpUrl(params.pmtiles)) {
+      if (isValidHttpUrl(params.mbtiles)) {
         throw Error(
-          `ERROR: MBTiles does not support web based files: "${inputFile}"`,
+          `ERROR: MBTiles does not support web based files: "${inputFile.toString}"`,
         );
       } else {
         inputFile = path.resolve(options.paths.mbtiles, params.mbtiles);
