@@ -111,9 +111,9 @@ export const serve_style = {
     for (const name of Object.keys(styleJSON.sources)) {
       const source = styleJSON.sources[name];
       const url = source.url;
-      const protocol = url.split(':')[0];
 
       if (url && (url.startsWith('pmtiles:') || url.startsWith('mbtiles:'))) {
+        const protocol = url.split(':')[0];
         let dataId = url.replace('pmtiles://', '').replace('mbtiles://', '');
 
         const fromData = dataId.startsWith('{') && dataId.endsWith('}');
