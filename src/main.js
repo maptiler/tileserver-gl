@@ -66,7 +66,7 @@ const opts = program.opts();
 
 console.log(`Starting ${packageJson.name} v${packageJson.version}`);
 
-const startServer = (configPath, config) => {
+const StartServer = (configPath, config) => {
   let publicUrl = opts.public_url;
   if (publicUrl && publicUrl.lastIndexOf('/') !== publicUrl.length - 1) {
     publicUrl += '/';
@@ -85,7 +85,7 @@ const startServer = (configPath, config) => {
   });
 };
 
-const startWithinputFile = async (inputFile) => {
+const StartWithInputFile = async (inputFile) => {
   console.log(`[INFO] Automatically creating config file for ${inputFile}`);
   console.log(`[INFO] Only a basic preview style will be used.`);
   console.log(
@@ -182,7 +182,7 @@ const startWithinputFile = async (inputFile) => {
       console.log('Run with --verbose to see the config file here.');
     }
 
-    return startServer(null, config);
+    return StartServer(null, config);
   } else {
     if (isValidHttpUrl(inputFile)) {
       console.log(`ERROR: MBTiles does not support web based files: `);
@@ -241,7 +241,7 @@ const startWithinputFile = async (inputFile) => {
           console.log('Run with --verbose to see the config file here.');
         }
 
-        return startServer(null, config);
+        return StartServer(null, config);
       });
     });
   }
@@ -257,7 +257,7 @@ fs.stat(path.resolve(opts.config), (err, stats) => {
     }
 
     if (inputFile) {
-      return startWithinputFile(inputFile);
+      return StartWithInputFile(inputFile);
     } else {
       // try to find in the cwd
       const files = fs.readdirSync(process.cwd());
@@ -272,7 +272,7 @@ fs.stat(path.resolve(opts.config), (err, stats) => {
       }
       if (inputFile) {
         console.log(`No input file specified, using ${inputFile}`);
-        return startWithinputFile(inputFile);
+        return StartWithInputFile(inputFile);
       } else {
         const url =
           'https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/zurich_switzerland.mbtiles';
@@ -280,12 +280,12 @@ fs.stat(path.resolve(opts.config), (err, stats) => {
         const stream = fs.createWriteStream(filename);
         console.log(`No input file found`);
         console.log(`[DEMO] Downloading sample data (${filename}) from ${url}`);
-        stream.on('finish', () => startWithinputFile(filename));
+        stream.on('finish', () => StartWithInputFile(filename));
         return request.get(url).pipe(stream);
       }
     }
   } else {
     console.log(`Using specified config file from ${opts.config}`);
-    return startServer(opts.config, null);
+    return StartServer(opts.config, null);
   }
 });
