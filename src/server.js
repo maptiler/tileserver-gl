@@ -217,7 +217,7 @@ function start(opts) {
               let id = fileid.substr(0, fileid.lastIndexOf('.')) || fileid;
               while (data[id]) id += '_';
               data[id] = {
-                mbtiles: fileid,
+                filename: fileid,
               };
               return id;
             }
@@ -239,7 +239,8 @@ function start(opts) {
             item,
             id,
             opts.publicUrl,
-            (fileid) => {
+            (fileid, protocol) => {
+              //console.log(protocol);
               let inputFile;
               let fileType;
               for (const id of Object.keys(data)) {
@@ -260,6 +261,12 @@ function start(opts) {
                       data[id].mbtiles,
                     );
                     fileType = 'mbtiles';
+                  } else if (data[id].filename !== undefined) {
+                    inputFile = path.resolve(
+                      options.paths[protocol],
+                      data[id].filename,
+                    );
+                    fileType = protocol;
                   }
                 }
               }

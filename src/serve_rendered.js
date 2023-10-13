@@ -1488,7 +1488,8 @@ export const serve_rendered = {
             inputFile = mapsTo;
           }
 
-          const DataInfo = dataResolver(inputFile);
+          let protocol = url.split(':')[0];
+          const DataInfo = dataResolver(inputFile, protocol);
           if (DataInfo.inputfile) {
             inputFile = DataInfo.inputfile;
             source_type = DataInfo.filetype;
