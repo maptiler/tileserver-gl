@@ -177,7 +177,9 @@ const StartWithInputFile = async (inputFile) => {
     return StartServer(null, config);
   } else {
     if (isValidHttpUrl(inputFile)) {
-      console.log(`ERROR: MBTiles does not support web based files. "${inputFile}" is not a valid data file.`,);
+      console.log(
+        `ERROR: MBTiles does not support web based files. "${inputFile}" is not a valid data file.`,
+      );
       process.exit(1);
     }
     const instance = new MBTiles(inputFile + '?mode=ro', (err) => {

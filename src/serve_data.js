@@ -203,7 +203,9 @@ export const serve_data = {
     } else if (params.mbtiles) {
       inputType = 'mbtiles';
       if (isValidHttpUrl(params.mbtiles)) {
-        console.log(`ERROR: MBTiles does not support web based files. "${params.mbtiles}" is not a valid data file.`,);
+        console.log(
+          `ERROR: MBTiles does not support web based files. "${params.mbtiles}" is not a valid data file.`,
+        );
         process.exit(1);
       } else {
         inputFile = path.resolve(options.paths.mbtiles, params.mbtiles);
