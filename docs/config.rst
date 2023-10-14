@@ -157,6 +157,13 @@ Allows the rendering of marker icons fetched via http(s) hyperlinks.
 For security reasons only allow this if you can control the origins from where the markers are fetched!
 Default is to disallow fetching of icons from remote sources.
 
+``allowInlineMarkerImages``
+--------------
+Allows the rendering of inline marker icons or base64 urls.
+For security reasons only allow this if you can control the origins from where the markers are fetched!
+Not used by default.
+
+
 ``styles``
 ==========
 

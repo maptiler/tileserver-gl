@@ -35,7 +35,7 @@ Static images
 
 * All the static image endpoints additionally support following query parameters:
 
-  * ``path`` - ``((fill|stroke|width)\:[^\|]+\|)*((enc:.+)|((-?\d+\.?\d*,-?\d+\.?\d*\|)+(-?\d+\.?\d*,-?\d+\.?\d*)))``
+  * ``path`` - ``((fill|stroke|width)\:[^\|]+\|)*(enc:.+|-?\d+(\.\d*)?,-?\d+(\.\d*)?(\|-?\d+(\.\d*)?,-?\d+(\.\d*)?)+)``
 
     * comma-separated ``lng,lat``, pipe-separated pairs
 
@@ -50,7 +50,7 @@ Static images
 
       * e.g. ``path=stroke:yellow|width:2|fill:green|5.9,45.8|5.9,47.8|10.5,47.8|10.5,45.8|5.9,45.8`` or ``path=stroke:blue|width:1|fill:yellow|enc:_p~iF~ps|U_ulLnnqC_mqNvxq`@``
 
-    * can be provided multiple times  
+    * can be provided multiple times
 
   * ``latlng`` - indicates coordinates are in ``lat,lng`` order rather than the usual ``lng,lat``
   * ``fill`` - color to use as the fill (e.g. ``red``, ``rgba(255,255,255,0.5)``, ``#0000ff``)

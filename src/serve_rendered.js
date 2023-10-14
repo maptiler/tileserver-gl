@@ -32,8 +32,8 @@ import {
 
 const FLOAT_PATTERN = '[+-]?(?:\\d+|\\d+.?\\d+)';
 const PATH_PATTERN =
-  /^((fill|stroke|width)\:[^\|]+\|)*((enc:.+)|((-?\d+\.?\d*,-?\d+\.?\d*\|)+(-?\d+\.?\d*,-?\d+\.?\d*)))/;
-const httpTester = /^(http(s)?:)?\/\//;
+  /^((fill|stroke|width)\:[^\|]+\|)*(enc:.+|-?\d+(\.\d*)?,-?\d+(\.\d*)?(\|-?\d+(\.\d*)?,-?\d+(\.\d*)?)+)/;
+const httpTester = /^\/\//;
 
 const mercator = new SphericalMercator();
 const getScale = (scale) => (scale || '@1x').slice(1, 2) | 0;
@@ -168,10 +168,7 @@ const extractPathsFromQuery = (query, transformer) => {
     // Iterate through paths, parse and validate them
     for (const providedPath of providedPaths) {
       // Logic for pushing coords to path when path includes google polyline
-      if (
-        providedPath.includes('enc:') &&
-        PATH_PATTERN.test(decodeURIComponent(providedPath))
-      ) {
+      if (providedPath.includes('enc:') && PATH_PATTERN.test(providedPath)) {
         // +4 because 'enc:' is 4 characters, everything after 'enc:' is considered to be part of the polyline
         const encIndex = providedPath.indexOf('enc:') + 4;
         const coords = polyline
@@ -289,7 +286,10 @@ const extractMarkersFromQuery = (query, options, transformer) => {
     let iconURI = markerParts[1];
     // Check if icon is served via http otherwise marker icons are expected to
     // be provided as filepaths relative to configured icon path
-    if (!(iconURI.startsWith('http://') || iconURI.startsWith('https://'))) {
+    const isRemoteURL =
+      iconURI.startsWith('http://') || iconURI.startsWith('https://');
+    const isDataURL = iconURI.startsWith('data:');
+    if (!(isRemoteURL || isDataURL)) {
       // Sanitize URI with sanitize-filename
       // https://www.npmjs.com/package/sanitize-filename#details
       iconURI = sanitize(iconURI);
@@ -302,7 +302,9 @@ const extractMarkersFromQuery = (query, options, transformer) => {
       iconURI = path.resolve(options.paths.icons, iconURI);
 
       // When we encounter a remote icon check if the configuration explicitly allows them.
-    } else if (options.allowRemoteMarkerIcons !== true) {
+    } else if (isRemoteURL && options.allowRemoteMarkerIcons !== true) {
+      continue;
+    } else if (isDataURL && options.allowInlineMarkerImages !== true) {
       continue;
     }
 
@@ -437,7 +439,7 @@ const drawMarkers = async (ctx, markers, z) => {
  * @param {number} z Map zoom level.
  */
 const drawPath = (ctx, path, query, pathQuery, z) => {
-  const splitPaths = decodeURIComponent(pathQuery).split('|');
+  const splitPaths = pathQuery.split('|');
 
   if (!path || path.length < 2) {
     return null;
