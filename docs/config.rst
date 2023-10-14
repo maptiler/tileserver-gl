@@ -33,6 +33,7 @@ Example:
       "serveAllStyles": false,
       "serveStaticMaps": true,
       "allowRemoteMarkerIcons": true,
+      "allowInlineMarkerImages": true,
       "staticAttributionText": "© OpenMapTiles  © OpenStreetMaps",
       "tileMargin": 0
     },
