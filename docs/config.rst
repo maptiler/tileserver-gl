@@ -16,8 +16,8 @@ Example:
         "sprites": "sprites",
         "icons": "icons",
         "styles": "styles",
-        "mbtiles": "",
-        "pmtiles": ""
+        "mbtiles": "data",
+        "pmtiles": "data"
       },
       "domains": [
         "localhost:8080",
@@ -212,7 +212,7 @@ MBTiles
 -------
 
 To specify that you want to use local mbtiles, use to following syntax: ``mbtiles://source1.mbtiles``.
-The TileServer-GL will try to find the file ``source1.mbtiles`` in ``root`` + ``mbtiles`` path.
+TileServer-GL will try to find the file ``source1.mbtiles`` in ``root`` + ``mbtiles`` path.
 
 For example::
 
@@ -231,8 +231,9 @@ PMTiles
 -------
 
 To specify that you want to use local pmtiles, use to following syntax: ``pmtiles://source2.pmtiles``.
+TileServer-GL will try to find the file ``source2.pmtiles`` in ``root`` + ``pmtiles`` path.
+
 To specify that you want to use a url based pmtiles, use to following syntax: ``pmtiles://https://foo.lan/source3.pmtiles``.
-The TileServer-GL will try to find the file ``source2.pmtiles`` in ``root`` + ``pmtiles`` path.
 
 For example::
 
