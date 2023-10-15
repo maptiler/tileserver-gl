@@ -77,8 +77,9 @@
             <img src="{{public_url}}images/placeholder.png{{&key_query}}" alt="{{name}} preview" />
           {{/if}}
           <div class="details">
-            <h3>{{name}}</h3>
-            <p class="identifier">identifier: {{@key}}{{#if formatted_filesize}} | size: {{formatted_filesize}}{{/if}} | type: {{#is_vector}}vector{{/is_vector}}{{^is_vector}}raster{{/is_vector}} data {{#if source_type}} | ext: {{source_type}}{{/if}}</p>
+            <h3>{{tileJSON.name}}</h3>
+            <div class="identifier">identifier: {{@key}}{{#if formatted_filesize}} | size: {{formatted_filesize}}{{/if}}</div>
+            <div class="identifier">type: {{#is_vector}}vector{{/is_vector}}{{^is_vector}}raster{{/is_vector}} data {{#if source_type}} | ext: {{source_type}}{{/if}}</div>
             <p class="services">
               services: <a href="{{public_url}}data/{{@key}}.json{{&../key_query}}">TileJSON</a>
               {{#if wmts_link}}
