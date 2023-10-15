@@ -29,7 +29,6 @@ export const serve_data = {
           return res.sendStatus(404);
         }
         const tileJSONFormat = item.tileJSON.format;
-        const tileJSONExtension = item.tileJSON.extension;
         const z = req.params.z | 0;
         const x = req.params.x | 0;
         const y = req.params.y | 0;
@@ -54,7 +53,7 @@ export const serve_data = {
         ) {
           return res.status(404).send('Out of bounds');
         }
-        if (tileJSONExtension === 'pmtiles') {
+        if (item.source_type === 'pmtiles') {
           let tileinfo = await GetPMtilesTile(item.source, z, x, y);
           if (tileinfo == undefined || tileinfo.data == undefined) {
             return res.status(404).send('Not found');
@@ -100,7 +99,7 @@ export const serve_data = {
 
             return res.status(200).send(data);
           }
-        } else {
+        } else if (item.source_type === 'mbtiles') {
           item.source.getTile(z, x, y, (err, data, headers) => {
             let isGzipped;
             if (err) {
@@ -232,7 +231,6 @@ export const serve_data = {
 
       tileJSON['name'] = id;
       tileJSON['format'] = 'pbf';
-      tileJSON['extension'] = 'pmtiles';
       Object.assign(tileJSON, metadata);
 
       tileJSON['tilejson'] = '2.0.0';
@@ -261,7 +259,6 @@ export const serve_data = {
             }
             tileJSON['name'] = id;
             tileJSON['format'] = 'pbf';
-            tileJSON['extension'] = 'mbtiles';
 
             Object.assign(tileJSON, info);
 
