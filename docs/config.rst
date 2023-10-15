@@ -183,7 +183,7 @@ Each item in this object defines one style (map). It can have the following opti
 Each item specifies one data source which should be made accessible by the server. It has to have one of the following options:
 
 * ``mbtiles`` -- name of the mbtiles file
-* ``pmtiles`` -- name of the pmtiles file or url to the file.
+* ``pmtiles`` -- name of the pmtiles file or url.
 
 For example::
 
