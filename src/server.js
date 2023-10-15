@@ -6,7 +6,7 @@ process.env.UV_THREADPOOL_SIZE = Math.ceil(Math.max(4, os.cpus().length * 1.5));
 
 import fs from 'node:fs';
 import path from 'path';
-
+import fnv1a from '@sindresorhus/fnv1a';
 import chokidar from 'chokidar';
 import clone from 'clone';
 import cors from 'cors';
@@ -207,8 +207,13 @@ function start(opts) {
               );
               return undefined;
             } else {
-              let id = StyleSourceId.replace(/^.*\/(.*)$/, '$1'); // Remove url path up to last backslash, if it exists
-              id = id.substr(0, StyleSourceId.lastIndexOf('.')) || id; // Remove extension, if it exists
+              let id =
+                StyleSourceId.substr(0, StyleSourceId.lastIndexOf('.')) ||
+                StyleSourceId;
+              if (isValidHttpUrl(StyleSourceId)) {
+                id =
+                  id.replace(/^.*\/(.*)$/, '$1') + '_' + fnv1a(StyleSourceId);
+              }
               while (data[id]) id += '_'; //if the data source id already exists, add a "_" untill it doesn't
               //Add the new data source to the data array.
               data[id] = {
