@@ -212,7 +212,7 @@ function start(opts) {
                 StyleSourceId;
               if (isValidHttpUrl(StyleSourceId)) {
                 id =
-                fnv1a(StyleSourceId) + '_' + id.replace(/^.*\/(.*)$/, '$1');
+                  fnv1a(StyleSourceId) + '_' + id.replace(/^.*\/(.*)$/, '$1');
               }
               while (data[id]) id += '_'; //if the data source id already exists, add a "_" untill it doesn't
               //Add the new data source to the data array.
