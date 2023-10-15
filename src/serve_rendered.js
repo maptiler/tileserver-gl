@@ -1469,23 +1469,26 @@ export const serve_rendered = {
     for (const name of Object.keys(styleJSON.sources)) {
       let source_type;
       let source = styleJSON.sources[name];
-      const url = source.url;
+      let url = source.url;
+      if (url) {
+        if (url.startsWith('{') && url.endsWith('}')) {
+          url = url.slice(1, -1);
+        }
+        if (url.startsWith('pmtiles://') || url.startsWith('mbtiles://')) {
+          // found pmtiles or mbtiles source, replace with info from local file
+          delete source.url;
 
-      if (url && (url.startsWith('pmtiles:') || url.startsWith('mbtiles:'))) {
-        // found pmtiles or mbtiles source, replace with info from local file
-        delete source.url;
+          let dataId = url.replace('pmtiles://', '').replace('mbtiles://', '');
+          if (dataId.startsWith('{') && dataId.endsWith('}')) {
+            dataId = dataId.slice(1, -1);
+          }
 
-        let inputFile;
-        let dataId = url.replace('pmtiles://', '').replace('mbtiles://', '');
-        const fromData = dataId.startsWith('{') && dataId.endsWith('}');
-
-        if (fromData) {
-          dataId = dataId.slice(1, -1);
           const mapsTo = (params.mapping || {})[dataId];
           if (mapsTo) {
             dataId = mapsTo;
           }
 
+          let inputFile;
           const DataInfo = dataResolver(dataId);
           if (DataInfo.inputfile) {
             inputFile = DataInfo.inputfile;
@@ -1494,109 +1497,114 @@ export const serve_rendered = {
             console.error(`ERROR: data "${inputFile}" not found!`);
             process.exit(1);
           }
-        }
 
-        if (!isValidHttpUrl(inputFile)) {
-          const inputFileStats = fs.statSync(inputFile);
-          if (!inputFileStats.isFile() || inputFileStats.size === 0) {
-            throw Error(`Not valid PMTiles file: "${inputFile}"`);
-          }
-        }
-
-        if (source_type === 'pmtiles') {
-          map.sources[name] = PMtilesOpen(inputFile);
-          map.source_types[name] = 'pmtiles';
-          const metadata = await GetPMtilesInfo(map.sources[name]);
-
-          if (!repoobj.dataProjWGStoInternalWGS && metadata.proj4) {
-            // how to do this for multiple sources with different proj4 defs?
-            const to3857 = proj4('EPSG:3857');
-            const toDataProj = proj4(metadata.proj4);
-            repoobj.dataProjWGStoInternalWGS = (xy) =>
-              to3857.inverse(toDataProj.forward(xy));
-          }
-
-          const type = source.type;
-          metadata['extension'] = 'pmtiles';
-          Object.assign(source, metadata);
-          source.type = type;
-          source.tiles = [
-            // meta url which will be detected when requested
-            `pmtiles://${name}/{z}/{x}/{y}.${metadata.format || 'pbf'}`,
-          ];
-          delete source.scheme;
-
-          if (
-            !attributionOverride &&
-            source.attribution &&
-            source.attribution.length > 0
-          ) {
-            if (!tileJSON.attribution.includes(source.attribution)) {
-              if (tileJSON.attribution.length > 0) {
-                tileJSON.attribution += ' | ';
-              }
-              tileJSON.attribution += source.attribution;
+          if (!isValidHttpUrl(inputFile)) {
+            const inputFileStats = fs.statSync(inputFile);
+            if (!inputFileStats.isFile() || inputFileStats.size === 0) {
+              throw Error(`Not valid PMTiles file: "${inputFile}"`);
             }
           }
-        } else {
-          queue.push(
-            new Promise((resolve, reject) => {
-              inputFile = path.resolve(options.paths.mbtiles, inputFile);
-              const inputFileStats = fs.statSync(inputFile);
-              if (!inputFileStats.isFile() || inputFileStats.size === 0) {
-                throw Error(`Not valid MBTiles file: "${inputFile}"`);
+
+          if (source_type === 'pmtiles') {
+            map.sources[name] = PMtilesOpen(inputFile);
+            map.source_types[name] = 'pmtiles';
+            const metadata = await GetPMtilesInfo(map.sources[name]);
+
+            if (!repoobj.dataProjWGStoInternalWGS && metadata.proj4) {
+              // how to do this for multiple sources with different proj4 defs?
+              const to3857 = proj4('EPSG:3857');
+              const toDataProj = proj4(metadata.proj4);
+              repoobj.dataProjWGStoInternalWGS = (xy) =>
+                to3857.inverse(toDataProj.forward(xy));
+            }
+
+            const type = source.type;
+            metadata['extension'] = 'pmtiles';
+            Object.assign(source, metadata);
+            source.type = type;
+            source.tiles = [
+              // meta url which will be detected when requested
+              `pmtiles://${name}/{z}/{x}/{y}.${metadata.format || 'pbf'}`,
+            ];
+            delete source.scheme;
+
+            if (
+              !attributionOverride &&
+              source.attribution &&
+              source.attribution.length > 0
+            ) {
+              if (!tileJSON.attribution.includes(source.attribution)) {
+                if (tileJSON.attribution.length > 0) {
+                  tileJSON.attribution += ' | ';
+                }
+                tileJSON.attribution += source.attribution;
               }
-              map.sources[name] = new MBTiles(inputFile + '?mode=ro', (err) => {
-                map.sources[name].getInfo((err, info) => {
-                  if (err) {
-                    console.error(err);
-                    return;
-                  }
-                  map.source_types[name] = 'mbtiles';
-
-                  if (!repoobj.dataProjWGStoInternalWGS && info.proj4) {
-                    // how to do this for multiple sources with different proj4 defs?
-                    const to3857 = proj4('EPSG:3857');
-                    const toDataProj = proj4(info.proj4);
-                    repoobj.dataProjWGStoInternalWGS = (xy) =>
-                      to3857.inverse(toDataProj.forward(xy));
-                  }
-
-                  const type = source.type;
-                  info['extension'] = 'mbtiles';
-                  Object.assign(source, info);
-                  source.type = type;
-                  source.tiles = [
-                    // meta url which will be detected when requested
-                    `mbtiles://${name}/{z}/{x}/{y}.${info.format || 'pbf'}`,
-                  ];
-                  delete source.scheme;
-
-                  if (options.dataDecoratorFunc) {
-                    source = options.dataDecoratorFunc(
-                      name,
-                      'tilejson',
-                      source,
-                    );
-                  }
-
-                  if (
-                    !attributionOverride &&
-                    source.attribution &&
-                    source.attribution.length > 0
-                  ) {
-                    if (!tileJSON.attribution.includes(source.attribution)) {
-                      if (tileJSON.attribution.length > 0) {
-                        tileJSON.attribution += ' | ';
+            }
+          } else {
+            queue.push(
+              new Promise((resolve, reject) => {
+                inputFile = path.resolve(options.paths.mbtiles, inputFile);
+                const inputFileStats = fs.statSync(inputFile);
+                if (!inputFileStats.isFile() || inputFileStats.size === 0) {
+                  throw Error(`Not valid MBTiles file: "${inputFile}"`);
+                }
+                map.sources[name] = new MBTiles(
+                  inputFile + '?mode=ro',
+                  (err) => {
+                    map.sources[name].getInfo((err, info) => {
+                      if (err) {
+                        console.error(err);
+                        return;
                       }
-                      tileJSON.attribution += source.attribution;
-                    }
-                  }
-                  resolve();
-                });
-              });
-            }),
-          );
+                      map.source_types[name] = 'mbtiles';
+
+                      if (!repoobj.dataProjWGStoInternalWGS && info.proj4) {
+                        // how to do this for multiple sources with different proj4 defs?
+                        const to3857 = proj4('EPSG:3857');
+                        const toDataProj = proj4(info.proj4);
+                        repoobj.dataProjWGStoInternalWGS = (xy) =>
+                          to3857.inverse(toDataProj.forward(xy));
+                      }
+
+                      const type = source.type;
+                      info['extension'] = 'mbtiles';
+                      Object.assign(source, info);
+                      source.type = type;
+                      source.tiles = [
+                        // meta url which will be detected when requested
+                        `mbtiles://${name}/{z}/{x}/{y}.${info.format || 'pbf'}`,
+                      ];
+                      delete source.scheme;
+
+                      if (options.dataDecoratorFunc) {
+                        source = options.dataDecoratorFunc(
+                          name,
+                          'tilejson',
+                          source,
+                        );
+                      }
+
+                      if (
+                        !attributionOverride &&
+                        source.attribution &&
+                        source.attribution.length > 0
+                      ) {
+                        if (
+                          !tileJSON.attribution.includes(source.attribution)
+                        ) {
+                          if (tileJSON.attribution.length > 0) {
+                            tileJSON.attribution += ' | ';
+                          }
+                          tileJSON.attribution += source.attribution;
+                        }
+                      }
+                      resolve();
+                    });
+                  },
+                );
+              }),
+            );
+          }
         }
       }
     }

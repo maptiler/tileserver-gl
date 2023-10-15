@@ -183,32 +183,38 @@ function start(opts) {
         item,
         id,
         opts.publicUrl,
-        (dataId, fromData, protocol) => {
+        (StyleSourceId, protocol) => {
           let dataItemId;
           for (const id of Object.keys(data)) {
-            if (fromData) {
-              if (id === dataId) {
-                dataItemId = id;
-              }
+            if (id === StyleSourceId) {
+              // Style id was found in data ids, return that id
+              dataItemId = id;
             } else {
               const fileType = Object.keys(data[id])[0];
-              if (data[id][fileType] === dataId) {
+              if (data[id][fileType] === StyleSourceId) {
+                // Style id was found in data filename, return the id that filename belong to
                 dataItemId = id;
               }
             }
           }
           if (dataItemId) {
-            // input files exists in the data config
+            // input files exists in the data config, return found id
             return dataItemId;
           } else {
-            if (fromData || !allowMoreData) {
+            if (!allowMoreData) {
               console.log(
-                `ERROR: style "${item.style}" using unknown file "${dataId}"! Skipping...`,
+                `ERROR: style "${item.style}" using unknown file "${StyleSourceId}"! Skipping...`,
               );
               return undefined;
             } else {
-              let id = dataId.substr(0, dataId.lastIndexOf('.')) || dataId;
-              data[id][protocol] = dataId;
+              let id = StyleSourceId.replace(/^.*\/(.*)$/, '$1'); // Remove url path up to last backslash, if it exists
+              id = id.substr(0, StyleSourceId.lastIndexOf('.')) || id; // Remove extension, if it exists
+              while (data[id]) id += '_'; //if the data source id already exists, add a "_" untill it doesn't
+              //Add the new data source to the data array.
+              data[id] = {
+                [protocol]: StyleSourceId,
+              };
+
               return id;
             }
           }
@@ -229,22 +235,23 @@ function start(opts) {
             item,
             id,
             opts.publicUrl,
-            (dataId) => {
+            (StyleSourceId) => {
               let fileType;
               let inputFile;
               for (const id of Object.keys(data)) {
-                if (id === dataId) {
-                  fileType = Object.keys(data[id])[0];
-                  if (isValidHttpUrl(data[id][fileType])) {
-                    inputFile = data[id][fileType];
-                  } else {
-                    inputFile = path.resolve(
-                      options.paths[fileType],
-                      data[id][fileType],
-                    );
-                  }
+                fileType = Object.keys(data[id])[0];
+                if (StyleSourceId == id) {
+                  inputFile = data[id][fileType];
+                  break;
+                } else if (data[id][fileType] == StyleSourceId) {
+                  inputFile = data[id][fileType];
+                  break;
                 }
               }
+              if (!isValidHttpUrl(inputFile)) {
+                inputFile = path.resolve(options.paths[fileType], inputFile);
+              }
+
               return { inputfile: inputFile, filetype: fileType };
             },
           ),
