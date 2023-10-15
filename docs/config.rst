@@ -201,7 +201,7 @@ For example::
   }
 
 
-The data source file does not need to be specified here unless you explicitly want to serve the raw data.
+The data source does not need to be specified here unless you explicitly want to serve the raw data.
 
 Referencing local files from style JSON
 =======================================
