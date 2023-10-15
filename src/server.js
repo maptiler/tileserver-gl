@@ -538,7 +538,7 @@ function start(opts) {
   });
 
   serveTemplate('/styles/:id/$', 'viewer', (req) => {
-    const id = req.params.id;
+    const { id } = req.params;
     const style = clone(((serving.styles || {})[id] || {}).styleJSON);
 
     if (!style) {
@@ -560,7 +560,7 @@ function start(opts) {
   });
   */
   serveTemplate('/styles/:id/wmts.xml', 'wmts', (req) => {
-    const id = req.params.id;
+    const { id } = req.params;
     const wmts = clone((serving.styles || {})[id]);
 
     if (!wmts) {
