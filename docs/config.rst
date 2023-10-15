@@ -180,11 +180,27 @@ Each item in this object defines one style (map). It can have the following opti
 ``data``
 ========
 
-Each item specifies one data source which should be made accessible by the server. It has the following options:
+Each item specifies one data source which should be made accessible by the server. It has to have one of the following options:
 
-* ``mbtiles`` -- name of the mbtiles file [required]
+* ``mbtiles`` -- name of the mbtiles file
+* ``pmtiles`` -- name of the pmtiles file or url to the file.
 
-The mbtiles file does not need to be specified here unless you explicitly want to serve the raw data.
+For example::
+
+  "data": {
+    "source1": {
+      "mbtiles": "source1.mbtiles"
+    },
+    "source2": {
+      "pmtiles": "source2.pmtiles"
+    },
+    "source3": {
+      "pmtiles": "https://foo.lan/source3.pmtiles"
+    }
+  }
+
+
+The data source file does not need to be specified here unless you explicitly want to serve the raw data.
 
 Referencing local files from style JSON
 =======================================
@@ -207,8 +223,32 @@ For example::
   }
 
 Alternatively, you can use ``mbtiles://{zurich-vector}`` to reference existing data object from the config.
-In this case, the server will look into the ``config.json`` to determine what mbtiles file to use.
+In this case, the server will look into the ``config.json`` to determine what file to use by data id.
 For the config above, this is equivalent to ``mbtiles://zurich.mbtiles``.
+
+PMTiles
+-------
+
+To specify that you want to use local pmtiles, use to following syntax: ``pmtiles://switzerland.pmtiles``.
+To specify that you want to use a http based pmtiles, use to following syntax: ``pmtiles://https://foo.lan/switzerland.pmtiles``.
+The TileServer-GL will try to find the file ``switzerland.pmtiles`` in ``root`` + ``pmtiles`` path.
+
+For example::
+
+  "sources": {
+    "source1": {
+      "url": "pmtiles://switzerland.pmtiles",
+      "type": "vector"
+    },
+    "source2": {
+      "url": "pmtiles://https://foo.lan/switzerland.pmtiles",
+      "type": "vector"
+    },
+  }
+
+Alternatively, you can use ``pmtiles://{zurich-vector}`` to reference existing data object from the config.
+In this case, the server will look into the ``config.json`` to determine what file to use by data id.
+For the config above, this is equivalent to ``pmtiles://zurich.mbtiles``.
 
 Sprites
 -------

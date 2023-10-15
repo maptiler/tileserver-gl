@@ -6,8 +6,8 @@ import path from 'path';
 import url from 'url';
 import util from 'util';
 import zlib from 'zlib';
-import sharp from 'sharp'; // sharp has to be required before node-canvas on linux but after it on windows. see https://github.com/lovell/sharp/issues/371
 import { createCanvas, Image } from 'canvas';
+import sharp from 'sharp'; // sharp has to be required before node-canvas on linux but after it on windows. see https://github.com/lovell/sharp/issues/371
 import clone from 'clone';
 import Color from 'color';
 import express from 'express';
