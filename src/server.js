@@ -516,7 +516,7 @@ function start(opts) {
       }
       if (data.filesize) {
         let suffix = 'kB';
-        let size = parseInt(data_.filesize, 10) / 1024;
+        let size = parseInt(tileJSON.filesize, 10) / 1024;
         if (size > 1024) {
           suffix = 'MB';
           size /= 1024;
