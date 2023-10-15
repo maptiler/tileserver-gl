@@ -16,7 +16,8 @@ Example:
         "sprites": "sprites",
         "icons": "icons",
         "styles": "styles",
-        "mbtiles": ""
+        "mbtiles": "",
+        "pmtiles": ""
       },
       "domains": [
         "localhost:8080",
@@ -210,45 +211,45 @@ You can link various data sources from the style JSON (for example even remote T
 MBTiles
 -------
 
-To specify that you want to use local mbtiles, use to following syntax: ``mbtiles://switzerland.mbtiles``.
-The TileServer-GL will try to find the file ``switzerland.mbtiles`` in ``root`` + ``mbtiles`` path.
+To specify that you want to use local mbtiles, use to following syntax: ``mbtiles://source1.mbtiles``.
+The TileServer-GL will try to find the file ``source1.mbtiles`` in ``root`` + ``mbtiles`` path.
 
 For example::
 
   "sources": {
     "source1": {
-      "url": "mbtiles://switzerland.mbtiles",
+      "url": "mbtiles://source1.mbtiles",
       "type": "vector"
     }
   }
 
-Alternatively, you can use ``mbtiles://{zurich-vector}`` to reference existing data object from the config.
+Alternatively, you can use ``mbtiles://{source1}`` to reference existing data object from the config.
 In this case, the server will look into the ``config.json`` to determine what file to use by data id.
-For the config above, this is equivalent to ``mbtiles://zurich.mbtiles``.
+For the config above, this is equivalent to ``mbtiles://source1.mbtiles``.
 
 PMTiles
 -------
 
-To specify that you want to use local pmtiles, use to following syntax: ``pmtiles://switzerland.pmtiles``.
-To specify that you want to use a http based pmtiles, use to following syntax: ``pmtiles://https://foo.lan/switzerland.pmtiles``.
-The TileServer-GL will try to find the file ``switzerland.pmtiles`` in ``root`` + ``pmtiles`` path.
+To specify that you want to use local pmtiles, use to following syntax: ``pmtiles://source2.pmtiles``.
+To specify that you want to use a url based pmtiles, use to following syntax: ``pmtiles://https://foo.lan/source3.pmtiles``.
+The TileServer-GL will try to find the file ``source2.pmtiles`` in ``root`` + ``pmtiles`` path.
 
 For example::
 
   "sources": {
-    "source1": {
-      "url": "pmtiles://switzerland.pmtiles",
+    "source2": {
+      "url": "pmtiles://source2.pmtiles",
       "type": "vector"
     },
-    "source2": {
-      "url": "pmtiles://https://foo.lan/switzerland.pmtiles",
+    "source3": {
+      "url": "pmtiles://https://foo.lan/source3.pmtiles",
       "type": "vector"
     },
   }
 
-Alternatively, you can use ``pmtiles://{zurich-vector}`` to reference existing data object from the config.
+Alternatively, you can use ``pmtiles://{source2}`` to reference existing data object from the config.
 In this case, the server will look into the ``config.json`` to determine what file to use by data id.
-For the config above, this is equivalent to ``pmtiles://zurich.mbtiles``.
+For the config above, this is equivalent to ``pmtiles://source2.mbtiles``.
 
 Sprites
 -------
