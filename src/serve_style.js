@@ -111,29 +111,27 @@ export const serve_style = {
     for (const name of Object.keys(styleJSON.sources)) {
       const source = styleJSON.sources[name];
       let url = source.url;
-      if (url) {
-        if (url.startsWith('{') && url.endsWith('}')) {
-          url = url.slice(1, -1);
+      if (
+        url &&
+        (url.startsWith('pmtiles://') || url.startsWith('mbtiles://'))
+      ) {
+        const protocol = url.split(':')[0];
+
+        let dataId = url.replace('pmtiles://', '').replace('mbtiles://', '');
+        if (dataId.startsWith('{') && dataId.endsWith('}')) {
+          dataId = dataId.slice(1, -1);
         }
-        if (url.startsWith('pmtiles://') || url.startsWith('mbtiles://')) {
-          const protocol = url.split(':')[0];
 
-          let dataId = url.replace('pmtiles://', '').replace('mbtiles://', '');
-          if (dataId.startsWith('{') && dataId.endsWith('}')) {
-            dataId = dataId.slice(1, -1);
-          }
-
-          const mapsTo = (params.mapping || {})[dataId];
-          if (mapsTo) {
-            dataId = mapsTo;
-          }
-
-          const identifier = reportTiles(dataId, protocol);
-          if (!identifier) {
-            return false;
-          }
-          source.url = `local://data/${identifier}.json`;
+        const mapsTo = (params.mapping || {})[dataId];
+        if (mapsTo) {
+          dataId = mapsTo;
         }
+
+        const identifier = reportTiles(dataId, protocol);
+        if (!identifier) {
+          return false;
+        }
+        source.url = `local://data/${identifier}.json`;
       }
     }
 
