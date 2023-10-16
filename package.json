@@ -42,7 +42,7 @@
     "proj4": "2.9.1",
     "request": "2.88.2",
     "sanitize-filename": "1.6.3",
-    "sharp": "0.32.6",
+    "sharp": "0.32.3",
     "tileserver-gl-styles": "2.0.0"
   },
   "devDependencies": {
