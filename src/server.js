@@ -546,11 +546,11 @@ function start(opts) {
     }
 
     return {
+      ...style,
       id,
       name: (serving.styles[id] || serving.rendered[id]).name,
       serving_data: serving.styles[id],
       serving_rendered: serving.rendered[id],
-      ...style,
     };
   });
 
@@ -583,10 +583,10 @@ function start(opts) {
     }
 
     return {
+      ...wmts,
       id,
       name: (serving.styles[id] || serving.rendered[id]).name,
       baseUrl,
-      ...wmts,
     };
   });
 
@@ -599,9 +599,9 @@ function start(opts) {
     }
 
     return {
+      ...data,
       id,
       is_vector: data.tileJSON.format === 'pbf',
-      ...data,
     };
   });
 
