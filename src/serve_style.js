@@ -9,7 +9,7 @@ import { validate } from '@maplibre/maplibre-gl-style-spec';
 
 import { getPublicUrl } from './utils.js';
 
-const httpTester = /^\/\//;
+const httpTester = /^(http(s)?:)?\/\//;
 
 const fixUrl = (req, url, publicUrl, opt_nokey) => {
   if (!url || typeof url !== 'string' || url.indexOf('local://') !== 0) {
