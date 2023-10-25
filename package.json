@@ -39,7 +39,7 @@
     "morgan": "1.10.0",
     "pbf": "3.2.1",
     "pmtiles": "2.11.0",
-    "proj4": "2.9.1",
+    "proj4": "2.9.2",
     "request": "2.88.2",
     "sanitize-filename": "1.6.3",
     "sharp": "0.32.6",
