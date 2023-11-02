@@ -1358,13 +1358,15 @@ export const serve_rendered = {
                   responseType: 'arraybuffer', // Get the response as raw buffer
                   // Axios handles gzip by default, so no need for a gzip flag
                 });
-            
+
                 const responseHeaders = response.headers;
                 const responseData = response.data;
-            
+
                 const parsedResponse = {};
                 if (responseHeaders['last-modified']) {
-                  parsedResponse.modified = new Date(responseHeaders['last-modified']);
+                  parsedResponse.modified = new Date(
+                    responseHeaders['last-modified'],
+                  );
                 }
                 if (responseHeaders.expires) {
                   parsedResponse.expires = new Date(responseHeaders.expires);
@@ -1372,10 +1374,9 @@ export const serve_rendered = {
                 if (responseHeaders.etag) {
                   parsedResponse.etag = responseHeaders.etag;
                 }
-            
+
                 parsedResponse.data = responseData;
                 callback(null, parsedResponse);
-            
               } catch (error) {
                 const parts = url.parse(req.url);
                 const extension = path.extname(parts.pathname).toLowerCase();

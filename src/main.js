@@ -277,14 +277,18 @@ fs.stat(path.resolve(opts.config), (err, stats) => {
         axios({
           url,
           method: 'GET',
-          responseType: 'stream'
-        }).then(response => {
-          response.data.pipe(writer);
-          writer.on('finish', () => StartWithInputFile(filename));
-          writer.on('error', err => console.error(`Error writing file: ${err}`));
-        }).catch(error => {
-          console.error(`Error downloading file: ${error}`);
-        });
+          responseType: 'stream',
+        })
+          .then((response) => {
+            response.data.pipe(writer);
+            writer.on('finish', () => StartWithInputFile(filename));
+            writer.on('error', (err) =>
+              console.error(`Error writing file: ${err}`),
+            );
+          })
+          .catch((error) => {
+            console.error(`Error downloading file: ${error}`);
+          });
       }
     }
   } else {
