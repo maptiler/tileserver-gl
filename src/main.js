@@ -280,7 +280,7 @@ fs.stat(path.resolve(opts.config), (err, stats) => {
           responseType: 'stream'
         }).then(response => {
           response.data.pipe(writer);
-          writer.on('finish', () => startWithMBTiles(filename));
+          writer.on('finish', () => StartWithInputFile(filename));
           writer.on('error', err => console.error(`Error writing file: ${err}`));
         }).catch(error => {
           console.error(`Error downloading file: ${error}`);
