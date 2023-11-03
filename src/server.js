@@ -15,6 +15,7 @@ import express from 'express';
 import handlebars from 'handlebars';
 import SphericalMercator from '@mapbox/sphericalmercator';
 const mercator = new SphericalMercator();
+import responseTime from 'response-time';
 import morgan from 'morgan';
 import { serve_data } from './serve_data.js';
 import { serve_style } from './serve_style.js';
@@ -48,6 +49,7 @@ function start(opts) {
     fonts: {},
   };
 
+  app.use(responseTime({ suffix: false }));
   app.enable('trust proxy');
 
   if (process.env.NODE_ENV !== 'test') {
