@@ -31,7 +31,7 @@ jobs:
           libxxf86vm-dev
 
       - name: Setup node env 📦
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version-file: 'package.json'
           check-latest: true
@@ -66,12 +66,12 @@ jobs:
           echo "PACKAGE_VERSION=$(grep '"version"' package.json | cut -d '"' -f 4 | head -n 1)" >> $GITHUB_ENV
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
         with:
           platforms: 'arm64'
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to DockerHub
         uses: docker/login-action@v2
@@ -80,7 +80,7 @@ jobs:
           password: ${{ github.event.inputs.docker_token }}
 
       - name: Build and publish Full Version to Docker Hub
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true
@@ -106,7 +106,7 @@ jobs:
           NPM_TOKEN: ${{ github.event.inputs.npm_token }}
 
       - name: Build and publish Light Version to Docker Hub
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: ./light
           file: ./light/Dockerfile

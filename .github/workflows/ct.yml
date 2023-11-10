@@ -31,7 +31,7 @@ jobs:
           libxxf86vm-dev
 
       - name: Setup node env 📦
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version-file: 'package.json'
           check-latest: true
@@ -52,15 +52,15 @@ jobs:
         run: xvfb-run --server-args="-screen 0 1024x768x24" npm test
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
         with:
           platforms: 'arm64'
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Test Docker Build
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: false
