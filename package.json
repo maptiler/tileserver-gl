@@ -27,6 +27,7 @@
     "@maplibre/maplibre-gl-style-spec": "18.0.0",
     "@sindresorhus/fnv1a": "3.0.0",
     "advanced-pool": "0.3.3",
+    "axios": "^1.6.1",
     "canvas": "2.11.2",
     "chokidar": "3.5.3",
     "clone": "2.1.2",
@@ -40,7 +41,6 @@
     "pbf": "3.2.1",
     "pmtiles": "2.11.0",
     "proj4": "2.9.2",
-    "axios": "1.5.1",
     "sanitize-filename": "1.6.3",
     "sharp": "0.32.6",
     "tileserver-gl-styles": "2.0.0"
