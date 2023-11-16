@@ -17,7 +17,7 @@ import mlgl from '@maplibre/maplibre-gl-native';
 import MBTiles from '@mapbox/mbtiles';
 import polyline from '@mapbox/polyline';
 import proj4 from 'proj4';
-import request from 'request';
+import axios from 'axios';
 import {
   getFontsPbf,
   getTileUrls,
@@ -1353,37 +1353,36 @@ export const serve_rendered = {
                 });
               }
             } else if (protocol === 'http' || protocol === 'https') {
-              request(
-                {
-                  url: req.url,
-                  encoding: null,
-                  gzip: true,
-                },
-                (err, res, body) => {
-                  const parts = url.parse(req.url);
-                  const extension = path.extname(parts.pathname).toLowerCase();
-                  const format = extensionToFormat[extension] || '';
-                  if (err || res.statusCode < 200 || res.statusCode >= 300) {
-                    // console.log('HTTP error', err || res.statusCode);
-                    createEmptyResponse(format, '', callback);
-                    return;
-                  }
+              try {
+                const response = await axios.get(req.url, {
+                  responseType: 'arraybuffer', // Get the response as raw buffer
+                  // Axios handles gzip by default, so no need for a gzip flag
+                });
 
-                  const response = {};
-                  if (res.headers.modified) {
-                    response.modified = new Date(res.headers.modified);
-                  }
-                  if (res.headers.expires) {
-                    response.expires = new Date(res.headers.expires);
-                  }
-                  if (res.headers.etag) {
-                    response.etag = res.headers.etag;
-                  }
+                const responseHeaders = response.headers;
+                const responseData = response.data;
 
-                  response.data = body;
-                  callback(null, response);
-                },
-              );
+                const parsedResponse = {};
+                if (responseHeaders['last-modified']) {
+                  parsedResponse.modified = new Date(
+                    responseHeaders['last-modified'],
+                  );
+                }
+                if (responseHeaders.expires) {
+                  parsedResponse.expires = new Date(responseHeaders.expires);
+                }
+                if (responseHeaders.etag) {
+                  parsedResponse.etag = responseHeaders.etag;
+                }
+
+                parsedResponse.data = responseData;
+                callback(null, parsedResponse);
+              } catch (error) {
+                const parts = url.parse(req.url);
+                const extension = path.extname(parts.pathname).toLowerCase();
+                const format = extensionToFormat[extension] || '';
+                createEmptyResponse(format, '', callback);
+              }
             }
           },
         });
