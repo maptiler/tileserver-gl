@@ -151,10 +151,9 @@ function start(opts) {
 
   if (options.dataDecorator) {
     try {
-      options.dataDecoratorFunc = require(path.resolve(
-        paths.root,
-        options.dataDecorator,
-      ));
+      options.dataDecoratorFunc = require(
+        path.resolve(paths.root, options.dataDecorator),
+      );
     } catch (e) {}
   }
 
@@ -427,9 +426,8 @@ function start(opts) {
                 return res.status(404).send('Not found');
               }
             }
-            data[
-              'server_version'
-            ] = `${packageJson.name} v${packageJson.version}`;
+            data['server_version'] =
+              `${packageJson.name} v${packageJson.version}`;
             data['public_url'] = opts.publicUrl || '/';
             data['is_light'] = isLight;
             data['key_query_part'] = req.query.key
