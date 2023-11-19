@@ -20,6 +20,7 @@ import proj4 from 'proj4';
 import axios from 'axios';
 import {
   getFontsPbf,
+  listFonts,
   getTileUrls,
   isValidHttpUrl,
   fixTileJSONCenter,
@@ -613,27 +614,6 @@ let maxScaleFactor = 2;
 
 export const serve_rendered = {
   init: (options, repo) => {
-    const fontListingPromise = new Promise((resolve, reject) => {
-      fs.readdir(options.paths.fonts, (err, files) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        for (const file of files) {
-          fs.stat(path.join(options.paths.fonts, file), (err, stats) => {
-            if (err) {
-              reject(err);
-              return;
-            }
-            if (stats.isDirectory()) {
-              existingFonts[path.basename(file)] = true;
-            }
-          });
-        }
-        resolve();
-      });
-    });
-
     maxScaleFactor = Math.min(Math.floor(options.maxScaleFactor || 3), 9);
     let scalePattern = '';
     for (let i = 2; i <= maxScaleFactor; i++) {
@@ -1215,7 +1195,10 @@ export const serve_rendered = {
       return res.send(info);
     });
 
-    return Promise.all([fontListingPromise]).then(() => app);
+    return listFonts(options.paths.fonts).then((fonts) => {
+      Object.assign(existingFonts, fonts);
+      return app;
+    });
   },
   add: async (options, repo, params, id, publicUrl, dataResolver) => {
     const map = {
@@ -1618,7 +1601,7 @@ export const serve_rendered = {
       }
     });
 
-    return Promise.all([renderersReadyPromise]);
+    return renderersReadyPromise;
   },
   remove: (repo, id) => {
     const item = repo[id];

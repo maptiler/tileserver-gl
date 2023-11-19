@@ -163,6 +163,35 @@ export const getFontsPbf = (
   return Promise.all(queue).then((values) => glyphCompose.combine(values));
 };
 
+export const listFonts = async (fontPath) => {
+  const existingFonts = {};
+  const fontListingPromise = new Promise((resolve, reject) => {
+    fs.readdir(fontPath, (err, files) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      for (const file of files) {
+        fs.stat(path.join(fontPath, file), (err, stats) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          if (
+            stats.isDirectory() &&
+            fs.existsSync(path.join(fontPath, file, '0-255.pbf'))
+          ) {
+            existingFonts[path.basename(file)] = true;
+          }
+        });
+      }
+      resolve();
+    });
+  });
+  await fontListingPromise;
+  return existingFonts;
+};
+
 export const isValidHttpUrl = (string) => {
   let url;
 
