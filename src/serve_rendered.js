@@ -352,6 +352,175 @@ const calcZForBBox = (bbox, w, h, query) => {
   return z;
 };
 
+const respondImage = (
+  options,
+  item,
+  z,
+  lon,
+  lat,
+  bearing,
+  pitch,
+  width,
+  height,
+  scale,
+  format,
+  res,
+  next,
+  opt_overlay,
+  opt_mode = 'tile',
+) => {
+  if (
+    Math.abs(lon) > 180 ||
+    Math.abs(lat) > 85.06 ||
+    lon !== lon ||
+    lat !== lat
+  ) {
+    return res.status(400).send('Invalid center');
+  }
+
+  if (
+    Math.min(width, height) <= 0 ||
+    Math.max(width, height) * scale > (options.maxSize || 2048) ||
+    width !== width ||
+    height !== height
+  ) {
+    return res.status(400).send('Invalid size');
+  }
+
+  if (format === 'png' || format === 'webp') {
+  } else if (format === 'jpg' || format === 'jpeg') {
+    format = 'jpeg';
+  } else {
+    return res.status(400).send('Invalid format');
+  }
+
+  const tileMargin = Math.max(options.tileMargin || 0, 0);
+  let pool;
+  if (opt_mode === 'tile' && tileMargin === 0) {
+    pool = item.map.renderers[scale];
+  } else {
+    pool = item.map.renderers_static[scale];
+  }
+  pool.acquire((err, renderer) => {
+    const mlglZ = Math.max(0, z - 1);
+    const params = {
+      zoom: mlglZ,
+      center: [lon, lat],
+      bearing: bearing,
+      pitch: pitch,
+      width: width,
+      height: height,
+    };
+
+    if (z === 0) {
+      params.width *= 2;
+      params.height *= 2;
+    }
+
+    if (z > 2 && tileMargin > 0) {
+      params.width += tileMargin * 2;
+      params.height += tileMargin * 2;
+    }
+
+    renderer.render(params, (err, data) => {
+      pool.release(renderer);
+      if (err) {
+        console.error(err);
+        return res.status(500).header('Content-Type', 'text/plain').send(err);
+      }
+
+      // Fix semi-transparent outlines on raw, premultiplied input
+      // https://github.com/maptiler/tileserver-gl/issues/350#issuecomment-477857040
+      for (let i = 0; i < data.length; i += 4) {
+        const alpha = data[i + 3];
+        const norm = alpha / 255;
+        if (alpha === 0) {
+          data[i] = 0;
+          data[i + 1] = 0;
+          data[i + 2] = 0;
+        } else {
+          data[i] = data[i] / norm;
+          data[i + 1] = data[i + 1] / norm;
+          data[i + 2] = data[i + 2] / norm;
+        }
+      }
+
+      const image = sharp(data, {
+        raw: {
+          width: params.width * scale,
+          height: params.height * scale,
+          channels: 4,
+        },
+      });
+
+      if (z > 2 && tileMargin > 0) {
+        const [_, y] = mercator.px(params.center, z);
+        let yoffset = Math.max(
+          Math.min(0, y - 128 - tileMargin),
+          y + 128 + tileMargin - Math.pow(2, z + 8),
+        );
+        image.extract({
+          left: tileMargin * scale,
+          top: (tileMargin + yoffset) * scale,
+          width: width * scale,
+          height: height * scale,
+        });
+      }
+
+      if (z === 0) {
+        // HACK: when serving zoom 0, resize the 0 tile from 512 to 256
+        image.resize(width * scale, height * scale);
+      }
+
+      const composite_array = [];
+      if (opt_overlay) {
+        composite_array.push({ input: opt_overlay });
+      }
+      if (item.watermark) {
+        const canvas = renderWatermark(width, height, scale, item.watermark);
+
+        composite_array.push({ input: canvas.toBuffer() });
+      }
+
+      if (opt_mode === 'static' && item.staticAttributionText) {
+        const canvas = rendeAttribution(
+          width,
+          height,
+          scale,
+          item.staticAttributionText,
+        );
+
+        composite_array.push({ input: canvas.toBuffer() });
+      }
+
+      if (composite_array.length > 0) {
+        image.composite(composite_array);
+      }
+
+      const formatQuality = (options.formatQuality || {})[format];
+
+      if (format === 'png') {
+        image.png({ adaptiveFiltering: false });
+      } else if (format === 'jpeg') {
+        image.jpeg({ quality: formatQuality || 80 });
+      } else if (format === 'webp') {
+        image.webp({ quality: formatQuality || 90 });
+      }
+      image.toBuffer((err, buffer, info) => {
+        if (!buffer) {
+          return res.status(404).send('Not found');
+        }
+
+        res.set({
+          'Last-Modified': item.lastModified,
+          'Content-Type': `image/${format}`,
+        });
+        return res.status(200).send(buffer);
+      });
+    });
+  });
+};
+
 const existingFonts = {};
 let maxScaleFactor = 2;
 
@@ -365,182 +534,6 @@ export const serve_rendered = {
     scalePattern = `@[${scalePattern}]x`;
 
     const app = express().disable('x-powered-by');
-
-    const respondImage = (
-      item,
-      z,
-      lon,
-      lat,
-      bearing,
-      pitch,
-      width,
-      height,
-      scale,
-      format,
-      res,
-      next,
-      opt_overlay,
-      opt_mode = 'tile',
-    ) => {
-      if (
-        Math.abs(lon) > 180 ||
-        Math.abs(lat) > 85.06 ||
-        lon !== lon ||
-        lat !== lat
-      ) {
-        return res.status(400).send('Invalid center');
-      }
-
-      if (
-        Math.min(width, height) <= 0 ||
-        Math.max(width, height) * scale > (options.maxSize || 2048) ||
-        width !== width ||
-        height !== height
-      ) {
-        return res.status(400).send('Invalid size');
-      }
-
-      if (format === 'png' || format === 'webp') {
-      } else if (format === 'jpg' || format === 'jpeg') {
-        format = 'jpeg';
-      } else {
-        return res.status(400).send('Invalid format');
-      }
-
-      const tileMargin = Math.max(options.tileMargin || 0, 0);
-      let pool;
-      if (opt_mode === 'tile' && tileMargin === 0) {
-        pool = item.map.renderers[scale];
-      } else {
-        pool = item.map.renderers_static[scale];
-      }
-      pool.acquire((err, renderer) => {
-        const mlglZ = Math.max(0, z - 1);
-        const params = {
-          zoom: mlglZ,
-          center: [lon, lat],
-          bearing: bearing,
-          pitch: pitch,
-          width: width,
-          height: height,
-        };
-
-        if (z === 0) {
-          params.width *= 2;
-          params.height *= 2;
-        }
-
-        if (z > 2 && tileMargin > 0) {
-          params.width += tileMargin * 2;
-          params.height += tileMargin * 2;
-        }
-
-        renderer.render(params, (err, data) => {
-          pool.release(renderer);
-          if (err) {
-            console.error(err);
-            return res
-              .status(500)
-              .header('Content-Type', 'text/plain')
-              .send(err);
-          }
-
-          // Fix semi-transparent outlines on raw, premultiplied input
-          // https://github.com/maptiler/tileserver-gl/issues/350#issuecomment-477857040
-          for (let i = 0; i < data.length; i += 4) {
-            const alpha = data[i + 3];
-            const norm = alpha / 255;
-            if (alpha === 0) {
-              data[i] = 0;
-              data[i + 1] = 0;
-              data[i + 2] = 0;
-            } else {
-              data[i] = data[i] / norm;
-              data[i + 1] = data[i + 1] / norm;
-              data[i + 2] = data[i + 2] / norm;
-            }
-          }
-
-          const image = sharp(data, {
-            raw: {
-              width: params.width * scale,
-              height: params.height * scale,
-              channels: 4,
-            },
-          });
-
-          if (z > 2 && tileMargin > 0) {
-            const [_, y] = mercator.px(params.center, z);
-            let yoffset = Math.max(
-              Math.min(0, y - 128 - tileMargin),
-              y + 128 + tileMargin - Math.pow(2, z + 8),
-            );
-            image.extract({
-              left: tileMargin * scale,
-              top: (tileMargin + yoffset) * scale,
-              width: width * scale,
-              height: height * scale,
-            });
-          }
-
-          if (z === 0) {
-            // HACK: when serving zoom 0, resize the 0 tile from 512 to 256
-            image.resize(width * scale, height * scale);
-          }
-
-          const composite_array = [];
-          if (opt_overlay) {
-            composite_array.push({ input: opt_overlay });
-          }
-          if (item.watermark) {
-            const canvas = renderWatermark(
-              width,
-              height,
-              scale,
-              item.watermark,
-            );
-
-            composite_array.push({ input: canvas.toBuffer() });
-          }
-
-          if (opt_mode === 'static' && item.staticAttributionText) {
-            const canvas = rendeAttribution(
-              width,
-              height,
-              scale,
-              item.staticAttributionText,
-            );
-
-            composite_array.push({ input: canvas.toBuffer() });
-          }
-
-          if (composite_array.length > 0) {
-            image.composite(composite_array);
-          }
-
-          const formatQuality = (options.formatQuality || {})[format];
-
-          if (format === 'png') {
-            image.png({ adaptiveFiltering: false });
-          } else if (format === 'jpeg') {
-            image.jpeg({ quality: formatQuality || 80 });
-          } else if (format === 'webp') {
-            image.webp({ quality: formatQuality || 90 });
-          }
-          image.toBuffer((err, buffer, info) => {
-            if (!buffer) {
-              return res.status(404).send('Not found');
-            }
-
-            res.set({
-              'Last-Modified': item.lastModified,
-              'Content-Type': `image/${format}`,
-            });
-            return res.status(200).send(buffer);
-          });
-        });
-      });
-    };
 
     app.get(
       `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+):scale(${scalePattern})?.:format([\\w]+)`,
@@ -582,6 +575,7 @@ export const serve_rendered = {
           z,
         );
         return respondImage(
+          options,
           item,
           z,
           tileCenter[0],
@@ -664,6 +658,7 @@ export const serve_rendered = {
             );
 
             return respondImage(
+              options,
               item,
               z,
               x,
@@ -745,6 +740,7 @@ export const serve_rendered = {
             req.query,
           );
           return respondImage(
+            options,
             item,
             z,
             x,
@@ -879,6 +875,7 @@ export const serve_rendered = {
             );
 
             return respondImage(
+              options,
               item,
               z,
               x,
