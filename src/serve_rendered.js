@@ -765,7 +765,7 @@ export const serve_rendered = {
             image.resize(width * scale, height * scale);
           }
 
-          var composite_array = [];
+          const composite_array = [];
           if (opt_overlay) {
             composite_array.push({ input: opt_overlay });
           }
