@@ -365,9 +365,8 @@ const respondImage = (
   scale,
   format,
   res,
-  next,
-  opt_overlay,
-  opt_mode = 'tile',
+  overlay = null,
+  mode = 'tile',
 ) => {
   if (
     Math.abs(lon) > 180 ||
@@ -396,7 +395,7 @@ const respondImage = (
 
   const tileMargin = Math.max(options.tileMargin || 0, 0);
   let pool;
-  if (opt_mode === 'tile' && tileMargin === 0) {
+  if (mode === 'tile' && tileMargin === 0) {
     pool = item.map.renderers[scale];
   } else {
     pool = item.map.renderers_static[scale];
@@ -473,8 +472,8 @@ const respondImage = (
       }
 
       const composite_array = [];
-      if (opt_overlay) {
-        composite_array.push({ input: opt_overlay });
+      if (overlay) {
+        composite_array.push({ input: overlay });
       }
       if (item.watermark) {
         const canvas = renderWatermark(width, height, scale, item.watermark);
@@ -482,7 +481,7 @@ const respondImage = (
         composite_array.push({ input: canvas.toBuffer() });
       }
 
-      if (opt_mode === 'static' && item.staticAttributionText) {
+      if (mode === 'static' && item.staticAttributionText) {
         const canvas = rendeAttribution(
           width,
           height,
@@ -587,7 +586,6 @@ export const serve_rendered = {
           scale,
           format,
           res,
-          next,
         );
       },
     );
@@ -670,7 +668,6 @@ export const serve_rendered = {
               scale,
               format,
               res,
-              next,
               overlay,
               'static',
             );
@@ -752,7 +749,6 @@ export const serve_rendered = {
             scale,
             format,
             res,
-            next,
             overlay,
             'static',
           );
@@ -887,7 +883,6 @@ export const serve_rendered = {
               scale,
               format,
               res,
-              next,
               overlay,
               'static',
             );
