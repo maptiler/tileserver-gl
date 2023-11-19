@@ -24,6 +24,5 @@ after(function () {
   console.log('global teardown');
   global.server.close(function () {
     console.log('Done');
-    process.exit();
   });
 });
