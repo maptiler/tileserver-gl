@@ -428,24 +428,9 @@ const respondImage = (
         return res.status(500).header('Content-Type', 'text/plain').send(err);
       }
 
-      // Fix semi-transparent outlines on raw, premultiplied input
-      // https://github.com/maptiler/tileserver-gl/issues/350#issuecomment-477857040
-      for (let i = 0; i < data.length; i += 4) {
-        const alpha = data[i + 3];
-        const norm = alpha / 255;
-        if (alpha === 0) {
-          data[i] = 0;
-          data[i + 1] = 0;
-          data[i + 2] = 0;
-        } else {
-          data[i] = data[i] / norm;
-          data[i + 1] = data[i + 1] / norm;
-          data[i + 2] = data[i + 2] / norm;
-        }
-      }
-
       const image = sharp(data, {
         raw: {
+          premultiplied: true,
           width: params.width * scale,
           height: params.height * scale,
           channels: 4,
