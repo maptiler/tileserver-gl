@@ -19,6 +19,7 @@ img, canvas {
 <div>A fast way to visually check for regressions. Each row shows: a test picture, the expected output, then the difference with <a href="https://github.com/mapbox/pixelmatch#pixelmatch">pixelmatch</a>.</div>
 <div>Put <i>zurich_switzerland.mbtiles</i> in public/resources/gallery/ then run with:</div>
 <pre>docker build . && docker run --rm -it -p 8080:8080 $(docker build -q .) -V --config /usr/src/app/public/resources/gallery/config.json</pre>
+<div>This page is then served at <a href="http://0.0.0.0:8080/gallery/gallery.html">http://0.0.0.0:8080/gallery/gallery.html</a></div>
 
 <h2>Interactive vector</h2>
 <iframe src="/styles/basic-preview/#11/47.379/8.5375" width="400" height="300"></iframe>
@@ -93,7 +94,7 @@ function loaded() {
   console.log('Loading done.');
 
   let success = true;
-  for (const [id, url] of tests) {
+  for (const [id] of tests) {
     const numDiffPixels = compare('a_' + id, 'b_' + id, 'c_' + id);
     if (numDiffPixels > 0) {
       success = false;
