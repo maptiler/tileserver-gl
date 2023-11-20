@@ -278,7 +278,7 @@ export const renderWatermark = (width, height, scale, text) => {
   return canvas;
 };
 
-export const rendeAttribution = (width, height, scale, text) => {
+export const renderAttribution = (width, height, scale, text) => {
   const canvas = createCanvas(scale * width, scale * height);
   const ctx = canvas.getContext('2d');
   ctx.scale(scale, scale);

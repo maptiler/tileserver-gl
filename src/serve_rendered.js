@@ -29,7 +29,7 @@ import {
   GetPMtilesInfo,
   GetPMtilesTile,
 } from './pmtiles_adapter.js';
-import { renderOverlay, renderWatermark, rendeAttribution } from './render.js';
+import { renderOverlay, renderWatermark, renderAttribution } from './render.js';
 
 const FLOAT_PATTERN = '[+-]?(?:\\d+|\\d+.?\\d+)';
 const PATH_PATTERN =
@@ -482,7 +482,7 @@ const respondImage = (
       }
 
       if (mode === 'static' && item.staticAttributionText) {
-        const canvas = rendeAttribution(
+        const canvas = renderAttribution(
           width,
           height,
           scale,
