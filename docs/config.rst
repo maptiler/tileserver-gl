@@ -132,6 +132,19 @@ If you have plenty of memory, try setting these equal to or slightly above your 
 If you need to conserve memory, try lower values for scale factors that are less common.
 Default is ``[16, 8, 4]``.
 
+``pbfAlias``
+------------------------
+
+Some CDNs did not handle .pbf extension as a static file correctly.
+The default URLs (with .pbf) are always available, but an alternative can be set.
+An example extension suffix would be ".pbf.pict".
+
+``serveAllFonts``
+------------------------
+
+If this option is enabled, all the fonts from the ``paths.fonts`` will be served.
+Otherwise only the fonts referenced by available styles will be served.
+
 ``serveAllStyles``
 ------------------------
 
@@ -139,10 +152,16 @@ If this option is enabled, all the styles from the ``paths.styles`` will be serv
 The process will also watch for changes in this directory and remove/add more styles dynamically.
 It is recommended to also use the ``serveAllFonts`` option when using this option.
 
+``serveStaticMaps``
+------------------------
+
+If this option is enabled, all the static map endpoints will be served.
+Default is ``true``.
+
 ``watermark``
 -----------
 
-Optional string to be rendered into the raster tiles (and static maps) as watermark (bottom-left corner).
+Optional string to be rendered into the raster tiles and static maps as watermark (bottom-left corner).
 Not used by default.
 
 ``staticAttributionText``

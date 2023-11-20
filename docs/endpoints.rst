@@ -52,14 +52,14 @@ Static images
 
     * can be provided multiple times
 
-  * ``latlng`` - indicates coordinates are in ``lat,lng`` order rather than the usual ``lng,lat``
-  * ``fill`` - color to use as the fill (e.g. ``red``, ``rgba(255,255,255,0.5)``, ``#0000ff``)
-  * ``stroke`` - color of the path stroke
-  * ``width`` - width of the stroke
-  * ``linecap`` - rendering style for the start and end points of the path
-  * ``linejoin`` - rendering style for overlapping segments of the path with differing directions
-  * ``border`` - color of the optional border path stroke
-  * ``borderwidth`` - width of the border stroke (default 10% of width)
+  * ``latlng`` - indicates coordinates are in ``lat,lng`` order rather than the usual ``lng,lat`` for paths and markers
+  * ``fill`` - default color to use as the fill (e.g. ``red``, ``rgba(255,255,255,0.5)``, ``#0000ff``) for all paths
+  * ``stroke`` - default color of the path stroke for all paths
+  * ``width`` - default width of the stroke for all paths
+  * ``linecap`` - rendering style for the start and end points of all paths - see https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineCap
+  * ``linejoin`` - rendering style for joining successive segments of all paths when the direction changes - see https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineJoin
+  * ``border`` - color of the optional border stroke for all paths ; the border is like a halo around the stroke
+  * ``borderwidth`` - width of the border stroke (default 10% of stroke width) for all paths
   * ``marker`` - Marker in format ``lng,lat|iconPath|option|option|...``
 
     * Will be rendered with the bottom center at the provided location
