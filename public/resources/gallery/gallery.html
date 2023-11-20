@@ -16,42 +16,23 @@ img, canvas {
 </head>
 <body onload="loaded()">
 <h1>Tileserver-gl tests</h1>
-<div>A fast way to visually check for regressions</div>
+<div>A fast way to visually check for regressions. Each row shows: a test picture, the expected output, then the difference with <a href="https://github.com/mapbox/pixelmatch#pixelmatch">pixelmatch</a>.</div>
 <div>Put <i>zurich_switzerland.mbtiles</i> in public/resources/gallery/ then run with:</div>
 <pre>docker build . && docker run --rm -it -p 8080:8080 $(docker build -q .) -V --config /usr/src/app/public/resources/gallery/config.json</pre>
 
-<h2>interactive-vector</h2>
+<h2>Interactive vector</h2>
 <iframe src="/styles/basic-preview/#11/47.379/8.5375" width="400" height="300"></iframe>
 <img src="interactive-vector.png" />
 
-<h2>interactive-raster</h2>
+<h2>Interactive raster</h2>
 <iframe src="/styles/basic-preview/?raster#12/47.379/8.5375" width="400" height="300"></iframe>
 <img src="interactive-raster.png" />
+
+<h1 id="result">Loading...</h1>
 
 <script>
 const width = 400;
 const height = 300;
-
-function getImg(id) {
-  const img = document.getElementById(id);
-  const canvas = document.createElement('canvas');
-  canvas.width = img.width;
-  canvas.height = img.height;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(img, 0, 0);
-  return ctx.getImageData(0, 0, width, height);
-}
-
-function compare(a, b, c) {
-  const img1 = getImg(a);
-  const img2 = getImg(b);
-  const cc = document.getElementById(c);
-  const ctx = cc.getContext('2d');
-  const imgData = ctx.createImageData(width, height);
-  const diff = ctx.createImageData(width, height);
-  pixelmatch(img1.data, img2.data, diff.data, width, height, { threshold: 0.1 });
-  ctx.putImageData(diff, 0, 0);
-}
 
 const tests = [
   ['static-lat-lng', '/styles/basic-preview/static/8.5375,47.379,12/400x300.png'],
@@ -65,24 +46,40 @@ const tests = [
   ['markers', '/styles/basic-preview/static/8.5375,47.379,12/400x300.png?marker=8.53180,47.38713|http://localhost:8080/images/logo.png|scale:0.3&marker=8.53180,47.37457|http://localhost:8080/images/logo.png|scale:0.3'],
 ];
 
+function getImgData(id) {
+  const img = document.getElementById(id);
+  const canvas = document.createElement('canvas');
+  canvas.width = img.width;
+  canvas.height = img.height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+  return ctx.getImageData(0, 0, img.width, img.height);
+}
+
+function compare(a, b, c) {
+  const img1 = getImgData(a);
+  const img2 = getImgData(b);
+
+  const cc = document.getElementById(c);
+  const ctx = cc.getContext('2d');
+  const diff = ctx.createImageData(width, height);
+  const numDiffPixels = pixelmatch(img1.data, img2.data, diff.data, width, height, { threshold: 0.1 });
+  ctx.putImageData(diff, 0, 0);
+
+  return numDiffPixels;
+}
+
 for (const [id, url] of tests) {
   const h2 = document.createElement('h2');
   h2.innerText = id;
   const a = document.createElement('img');
-  a.crossOrigin = 'anonymous';
   a.src = url;
-  a.width = width;
-  a.height = height;
   a.id = 'a_' + id;
   const b = document.createElement('img');
-  b.crossOrigin = 'anonymous';
   b.src = id + '.png';
-  b.width = width;
-  b.height = height;
   b.id = 'b_' + id;
   const c = document.createElement('canvas');
   c.width = width;
-  c.height = height;
   c.height = height;
   c.id = 'c_' + id;
   document.body.appendChild(h2);
@@ -94,9 +91,18 @@ console.log('Init done.');
 
 function loaded() {
   console.log('Loading done.');
+
+  let success = true;
   for (const [id, url] of tests) {
-    compare('a_' + id, 'b_' + id, 'c_' + id);
+    const numDiffPixels = compare('a_' + id, 'b_' + id, 'c_' + id);
+    if (numDiffPixels > 0) {
+      success = false;
+    }
   }
+  const r = document.getElementById('result');
+  r.innerText = success ? 'Success' : 'Failure';
+  r.style.color = success ? 'green' : 'red';
+
   console.log('Compare done.');
 }
 </script>
