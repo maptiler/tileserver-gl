@@ -98,9 +98,7 @@ export const serve_style = {
 
     const validationErrors = validate(styleFileData);
     if (validationErrors.length > 0) {
-      console.log(
-        `The file "${params.style}" is not valid a valid style file:`,
-      );
+      console.log(`The file "${params.style}" is not a valid style file:`);
       for (const err of validationErrors) {
         console.log(`${err.line}: ${err.message}`);
       }

@@ -82,9 +82,6 @@
             <div class="identifier">type: {{#is_vector}}vector{{/is_vector}}{{^is_vector}}raster{{/is_vector}} data {{#if source_type}} | ext: {{source_type}}{{/if}}</div>
             <p class="services">
               services: <a href="{{public_url}}data/{{@key}}.json{{&../key_query}}">TileJSON</a>
-              {{#if wmts_link}}
-                | <a href="{{&wmts_link}}">WMTS</a>
-              {{/if}}
               {{#if xyz_link}}
                 | <a href="#" onclick="return toggle_xyz('xyz_data_{{@key}}');">XYZ</a>
                   <input id="xyz_data_{{@key}}" type="text" value="{{&xyz_link}}" style="display:none;" />
