@@ -413,9 +413,8 @@ const respondImage = (
     pool = item.map.renderersStatic[scale];
   }
   pool.acquire((err, renderer) => {
-    const mlglZ = Math.max(0, z - 1);
     const params = {
-      zoom: mlglZ,
+      zoom: z - 1, // Maplibre-native zoom 0  corresponds to our zoom 1.
       center: [lon, lat],
       bearing,
       pitch,
@@ -424,6 +423,8 @@ const respondImage = (
     };
 
     if (z === 0) {
+      // params.zoom equals -1
+      params.zoom = 0;
       params.width *= 2;
       params.height *= 2;
     }
@@ -464,7 +465,7 @@ const respondImage = (
       }
 
       if (z === 0) {
-        // HACK: when serving zoom 0, resize the 0 tile from 512 to 256
+        // HACK: when serving zoom 0 (unsupported by Maplibre-native), generate at zoom 1 then downsize.
         image.resize(width * scale, height * scale);
       }
 
