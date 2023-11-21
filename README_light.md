@@ -32,4 +32,4 @@ docker run --rm -it -v $(pwd):/data -p 8080:8080 tileserver-gl-light
 ```
 
 ## Documentation
-You can read full documentation of this project at https://tileserver.readthedocs.io/.
+You can read full documentation of this project at https://maptiler-tileserver.readthedocs.io/
