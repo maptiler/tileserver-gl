@@ -1,9 +1,9 @@
 import * as http from 'http';
-var options = {
+const options = {
   timeout: 2000,
 };
-var url = 'http://localhost:8080/health';
-var request = http.request(url, options, (res) => {
+const url = 'http://localhost:8080/health';
+const request = http.request(url, options, (res) => {
   console.log(`STATUS: ${res.statusCode}`);
   if (res.statusCode == 200) {
     process.exit(0);

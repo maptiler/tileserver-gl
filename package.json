@@ -6,7 +6,7 @@
   "bin": "src/main.js",
   "type": "module",
   "scripts": {
-    "test": "mocha test/**.js --timeout 10000",
+    "test": "mocha test/**.js --timeout 10000 --exit",
     "lint:yml": "yamllint --schema=CORE_SCHEMA *.{yml,yaml}",
     "lint:js": "npm run lint:eslint && npm run lint:prettier",
     "lint:js:fix": "npm run lint:eslint:fix && npm run lint:prettier:fix",
@@ -14,7 +14,7 @@
     "lint:eslint:fix": "eslint --fix \"{,!(node_modules|dist|static|public)/**/}*.{js,ts,cjs,mjs}\" --ignore-path .gitignore",
     "lint:prettier": "prettier --check \"{,!(node_modules|dist|static|public)/**/}*.{js,ts,cjs,mjs,json}\" --ignore-path .gitignore",
     "lint:prettier:fix": "prettier --write \"{,!(node_modules|dist|static|public)/**/}*.{js,ts,cjs,mjs,json}\" --ignore-path .gitignore",
-    "docker": "docker build -f Dockerfile . && docker run --rm -i -p 8080:8080 $(docker build -q .)",
+    "docker": "docker build . && docker run --rm -i -p 8080:8080 $(docker build -q .)",
     "prepare": "node -e \"if (process.env.NODE_ENV !== 'production'){ process.exit(1) } \" || husky install"
   },
   "dependencies": {
@@ -25,7 +25,7 @@
     "@mapbox/vector-tile": "1.3.1",
     "@maplibre/maplibre-gl-native": "5.2.0",
     "@maplibre/maplibre-gl-style-spec": "18.0.0",
-    "@sindresorhus/fnv1a": "3.0.0",
+    "@sindresorhus/fnv1a": "3.1.0",
     "advanced-pool": "0.3.3",
     "axios": "^1.6.2",
     "canvas": "2.11.2",
@@ -46,12 +46,12 @@
     "tileserver-gl-styles": "2.0.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "^18.4.1",
-    "@commitlint/config-conventional": "^18.4.0",
-    "@typescript-eslint/eslint-plugin": "^6.11.0",
-    "@typescript-eslint/parser": "^6.11.0",
+    "@commitlint/cli": "^18.4.3",
+    "@commitlint/config-conventional": "^18.4.3",
+    "@typescript-eslint/eslint-plugin": "^6.12.0",
+    "@typescript-eslint/parser": "^6.12.0",
     "chai": "4.3.10",
-    "eslint": "^8.53.0",
+    "eslint": "^8.54.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-jsdoc": "^46.9.0",
     "eslint-plugin-prettier": "^5.0.1",

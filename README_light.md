@@ -28,8 +28,8 @@ docker build -t tileserver-gl-light .
 [Download from OpenMapTiles.com](https://openmaptiles.com/downloads/planet/) or [create](https://github.com/openmaptiles/openmaptiles) your vector tile, and run following in directory contains your *.mbtiles.
 
 ```
-docker run --rm -it -v $(pwd):/data -p 8000:80 tileserver-gl-light
+docker run --rm -it -v $(pwd):/data -p 8080:8080 tileserver-gl-light
 ```
 
 ## Documentation
-You can read full documentation of this project at https://tileserver.readthedocs.io/.
+You can read full documentation of this project at https://maptiler-tileserver.readthedocs.io/
