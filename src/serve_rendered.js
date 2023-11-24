@@ -1,5 +1,17 @@
 'use strict';
 
+// SECTION START
+//
+// The order of the two imports below is important.
+// For an unknown reason, if the order is reversed, rendering can crash.
+// This happens on ARM:
+//  > terminate called after throwing an instance of 'std::runtime_error'
+//  > what():  Cannot read GLX extensions.
+import 'canvas';
+import '@maplibre/maplibre-gl-native';
+//
+// SECTION END
+
 import advancedPool from 'advanced-pool';
 import fs from 'node:fs';
 import path from 'path';
