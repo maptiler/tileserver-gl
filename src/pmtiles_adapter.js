@@ -11,7 +11,7 @@ class PMTilesFileSource {
   }
   async getBytes(offset, length) {
     const buffer = Buffer.alloc(length);
-    await ReadFileBytes(this.fd, buffer, offset);
+    await readFileBytes(this.fd, buffer, offset);
     const ab = buffer.buffer.slice(
       buffer.byteOffset,
       buffer.byteOffset + buffer.byteLength,
@@ -26,7 +26,7 @@ class PMTilesFileSource {
  * @param buffer
  * @param offset
  */
-async function ReadFileBytes(fd, buffer, offset) {
+async function readFileBytes(fd, buffer, offset) {
   return new Promise((resolve, reject) => {
     fs.read(fd, buffer, 0, buffer.length, offset, (err) => {
       if (err) {
@@ -41,7 +41,7 @@ async function ReadFileBytes(fd, buffer, offset) {
  *
  * @param FilePath
  */
-export function PMtilesOpen(FilePath) {
+export function openPMtiles(FilePath) {
   let pmtiles = undefined;
 
   if (isValidHttpUrl(FilePath)) {
@@ -59,12 +59,12 @@ export function PMtilesOpen(FilePath) {
  *
  * @param pmtiles
  */
-export async function GetPMtilesInfo(pmtiles) {
+export async function getPMtilesInfo(pmtiles) {
   const header = await pmtiles.getHeader();
   const metadata = await pmtiles.getMetadata();
 
   //Add missing metadata from header
-  metadata['format'] = GetPmtilesTileType(header.tileType).type;
+  metadata['format'] = getPmtilesTileType(header.tileType).type;
   metadata['minzoom'] = header.minZoom;
   metadata['maxzoom'] = header.maxZoom;
 
@@ -103,23 +103,23 @@ export async function GetPMtilesInfo(pmtiles) {
  * @param x
  * @param y
  */
-export async function GetPMtilesTile(pmtiles, z, x, y) {
+export async function getPMtilesTile(pmtiles, z, x, y) {
   const header = await pmtiles.getHeader();
-  const TileType = GetPmtilesTileType(header.tileType);
+  const tileType = getPmtilesTileType(header.tileType);
   let zxyTile = await pmtiles.getZxy(z, x, y);
   if (zxyTile && zxyTile.data) {
     zxyTile = Buffer.from(zxyTile.data);
   } else {
     zxyTile = undefined;
   }
-  return { data: zxyTile, header: TileType.header };
+  return { data: zxyTile, header: tileType.header };
 }
 
 /**
  *
  * @param typenum
  */
-function GetPmtilesTileType(typenum) {
+function getPmtilesTileType(typenum) {
   let head = {};
   let tileType;
   switch (typenum) {

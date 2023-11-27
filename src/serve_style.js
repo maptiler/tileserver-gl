@@ -11,12 +11,12 @@ import { getPublicUrl } from './utils.js';
 
 const httpTester = /^(http(s)?:)?\/\//;
 
-const fixUrl = (req, url, publicUrl, opt_nokey) => {
+const fixUrl = (req, url, publicUrl) => {
   if (!url || typeof url !== 'string' || url.indexOf('local://') !== 0) {
     return url;
   }
   const queryParams = [];
-  if (!opt_nokey && req.query.key) {
+  if (req.query.key) {
     queryParams.unshift(`key=${encodeURIComponent(req.query.key)}`);
   }
   let query = '';
@@ -42,20 +42,10 @@ export const serve_style = {
       }
       // mapbox-gl-js viewer cannot handle sprite urls with query
       if (styleJSON_.sprite) {
-        styleJSON_.sprite = fixUrl(
-          req,
-          styleJSON_.sprite,
-          item.publicUrl,
-          false,
-        );
+        styleJSON_.sprite = fixUrl(req, styleJSON_.sprite, item.publicUrl);
       }
       if (styleJSON_.glyphs) {
-        styleJSON_.glyphs = fixUrl(
-          req,
-          styleJSON_.glyphs,
-          item.publicUrl,
-          false,
-        );
+        styleJSON_.glyphs = fixUrl(req, styleJSON_.glyphs, item.publicUrl);
       }
       return res.send(styleJSON_);
     });

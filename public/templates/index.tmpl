@@ -79,7 +79,7 @@
           <div class="details">
             <h3>{{tileJSON.name}}</h3>
             <div class="identifier">identifier: {{@key}}{{#if formatted_filesize}} | size: {{formatted_filesize}}{{/if}}</div>
-            <div class="identifier">type: {{#is_vector}}vector{{/is_vector}}{{^is_vector}}raster{{/is_vector}} data {{#if source_type}} | ext: {{source_type}}{{/if}}</div>
+            <div class="identifier">type: {{#is_vector}}vector{{/is_vector}}{{^is_vector}}raster{{/is_vector}} data {{#if sourceType}} | ext: {{sourceType}}{{/if}}</div>
             <p class="services">
               services: <a href="{{public_url}}data/{{@key}}.json{{&../key_query}}">TileJSON</a>
               {{#if xyz_link}}

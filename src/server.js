@@ -141,11 +141,8 @@ function start(opts) {
 
   // Load all available icons into a settings object
   startupPromises.push(
-    new Promise((resolve) => {
-      getFiles(paths.icons).then((files) => {
-        paths.availableIcons = files;
-        resolve();
-      });
+    getFiles(paths.icons).then((files) => {
+      paths.availableIcons = files;
     }),
   );
 
@@ -182,15 +179,15 @@ function start(opts) {
         item,
         id,
         opts.publicUrl,
-        (StyleSourceId, protocol) => {
+        (styleSourceId, protocol) => {
           let dataItemId;
           for (const id of Object.keys(data)) {
-            if (id === StyleSourceId) {
+            if (id === styleSourceId) {
               // Style id was found in data ids, return that id
               dataItemId = id;
             } else {
               const fileType = Object.keys(data[id])[0];
-              if (data[id][fileType] === StyleSourceId) {
+              if (data[id][fileType] === styleSourceId) {
                 // Style id was found in data filename, return the id that filename belong to
                 dataItemId = id;
               }
@@ -202,21 +199,21 @@ function start(opts) {
           } else {
             if (!allowMoreData) {
               console.log(
-                `ERROR: style "${item.style}" using unknown file "${StyleSourceId}"! Skipping...`,
+                `ERROR: style "${item.style}" using unknown file "${styleSourceId}"! Skipping...`,
               );
               return undefined;
             } else {
               let id =
-                StyleSourceId.substr(0, StyleSourceId.lastIndexOf('.')) ||
-                StyleSourceId;
-              if (isValidHttpUrl(StyleSourceId)) {
+                styleSourceId.substr(0, styleSourceId.lastIndexOf('.')) ||
+                styleSourceId;
+              if (isValidHttpUrl(styleSourceId)) {
                 id =
-                  fnv1a(StyleSourceId) + '_' + id.replace(/^.*\/(.*)$/, '$1');
+                  fnv1a(styleSourceId) + '_' + id.replace(/^.*\/(.*)$/, '$1');
               }
               while (data[id]) id += '_'; //if the data source id already exists, add a "_" untill it doesn't
               //Add the new data source to the data array.
               data[id] = {
-                [protocol]: StyleSourceId,
+                [protocol]: styleSourceId,
               };
 
               return id;
@@ -239,15 +236,15 @@ function start(opts) {
             item,
             id,
             opts.publicUrl,
-            (StyleSourceId) => {
+            function dataResolver(styleSourceId) {
               let fileType;
               let inputFile;
               for (const id of Object.keys(data)) {
                 fileType = Object.keys(data[id])[0];
-                if (StyleSourceId == id) {
+                if (styleSourceId == id) {
                   inputFile = data[id][fileType];
                   break;
-                } else if (data[id][fileType] == StyleSourceId) {
+                } else if (data[id][fileType] == styleSourceId) {
                   inputFile = data[id][fileType];
                   break;
                 }
@@ -256,7 +253,7 @@ function start(opts) {
                 inputFile = path.resolve(options.paths[fileType], inputFile);
               }
 
-              return { inputfile: inputFile, filetype: fileType };
+              return { inputFile, fileType };
             },
           ),
         );
@@ -347,7 +344,7 @@ function start(opts) {
       result.push({
         version: styleJSON.version,
         name: styleJSON.name,
-        id: id,
+        id,
         url: `${getPublicUrl(
           opts.publicUrl,
           req,
@@ -633,9 +630,9 @@ function start(opts) {
   enableShutdown(server);
 
   return {
-    app: app,
-    server: server,
-    startupPromise: startupPromise,
+    app,
+    server,
+    startupPromise,
   };
 }
 

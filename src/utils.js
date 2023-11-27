@@ -1,7 +1,8 @@
 'use strict';
 
 import path from 'path';
-import fs from 'node:fs';
+import fsPromises from 'fs/promises';
+import fs, { existsSync } from 'node:fs';
 import clone from 'clone';
 import glyphCompose from '@mapbox/glyph-pbf-composite';
 
@@ -139,7 +140,7 @@ const getFontPbf = (allowedFonts, fontPath, name, range, fallbacks) =>
     }
   });
 
-export const getFontsPbf = (
+export const getFontsPbf = async (
   allowedFonts,
   fontPath,
   names,
@@ -160,35 +161,24 @@ export const getFontsPbf = (
     );
   }
 
-  return Promise.all(queue).then((values) => glyphCompose.combine(values));
+  const values = await Promise.all(queue);
+  return glyphCompose.combine(values);
 };
 
 export const listFonts = async (fontPath) => {
   const existingFonts = {};
-  const fontListingPromise = new Promise((resolve, reject) => {
-    fs.readdir(fontPath, (err, files) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-      for (const file of files) {
-        fs.stat(path.join(fontPath, file), (err, stats) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          if (
-            stats.isDirectory() &&
-            fs.existsSync(path.join(fontPath, file, '0-255.pbf'))
-          ) {
-            existingFonts[path.basename(file)] = true;
-          }
-        });
-      }
-      resolve();
-    });
-  });
-  await fontListingPromise;
+
+  const files = await fsPromises.readdir(fontPath);
+  for (const file of files) {
+    const stats = await fsPromises.stat(path.join(fontPath, file));
+    if (
+      stats.isDirectory() &&
+      existsSync(path.join(fontPath, file, '0-255.pbf'))
+    ) {
+      existingFonts[path.basename(file)] = true;
+    }
+  }
+
   return existingFonts;
 };
 

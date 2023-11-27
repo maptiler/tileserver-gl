@@ -12,9 +12,9 @@ import { VectorTile } from '@mapbox/vector-tile';
 
 import { getTileUrls, isValidHttpUrl, fixTileJSONCenter } from './utils.js';
 import {
-  PMtilesOpen,
-  GetPMtilesInfo,
-  GetPMtilesTile,
+  openPMtiles,
+  getPMtilesInfo,
+  getPMtilesTile,
 } from './pmtiles_adapter.js';
 
 export const serve_data = {
@@ -53,8 +53,8 @@ export const serve_data = {
         ) {
           return res.status(404).send('Out of bounds');
         }
-        if (item.source_type === 'pmtiles') {
-          let tileinfo = await GetPMtilesTile(item.source, z, x, y);
+        if (item.sourceType === 'pmtiles') {
+          let tileinfo = await getPMtilesTile(item.source, z, x, y);
           if (tileinfo == undefined || tileinfo.data == undefined) {
             return res.status(404).send('Not found');
           } else {
@@ -99,7 +99,7 @@ export const serve_data = {
 
             return res.status(200).send(data);
           }
-        } else if (item.source_type === 'mbtiles') {
+        } else if (item.sourceType === 'mbtiles') {
           item.source.getTile(z, x, y, (err, data, headers) => {
             let isGzipped;
             if (err) {
@@ -223,11 +223,11 @@ export const serve_data = {
     }
 
     let source;
-    let source_type;
+    let sourceType;
     if (inputType === 'pmtiles') {
-      source = PMtilesOpen(inputFile);
-      source_type = 'pmtiles';
-      const metadata = await GetPMtilesInfo(source);
+      source = openPMtiles(inputFile);
+      sourceType = 'pmtiles';
+      const metadata = await getPMtilesInfo(source);
 
       tileJSON['name'] = id;
       tileJSON['format'] = 'pbf';
@@ -245,7 +245,7 @@ export const serve_data = {
         tileJSON = options.dataDecoratorFunc(id, 'tilejson', tileJSON);
       }
     } else if (inputType === 'mbtiles') {
-      source_type = 'mbtiles';
+      sourceType = 'mbtiles';
       const sourceInfoPromise = new Promise((resolve, reject) => {
         source = new MBTiles(inputFile + '?mode=ro', (err) => {
           if (err) {
@@ -285,7 +285,7 @@ export const serve_data = {
       tileJSON,
       publicUrl,
       source,
-      source_type,
+      sourceType,
     };
   },
 };

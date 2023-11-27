@@ -4,7 +4,7 @@ import express from 'express';
 
 import { getFontsPbf, listFonts } from './utils.js';
 
-export const serve_font = (options, allowedFonts) => {
+export const serve_font = async (options, allowedFonts) => {
   const app = express().disable('x-powered-by');
 
   const lastModified = new Date().toUTCString();
@@ -13,25 +13,29 @@ export const serve_font = (options, allowedFonts) => {
 
   const existingFonts = {};
 
-  app.get('/fonts/:fontstack/:range([\\d]+-[\\d]+).pbf', (req, res, next) => {
-    const fontstack = decodeURI(req.params.fontstack);
-    const range = req.params.range;
+  app.get(
+    '/fonts/:fontstack/:range([\\d]+-[\\d]+).pbf',
+    async (req, res, next) => {
+      const fontstack = decodeURI(req.params.fontstack);
+      const range = req.params.range;
 
-    getFontsPbf(
-      options.serveAllFonts ? null : allowedFonts,
-      fontPath,
-      fontstack,
-      range,
-      existingFonts,
-    ).then(
-      (concated) => {
+      try {
+        const concatenated = await getFontsPbf(
+          options.serveAllFonts ? null : allowedFonts,
+          fontPath,
+          fontstack,
+          range,
+          existingFonts,
+        );
+
         res.header('Content-type', 'application/x-protobuf');
         res.header('Last-Modified', lastModified);
-        return res.send(concated);
-      },
-      (err) => res.status(400).header('Content-Type', 'text/plain').send(err),
-    );
-  });
+        return res.send(concatenated);
+      } catch (err) {
+        res.status(400).header('Content-Type', 'text/plain').send(err);
+      }
+    },
+  );
 
   app.get('/fonts.json', (req, res, next) => {
     res.header('Content-type', 'application/json');
@@ -40,8 +44,7 @@ export const serve_font = (options, allowedFonts) => {
     );
   });
 
-  return listFonts(options.paths.fonts).then((fonts) => {
-    Object.assign(existingFonts, fonts);
-    return app;
-  });
+  const fonts = await listFonts(options.paths.fonts);
+  Object.assign(existingFonts, fonts);
+  return app;
 };
