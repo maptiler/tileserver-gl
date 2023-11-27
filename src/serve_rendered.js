@@ -552,6 +552,7 @@ export const serve_rendered = {
         const y = req.params.y | 0;
         const scale = getScale(req.params.scale);
         const format = req.params.format;
+        const tileSize = 256;
         if (
           z < 0 ||
           x < 0 ||
@@ -562,11 +563,58 @@ export const serve_rendered = {
         ) {
           return res.status(404).send('Out of bounds');
         }
-        const tileSize = 256;
         const tileCenter = mercator.ll(
           [
-            ((x + 0.5) / (1 << z)) * (256 << z),
-            ((y + 0.5) / (1 << z)) * (256 << z),
+            ((x + 0.5) / (1 << z)) * (tileSize << z),
+            ((y + 0.5) / (1 << z)) * (tileSize << z),
+          ],
+          z,
+        );
+
+        // prettier-ignore
+        return respondImage(
+          options, item, z, tileCenter[0], tileCenter[1], 0, 0, tileSize, tileSize, scale, format, res,
+        );
+      },
+    );
+
+    app.get(
+      `/:id/:tileSize(256|512)/:z(\\d+)/:x(\\d+)/:y(\\d+):scale(${scalePattern})?.:format([\\w]+)`,
+      (req, res, next) => {
+        const item = repo[req.params.id];
+        if (!item) {
+          return res.sendStatus(404);
+        }
+
+        const modifiedSince = req.get('if-modified-since');
+        const cc = req.get('cache-control');
+        if (modifiedSince && (!cc || cc.indexOf('no-cache') === -1)) {
+          if (new Date(item.lastModified) <= new Date(modifiedSince)) {
+            return res.sendStatus(304);
+          }
+        }
+
+        const z = req.params.z | 0;
+        const x = req.params.x | 0;
+        const y = req.params.y | 0;
+        const scale = getScale(req.params.scale);
+        const format = req.params.format;
+        const tileSize = parseInt(req.params.tileSize, 10) || 256;
+        console.log(tileSize);
+        if (
+          z < 0 ||
+          x < 0 ||
+          y < 0 ||
+          z > 22 ||
+          x >= Math.pow(2, z) ||
+          y >= Math.pow(2, z)
+        ) {
+          return res.status(404).send('Out of bounds');
+        }
+        const tileCenter = mercator.ll(
+          [
+            ((x + 0.5) / (1 << z)) * (tileSize << z),
+            ((y + 0.5) / (1 << z)) * (tileSize << z),
           ],
           z,
         );
@@ -822,6 +870,7 @@ export const serve_rendered = {
     }
 
     app.get('/:id.json', (req, res, next) => {
+      const tileSize = 512;
       const item = repo[req.params.id];
       if (!item) {
         return res.sendStatus(404);
@@ -831,6 +880,7 @@ export const serve_rendered = {
         req,
         info.tiles,
         `styles/${req.params.id}`,
+        tileSize,
         info.format,
         item.publicUrl,
       );

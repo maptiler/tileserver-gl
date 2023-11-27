@@ -107,6 +107,7 @@
 
             for (tile_url in tile_urls) {
                 L.tileLayer(tile_urls[tile_url], {
+                    tileSize: 512,
                     minZoom: tile_minzoom,
                     maxZoom: tile_maxzoom,
                     attribution: tile_attribution
