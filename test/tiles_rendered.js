@@ -26,8 +26,7 @@ describe('Raster tiles', function() {
 
     describe('different coordinates and scales', function() {
       testTile(prefix, 256, 1, 1, 1, 'png', 200);
-      testTile(prefix, 512, 0, 0, 0, 'png', 200);
-
+      testTile(prefix, 512, 1, 1, 1, 'png', 200);
       testTile(prefix, 256, 0, 0, 0, 'png', 200, 2);
       testTile(prefix, 512, 0, 0, 0, 'png', 200, 2);
       testTile(prefix, 256, 0, 0, 0, 'png', 200, 3);
@@ -50,7 +49,5 @@ describe('Raster tiles', function() {
     testTile(prefix, 256, 0, 0, 0, 'png', 404, 5);
 
     testTile(prefix, 300, 0, 0, 0, 'png', 404);
-
-    // testTile('hybrid', 0, 0, 0, 'png', 404); //TODO: test this
   });
 });
