@@ -52,7 +52,7 @@
     "@typescript-eslint/parser": "^6.13.1",
     "chai": "4.3.10",
     "eslint": "^8.55.0",
-    "eslint-config-prettier": "^9.0.0",
+    "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-jsdoc": "^46.9.0",
     "eslint-plugin-prettier": "^5.0.1",
     "eslint-plugin-security": "^1.7.1",
