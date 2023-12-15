@@ -55,7 +55,7 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-jsdoc": "^46.9.1",
     "eslint-plugin-prettier": "^5.1.2",
-    "eslint-plugin-security": "^1.7.1",
+    "eslint-plugin-security": "^2.1.0",
     "husky": "^8.0.3",
     "lint-staged": "^15.2.0",
     "mocha": "^10.2.0",
