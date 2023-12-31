@@ -32,6 +32,7 @@ Example:
       "pbfAlias": "pbf",
       "serveAllFonts": false,
       "serveAllStyles": false,
+      "watchMbtiles": false,
       "serveStaticMaps": true,
       "allowRemoteMarkerIcons": true,
       "allowInlineMarkerImages": true,
@@ -151,6 +152,13 @@ Otherwise only the fonts referenced by available styles will be served.
 If this option is enabled, all the styles from the ``paths.styles`` will be served. (No recursion, only ``.json`` files are used.)
 The process will also watch for changes in this directory and remove/add more styles dynamically.
 It is recommended to also use the ``serveAllFonts`` option when using this option.
+
+``watchMbtiles``
+------------------------
+
+If this option is enabled, all the opened Mbtiles are watched for changes and automatically reloaded.
+The new data is then severed immediately. There is a small downtime for rendered endpoints.
+Mbtiles have to be replaced atomically. i.e. moving the file from the same filesystem. Modifying an existing file will crash the server.
 
 ``serveStaticMaps``
 ------------------------
