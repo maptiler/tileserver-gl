@@ -847,6 +847,7 @@ export const serve_rendered = {
       renderersStatic: [],
       sources: {},
       sourceTypes: {},
+      styleFile: '',
     };
 
     let styleJSON;
@@ -1023,6 +1024,7 @@ export const serve_rendered = {
     };
 
     const styleFile = params.style;
+    map.styleFile = styleFile;
     const styleJSONPath = path.resolve(options.paths.styles, styleFile);
     try {
       styleJSON = JSON.parse(fs.readFileSync(styleJSONPath));
