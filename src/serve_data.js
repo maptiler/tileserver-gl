@@ -189,6 +189,9 @@ export const serve_data = {
 
     return app;
   },
+  remove: (repo, id) => {
+    delete repo[id];
+  },
   add: async (options, repo, params, id, publicUrl) => {
     let inputFile;
     let inputType;
