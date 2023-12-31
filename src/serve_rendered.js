@@ -1250,6 +1250,9 @@ export const serve_rendered = {
       item.map.renderersStatic.forEach((pool) => {
         pool.close();
       });
+      Object.entries(item.map.sources).forEach(([key, source]) => {
+        delete item.map.sources[key];
+      });
     }
     delete repo[id];
   },
