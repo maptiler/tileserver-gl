@@ -27,7 +27,7 @@
     "@maplibre/maplibre-gl-style-spec": "18.0.0",
     "@sindresorhus/fnv1a": "3.1.0",
     "advanced-pool": "0.3.3",
-    "axios": "^1.6.4",
+    "axios": "^1.6.5",
     "canvas": "2.11.2",
     "chokidar": "3.5.3",
     "clone": "2.1.2",
