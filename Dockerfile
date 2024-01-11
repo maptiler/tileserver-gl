@@ -1,4 +1,4 @@
-FROM ubuntu:focal AS builder
+FROM ubuntu:jammy AS builder
 
 ENV NODE_ENV="production"
 
@@ -15,7 +15,7 @@ RUN set -ex; \
       libglfw3-dev \
       libuv1-dev \
       libjpeg-turbo8 \
-      libicu66 \
+      libicu70 \
       libcairo2-dev \
       libpango1.0-dev \
       libjpeg-dev \
@@ -58,7 +58,7 @@ RUN npm config set maxsockets 1; \
     npm ci --omit=dev; \
     chown -R root:root /usr/src/app;
 
-FROM ubuntu:focal AS final
+FROM ubuntu:jammy AS final
 
 ENV \
     NODE_ENV="production" \
@@ -78,7 +78,7 @@ RUN set -ex; \
       libglfw3 \
       libuv1 \
       libjpeg-turbo8 \
-      libicu66 \
+      libicu70 \
       libcairo2 \
       libgif7 \
       libopengl0 \

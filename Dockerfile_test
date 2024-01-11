@@ -2,7 +2,7 @@
 # Simply run "docker build -f Dockerfile_test ."
 # WARNING: sometimes it fails with a core dumped exception
 
-FROM ubuntu:focal
+FROM ubuntu:jammy
 
 ENV NODE_ENV="development"
 
@@ -19,7 +19,7 @@ RUN set -ex; \
       libglfw3-dev \
       libuv1-dev \
       libjpeg-turbo8 \
-      libicu66 \
+      libicu70 \
       libcairo2-dev \
       libpango1.0-dev \
       libjpeg-dev \
