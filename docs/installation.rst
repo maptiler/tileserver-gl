@@ -21,11 +21,11 @@ npm is supported on the following platforms with `Native Dependencies <#id1>`_ i
 
 - Operating systems:
 
-  - Ubuntu 20.04 (x64/arm64)
+  - Ubuntu 22.04 (x64/arm64)
   - macOS 12 (x64/arm64)
   - Windows (x64)
 
-- Node.js 18
+- Node.js 18,20
   
 Install globally from npmjs.
 ------------------------------
