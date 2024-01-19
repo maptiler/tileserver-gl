@@ -531,7 +531,9 @@ export const serve_rendered = {
 
     const app = express().disable('x-powered-by');
 
-    app.get(`/:id/:tileSize(256|512)/:z(\\d+)/:x(\\d+)/:y(\\d+):scale(${scalePattern})?.:format([\\w]+)`, (req, res, next) => {
+    app.get(
+      `/:id/:tileSize(256|512)/:z(\\d+)/:x(\\d+)/:y(\\d+):scale(${scalePattern})?.:format([\\w]+)`,
+      (req, res, next) => {
         const item = repo[req.params.id];
         if (!item) {
           return res.sendStatus(404);
@@ -565,7 +567,7 @@ export const serve_rendered = {
         const tileCenter = mercator.ll(
           [
             ((x + 0.5) / (1 << z)) * (tileSize << z),
-            ((y + 0.5) / (1 << z)) * (tileSize << z)
+            ((y + 0.5) / (1 << z)) * (tileSize << z),
           ],
           z,
         );
