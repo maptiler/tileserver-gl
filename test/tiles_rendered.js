@@ -47,8 +47,8 @@ describe('Raster tiles', function () {
     });
 
     describe('different coordinates and scales', function () {
-      testTile(prefix, 256, 1, 1, 1, 'png', 200);
-      testTile(prefix, 512, 1, 1, 1, 'png', 200);
+      testTile(prefix, 256, 1, 0, 0, 'png', 200);
+      testTile(prefix, 512, 1, 0, 0, 'png', 200);
       testTile(prefix, 256, 0, 0, 0, 'png', 200, 2);
       testTile(prefix, 512, 0, 0, 0, 'png', 200, 2);
       testTile(prefix, 256, 0, 0, 0, 'png', 200, 3);
