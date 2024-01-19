@@ -69,7 +69,7 @@ export const getTileUrls = (req, domains, path, tileSize, format, publicUrl, ali
 
   let tileParams = '{z}/{x}/{y}';
   if (['png', 'jpg', 'jpeg', 'webp'].includes(format)) {
-    tileParams = '256/{z}/{x}/{y}';
+    if(tileSize) {tileParams = '{tileSize}/{z}/{x}/{y}';}
   }
 
   const uris = [];
