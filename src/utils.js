@@ -78,7 +78,7 @@ export const getTileUrls = (req, domains, path, tileSize, format, publicUrl, ali
       uris.push(`${req.protocol}://${domain}/${path}/${tileParams}.${format}${query}`);
     }
   } else {
-    uris.push(`${publicUrl}${path}/${tileParams}.${format}${query}`)
+    uris.push(`${publicUrl}${path}/${tileParams}.${format}${query}`);
   }
 
   return uris;
