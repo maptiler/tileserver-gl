@@ -5,7 +5,7 @@ import fs from 'node:fs';
 
 import clone from 'clone';
 import express from 'express';
-import { validate } from '@maplibre/maplibre-gl-style-spec';
+import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
 
 import { getPublicUrl } from './utils.js';
 
@@ -86,7 +86,8 @@ export const serve_style = {
       return false;
     }
 
-    const validationErrors = validate(styleFileData);
+    const styleJSON = JSON.parse(styleFileData);
+    const validationErrors = validateStyleMin(styleJSON);
     if (validationErrors.length > 0) {
       console.log(`The file "${params.style}" is not a valid style file:`);
       for (const err of validationErrors) {
@@ -94,7 +95,6 @@ export const serve_style = {
       }
       return false;
     }
-    const styleJSON = JSON.parse(styleFileData);
 
     for (const name of Object.keys(styleJSON.sources)) {
       const source = styleJSON.sources[name];
