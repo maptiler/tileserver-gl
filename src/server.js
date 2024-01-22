@@ -511,7 +511,6 @@ function start(opts) {
         },
       )[0];
 
-
       if (data.filesize) {
         let suffix = 'kB';
         let size = parseInt(tileJSON.filesize, 10) / 1024;
