@@ -13,11 +13,11 @@ Styles
 
 Rendered tiles
 ==============
-* Rendered tiles are served at ``/styles/{id}/{tileSize}/{z}/{x}/{y}[@2x].{format}``
+* Rendered tiles are served at ``/styles/{id}[/{tileSize}]/{z}/{x}/{y}[@2x].{format}``
 
-  * The optional ``@2x`` (or ``@3x``, ``@4x``) part can be used to render HiDPI (retina) tiles
+  * The optional ratio ``@2x`` (ex.  ``@2x``, ``@3x``, ``@4x``) part can be used to render HiDPI (retina) tiles
+  * The optional tile size ``/{tileSize}`` (ex. ``/256``, ``/512``). if omitted, tileSize defaults to 256.
   * Available formats: ``png``, ``jpg`` (``jpeg``), ``webp``
-  * Tile sizes: ``256``, ``512``
   * TileJSON at ``/styles/{id}.json``
 
 * The rendered tiles are not available in the ``tileserver-gl-light`` version.
