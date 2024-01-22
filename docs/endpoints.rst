@@ -92,12 +92,13 @@ Static images
 
 Source data
 ===========
-* Source data are served at ``/data/{mbtiles}/{z}/{x}/{y}.{format}``
+* Source data are served at ``/data/{mbtiles}[/{tileSize}]/{z}/{x}/{y}.{format}``
 
   * Format depends on the source file (usually ``png`` or ``pbf``)
 
     * ``geojson`` is also available (useful for inspecting the tiles) in case the original format is ``pbf``
 
+  * The optional tile size ``/{tileSize}`` (ex. ``/256``, ``/512``) is ignored by the data endpoint, but is allowed for url consistency.
   * TileJSON at ``/data/{mbtiles}.json``
 
 TileJSON arrays
