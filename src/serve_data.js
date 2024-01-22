@@ -169,7 +169,6 @@ export const serve_data = {
     );
 
     app.get('/:id.json', (req, res, next) => {
-      const tileSize = undefined;
       const item = repo[req.params.id];
       if (!item) {
         return res.sendStatus(404);
@@ -179,7 +178,6 @@ export const serve_data = {
         req,
         info.tiles,
         `data/${req.params.id}`,
-        tileSize,
         info.format,
         item.publicUrl,
         {

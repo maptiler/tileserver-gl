@@ -26,15 +26,7 @@ export const getPublicUrl = (publicUrl, req) => {
   return getUrlObject(req).toString();
 };
 
-export const getTileUrls = (
-  req,
-  domains,
-  path,
-  tileSize,
-  format,
-  publicUrl,
-  aliases,
-) => {
+export const getTileUrls = (req, domains, path, format, publicUrl, aliases) => {
   const urlObject = getUrlObject(req);
   if (domains) {
     if (domains.constructor === String && domains.length > 0) {
@@ -75,20 +67,15 @@ export const getTileUrls = (
     format = aliases[format];
   }
 
-  let tileParams = '{z}/{x}/{y}';
-  if (tileSize && ['png', 'jpg', 'jpeg', 'webp'].includes(format)) {
-    tileParams = '{tileSize}/{z}/{x}/{y}';
-  }
-
   const uris = [];
   if (!publicUrl) {
     for (const domain of domains) {
       uris.push(
-        `${req.protocol}://${domain}/${path}/${tileParams}.${format}${query}`,
+        `${req.protocol}://${domain}/${path}/{tileSize}/{z}/{x}/{y}.${format}${query}`,
       );
     }
   } else {
-    uris.push(`${publicUrl}${path}/${tileParams}.${format}${query}`);
+    uris.push(`${publicUrl}${path}/{tileSize}/{z}/{x}/{y}.${format}${query}`);
   }
 
   return uris;

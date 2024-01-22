@@ -823,7 +823,6 @@ export const serve_rendered = {
     }
 
     app.get('/:id.json', (req, res, next) => {
-      const tileSize = 512;
       const item = repo[req.params.id];
       if (!item) {
         return res.sendStatus(404);
@@ -833,7 +832,6 @@ export const serve_rendered = {
         req,
         info.tiles,
         `styles/${req.params.id}`,
-        tileSize,
         info.format,
         item.publicUrl,
       );
