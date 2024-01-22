@@ -497,7 +497,7 @@ function start(opts) {
           data.thumbnail = `${center[2]}/${Math.floor(centerPx[0] / 256)}/${Math.floor(centerPx[1] / 256)}.${tileJSON.format}`;
         }
 
-        const tileSize = 256;
+        const tileSize = undefined;
         data.xyz_link = getTileUrls(
           req,
           tileJSON.tiles,
