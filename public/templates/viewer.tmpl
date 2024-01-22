@@ -77,7 +77,7 @@
          selectThreshold: 5
       }));
     } else {
-        var map = L.map('map', { zoomControl: false });
+        var map = L.map('map', { minZoom: 1, zoomControl: false });
         new L.Control.Zoom({ position: 'topright' }).addTo(map);
         
         var tile_urls = [], tile_attribution, tile_minzoom, tile_maxzoom;
