@@ -496,20 +496,22 @@ function start(opts) {
           const centerPx = mercator.px([center[0], center[1]], center[2]);
           data.thumbnail = `${center[2]}/${Math.floor(centerPx[0] / 256)}/${Math.floor(centerPx[1] / 256)}.${tileJSON.format}`;
         }
-
-        const tileSize = undefined;
-        data.xyz_link = getTileUrls(
-          req,
-          tileJSON.tiles,
-          `data/${id}`,
-          tileSize,
-          tileJSON.format,
-          opts.publicUrl,
-          {
-            pbf: options.pbfAlias,
-          },
-        )[0];
       }
+
+      const tileSize = undefined;
+      data.xyz_link = getTileUrls(
+        req,
+        tileJSON.tiles,
+        `data/${id}`,
+        tileSize,
+        tileJSON.format,
+        opts.publicUrl,
+        {
+          pbf: options.pbfAlias,
+        },
+      )[0];
+
+
       if (data.filesize) {
         let suffix = 'kB';
         let size = parseInt(tileJSON.filesize, 10) / 1024;
@@ -524,6 +526,7 @@ function start(opts) {
         data.formatted_filesize = `${size.toFixed(2)} ${suffix}`;
       }
 
+	  console.log(data)
       datas[id] = data;
     }
 
