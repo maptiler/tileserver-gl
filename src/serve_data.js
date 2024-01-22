@@ -22,7 +22,7 @@ export const serve_data = {
     const app = express().disable('x-powered-by');
 
     app.get(
-      '/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+).:format([\\w.]+)',
+      '/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format([\\w.]+)',
       async (req, res, next) => {
         const item = repo[req.params.id];
         if (!item) {
