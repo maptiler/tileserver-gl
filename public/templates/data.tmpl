@@ -98,7 +98,7 @@
     new L.Control.Zoom({ position: 'topright' }).addTo(map);
 
     var tile_urls = [], tile_attribution, tile_minzoom, tile_maxzoom;
-    var url = '{{public_url}}data/{{id}}.json' + keyParam;
+    var url = '{{public_url}}data/256/{{id}}.json' + keyParam;
     var req = new XMLHttpRequest();
     req.overrideMimeType("application/json");
     req.open('GET', url, true);
