@@ -454,7 +454,6 @@ function start(opts) {
       };
 
       if (style.serving_rendered) {
-        const tileSize = 256;
         const { center } = style.serving_rendered.tileJSON;
         if (center) {
           style.viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
@@ -464,6 +463,7 @@ function start(opts) {
           style.thumbnail = `${center[2]}/${Math.floor(centerPx[0] / 256)}/${Math.floor(centerPx[1] / 256)}.png`;
         }
 
+        const tileSize = 512;
         style.xyz_link = getTileUrls(
           req,
           style.serving_rendered.tileJSON.tiles,
@@ -492,14 +492,12 @@ function start(opts) {
 
       data.is_vector = tileJSON.format === 'pbf';
       if (!data.is_vector) {
-        const tileSize = 256;
         if (center) {
           const centerPx = mercator.px([center[0], center[1]], center[2]);
-          data.thumbnail = `${center[2]}/${Math.floor(
-            centerPx[0] / 256,
-          )}/${Math.floor(centerPx[1] / tileSize)}.${tileJSON.format}`;
+          data.thumbnail = `${center[2]}/${Math.floor(centerPx[0] / 256)}/${Math.floor(centerPx[1] / 256)}.${tileJSON.format}`;
         }
 
+        const tileSize = 256;
         data.xyz_link = getTileUrls(
           req,
           tileJSON.tiles,
