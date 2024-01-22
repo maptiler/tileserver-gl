@@ -75,9 +75,9 @@ export const getTileUrls = (
     format = aliases[format];
   }
 
-  let tileParams = '{z}/{x}/{y}';
+  let tileParams = `{z}/{x}/{y}`;
   if (tileSize && ['png', 'jpg', 'jpeg', 'webp'].includes(format)) {
-    tileParams = '{tileSize}/{z}/{x}/{y}';
+    tileParams = `${tileSize}/{z}/{x}/{y}`;
   }
 
   const uris = [];

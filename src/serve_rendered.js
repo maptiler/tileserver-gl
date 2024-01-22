@@ -822,8 +822,8 @@ export const serve_rendered = {
       );
     }
 
-    app.get('/:id.json', (req, res, next) => {
-      const tileSize = 512;
+    app.get('/(:tileSize(256|512)/)?:id.json', (req, res, next) => {
+      const tileSize = parseInt(req.params.tileSize, 10) || 256;
       const item = repo[req.params.id];
       if (!item) {
         return res.sendStatus(404);
