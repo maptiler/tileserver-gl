@@ -532,7 +532,7 @@ export const serve_rendered = {
     const app = express().disable('x-powered-by');
 
     app.get(
-      `/:id/:tileSize(256|512)/:z(\\d+)/:x(\\d+)/:y(\\d+):scale(${scalePattern})?.:format([\\w]+)`,
+      `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):scale(${scalePattern})?.:format([\\w]+)`,
       (req, res, next) => {
         const item = repo[req.params.id];
         if (!item) {
