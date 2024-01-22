@@ -407,7 +407,7 @@ const respondImage = (
 
   const tileMargin = Math.max(options.tileMargin || 0, 0);
   let pool;
-  if (mode === 'tile' && tileMargin === 0 && z !== 0) {
+  if (mode === 'tile' && tileMargin === 0) {
     pool = item.map.renderers[scale];
   } else {
     pool = item.map.renderersStatic[scale];
