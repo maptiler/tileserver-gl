@@ -823,11 +823,11 @@ export const serve_rendered = {
     }
 
     app.get('/(:tileSize(256|512)/)?:id.json', (req, res, next) => {
-      const tileSize = parseInt(req.params.tileSize, 10) || 256;
       const item = repo[req.params.id];
       if (!item) {
         return res.sendStatus(404);
       }
+      const tileSize = parseInt(req.params.tileSize, 10) || undefined;
       const info = clone(item.tileJSON);
       info.tiles = getTileUrls(
         req,
