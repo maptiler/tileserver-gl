@@ -526,7 +526,6 @@ function start(opts) {
         data.formatted_filesize = `${size.toFixed(2)} ${suffix}`;
       }
 
-	  console.log(data)
       datas[id] = data;
     }
 
