@@ -1,5 +1,3 @@
-import { join } from 'path';
-
 var testTile = function (
   prefix,
   tileSize = 256,
@@ -12,7 +10,19 @@ var testTile = function (
   type,
 ) {
   if (scale) y += '@' + scale + 'x';
-  var path = join('/styles', prefix, tileSize, z, x, `${y}.${format}`);
+  var path =
+    '/styles/' +
+    prefix +
+    '/' +
+    tileSize +
+    '/' +
+    z +
+    '/' +
+    x +
+    '/' +
+    y +
+    '.' +
+    format;
   it(path + ' returns ' + status, function (done) {
     var test = supertest(app).get(path);
     test.expect(status);
