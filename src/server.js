@@ -558,6 +558,7 @@ function start(opts) {
   */
   serveTemplate('/styles/:id/wmts.xml', 'wmts', (req) => {
     const { id } = req.params;
+    const { tileJSON } = serving.rendered[id];
     const wmts = clone((serving.styles || {})[id]);
 
     if (!wmts) {
@@ -582,6 +583,7 @@ function start(opts) {
     return {
       ...wmts,
       id,
+      tileJSON,
       name: (serving.styles[id] || serving.rendered[id]).name,
       baseUrl,
     };
