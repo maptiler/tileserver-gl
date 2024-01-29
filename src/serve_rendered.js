@@ -576,11 +576,11 @@ export const serve_rendered = {
         }
 
         const tileCenter = mercator.ll(
-            [
-              ((x + 0.5) / (1 << z)) * (256 << z),
-              ((y + 0.5) / (1 << z)) * (256 << z),
-            ],
-            z,
+          [
+            ((x + 0.5) / (1 << z)) * (256 << z),
+            ((y + 0.5) / (1 << z)) * (256 << z),
+          ],
+          z,
         );
 
         // prettier-ignore
