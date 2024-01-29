@@ -574,7 +574,7 @@ export const serve_rendered = {
           return res.status(404).send('Out of bounds');
         }
 
-        let tileCenter
+        let tileCenter;
         if (tileSize === 512) {
           tileCenter = mercator_512.ll([((x + 0.5) / (1 << z)) * (tileSize << z),((y + 0.5) / (1 << z)) * (tileSize << z)],z);
         } else {
