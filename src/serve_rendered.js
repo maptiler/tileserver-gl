@@ -381,6 +381,14 @@ const respondImage = (
   overlay = null,
   mode = 'tile',
 ) => {
+  if (
+    Math.abs(lon) > 180 ||
+    Math.abs(lat) > 85.06 ||
+    lon !== lon ||
+    lat !== lat
+  ) {
+    return res.status(400).send('Invalid center');
+  }
 
   if (
     Math.min(width, height) <= 0 ||
