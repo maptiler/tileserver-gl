@@ -48,7 +48,8 @@ const PATH_PATTERN =
   /^((fill|stroke|width)\:[^\|]+\|)*(enc:.+|-?\d+(\.\d*)?,-?\d+(\.\d*)?(\|-?\d+(\.\d*)?,-?\d+(\.\d*)?)+)/;
 const httpTester = /^(http(s)?:)?\/\//;
 
-const mercator = new SphericalMercator();
+const mercator_256 = new SphericalMercator();
+const mercator_512 = new SphericalMercator({size: 512});
 const getScale = (scale) => (scale || '@1x').slice(1, 2) | 0;
 
 mlgl.on('message', (e) => {
@@ -348,8 +349,8 @@ const calcZForBBox = (bbox, w, h, query) => {
 
   const padding = query.padding !== undefined ? parseFloat(query.padding) : 0.1;
 
-  const minCorner = mercator.px([bbox[0], bbox[3]], z);
-  const maxCorner = mercator.px([bbox[2], bbox[1]], z);
+  const minCorner = mercator_256.px([bbox[0], bbox[3]], z);
+  const maxCorner = mercator_256.px([bbox[2], bbox[1]], z);
   const w_ = w / (1 + 2 * padding);
   const h_ = h / (1 + 2 * padding);
 
@@ -380,14 +381,6 @@ const respondImage = (
   overlay = null,
   mode = 'tile',
 ) => {
-  if (
-    Math.abs(lon) > 180 ||
-    Math.abs(lat) > 85.06 ||
-    lon !== lon ||
-    lat !== lat
-  ) {
-    return res.status(400).send('Invalid center');
-  }
 
   if (
     Math.min(width, height) <= 0 ||
@@ -413,7 +406,15 @@ const respondImage = (
     pool = item.map.renderersStatic[scale];
   }
   pool.acquire((err, renderer) => {
-    const mlglZ = Math.max(0, z - 1);
+
+    // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
+    let mlglZ
+     if (width === 512) {
+       mlglZ = Math.max(0, z);
+     } else {
+       mlglZ = Math.max(0, z - 1);
+     }
+
     const params = {
       zoom: mlglZ,
       center: [lon, lat],
@@ -423,12 +424,14 @@ const respondImage = (
       height,
     };
 
-    if (z === 0) {
+    // HACK(Part 1) to allow for zoom 0 256px images. (z - 1) used byt 256 tiles would be -1, which isn't support. Instead a double size image is requested from zoom 0 and it is later resized. 
+    if (z === 0 && width === 256) {
       params.width *= 2;
       params.height *= 2;
     }
+    // END HACK(Part 1) 
 
-    if (z > 2 && tileMargin > 0) {
+    if (((z > 2 && width === 256) || (z > 1 && width === 512))  && tileMargin > 0) {
       params.width += tileMargin * 2;
       params.height += tileMargin * 2;
     }
@@ -449,12 +452,16 @@ const respondImage = (
         },
       });
 
-      if (z > 2 && tileMargin > 0) {
-        const [_, y] = mercator.px(params.center, z);
-        let yoffset = Math.max(
-          Math.min(0, y - 128 - tileMargin),
-          y + 128 + tileMargin - Math.pow(2, z + 8),
-        );
+      if (((z > 2 && width === 256) || (z > 1 && width === 512))  && tileMargin > 0) {
+         let y
+         let yoffset
+         if (width === 512) {
+           y = mercator_512.px(params.center, z)[1]
+           yoffset = Math.max(Math.min(0, y - 256 - tileMargin), y + 256 + tileMargin - Math.pow(2, z + 8));
+         } else {
+           y = mercator_256.px(params.center, z)[1]
+           yoffset = Math.max(Math.min(0, y - 128 - tileMargin), y + 128 + tileMargin - Math.pow(2, z + 8));
+         }
         image.extract({
           left: tileMargin * scale,
           top: (tileMargin + yoffset) * scale,
@@ -463,10 +470,11 @@ const respondImage = (
         });
       }
 
-      if (z === 0) {
-        // HACK: when serving zoom 0, resize the 0 tile from 512 to 256
+      // HACK(Part 2) to allow for zoom 0 256px images. (z - 1) used byt 256 tiles would be -1, which isn't support. Instead a double size image is requested from zoom 0 and it is resized here. 
+      if ((z === 0 && width === 256)) {
         image.resize(width * scale, height * scale);
       }
+      // END HACK(Part 2)
 
       const composites = [];
       if (overlay) {
@@ -564,13 +572,13 @@ export const serve_rendered = {
         ) {
           return res.status(404).send('Out of bounds');
         }
-        const tileCenter = mercator.ll(
-          [
-            ((x + 0.5) / (1 << z)) * (tileSize << z),
-            ((y + 0.5) / (1 << z)) * (tileSize << z),
-          ],
-          z,
-        );
+
+        let tileCenter
+        if (tileSize === 512) {
+          tileCenter = mercator_512.ll([((x + 0.5) / (1 << z)) * (tileSize << z),((y + 0.5) / (1 << z)) * (tileSize << z)],z);
+        } else {
+          tileCenter = mercator_256.ll([((x + 0.5) / (1 << z)) * (tileSize << z),((y + 0.5) / (1 << z)) * (tileSize << z)],z);
+        }
 
         // prettier-ignore
         return respondImage(
@@ -615,7 +623,7 @@ export const serve_rendered = {
             }
 
             const transformer = raw
-              ? mercator.inverse.bind(mercator)
+              ? mercator_256.inverse.bind(mercator)
               : item.dataProjWGStoInternalWGS;
 
             if (transformer) {
@@ -662,7 +670,7 @@ export const serve_rendered = {
           let center = [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2];
 
           const transformer = raw
-            ? mercator.inverse.bind(mercator)
+            ? mercator_256.inverse.bind(mercator)
             : item.dataProjWGStoInternalWGS;
 
           if (transformer) {
@@ -758,7 +766,7 @@ export const serve_rendered = {
             const format = req.params.format;
 
             const transformer = raw
-              ? mercator.inverse.bind(mercator)
+              ? mercator_256.inverse.bind(mercator)
               : item.dataProjWGStoInternalWGS;
 
             const paths = extractPathsFromQuery(req.query, transformer);
@@ -790,8 +798,8 @@ export const serve_rendered = {
               bbox[3] = Math.max(bbox[3], pair[1]);
             }
 
-            const bbox_ = mercator.convert(bbox, '900913');
-            const center = mercator.inverse([
+            const bbox_ = mercator_256.convert(bbox, '900913');
+            const center = mercator_256.inverse([
               (bbox_[0] + bbox_[2]) / 2,
               (bbox_[1] + bbox_[3]) / 2,
             ]);
