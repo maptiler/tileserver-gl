@@ -49,7 +49,7 @@ const PATH_PATTERN =
 const httpTester = /^(http(s)?:)?\/\//;
 
 const mercator = new SphericalMercator();
-const mercator_512 = new SphericalMercator({size: 512});
+const mercator_512 = new SphericalMercator({ size: 512 });
 const getScale = (scale) => (scale || '@1x').slice(1, 2) | 0;
 
 mlgl.on('message', (e) => {
@@ -414,14 +414,13 @@ const respondImage = (
     pool = item.map.renderersStatic[scale];
   }
   pool.acquire((err, renderer) => {
-
     // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
-    let mlglZ
-     if (width === 512) {
-       mlglZ = Math.max(0, z);
-     } else {
-       mlglZ = Math.max(0, z - 1);
-     }
+    let mlglZ;
+    if (width === 512) {
+      mlglZ = Math.max(0, z);
+    } else {
+      mlglZ = Math.max(0, z - 1);
+    }
 
     const params = {
       zoom: mlglZ,
@@ -437,7 +436,7 @@ const respondImage = (
       params.width *= 2;
       params.height *= 2;
     }
-    // END HACK(Part 1) 
+    // END HACK(Part 1)
 
     if (z > 0 && tileMargin > 0) {
       params.width += tileMargin * 2;
@@ -462,7 +461,10 @@ const respondImage = (
 
       if (z > 0 && tileMargin > 0) {
         const y = mercator.px(params.center, z)[1];
-        const yoffset = Math.max(Math.min(0, y - 128 - tileMargin), y + 128 + tileMargin - Math.pow(2, z + 8));
+        const yoffset = Math.max(
+          Math.min(0, y - 128 - tileMargin),
+          y + 128 + tileMargin - Math.pow(2, z + 8),
+        );
         image.extract({
           left: tileMargin * scale,
           top: (tileMargin + yoffset) * scale,
@@ -472,7 +474,7 @@ const respondImage = (
       }
 
       // END HACK(Part 2) 256px tiles are a zoom level lower than maplibre-native default tiles. this hack allows tileserver-gl to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native. Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized here.
-      if ((z === 0 && width === 256)) {
+      if (z === 0 && width === 256) {
         image.resize(width * scale, height * scale);
       }
       // END HACK(Part 2)
@@ -576,9 +578,21 @@ export const serve_rendered = {
 
         let tileCenter;
         if (tileSize === 512) {
-          tileCenter = mercator_512.ll([((x + 0.5) / (1 << z)) * (tileSize << z),((y + 0.5) / (1 << z)) * (tileSize << z)],z);
+          tileCenter = mercator_512.ll(
+            [
+              ((x + 0.5) / (1 << z)) * (tileSize << z),
+              ((y + 0.5) / (1 << z)) * (tileSize << z),
+            ],
+            z,
+          );
         } else {
-          tileCenter = mercator.ll([((x + 0.5) / (1 << z)) * (tileSize << z),((y + 0.5) / (1 << z)) * (tileSize << z)],z);
+          tileCenter = mercator.ll(
+            [
+              ((x + 0.5) / (1 << z)) * (tileSize << z),
+              ((y + 0.5) / (1 << z)) * (tileSize << z),
+            ],
+            z,
+          );
         }
 
         // prettier-ignore
