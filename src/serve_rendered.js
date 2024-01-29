@@ -453,15 +453,8 @@ const respondImage = (
       });
 
       if (z > 0 && tileMargin > 0) {
-         let y
-         let yoffset
-         if (width === 512) {
-           y = mercator_512.px(params.center, z)[1]
-           yoffset = Math.max(Math.min(0, y - 256 - tileMargin), y + 256 + tileMargin - Math.pow(2, z + 8));
-         } else {
-           y = mercator_256.px(params.center, z)[1]
-           yoffset = Math.max(Math.min(0, y - 128 - tileMargin), y + 128 + tileMargin - Math.pow(2, z + 8));
-         }
+        const y = mercator_256.px(params.center, z)[1]
+        const yoffset = Math.max(Math.min(0, y - 128 - tileMargin), y + 128 + tileMargin - Math.pow(2, z + 8));
         image.extract({
           left: tileMargin * scale,
           top: (tileMargin + yoffset) * scale,
