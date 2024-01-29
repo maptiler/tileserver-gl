@@ -461,7 +461,7 @@ const respondImage = (
       });
 
       if (z > 0 && tileMargin > 0) {
-        const y = mercator.px(params.center, z)[1]
+        const y = mercator.px(params.center, z)[1];
         const yoffset = Math.max(Math.min(0, y - 128 - tileMargin), y + 128 + tileMargin - Math.pow(2, z + 8));
         image.extract({
           left: tileMargin * scale,
