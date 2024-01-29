@@ -424,14 +424,14 @@ const respondImage = (
       height,
     };
 
-    // HACK(Part 1) to allow for zoom 0 256px images. (z - 1) used byt 256 tiles would be -1, which isn't support. Instead a double size image is requested from zoom 0 and it is later resized. 
+    // HACK(Part 1) 256px tiles are a zoom level lower than maplibre-native default tiles. this hack allows tileserver-gl to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native. Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in Part 2.
     if (z === 0 && width === 256) {
       params.width *= 2;
       params.height *= 2;
     }
     // END HACK(Part 1) 
 
-    if (((z > 2 && width === 256) || (z > 1 && width === 512))  && tileMargin > 0) {
+    if (z > 0 && tileMargin > 0) {
       params.width += tileMargin * 2;
       params.height += tileMargin * 2;
     }
@@ -452,7 +452,7 @@ const respondImage = (
         },
       });
 
-      if (((z > 2 && width === 256) || (z > 1 && width === 512))  && tileMargin > 0) {
+      if (z > 0 && tileMargin > 0) {
          let y
          let yoffset
          if (width === 512) {
@@ -470,7 +470,7 @@ const respondImage = (
         });
       }
 
-      // HACK(Part 2) to allow for zoom 0 256px images. (z - 1) used byt 256 tiles would be -1, which isn't support. Instead a double size image is requested from zoom 0 and it is resized here. 
+      // END HACK(Part 2) 256px tiles are a zoom level lower than maplibre-native default tiles. this hack allows tileserver-gl to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native. Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized here.
       if ((z === 0 && width === 256)) {
         image.resize(width * scale, height * scale);
       }
