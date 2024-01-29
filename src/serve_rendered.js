@@ -48,7 +48,7 @@ const PATH_PATTERN =
   /^((fill|stroke|width)\:[^\|]+\|)*(enc:.+|-?\d+(\.\d*)?,-?\d+(\.\d*)?(\|-?\d+(\.\d*)?,-?\d+(\.\d*)?)+)/;
 const httpTester = /^(http(s)?:)?\/\//;
 
-const mercator_256 = new SphericalMercator();
+const mercator = new SphericalMercator();
 const mercator_512 = new SphericalMercator({size: 512});
 const getScale = (scale) => (scale || '@1x').slice(1, 2) | 0;
 
@@ -349,8 +349,8 @@ const calcZForBBox = (bbox, w, h, query) => {
 
   const padding = query.padding !== undefined ? parseFloat(query.padding) : 0.1;
 
-  const minCorner = mercator_256.px([bbox[0], bbox[3]], z);
-  const maxCorner = mercator_256.px([bbox[2], bbox[1]], z);
+  const minCorner = mercator.px([bbox[0], bbox[3]], z);
+  const maxCorner = mercator.px([bbox[2], bbox[1]], z);
   const w_ = w / (1 + 2 * padding);
   const h_ = h / (1 + 2 * padding);
 
@@ -453,7 +453,7 @@ const respondImage = (
       });
 
       if (z > 0 && tileMargin > 0) {
-        const y = mercator_256.px(params.center, z)[1]
+        const y = mercator.px(params.center, z)[1]
         const yoffset = Math.max(Math.min(0, y - 128 - tileMargin), y + 128 + tileMargin - Math.pow(2, z + 8));
         image.extract({
           left: tileMargin * scale,
@@ -570,7 +570,7 @@ export const serve_rendered = {
         if (tileSize === 512) {
           tileCenter = mercator_512.ll([((x + 0.5) / (1 << z)) * (tileSize << z),((y + 0.5) / (1 << z)) * (tileSize << z)],z);
         } else {
-          tileCenter = mercator_256.ll([((x + 0.5) / (1 << z)) * (tileSize << z),((y + 0.5) / (1 << z)) * (tileSize << z)],z);
+          tileCenter = mercator.ll([((x + 0.5) / (1 << z)) * (tileSize << z),((y + 0.5) / (1 << z)) * (tileSize << z)],z);
         }
 
         // prettier-ignore
@@ -616,7 +616,7 @@ export const serve_rendered = {
             }
 
             const transformer = raw
-              ? mercator_256.inverse.bind(mercator)
+              ? mercator.inverse.bind(mercator)
               : item.dataProjWGStoInternalWGS;
 
             if (transformer) {
@@ -663,7 +663,7 @@ export const serve_rendered = {
           let center = [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2];
 
           const transformer = raw
-            ? mercator_256.inverse.bind(mercator)
+            ? mercator.inverse.bind(mercator)
             : item.dataProjWGStoInternalWGS;
 
           if (transformer) {
@@ -759,7 +759,7 @@ export const serve_rendered = {
             const format = req.params.format;
 
             const transformer = raw
-              ? mercator_256.inverse.bind(mercator)
+              ? mercator.inverse.bind(mercator)
               : item.dataProjWGStoInternalWGS;
 
             const paths = extractPathsFromQuery(req.query, transformer);
@@ -791,8 +791,8 @@ export const serve_rendered = {
               bbox[3] = Math.max(bbox[3], pair[1]);
             }
 
-            const bbox_ = mercator_256.convert(bbox, '900913');
-            const center = mercator_256.inverse([
+            const bbox_ = mercator.convert(bbox, '900913');
+            const center = mercator.inverse([
               (bbox_[0] + bbox_[2]) / 2,
               (bbox_[1] + bbox_[3]) / 2,
             ]);
