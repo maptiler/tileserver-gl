@@ -49,7 +49,6 @@ const PATH_PATTERN =
 const httpTester = /^(http(s)?:)?\/\//;
 
 const mercator = new SphericalMercator();
-const mercator_512 = new SphericalMercator({ size: 512 });
 const getScale = (scale) => (scale || '@1x').slice(1, 2) | 0;
 
 mlgl.on('message', (e) => {
@@ -576,24 +575,13 @@ export const serve_rendered = {
           return res.status(404).send('Out of bounds');
         }
 
-        let tileCenter;
-        if (tileSize === 512) {
-          tileCenter = mercator_512.ll(
+        let tileCenter = mercator.ll(
             [
-              ((x + 0.5) / (1 << z)) * (tileSize << z),
-              ((y + 0.5) / (1 << z)) * (tileSize << z),
+              ((x + 0.5) / (1 << z)) * (256 << z),
+              ((y + 0.5) / (1 << z)) * (256 << z),
             ],
             z,
-          );
-        } else {
-          tileCenter = mercator.ll(
-            [
-              ((x + 0.5) / (1 << z)) * (tileSize << z),
-              ((y + 0.5) / (1 << z)) * (tileSize << z),
-            ],
-            z,
-          );
-        }
+        );
 
         // prettier-ignore
         return respondImage(
