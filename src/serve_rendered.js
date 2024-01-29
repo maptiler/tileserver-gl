@@ -575,7 +575,7 @@ export const serve_rendered = {
           return res.status(404).send('Out of bounds');
         }
 
-        let tileCenter = mercator.ll(
+        const tileCenter = mercator.ll(
             [
               ((x + 0.5) / (1 << z)) * (256 << z),
               ((y + 0.5) / (1 << z)) * (256 << z),
