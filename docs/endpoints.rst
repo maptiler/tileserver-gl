@@ -102,7 +102,9 @@ Source data
 
 TileJSON arrays
 ===============
-Array of all TileJSONs is at ``/index.json`` (``/rendered.json``; ``/data.json``)
+Array of all TileJSONs is at ``[/{tileSize}]/index.json`` (``[/{tileSize}]/rendered.json``; ``/data.json``)
+
+  * The optional tile size ``/{tileSize}`` (ex. ``/256``, ``/512``). if omitted, tileSize defaults to 256.
 
 List of available fonts
 =======================
