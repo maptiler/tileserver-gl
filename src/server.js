@@ -388,7 +388,14 @@ function start(opts) {
   });
   app.get('/(:tileSize(256|512)/)?index.json', (req, res, next) => {
     const tileSize = parseInt(req.params.tileSize, 10) || 256;
-    res.send(addTileJSONs(addTileJSONs([], req, 'rendered', tileSize), req, 'data', undefined));
+    res.send(
+      addTileJSONs(
+        addTileJSONs([], req, 'rendered', tileSize),
+        req,
+        'data',
+        undefined,
+      ),
+    );
   });
 
   // ------------------------------------
