@@ -39,7 +39,7 @@
     "http-shutdown": "1.2.2",
     "morgan": "1.10.0",
     "pbf": "3.2.1",
-    "pmtiles": "2.11.0",
+    "pmtiles": "3.0.0",
     "proj4": "2.10.0",
     "sanitize-filename": "1.6.3",
     "sharp": "0.33.2",
