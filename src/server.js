@@ -356,11 +356,12 @@ function start(opts) {
 
   const addTileJSONs = (arr, req, type) => {
     for (const id of Object.keys(serving[type])) {
-      const tileSize = 256;
       const info = clone(serving[type][id].tileJSON);
       let path = '';
+      let tileSize = undefined;
       if (type === 'rendered') {
         path = `styles/${id}`;
+        tileSize = 512;
       } else {
         path = `${type}/${id}`;
       }
