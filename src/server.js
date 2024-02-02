@@ -354,14 +354,12 @@ function start(opts) {
     res.send(result);
   });
 
-  const addTileJSONs = (arr, req, type) => {
+  const addTileJSONs = (arr, req, type, tileSize) => {
     for (const id of Object.keys(serving[type])) {
       const info = clone(serving[type][id].tileJSON);
       let path = '';
-      let tileSize = undefined;
       if (type === 'rendered') {
         path = `styles/${id}`;
-        tileSize = 512;
       } else {
         path = `${type}/${id}`;
       }
@@ -381,14 +379,16 @@ function start(opts) {
     return arr;
   };
 
-  app.get('/rendered.json', (req, res, next) => {
-    res.send(addTileJSONs([], req, 'rendered'));
+  app.get('/(:tileSize(256|512)/)?rendered.json', (req, res, next) => {
+    const tileSize = parseInt(req.params.tileSize, 10) || 256;
+    res.send(addTileJSONs([], req, 'rendered', tileSize));
   });
   app.get('/data.json', (req, res, next) => {
-    res.send(addTileJSONs([], req, 'data'));
+    res.send(addTileJSONs([], req, 'data', undefined));
   });
-  app.get('/index.json', (req, res, next) => {
-    res.send(addTileJSONs(addTileJSONs([], req, 'rendered'), req, 'data'));
+  app.get('/(:tileSize(256|512)/)?index.json', (req, res, next) => {
+    const tileSize = parseInt(req.params.tileSize, 10) || 256;
+    res.send(addTileJSONs(addTileJSONs([], req, 'rendered', tileSize), req, 'data', undefined));
   });
 
   // ------------------------------------
