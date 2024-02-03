@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import PMTiles from 'pmtiles';
+import { PMTiles, FetchSource } from 'pmtiles';
 import { isValidHttpUrl } from './utils.js';
 
 class PMTilesFileSource {
@@ -45,12 +45,12 @@ export function openPMtiles(FilePath) {
   let pmtiles = undefined;
 
   if (isValidHttpUrl(FilePath)) {
-    const source = new PMTiles.FetchSource(FilePath);
-    pmtiles = new PMTiles.PMTiles(source);
+    const source = new FetchSource(FilePath);
+    pmtiles = new PMTiles(source);
   } else {
     const fd = fs.openSync(FilePath, 'r');
     const source = new PMTilesFileSource(fd);
-    pmtiles = new PMTiles.PMTiles(source);
+    pmtiles = new PMTiles(source);
   }
   return pmtiles;
 }
