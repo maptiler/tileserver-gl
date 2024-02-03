@@ -380,14 +380,14 @@ function start(opts) {
   };
 
   app.get('/(:tileSize(256|512)/)?rendered.json', (req, res, next) => {
-    const tileSize = parseInt(req.params.tileSize, 10) || 256;
+    const tileSize = parseInt(req.params.tileSize, 10) || undefined;
     res.send(addTileJSONs([], req, 'rendered', tileSize));
   });
   app.get('/data.json', (req, res, next) => {
     res.send(addTileJSONs([], req, 'data', undefined));
   });
   app.get('/(:tileSize(256|512)/)?index.json', (req, res, next) => {
-    const tileSize = parseInt(req.params.tileSize, 10) || 256;
+    const tileSize = parseInt(req.params.tileSize, 10) || undefined;
     res.send(
       addTileJSONs(
         addTileJSONs([], req, 'rendered', tileSize),
