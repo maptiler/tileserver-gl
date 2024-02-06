@@ -60,7 +60,7 @@
     "lint-staged": "^15.2.2",
     "mocha": "^10.2.0",
     "node-addon-api": "^7",
-    "prettier": "^3.2.4",
+    "prettier": "^3.2.5",
     "should": "^13.2.3",
     "supertest": "^6.3.4",
     "yaml-lint": "^1.7.0"
