@@ -32,7 +32,7 @@
     "chokidar": "3.5.3",
     "clone": "2.1.2",
     "color": "4.2.3",
-    "commander": "11.1.0",
+    "commander": "12.0.0",
     "cors": "2.8.5",
     "express": "4.18.2",
     "handlebars": "4.7.8",
