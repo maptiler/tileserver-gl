@@ -46,7 +46,7 @@
     "tileserver-gl-styles": "2.0.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "^18.6.0",
+    "@commitlint/cli": "^18.6.1",
     "@commitlint/config-conventional": "^18.6.1",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^6.21.0",
