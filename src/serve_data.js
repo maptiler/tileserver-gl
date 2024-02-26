@@ -69,12 +69,6 @@ export const serve_data = {
               headers['Content-Type'] = 'application/x-protobuf';
             } else if (format === 'geojson') {
               headers['Content-Type'] = 'application/json';
-
-              if (isGzipped) {
-                data = zlib.unzipSync(data);
-                isGzipped = false;
-              }
-
               const tile = new VectorTile(new Pbf(data));
               const geojson = {
                 type: 'FeatureCollection',
