@@ -59,13 +59,13 @@ export const getPublicUrl = (publicUrl, req) => {
 };
 
 export const getTileUrls = (
-  req,
-  domains,
-  path,
-  tileSize,
-  format,
-  publicUrl,
-  aliases,
+    req,
+    domains,
+    path,
+    tileSize,
+    format,
+    publicUrl,
+    aliases,
 ) => {
   const urlObject = getUrlObject(req);
   if (domains) {
@@ -74,8 +74,8 @@ export const getTileUrls = (
     }
     const hostParts = urlObject.host.split('.');
     const relativeSubdomainsUsable =
-      hostParts.length > 1 &&
-      !/^([0-9]{1,3}\.){3}[0-9]{1,3}(\:[0-9]+)?$/.test(urlObject.host);
+        hostParts.length > 1 &&
+        !/^([0-9]{1,3}\.){3}[0-9]{1,3}(\:[0-9]+)?$/.test(urlObject.host);
     const newDomains = [];
     for (const domain of domains) {
       if (domain.indexOf('*') !== -1) {
@@ -114,9 +114,10 @@ export const getTileUrls = (
 
   const uris = [];
   if (!publicUrl) {
+    let xForwardedPath = `${req.get('X-Forwarded-Path') ? "/" + req.get('X-Forwarded-Path') : ""}`
     for (const domain of domains) {
       uris.push(
-        `${req.protocol}://${domain}/${path}/${tileParams}.${format}${query}`,
+          `${req.protocol}://${domain}${xForwardedPath}/${path}/${tileParams}.${format}${query}`,
       );
     }
   } else {
@@ -134,7 +135,7 @@ export const fixTileJSONCenter = (tileJSON) => {
       (tileJSON.bounds[0] + tileJSON.bounds[2]) / 2,
       (tileJSON.bounds[1] + tileJSON.bounds[3]) / 2,
       Math.round(
-        -Math.log((tileJSON.bounds[2] - tileJSON.bounds[0]) / 360 / tiles) /
+          -Math.log((tileJSON.bounds[2] - tileJSON.bounds[0]) / 360 / tiles) /
           Math.LN2,
       ),
     ];
@@ -142,67 +143,67 @@ export const fixTileJSONCenter = (tileJSON) => {
 };
 
 const getFontPbf = (allowedFonts, fontPath, name, range, fallbacks) =>
-  new Promise((resolve, reject) => {
-    if (!allowedFonts || (allowedFonts[name] && fallbacks)) {
-      const filename = path.join(fontPath, name, `${range}.pbf`);
-      if (!fallbacks) {
-        fallbacks = clone(allowedFonts || {});
-      }
-      delete fallbacks[name];
-      fs.readFile(filename, (err, data) => {
-        if (err) {
-          console.error(`ERROR: Font not found: ${name}`);
-          if (fallbacks && Object.keys(fallbacks).length) {
-            let fallbackName;
-
-            let fontStyle = name.split(' ').pop();
-            if (['Regular', 'Bold', 'Italic'].indexOf(fontStyle) < 0) {
-              fontStyle = 'Regular';
-            }
-            fallbackName = `Noto Sans ${fontStyle}`;
-            if (!fallbacks[fallbackName]) {
-              fallbackName = `Open Sans ${fontStyle}`;
-              if (!fallbacks[fallbackName]) {
-                fallbackName = Object.keys(fallbacks)[0];
-              }
-            }
-
-            console.error(`ERROR: Trying to use ${fallbackName} as a fallback`);
-            delete fallbacks[fallbackName];
-            getFontPbf(null, fontPath, fallbackName, range, fallbacks).then(
-              resolve,
-              reject,
-            );
-          } else {
-            reject(`Font load error: ${name}`);
-          }
-        } else {
-          resolve(data);
+    new Promise((resolve, reject) => {
+      if (!allowedFonts || (allowedFonts[name] && fallbacks)) {
+        const filename = path.join(fontPath, name, `${range}.pbf`);
+        if (!fallbacks) {
+          fallbacks = clone(allowedFonts || {});
         }
-      });
-    } else {
-      reject(`Font not allowed: ${name}`);
-    }
-  });
+        delete fallbacks[name];
+        fs.readFile(filename, (err, data) => {
+          if (err) {
+            console.error(`ERROR: Font not found: ${name}`);
+            if (fallbacks && Object.keys(fallbacks).length) {
+              let fallbackName;
+
+              let fontStyle = name.split(' ').pop();
+              if (['Regular', 'Bold', 'Italic'].indexOf(fontStyle) < 0) {
+                fontStyle = 'Regular';
+              }
+              fallbackName = `Noto Sans ${fontStyle}`;
+              if (!fallbacks[fallbackName]) {
+                fallbackName = `Open Sans ${fontStyle}`;
+                if (!fallbacks[fallbackName]) {
+                  fallbackName = Object.keys(fallbacks)[0];
+                }
+              }
+
+              console.error(`ERROR: Trying to use ${fallbackName} as a fallback`);
+              delete fallbacks[fallbackName];
+              getFontPbf(null, fontPath, fallbackName, range, fallbacks).then(
+                  resolve,
+                  reject,
+              );
+            } else {
+              reject(`Font load error: ${name}`);
+            }
+          } else {
+            resolve(data);
+          }
+        });
+      } else {
+        reject(`Font not allowed: ${name}`);
+      }
+    });
 
 export const getFontsPbf = async (
-  allowedFonts,
-  fontPath,
-  names,
-  range,
-  fallbacks,
+    allowedFonts,
+    fontPath,
+    names,
+    range,
+    fallbacks,
 ) => {
   const fonts = names.split(',');
   const queue = [];
   for (const font of fonts) {
     queue.push(
-      getFontPbf(
-        allowedFonts,
-        fontPath,
-        font,
-        range,
-        clone(allowedFonts || fallbacks),
-      ),
+        getFontPbf(
+            allowedFonts,
+            fontPath,
+            font,
+            range,
+            clone(allowedFonts || fallbacks),
+        ),
     );
   }
 
@@ -217,8 +218,8 @@ export const listFonts = async (fontPath) => {
   for (const file of files) {
     const stats = await fsPromises.stat(path.join(fontPath, file));
     if (
-      stats.isDirectory() &&
-      existsSync(path.join(fontPath, file, '0-255.pbf'))
+        stats.isDirectory() &&
+        existsSync(path.join(fontPath, file, '0-255.pbf'))
     ) {
       existingFonts[path.basename(file)] = true;
     }
