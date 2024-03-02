@@ -15,7 +15,7 @@
     "lint:prettier": "prettier --check \"{,!(node_modules|dist|static|public)/**/}*.{js,ts,cjs,mjs,json}\" --ignore-path .gitignore",
     "lint:prettier:fix": "prettier --write \"{,!(node_modules|dist|static|public)/**/}*.{js,ts,cjs,mjs,json}\" --ignore-path .gitignore",
     "docker": "docker build . && docker run --rm -i -p 8080:8080 $(docker build -q .)",
-    "prepare": "is-ci || husky install"
+    "prepare": "is-ci || husky"
   },
   "dependencies": {
     "@mapbox/glyph-pbf-composite": "0.0.3",
