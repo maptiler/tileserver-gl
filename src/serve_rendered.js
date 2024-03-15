@@ -861,6 +861,7 @@ export const serve_rendered = {
       renderersStatic: [],
       sources: {},
       sourceTypes: {},
+      styleFile: '',
     };
 
     let styleJSON;
@@ -1037,6 +1038,7 @@ export const serve_rendered = {
     };
 
     const styleFile = params.style;
+    map.styleFile = styleFile;
     const styleJSONPath = path.resolve(options.paths.styles, styleFile);
     try {
       styleJSON = JSON.parse(fs.readFileSync(styleJSONPath));
@@ -1263,6 +1265,9 @@ export const serve_rendered = {
       });
       item.map.renderersStatic.forEach((pool) => {
         pool.close();
+      });
+      Object.entries(item.map.sources).forEach(([key, source]) => {
+        delete item.map.sources[key];
       });
     }
     delete repo[id];
