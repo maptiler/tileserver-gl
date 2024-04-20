@@ -8,7 +8,7 @@ Styles
 ======
 * Styles are served at ``/styles/{id}/style.json`` (+ array at ``/styles.json``)
 
-  * Sprites at ``/styles/{id}/sprite[@2x].{format}``
+  * Sprites at ``/styles/{id}/sprite[/name][@2x].{format}``
   * Fonts at ``/fonts/{fontstack}/{start}-{end}.pbf``
 
 Rendered tiles
