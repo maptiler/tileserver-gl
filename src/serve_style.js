@@ -56,8 +56,9 @@ export const serve_style = {
       return res.send(styleJSON_);
     });
 
-    app.get('/:id/sprite/:name:scale(@[23]x)?.:format([\\w]+)', (req, res, next) => {
+    app.get('/:id/sprite(/:name)?:scale(@[23]x)?.:format([\\w]+)', (req, res, next) => {
       const item = repo[req.params.id];
+      const spriteName = req.params.name || 'sprite';
 
       if (!item || !item.spritePaths) {
         return res.sendStatus(404);
@@ -65,7 +66,7 @@ export const serve_style = {
 
       let spritePath
       for (const sprite of item.spritePaths) {
-        if (sprite.name === req.params.name) {
+        if (sprite.name === spriteName) {
           spritePath = sprite.path;
         }
       }
@@ -154,13 +155,12 @@ export const serve_style = {
       }
     }
 
-    let spriteName
     let spritePaths = [];
     if (styleJSON.sprite && styleJSON.sprite) {
       if (Array.isArray(styleJSON.sprite)) {
         styleJSON.sprite.forEach((spriteItem) => {
           if (!httpTester.test(spriteItem.url)) {
-            spriteName = spriteItem.url.substring(spriteItem.url.lastIndexOf('/') + 1);
+            let spriteName = spriteItem.url.substring(spriteItem.url.lastIndexOf('/') + 1);
             let spritePath = path.join(
               options.paths.sprites,
               spriteItem.url
@@ -176,7 +176,6 @@ export const serve_style = {
         });
       } else {
         if (!httpTester.test(styleJSON.sprite)) {
-          spriteName = styleJSON.sprite.substring(styleJSON.sprite.lastIndexOf('/') + 1);
           let spritePath = path.join(
             options.paths.sprites,
             styleJSON.sprite
@@ -186,8 +185,8 @@ export const serve_style = {
                 path.relative(options.paths.sprites, path.dirname(styleFile))
               )
           );
-          styleJSON.sprite = `local://styles/${id}/sprite/` + spriteName;
-          spritePaths.push({id: 'default', name: spriteName, path: spritePath});
+          styleJSON.sprite = `local://styles/${id}/sprite`;
+          spritePaths.push({id: 'default', name: 'sprite', path: spritePath});
         }
       }
     }
