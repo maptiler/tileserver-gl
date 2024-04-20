@@ -56,39 +56,43 @@ export const serve_style = {
       return res.send(styleJSON_);
     });
 
-    app.get('/:id/sprite(/:name)?:scale(@[23]x)?.:format([\\w]+)', (req, res, next) => {
-      const item = repo[req.params.id];
-      const spriteName = req.params.name || 'sprite';
+    app.get(
+      '/:id/sprite(/:name)?:scale(@[23]x)?.:format([\\w]+)',
+      (req, res, next) => {
+        const item = repo[req.params.id];
+        const spriteName = req.params.name || 'sprite';
 
-      if (!item || !item.spritePaths) {
-        return res.sendStatus(404);
-      }
-
-      let spritePath
-      for (const sprite of item.spritePaths) {
-        if (sprite.name === spriteName) {
-          spritePath = sprite.path;
-        }
-      }
-
-      if (!spritePath) {
-        return res.sendStatus(404);
-      }
-
-      const scale = req.params.scale;
-      const format = req.params.format;
-      const filename = `${spritePath + (scale || '')}.${format}`;
-      return fs.readFile(filename, (err, data) => {
-        if (err) {
-          console.log('Sprite load error:', filename);
+        if (!item || !item.spritePaths) {
           return res.sendStatus(404);
-        } else {
-          if (format === 'json') res.header('Content-type', 'application/json');
-          if (format === 'png') res.header('Content-type', 'image/png');
-          return res.send(data);
         }
-      });
-    });
+
+        let spritePath;
+        for (const sprite of item.spritePaths) {
+          if (sprite.name === spriteName) {
+            spritePath = sprite.path;
+          }
+        }
+
+        if (!spritePath) {
+          return res.sendStatus(404);
+        }
+
+        const scale = req.params.scale;
+        const format = req.params.format;
+        const filename = `${spritePath + (scale || '')}.${format}`;
+        return fs.readFile(filename, (err, data) => {
+          if (err) {
+            console.log('Sprite load error:', filename);
+            return res.sendStatus(404);
+          } else {
+            if (format === 'json')
+              res.header('Content-type', 'application/json');
+            if (format === 'png') res.header('Content-type', 'image/png');
+            return res.send(data);
+          }
+        });
+      },
+    );
 
     return app;
   },
@@ -160,18 +164,24 @@ export const serve_style = {
       if (Array.isArray(styleJSON.sprite)) {
         styleJSON.sprite.forEach((spriteItem) => {
           if (!httpTester.test(spriteItem.url)) {
-            let spriteName = spriteItem.url.substring(spriteItem.url.lastIndexOf('/') + 1);
+            let spriteName = spriteItem.url.substring(
+              spriteItem.url.lastIndexOf('/') + 1,
+            );
             let spritePath = path.join(
               options.paths.sprites,
               spriteItem.url
                 .replace('{style}', path.basename(styleFile, '.json'))
                 .replace(
                   '{styleJsonFolder}',
-                  path.relative(options.paths.sprites, path.dirname(styleFile))
-                )
+                  path.relative(options.paths.sprites, path.dirname(styleFile)),
+                ),
             );
             spriteItem.url = `local://styles/${id}/sprite/` + spriteName;
-            spritePaths.push({id: spriteItem.id, name: spriteName, path: spritePath});
+            spritePaths.push({
+              id: spriteItem.id,
+              name: spriteName,
+              path: spritePath,
+            });
           }
         });
       } else {
@@ -182,11 +192,11 @@ export const serve_style = {
               .replace('{style}', path.basename(styleFile, '.json'))
               .replace(
                 '{styleJsonFolder}',
-                path.relative(options.paths.sprites, path.dirname(styleFile))
-              )
+                path.relative(options.paths.sprites, path.dirname(styleFile)),
+              ),
           );
           styleJSON.sprite = `local://styles/${id}/sprite`;
-          spritePaths.push({id: 'default', name: 'sprite', path: spritePath});
+          spritePaths.push({ id: 'default', name: 'sprite', path: spritePath });
         }
       }
     }

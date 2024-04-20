@@ -1050,25 +1050,31 @@ export const serve_rendered = {
         styleJSON.sprite.forEach((spriteItem) => {
           if (!httpTester.test(spriteItem.url)) {
             spriteItem.url =
-            'sprites://' +
-            spriteItem.url
-              .replace('{style}', path.basename(styleFile, '.json'))
-              .replace(
-                '{styleJsonFolder}',
-                path.relative(options.paths.sprites, path.dirname(styleJSONPath)),
-              );
+              'sprites://' +
+              spriteItem.url
+                .replace('{style}', path.basename(styleFile, '.json'))
+                .replace(
+                  '{styleJsonFolder}',
+                  path.relative(
+                    options.paths.sprites,
+                    path.dirname(styleJSONPath),
+                  ),
+                );
           }
         });
       } else {
         if (!httpTester.test(styleJSON.sprite)) {
           styleJSON.sprite =
-          'sprites://' +
-          styleJSON.sprite
-            .replace('{style}', path.basename(styleFile, '.json'))
-            .replace(
-              '{styleJsonFolder}',
-              path.relative(options.paths.sprites, path.dirname(styleJSONPath)),
-            );
+            'sprites://' +
+            styleJSON.sprite
+              .replace('{style}', path.basename(styleFile, '.json'))
+              .replace(
+                '{styleJsonFolder}',
+                path.relative(
+                  options.paths.sprites,
+                  path.dirname(styleJSONPath),
+                ),
+              );
         }
       }
     }
