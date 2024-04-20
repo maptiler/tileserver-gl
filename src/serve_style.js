@@ -56,7 +56,7 @@ export const serve_style = {
       return res.send(styleJSON_);
     });
 
-    app.get('/:id/:name:scale(@[23]x)?.:format([\\w]+)', (req, res, next) => {
+    app.get('/:id/sprite/:name:scale(@[23]x)?.:format([\\w]+)', (req, res, next) => {
       const item = repo[req.params.id];
 
       if (!item || !item.spritePaths) {
@@ -170,7 +170,7 @@ export const serve_style = {
                   path.relative(options.paths.sprites, path.dirname(styleFile))
                 )
             );
-            spriteItem.url = `local://styles/${id}/` + spriteName;
+            spriteItem.url = `local://styles/${id}/sprite/` + spriteName;
             spritePaths.push({id: spriteItem.id, name: spriteName, path: spritePath});
           }
         });
@@ -186,7 +186,7 @@ export const serve_style = {
                 path.relative(options.paths.sprites, path.dirname(styleFile))
               )
           );
-          styleJSON.sprite = `local://styles/${id}/` + spriteName;
+          styleJSON.sprite = `local://styles/${id}/sprite/` + spriteName;
           spritePaths.push({id: 'default', name: spriteName, path: spritePath});
         }
       }
