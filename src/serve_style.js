@@ -63,9 +63,10 @@ export const serve_style = {
         const scale = req.params.scale || '';
         const format = req.params.format;
         const item = repo[req.params.id];
+        console.log(scale);
 
         let spritePath;
-        if (item && !item.spritePaths) {
+        if (item && item.spritePaths) {
           for (const sprite of item.spritePaths) {
             if (sprite.name === name) {
               spritePath = sprite.path;
@@ -85,9 +86,6 @@ export const serve_style = {
             spriteScale = as;
           }
         }
-        if (!spriteScale) {
-          return res.sendStatus(400);
-        }
 
         let spriteFormat;
         const allowedFormats = ['png', 'json'];
@@ -96,23 +94,25 @@ export const serve_style = {
             spriteFormat = af;
           }
         }
-        if (!spriteFormat) {
+
+        if (spriteFormat) {
+          const filename = `${spritePath + spriteScale}.${spriteFormat}`;
+          console.log(filename);
+          // eslint-disable-next-line security/detect-non-literal-fs-filename
+          return fs.readFile(filename, (err, data) => {
+            if (err) {
+              console.log('Sprite load error:', filename);
+              return res.sendStatus(404);
+            } else {
+              if (format === 'json')
+                res.header('Content-type', 'application/json');
+              if (format === 'png') res.header('Content-type', 'image/png');
+              return res.send(data);
+            }
+          });
+        } else {
           return res.sendStatus(400);
         }
-
-        const filename = `${spritePath + spriteScale}.${spriteFormat}`;
-        // eslint-disable-next-line security/detect-non-literal-fs-filename
-        return fs.readFile(filename, (err, data) => {
-          if (err) {
-            console.log('Sprite load error:', filename);
-            return res.sendStatus(404);
-          } else {
-            if (format === 'json')
-              res.header('Content-type', 'application/json');
-            if (format === 'png') res.header('Content-type', 'image/png');
-            return res.send(data);
-          }
-        });
       },
     );
 
