@@ -160,7 +160,7 @@ export const serve_style = {
     }
 
     let spritePaths = [];
-    if (styleJSON.sprite && styleJSON.sprite) {
+    if (styleJSON.sprite) {
       if (Array.isArray(styleJSON.sprite)) {
         styleJSON.sprite.forEach((spriteItem) => {
           if (!httpTester.test(spriteItem.url)) {
