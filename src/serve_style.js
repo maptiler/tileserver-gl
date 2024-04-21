@@ -63,7 +63,6 @@ export const serve_style = {
         const scale = req.params.scale || '';
         const format = req.params.format;
         const item = repo[req.params.id];
-        console.log(scale);
 
         let spritePath;
         if (item && item.spritePaths) {
@@ -97,7 +96,6 @@ export const serve_style = {
 
         if (spriteFormat) {
           const filename = `${spritePath + spriteScale}.${spriteFormat}`;
-          console.log(filename);
           // eslint-disable-next-line security/detect-non-literal-fs-filename
           return fs.readFile(filename, (err, data) => {
             if (err) {
