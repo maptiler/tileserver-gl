@@ -60,7 +60,7 @@ export const serve_style = {
       '/:id/sprite(/:name)?:scale(@[23]x)?.:format([\\w]+)',
       (req, res, next) => {
         const name = req.params.name || 'sprite';
-        const scale = req.params.scale || '';
+        const scale = req.params.scale.replace(/[^@23x]/g, '') || '';
         const format = req.params.format;
         const item = repo[req.params.id];
 
@@ -81,9 +81,7 @@ export const serve_style = {
 
         const filename = `${spritePath + scale}.${format}`;
         if (format !== 'png' && format !== 'json') {
-          return res
-            .sendStatus(400)
-            .send('Invalid format. Please use png or json.');
+          return res.sendStatus(400);
         } else {
           // eslint-disable-next-line security/detect-non-literal-fs-filename
           return fs.readFile(filename, (err, data) => {
