@@ -79,7 +79,7 @@ export const serve_style = {
         }
 
         let spriteScale;
-        const allowedScales = ['', '@2x', '@3x']
+        const allowedScales = ['', '@2x', '@3x'];
         for (const as of allowedScales) {
           if (as === scale) {
             spriteScale = as;
@@ -90,7 +90,7 @@ export const serve_style = {
         }
 
         let spriteFormat;
-        const allowedFormats = ['png', 'json']
+        const allowedFormats = ['png', 'json'];
         for (const af of allowedFormats) {
           if (af === format) {
             spriteFormat = af;
