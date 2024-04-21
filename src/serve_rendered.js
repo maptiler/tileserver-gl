@@ -46,7 +46,7 @@ import { renderOverlay, renderWatermark, renderAttribution } from './render.js';
 const FLOAT_PATTERN = '[+-]?(?:\\d+|\\d+.?\\d+)';
 const PATH_PATTERN =
   /^((fill|stroke|width)\:[^\|]+\|)*(enc:.+|-?\d+(\.\d*)?,-?\d+(\.\d*)?(\|-?\d+(\.\d*)?,-?\d+(\.\d*)?)+)/;
-const httpTester = /^(http(s)?:)?\/\//;
+const httpTester = /^https?:\/\//i;
 
 const mercator = new SphericalMercator();
 const getScale = (scale) => (scale || '@1x').slice(1, 2) | 0;

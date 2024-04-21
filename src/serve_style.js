@@ -9,7 +9,7 @@ import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
 
 import { getPublicUrl } from './utils.js';
 
-const httpTester = /^(http(s)?:)?\/\//;
+const httpTester = /^https?:\/\//i;
 
 const fixUrl = (req, url, publicUrl) => {
   if (!url || typeof url !== 'string' || url.indexOf('local://') !== 0) {
@@ -59,8 +59,10 @@ export const serve_style = {
     app.get(
       '/:id/sprite(/:name)?:scale(@[23]x)?.:format([\\w]+)',
       (req, res, next) => {
+        const name = req.params.name || 'sprite';
+        const scale = req.params.scale || '';
+        const format = req.params.format;
         const item = repo[req.params.id];
-        const spriteName = req.params.name || 'sprite';
 
         if (!item || !item.spritePaths) {
           return res.sendStatus(404);
@@ -68,7 +70,7 @@ export const serve_style = {
 
         let spritePath;
         for (const sprite of item.spritePaths) {
-          if (sprite.name === spriteName) {
+          if (sprite.name === name) {
             spritePath = sprite.path;
           }
         }
@@ -77,20 +79,25 @@ export const serve_style = {
           return res.sendStatus(404);
         }
 
-        const scale = req.params.scale;
-        const format = req.params.format;
-        const filename = `${spritePath + (scale || '')}.${format}`;
-        return fs.readFile(filename, (err, data) => {
-          if (err) {
-            console.log('Sprite load error:', filename);
-            return res.sendStatus(404);
-          } else {
-            if (format === 'json')
-              res.header('Content-type', 'application/json');
-            if (format === 'png') res.header('Content-type', 'image/png');
-            return res.send(data);
-          }
-        });
+        const filename = `${spritePath + scale}.${format}`;
+        if (format !== 'png' && format !== 'json') {
+          return res
+            .sendStatus(400)
+            .send('Invalid format. Please use png or json.');
+        } else {
+          // eslint-disable-next-line security/detect-non-literal-fs-filename
+          return fs.readFile(filename, (err, data) => {
+            if (err) {
+              console.log('Sprite load error:', filename);
+              return res.sendStatus(404);
+            } else {
+              if (format === 'json')
+                res.header('Content-type', 'application/json');
+              if (format === 'png') res.header('Content-type', 'image/png');
+              return res.send(data);
+            }
+          });
+        }
       },
     );
 
