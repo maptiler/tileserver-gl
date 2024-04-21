@@ -60,30 +60,33 @@ export const serve_style = {
       '/:id/sprite(/:name)?:scale(@[23]x)?.:format([\\w]+)',
       (req, res, next) => {
         const name = req.params.name || 'sprite';
-        const scale =
-          req.params.scale === '@2x' || req.params.scale === '@3x'
-            ? req.params.scale
-            : '';
-
+        const scale = req.params.scale || '';
         const format = req.params.format;
         const item = repo[req.params.id];
 
-        if (!item || !item.spritePaths) {
+        let spritePath;
+        if (item && !item.spritePaths) {
+          for (const sprite of item.spritePaths) {
+            if (sprite.name === name) {
+              spritePath = sprite.path;
+            }
+          }
+          if (!spritePath) {
+            return res.sendStatus(404);
+          }
+        } else {
           return res.sendStatus(404);
         }
 
-        let spritePath;
-        for (const sprite of item.spritePaths) {
-          if (sprite.name === name) {
-            spritePath = sprite.path;
+        let spriteScale;
+        const allowedScales = ['', '@2x', '@3x']
+        for (const as of allowedScales) {
+          if (as === scale) {
+            spriteScale = as;
           }
         }
 
-        if (!spritePath) {
-          return res.sendStatus(404);
-        }
-
-        const filename = `${spritePath + scale}.${format}`;
+        const filename = `${spritePath + spriteScale}.${format}`;
         if (format !== 'png' && format !== 'json') {
           return res.sendStatus(400);
         } else {
