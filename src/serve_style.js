@@ -60,7 +60,11 @@ export const serve_style = {
       '/:id/sprite(/:name)?:scale(@[23]x)?.:format([\\w]+)',
       (req, res, next) => {
         const name = req.params.name || 'sprite';
-        const scale = req.params.scale.replace(/[^@23x]/g, '') || '';
+        const scale =
+          req.params.scale === '@2x' || req.params.scale === '@3x'
+            ? req.params.scale
+            : '';
+
         const format = req.params.format;
         const item = repo[req.params.id];
 
