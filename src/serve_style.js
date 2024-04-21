@@ -85,24 +85,34 @@ export const serve_style = {
             spriteScale = as;
           }
         }
-
-        const filename = `${spritePath + spriteScale}.${format}`;
-        if (format !== 'png' && format !== 'json') {
+        if (!spriteScale) {
           return res.sendStatus(400);
-        } else {
-          // eslint-disable-next-line security/detect-non-literal-fs-filename
-          return fs.readFile(filename, (err, data) => {
-            if (err) {
-              console.log('Sprite load error:', filename);
-              return res.sendStatus(404);
-            } else {
-              if (format === 'json')
-                res.header('Content-type', 'application/json');
-              if (format === 'png') res.header('Content-type', 'image/png');
-              return res.send(data);
-            }
-          });
         }
+
+        let spriteFormat;
+        const allowedFormats = ['png', 'json']
+        for (const af of allowedFormats) {
+          if (af === format) {
+            spriteFormat = af;
+          }
+        }
+        if (!spriteFormat) {
+          return res.sendStatus(400);
+        }
+
+        const filename = `${spritePath + spriteScale}.${spriteFormat}`;
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
+        return fs.readFile(filename, (err, data) => {
+          if (err) {
+            console.log('Sprite load error:', filename);
+            return res.sendStatus(404);
+          } else {
+            if (format === 'json')
+              res.header('Content-type', 'application/json');
+            if (format === 'png') res.header('Content-type', 'image/png');
+            return res.send(data);
+          }
+        });
       },
     );
 
