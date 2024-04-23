@@ -57,9 +57,9 @@ export const serve_style = {
     });
 
     app.get(
-      '/:id/sprite(/:name)?:scale(@[23]x)?.:format([\\w]+)',
+      '/:id/sprite(/:spriteID)?:scale(@[23]x)?.:format([\\w]+)',
       (req, res, next) => {
-        const name = req.params.name || 'sprite';
+        const spriteID = req.params.spriteID || 'default';
         const scale = req.params.scale || '';
         const format = req.params.format;
         const item = repo[req.params.id];
@@ -67,7 +67,7 @@ export const serve_style = {
         let spritePath;
         if (item && item.spritePaths) {
           for (const sprite of item.spritePaths) {
-            if (sprite.name === name) {
+            if (sprite.id === spriteID) {
               spritePath = sprite.path;
             }
           }
@@ -96,7 +96,6 @@ export const serve_style = {
 
         if (spriteFormat) {
           const filename = `${spritePath + spriteScale}.${spriteFormat}`;
-          // eslint-disable-next-line security/detect-non-literal-fs-filename
           return fs.readFile(filename, (err, data) => {
             if (err) {
               console.log('Sprite load error:', filename);
@@ -184,9 +183,6 @@ export const serve_style = {
       if (Array.isArray(styleJSON.sprite)) {
         styleJSON.sprite.forEach((spriteItem) => {
           if (!httpTester.test(spriteItem.url)) {
-            let spriteName = spriteItem.url.substring(
-              spriteItem.url.lastIndexOf('/') + 1,
-            );
             let spritePath = path.join(
               options.paths.sprites,
               spriteItem.url
@@ -196,12 +192,8 @@ export const serve_style = {
                   path.relative(options.paths.sprites, path.dirname(styleFile)),
                 ),
             );
-            spriteItem.url = `local://styles/${id}/sprite/` + spriteName;
-            spritePaths.push({
-              id: spriteItem.id,
-              name: spriteName,
-              path: spritePath,
-            });
+            spriteItem.url = `local://styles/${id}/sprite/` + spriteItem.id;
+            spritePaths.push({ id: spriteItem.id, path: spritePath });
           }
         });
       } else {
@@ -216,7 +208,7 @@ export const serve_style = {
               ),
           );
           styleJSON.sprite = `local://styles/${id}/sprite`;
-          spritePaths.push({ id: 'default', name: 'sprite', path: spritePath });
+          spritePaths.push({ id: 'default', path: spritePath });
         }
       }
     }
