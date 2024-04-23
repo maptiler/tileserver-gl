@@ -7,6 +7,38 @@ import clone from 'clone';
 import glyphCompose from '@mapbox/glyph-pbf-composite';
 
 /**
+ * Restrict user input to an allowed set of options.
+ * @param opts
+ * @param root0
+ * @param root0.defaultValue
+ */
+export function allowedOptions(opts, { defaultValue } = {}) {
+  const values = Object.fromEntries(opts.map((key) => [key, key]));
+  return (value) => values[value] || defaultValue;
+}
+
+/**
+ * Replace local:// urls with public http(s):// urls
+ * @param req
+ * @param url
+ * @param publicUrl
+ */
+export function fixUrl(req, url, publicUrl) {
+  if (!url || typeof url !== 'string' || url.indexOf('local://') !== 0) {
+    return url;
+  }
+  const queryParams = [];
+  if (req.query.key) {
+    queryParams.unshift(`key=${encodeURIComponent(req.query.key)}`);
+  }
+  let query = '';
+  if (queryParams.length) {
+    query = `?${queryParams.join('&')}`;
+  }
+  return url.replace('local://', getPublicUrl(publicUrl, req)) + query;
+}
+
+/**
  * Generate new URL object
  * @param req
  * @params {object} req - Express request

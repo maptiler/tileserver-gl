@@ -7,43 +7,11 @@ import clone from 'clone';
 import express from 'express';
 import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
 
-import { getPublicUrl } from './utils.js';
+import { fixUrl, allowedOptions } from './utils.js';
 
 const httpTester = /^https?:\/\//i;
-const allowedSpriteScales = allowedOptions(['', '@2x', '@3x'], '');
+const allowedSpriteScales = allowedOptions(['', '@2x', '@3x']);
 const allowedSpriteFormats = allowedOptions(['png', 'json']);
-
-/**
- *
- * @param opts
- * @param root0
- * @param root0.defaultValue
- */
-function allowedOptions(opts, { defaultValue } = {}) {
-  const values = Object.fromEntries(opts.map((key) => [key, key]));
-  return (value) => values[value] || defaultValue;
-}
-
-/**
- *
- * @param req
- * @param url
- * @param publicUrl
- */
-function fixUrl(req, url, publicUrl) {
-  if (!url || typeof url !== 'string' || url.indexOf('local://') !== 0) {
-    return url;
-  }
-  const queryParams = [];
-  if (req.query.key) {
-    queryParams.unshift(`key=${encodeURIComponent(req.query.key)}`);
-  }
-  let query = '';
-  if (queryParams.length) {
-    query = `?${queryParams.join('&')}`;
-  }
-  return url.replace('local://', getPublicUrl(publicUrl, req)) + query;
-}
 
 export const serve_style = {
   init: (options, repo) => {
