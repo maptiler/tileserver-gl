@@ -13,11 +13,23 @@ const httpTester = /^https?:\/\//i;
 const allowedSpriteScales = allowedOptions(['', '@2x', '@3x'], '');
 const allowedSpriteFormats = allowedOptions(['png', 'json']);
 
+/**
+ *
+ * @param opts
+ * @param root0
+ * @param root0.defaultValue
+ */
 function allowedOptions(opts, { defaultValue } = {}) {
-  const values = Object.fromEntries(opts.map(key => [key, key]));
+  const values = Object.fromEntries(opts.map((key) => [key, key]));
   return (value) => values[value] || defaultValue;
 }
 
+/**
+ *
+ * @param req
+ * @param url
+ * @param publicUrl
+ */
 function fixUrl(req, url, publicUrl) {
   if (!url || typeof url !== 'string' || url.indexOf('local://') !== 0) {
     return url;
@@ -31,7 +43,7 @@ function fixUrl(req, url, publicUrl) {
     query = `?${queryParams.join('&')}`;
   }
   return url.replace('local://', getPublicUrl(publicUrl, req)) + query;
-};
+}
 
 export const serve_style = {
   init: (options, repo) => {
@@ -68,7 +80,9 @@ export const serve_style = {
 
         if (format) {
           const item = repo[id];
-          const sprite = item.spritePaths.find(sprite => sprite.id === spriteID);
+          const sprite = item.spritePaths.find(
+            (sprite) => sprite.id === spriteID,
+          );
           if (sprite) {
             const filename = `${sprite.path + scale}.${format}`;
             return fs.readFile(filename, (err, data) => {
@@ -159,7 +173,7 @@ export const serve_style = {
     let spritePaths = [];
     if (styleJSON.sprite) {
       if (!Array.isArray(styleJSON.sprite)) {
-        styleJSON.sprite = [{id: 'default', url: styleJSON.sprite }]; 
+        styleJSON.sprite = [{ id: 'default', url: styleJSON.sprite }];
       }
 
       for (let spriteItem of styleJSON.sprite) {
