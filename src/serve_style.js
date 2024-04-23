@@ -61,9 +61,13 @@ export const serve_style = {
       }
       // mapbox-gl-js viewer cannot handle sprite urls with query
       if (styleJSON_.sprite) {
-        styleJSON_.sprite.forEach((spriteItem) => {
-          spriteItem.url = fixUrl(req, spriteItem.url, item.publicUrl);
-        });
+        if (Array.isArray(styleJSON_.sprite)) {
+          styleJSON_.sprite.forEach((spriteItem) => {
+            spriteItem.url = fixUrl(req, spriteItem.url, item.publicUrl);
+          });
+        } else {
+          styleJSON_.sprite = fixUrl(req, styleJSON_.sprite, item.publicUrl);
+        }
       }
       if (styleJSON_.glyphs) {
         styleJSON_.glyphs = fixUrl(req, styleJSON_.glyphs, item.publicUrl);
@@ -173,22 +177,34 @@ export const serve_style = {
     let spritePaths = [];
     if (styleJSON.sprite) {
       if (!Array.isArray(styleJSON.sprite)) {
-        styleJSON.sprite = [{ id: 'default', url: styleJSON.sprite }];
-      }
-
-      for (let spriteItem of styleJSON.sprite) {
-        if (!httpTester.test(spriteItem.url)) {
+        if (!httpTester.test(styleJSON.sprite)) {
           let spritePath = path.join(
             options.paths.sprites,
-            spriteItem.url
+            styleJSON.sprite
               .replace('{style}', path.basename(styleFile, '.json'))
               .replace(
                 '{styleJsonFolder}',
                 path.relative(options.paths.sprites, path.dirname(styleFile)),
               ),
           );
-          spriteItem.url = `local://styles/${id}/sprite/` + spriteItem.id;
-          spritePaths.push({ id: spriteItem.id, path: spritePath });
+          styleJSON.sprite = `local://styles/${id}/sprite`;
+          spritePaths.push({ id: 'default', path: spritePath });
+        }
+      } else {
+        for (let spriteItem of styleJSON.sprite) {
+          if (!httpTester.test(spriteItem.url)) {
+            let spritePath = path.join(
+              options.paths.sprites,
+              spriteItem.url
+                .replace('{style}', path.basename(styleFile, '.json'))
+                .replace(
+                  '{styleJsonFolder}',
+                  path.relative(options.paths.sprites, path.dirname(styleFile)),
+                ),
+            );
+            spriteItem.url = `local://styles/${id}/sprite/` + spriteItem.id;
+            spritePaths.push({ id: spriteItem.id, path: spritePath });
+          }
         }
       }
     }

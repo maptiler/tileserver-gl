@@ -1046,6 +1046,9 @@ export const serve_rendered = {
     }
 
     if (styleJSON.sprite) {
+      if (!Array.isArray(styleJSON.sprite)) {
+        styleJSON.sprite = [{ id: 'default', url: styleJSON.sprite }];
+      }
       styleJSON.sprite.forEach((spriteItem) => {
         if (!httpTester.test(spriteItem.url)) {
           spriteItem.url =
