@@ -49,13 +49,9 @@ export const serve_style = {
       }
       // mapbox-gl-js viewer cannot handle sprite urls with query
       if (styleJSON_.sprite) {
-        if (Array.isArray(styleJSON_.sprite)) {
-          styleJSON_.sprite.forEach((spriteItem) => {
-            spriteItem.url = fixUrl(req, spriteItem.url, item.publicUrl);
-          });
-        } else {
-          styleJSON_.sprite = fixUrl(req, styleJSON_.sprite, item.publicUrl);
-        }
+        styleJSON_.sprite.forEach((spriteItem) => {
+          spriteItem.url = fixUrl(req, spriteItem.url, item.publicUrl);
+        });
       }
       if (styleJSON_.glyphs) {
         styleJSON_.glyphs = fixUrl(req, styleJSON_.glyphs, item.publicUrl);
