@@ -10,8 +10,15 @@ import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
 import { getPublicUrl } from './utils.js';
 
 const httpTester = /^https?:\/\//i;
+const allowedSpriteScales = allowedOptions(['', '@2x', '@3x'], '');
+const allowedSpriteFormats = allowedOptions(['png', 'json']);
 
-const fixUrl = (req, url, publicUrl) => {
+function allowedOptions(opts, { defaultValue } = {}) {
+  const values = Object.fromEntries(opts.map(key => [key, key]));
+  return (value) => values[value] || defaultValue;
+}
+
+function fixUrl(req, url, publicUrl) {
   if (!url || typeof url !== 'string' || url.indexOf('local://') !== 0) {
     return url;
   }
@@ -59,56 +66,31 @@ export const serve_style = {
     app.get(
       '/:id/sprite(/:spriteID)?:scale(@[23]x)?.:format([\\w]+)',
       (req, res, next) => {
-        const spriteID = req.params.spriteID || 'default';
-        const scale = req.params.scale || '';
-        const format = req.params.format;
-        const item = repo[req.params.id];
+        const { spriteID = 'default', id } = req.params;
+        const scale = allowedSpriteScales(req.params.scale) || '';
+        const format = allowedSpriteFormats(req.params.format);
 
-        let spritePath;
-        if (item && item.spritePaths) {
-          for (const sprite of item.spritePaths) {
-            if (sprite.id === spriteID) {
-              spritePath = sprite.path;
-            }
-          }
-          if (!spritePath) {
-            return res.sendStatus(404);
+        if (format) {
+          const item = repo[id];
+          const sprite = item.spritePaths.find(sprite => sprite.id === spriteID);
+          if (sprite) {
+            const filename = `${sprite.path + scale}.${format}`;
+            return fs.readFile(filename, (err, data) => {
+              if (err) {
+                console.log('Sprite load error:', filename);
+                return res.sendStatus(404);
+              } else {
+                if (format === 'json')
+                  res.header('Content-type', 'application/json');
+                if (format === 'png') res.header('Content-type', 'image/png');
+                return res.send(data);
+              }
+            });
+          } else {
+            return res.status(400).send('Bad Sprite ID or Scale');
           }
         } else {
-          return res.sendStatus(404);
-        }
-
-        let spriteScale;
-        const allowedScales = ['', '@2x', '@3x'];
-        for (const as of allowedScales) {
-          if (as === scale) {
-            spriteScale = as;
-          }
-        }
-
-        let spriteFormat;
-        const allowedFormats = ['png', 'json'];
-        for (const af of allowedFormats) {
-          if (af === format) {
-            spriteFormat = af;
-          }
-        }
-
-        if (spriteFormat) {
-          const filename = `${spritePath + spriteScale}.${spriteFormat}`;
-          return fs.readFile(filename, (err, data) => {
-            if (err) {
-              console.log('Sprite load error:', filename);
-              return res.sendStatus(404);
-            } else {
-              if (format === 'json')
-                res.header('Content-type', 'application/json');
-              if (format === 'png') res.header('Content-type', 'image/png');
-              return res.send(data);
-            }
-          });
-        } else {
-          return res.sendStatus(400);
+          return res.status(400).send('Bad Sprite Format');
         }
       },
     );
@@ -180,35 +162,23 @@ export const serve_style = {
 
     let spritePaths = [];
     if (styleJSON.sprite) {
-      if (Array.isArray(styleJSON.sprite)) {
-        styleJSON.sprite.forEach((spriteItem) => {
-          if (!httpTester.test(spriteItem.url)) {
-            let spritePath = path.join(
-              options.paths.sprites,
-              spriteItem.url
-                .replace('{style}', path.basename(styleFile, '.json'))
-                .replace(
-                  '{styleJsonFolder}',
-                  path.relative(options.paths.sprites, path.dirname(styleFile)),
-                ),
-            );
-            spriteItem.url = `local://styles/${id}/sprite/` + spriteItem.id;
-            spritePaths.push({ id: spriteItem.id, path: spritePath });
-          }
-        });
-      } else {
-        if (!httpTester.test(styleJSON.sprite)) {
+      if (!Array.isArray(styleJSON.sprite)) {
+        styleJSON.sprite = [{id: 'default', url: styleJSON.sprite }]; 
+      }
+
+      for (let spriteItem of styleJSON.sprite) {
+        if (!httpTester.test(spriteItem.url)) {
           let spritePath = path.join(
             options.paths.sprites,
-            styleJSON.sprite
+            spriteItem.url
               .replace('{style}', path.basename(styleFile, '.json'))
               .replace(
                 '{styleJsonFolder}',
                 path.relative(options.paths.sprites, path.dirname(styleFile)),
               ),
           );
-          styleJSON.sprite = `local://styles/${id}/sprite`;
-          spritePaths.push({ id: 'default', path: spritePath });
+          spriteItem.url = `local://styles/${id}/sprite/` + spriteItem.id;
+          spritePaths.push({ id: spriteItem.id, path: spritePath });
         }
       }
     }
