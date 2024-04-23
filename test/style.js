@@ -41,6 +41,13 @@ describe('Styles', function () {
     testIs('/styles/' + prefix + '/sprite.png', /image\/png/);
     testIs('/styles/' + prefix + '/sprite@2x.png', /image\/png/);
   });
+
+  describe('/styles/' + prefix + '/sprite/default[@2x].{format}', function () {
+    testIs('/styles/' + prefix + '/sprite/default.json', /application\/json/);
+    testIs('/styles/' + prefix + '/sprite/default@2x.json', /application\/json/);
+    testIs('/styles/' + prefix + '/sprite/default.png', /image\/png/);
+    testIs('/styles/' + prefix + '/sprite/default@2x.png', /image\/png/);
+  });
 });
 
 describe('Fonts', function () {
