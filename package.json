@@ -42,7 +42,7 @@
     "pmtiles": "3.0.5",
     "proj4": "2.11.0",
     "sanitize-filename": "1.6.3",
-    "sharp": "0.33.3",
+    "sharp": "0.33.4",
     "tileserver-gl-styles": "2.0.0"
   },
   "devDependencies": {
