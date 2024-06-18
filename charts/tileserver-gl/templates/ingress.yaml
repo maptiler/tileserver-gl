@@ -1,0 +1,18 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: openmaptileserver
+{{- with .Values.ingress.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+  entryPoints:
+    - websecure
+    - web
+  routes:
+  - match: Host(`{{ .Values.ingress.dnsname }}`) 
+    kind: Rule
+    services:
+    - name: {{ .Values.service.name }} 
+      port: {{ .Values.service.port }}
