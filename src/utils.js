@@ -4,7 +4,7 @@ import path from 'path';
 import fsPromises from 'fs/promises';
 import fs, { existsSync } from 'node:fs';
 import clone from 'clone';
-import * as glyphCompose from '@jsse/pbfont';
+import { combine } from '@jsse/pbfont';
 
 /**
  * Restrict user input to an allowed set of options.
@@ -213,7 +213,7 @@ export const getFontsPbf = async (
     );
   }
 
-  const combined = glyphCompose.combine(await Promise.all(queue), names);
+  const combined = combine(await Promise.all(queue), names);
   return Buffer.from(combined.buffer, 0, combined.buffer.length);
 };
 
