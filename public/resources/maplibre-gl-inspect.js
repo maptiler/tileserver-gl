@@ -849,7 +849,7 @@
 		      length = result.length;
 
 		  for (var key in value) {
-		    if ((inherited || hasOwnProperty.call(value, key)) &&
+		    if ((hasOwnProperty.call(value, key)) &&
 		        !(skipIndexes && (
 		           // Safari 9 has enumerable `arguments.length` in strict mode.
 		           key == 'length' ||
@@ -2055,9 +2055,10 @@
 	}
 	function renderProperties(feature) {
 	    const sourceProperty = renderLayer(feature.layer['source-layer'] || feature.layer.source);
+	    const idProperty = renderProperty('$id', feature.id);
 	    const typeProperty = renderProperty('$type', feature.geometry.type);
 	    const properties = Object.keys(feature.properties).map(propertyName => renderProperty(propertyName, feature.properties[propertyName]));
-	    return [sourceProperty, typeProperty].concat(properties).join('');
+	    return [sourceProperty, idProperty, typeProperty].concat(properties).join('');
 	}
 	function renderFeatures(features) {
 	    return features.map(ft => `<div class="maplibregl-inspect_feature">${renderProperties(ft)}</div>`).join('');
