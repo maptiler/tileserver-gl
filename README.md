@@ -80,7 +80,7 @@ xvfb-run --server-args="-screen 0 1024x768x24" node .
 
 ## Documentation
 
-You can read the full documentation of this project at https://maptiler-tileserver.readthedocs.io/.
+You can read the full documentation of this project at https://tileserver.readthedocs.io/en/latest/.
 
 ## Alternative
 
