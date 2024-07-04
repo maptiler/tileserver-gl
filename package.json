@@ -38,7 +38,7 @@
     "handlebars": "4.7.8",
     "http-shutdown": "1.2.2",
     "morgan": "1.10.0",
-    "pbf": "3.2.1",
+    "pbf": "3.3.0",
     "pmtiles": "3.0.6",
     "proj4": "2.11.0",
     "sanitize-filename": "1.6.3",
