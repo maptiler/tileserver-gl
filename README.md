@@ -78,6 +78,14 @@ Run from command line
 xvfb-run --server-args="-screen 0 1024x768x24" node .
 ```
 
+## Using Kubernetes/helm
+
+```bash
+helm install tileserver-gl .\tileserver-gl\ -n default
+```
+
+you can now access the service (kubectl get svc) via port-forward or you can change the service type configuration to LoadBalancer or even activate the ingres/traefik routing.
+
 ## Documentation
 
 You can read the full documentation of this project at https://tileserver.readthedocs.io/en/latest/.

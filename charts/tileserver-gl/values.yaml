@@ -1,0 +1,44 @@
+# Default values for OpenMapTiles.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: 245136312710.dkr.ecr.ca-central-1.amazonaws.com/tileserverglolameter
+  tag: latest
+  pullPolicy: Always
+
+imagePullSecrets: []
+
+ingress:
+  enabled: false
+  dnsname: openmaptilese.some-dns.com
+  annotations: {}
+    # kubernetes.io/tls-acme: "true"
+  path: /
+  # hosts:
+  #   - chart-example.local
+  tls: {}
+
+service:
+  type: ClusterIP
+  port: 8081
+  name: openmaptile-svc
+
+volume:
+  name: openmaptiles-dataset
+  persistentVolumeClaim:
+    claimName: openmaptilesefs-claim
+  persistentVolume:
+    pvName: openmaptiles-pv
+#This mountPath is related to the config file configuration
+  mountPath: /data
+  storage: 20Gi
+
+storageClass:
+  name: openmaptilesefs
+
+#This port is related to the activated dockerfile port
+deployment:
+  containerPort: 8080
