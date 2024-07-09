@@ -34,6 +34,7 @@
     "color": "4.2.3",
     "commander": "12.1.0",
     "cors": "2.8.5",
+    "crypto": "^1.0.1",
     "express": "4.19.2",
     "handlebars": "4.7.8",
     "http-shutdown": "1.2.2",
@@ -42,7 +43,7 @@
     "pmtiles": "3.0.6",
     "proj4": "2.11.0",
     "sanitize-filename": "1.6.3",
-    "sharp": "0.33.4",
+    "sharp": "^0.33.4",
     "tileserver-gl-styles": "2.0.0"
   },
   "devDependencies": {

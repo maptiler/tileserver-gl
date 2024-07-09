@@ -5,7 +5,7 @@ import fsPromises from 'fs/promises';
 import fs, { existsSync } from 'node:fs';
 import clone from 'clone';
 import { combine } from '@jsse/pbfont';
-
+import * as crypto from 'crypto';
 /**
  * Restrict user input to an allowed set of options.
  * @param opts
@@ -72,6 +72,7 @@ export const getTileUrls = (
   format,
   publicUrl,
   aliases,
+  cacheId
 ) => {
   const urlObject = getUrlObject(req);
   if (domains) {
@@ -107,6 +108,11 @@ export const getTileUrls = (
   if (req.query.style) {
     queryParams.push(`style=${encodeURIComponent(req.query.style)}`);
   }
+
+  if(cacheId){
+    queryParams.push(`cache-id=${encodeURIComponent(cacheId)}`);
+  }
+
   const query = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
 
   if (aliases && aliases[format]) {
@@ -130,6 +136,7 @@ export const getTileUrls = (
     uris.push(`${publicUrl}${path}/${tileParams}.${format}${query}`);
   }
 
+  
   return uris;
 };
 
@@ -245,3 +252,12 @@ export const isValidHttpUrl = (string) => {
 
   return url.protocol === 'http:' || url.protocol === 'https:';
 };
+
+
+export const getFileHash = path => new Promise((resolve, reject) => {
+  const hash = crypto.createHash('sha1');
+  const rs = fs.createReadStream(path);
+  rs.on('error', reject);
+  rs.on('data', chunk => hash.update(chunk));
+  rs.on('end', () => resolve(hash.digest('base64')));
+ })
