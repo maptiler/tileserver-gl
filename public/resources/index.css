@@ -1,18 +1,18 @@
 @font-face {
   font-family: 'OpenSans';
-  src: url('/fonts/OpenSans-Regular.ttf');
+  src: url('./fonts/OpenSans-Regular.ttf');
   font-weight: normal;
   font-style: normal;
 }
 @font-face {
   font-family: 'OpenSans';
-  src: url('/fonts/OpenSans-Italic.ttf');
+  src: url('./fonts/OpenSans-Italic.ttf');
   font-weight: normal;
   font-style: italic;
 }
 @font-face {
   font-family: 'OpenSans';
-  src: url('/fonts/OpenSans-Bold.ttf');
+  src: url('./fonts/OpenSans-Bold.ttf');
   font-weight: bold;
   font-style: normal;
 }
@@ -25,7 +25,7 @@ body {
   margin: 0;
   background-repeat: no-repeat !important;
   background-size: contain !important;
-  background-image: url(/images/header-map-1280px.png);
+  background-image: url(./images/header-map-1280px.png);
 }
 a {
   color: #499dce;
