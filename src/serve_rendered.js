@@ -17,7 +17,6 @@ import fs from 'node:fs';
 import path from 'path';
 import url from 'url';
 import util from 'util';
-import zlib from 'zlib';
 import sharp from 'sharp';
 import clone from 'clone';
 import Color from 'color';
@@ -42,6 +41,8 @@ import {
   getPMtilesTile,
 } from './pmtiles_adapter.js';
 import { renderOverlay, renderWatermark, renderAttribution } from './render.js';
+import fsp from 'node:fs/promises';
+import { gunzipP } from './promises.js';
 
 const FLOAT_PATTERN = '[+-]?(?:\\d+|\\d+.?\\d+)';
 const PATH_PATTERN =
@@ -943,7 +944,7 @@ export const serve_rendered = {
                   callback(null, response);
                 }
               } else if (sourceType === 'mbtiles') {
-                source.getTile(z, x, y, (err, data, headers) => {
+                source.getTile(z, x, y, async (err, data, headers) => {
                   if (err) {
                     if (options.verbose)
                       console.log('MBTiles error, serving empty', err);
@@ -962,7 +963,7 @@ export const serve_rendered = {
 
                   if (format === 'pbf') {
                     try {
-                      response.data = zlib.unzipSync(data);
+                      response.data = await gunzipP(data);
                     } catch (err) {
                       console.log(
                         'Skipping incorrect header for tile mbtiles://%s/%s/%s/%s.pbf',
@@ -1039,7 +1040,7 @@ export const serve_rendered = {
     const styleFile = params.style;
     const styleJSONPath = path.resolve(options.paths.styles, styleFile);
     try {
-      styleJSON = JSON.parse(fs.readFileSync(styleJSONPath));
+      styleJSON = JSON.parse(await fsp.readFile(styleJSONPath));
     } catch (e) {
       console.log('Error parsing style file');
       return false;
@@ -1145,7 +1146,7 @@ export const serve_rendered = {
         }
 
         if (!isValidHttpUrl(inputFile)) {
-          const inputFileStats = fs.statSync(inputFile);
+          const inputFileStats = await fsp.stat(inputFile);
           if (!inputFileStats.isFile() || inputFileStats.size === 0) {
             throw Error(`Not valid PMTiles file: "${inputFile}"`);
           }
@@ -1187,9 +1188,9 @@ export const serve_rendered = {
           }
         } else {
           queue.push(
-            new Promise((resolve, reject) => {
+            new Promise(async (resolve, reject) => {
               inputFile = path.resolve(options.paths.mbtiles, inputFile);
-              const inputFileStats = fs.statSync(inputFile);
+              const inputFileStats = await fsp.stat(inputFile);
               if (!inputFileStats.isFile() || inputFileStats.size === 0) {
                 throw Error(`Not valid MBTiles file: "${inputFile}"`);
               }

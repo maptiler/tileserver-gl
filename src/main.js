@@ -3,6 +3,7 @@
 'use strict';
 
 import fs from 'node:fs';
+import fsp from 'node:fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import axios from 'axios';
@@ -23,6 +24,7 @@ if (args.length >= 3 && args[2][0] !== '-') {
 }
 
 import { program } from 'commander';
+import { existsP } from './promises.js';
 program
   .description('tileserver-gl startup options')
   .usage('tileserver-gl [mbtiles] [options]')
@@ -95,7 +97,7 @@ const startWithInputFile = async (inputFile) => {
     inputFile = path.resolve(process.cwd(), inputFile);
     inputFilePath = path.dirname(inputFile);
 
-    const inputFileStats = fs.statSync(inputFile);
+    const inputFileStats = await fsp.stat(inputFile);
     if (!inputFileStats.isFile() || inputFileStats.size === 0) {
       console.log(`ERROR: Not a valid input file: `);
       process.exit(1);
@@ -140,11 +142,11 @@ const startWithInputFile = async (inputFile) => {
         };
       }
 
-      const styles = fs.readdirSync(path.resolve(styleDir, 'styles'));
+      const styles = await fsp.readdir(path.resolve(styleDir, 'styles'));
       for (const styleName of styles) {
         const styleFileRel = styleName + '/style.json';
         const styleFile = path.resolve(styleDir, 'styles', styleFileRel);
-        if (fs.existsSync(styleFile)) {
+        if (await existsP(styleFile)) {
           config['styles'][styleName] = {
             style: styleFileRel,
             tilejson: {
@@ -189,7 +191,7 @@ const startWithInputFile = async (inputFile) => {
         process.exit(1);
       }
 
-      instance.getInfo((err, info) => {
+      instance.getInfo(async (err, info) => {
         if (err || !info) {
           console.log('ERROR: Metadata missing in the MBTiles.');
           console.log(
@@ -207,11 +209,11 @@ const startWithInputFile = async (inputFile) => {
             mbtiles: path.basename(inputFile),
           };
 
-          const styles = fs.readdirSync(path.resolve(styleDir, 'styles'));
+          const styles = await fsp.readdir(path.resolve(styleDir, 'styles'));
           for (const styleName of styles) {
             const styleFileRel = styleName + '/style.json';
             const styleFile = path.resolve(styleDir, 'styles', styleFileRel);
-            if (fs.existsSync(styleFile)) {
+            if (await existsP(styleFile)) {
               config['styles'][styleName] = {
                 style: styleFileRel,
                 tilejson: {
@@ -254,10 +256,10 @@ fs.stat(path.resolve(opts.config), async (err, stats) => {
       return startWithInputFile(inputFile);
     } else {
       // try to find in the cwd
-      const files = fs.readdirSync(process.cwd());
+      const files = await fsp.readdir(process.cwd());
       for (const filename of files) {
         if (filename.endsWith('.mbtiles') || filename.endsWith('.pmtiles')) {
-          const inputFilesStats = fs.statSync(filename);
+          const inputFilesStats = await fsp.stat(filename);
           if (inputFilesStats.isFile() && inputFilesStats.size > 0) {
             inputFile = filename;
             break;

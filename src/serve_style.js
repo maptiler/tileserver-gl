@@ -87,7 +87,7 @@ export const serve_style = {
 
     let styleFileData;
     try {
-      styleFileData = fs.readFileSync(styleFile);
+      styleFileData = fs.readFileSync(styleFile); // TODO: could be made async if this function was
     } catch (e) {
       console.log('Error reading style file');
       return false;
