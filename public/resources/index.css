@@ -73,6 +73,17 @@ section {
   font-size: 20px;
   background: #fff;
 }
+.filter-details {
+  padding: 20px 30px;
+}
+.box input { /* Filter text input */
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ededed;
+  border-radius: 4px;
+  /* fill out to parent */
+  width: 100%;
+}
 .item {
   background: #fff;
   height: 191px;

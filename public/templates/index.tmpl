@@ -13,12 +13,42 @@
       el.setSelectionRange(0, el.value.length);
       return false;
     }
+
+    function filter() {
+      var filter = document.getElementById('filter').value.toLowerCase();
+      var items = document.getElementsByClassName('item');
+      for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        if (!item.getElementsByClassName('details')[0]) {
+          continue;
+        }
+        var details = item.getElementsByClassName('details')[0];
+        var name = details.getElementsByTagName('h3')[0].textContent.toLowerCase();
+        var identifier = details.getElementsByClassName('identifier')[0].textContent.toLowerCase().substring(12); // remove "identifier: "
+        if (name.indexOf(filter) > -1 || identifier.indexOf(filter) > -1) {
+          item.style.display = 'block';
+        } else {
+          item.style.display = 'none';
+        }
+      }
+    }
   </script>
 </head>
 <body>
   <section>
     <h1 class="title {{#if is_light}}light{{/if}}"><img src="{{public_url}}images/logo.png{{&key_query}}" alt="TileServer GL" /></h1>
     <h2 class="subtitle">Vector {{#if is_light}}<s>and raster</s>{{else}}and raster{{/if}} maps with GL styles</h2>
+    <h2 class="box-header">Filter</h2>
+    <!-- filter box -->
+    <div class="box">
+      <div class="item">
+        <div class="filter-details">
+          <h3>Filter styles and data by name or identifier.</h3>
+          <!-- filter input , needs to call filter() when content changes...-->
+          <input id="filter" type="text" oninput="filter()" placeholder="Filter by name or identifier" />
+        </div>
+      </div>
+    </div>
     {{#if styles}}
       <h2 class="box-header">Styles</h2>
       <div class="box">
