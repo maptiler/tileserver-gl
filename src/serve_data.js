@@ -10,7 +10,7 @@ import MBTiles from '@mapbox/mbtiles';
 import Pbf from 'pbf';
 import { VectorTile } from '@mapbox/vector-tile';
 
-import { getTileUrls, isValidHttpUrl, fixTileJSONCenter } from './utils.js';
+import { getTileUrls, isValidHttpUrl, fixTileJSONCenter, getFileHash } from './utils.js';
 import {
   openPMtiles,
   getPMtilesInfo,
@@ -179,6 +179,7 @@ export const serve_data = {
         {
           pbf: options.pbfAlias,
         },
+        info.cacheId
       );
       return res.send(info);
     });
@@ -230,10 +231,11 @@ export const serve_data = {
       Object.assign(tileJSON, metadata);
 
       tileJSON['tilejson'] = '2.0.0';
+      tileJSON['cacheId']= btoa(tileJSON['mtime']);
       delete tileJSON['filesize'];
       delete tileJSON['mtime'];
       delete tileJSON['scheme'];
-
+      
       Object.assign(tileJSON, params.tilejson || {});
       fixTileJSONCenter(tileJSON);
 
@@ -242,6 +244,8 @@ export const serve_data = {
       }
     } else if (inputType === 'mbtiles') {
       sourceType = 'mbtiles';
+      tileJSON['cacheId']= await getFileHash(inputFile)
+
       const sourceInfoPromise = new Promise((resolve, reject) => {
         source = new MBTiles(inputFile + '?mode=ro', (err) => {
           if (err) {

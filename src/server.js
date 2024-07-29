@@ -373,6 +373,7 @@ function start(opts) {
         {
           pbf: options.pbfAlias,
         },
+        info.cacheId
       );
       arr.push(info);
     }
@@ -479,6 +480,8 @@ function start(opts) {
           tileSize,
           style.serving_rendered.tileJSON.format,
           opts.publicUrl,
+          null,
+          style.serving_rendered.tileJSON.cacheId
         )[0];
       }
 
@@ -517,6 +520,7 @@ function start(opts) {
         {
           pbf: options.pbfAlias,
         },
+        tileJSON.cacheId
       )[0];
 
       if (data.filesize) {
@@ -598,7 +602,7 @@ function start(opts) {
   serveTemplate('/data/:id/$', 'data', (req) => {
     const { id } = req.params;
     const data = serving.data[id];
-
+    debugger
     if (!data) {
       return null;
     }

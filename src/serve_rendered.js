@@ -847,6 +847,8 @@ export const serve_rendered = {
         tileSize,
         info.format,
         item.publicUrl,
+        null,
+        info.cacheId
       );
       return res.send(info);
     });
