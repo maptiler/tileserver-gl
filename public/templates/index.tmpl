@@ -19,10 +19,8 @@
       var items = document.getElementsByClassName('item');
       for (var i = 0; i < items.length; i++) {
         var item = items[i];
-        if (!item.getElementsByClassName('details')[0]) {
-          continue;
-        }
         var details = item.getElementsByClassName('details')[0];
+        if(!details) continue;
         var name = details.getElementsByTagName('h3')[0].textContent.toLowerCase();
         var identifier = details.getElementsByClassName('identifier')[0].textContent.toLowerCase().replace(/^identifier: /, '');
         if (name.indexOf(filter) > -1 || identifier.indexOf(filter) > -1) {
