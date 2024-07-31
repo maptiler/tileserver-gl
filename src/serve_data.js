@@ -1,8 +1,7 @@
 'use strict';
 
-import fs from 'node:fs';
+import fsp from 'node:fs/promises';
 import path from 'path';
-import zlib from 'zlib';
 
 import clone from 'clone';
 import express from 'express';
@@ -10,12 +9,13 @@ import MBTiles from '@mapbox/mbtiles';
 import Pbf from 'pbf';
 import { VectorTile } from '@mapbox/vector-tile';
 
-import { getTileUrls, isValidHttpUrl, fixTileJSONCenter } from './utils.js';
+import { fixTileJSONCenter, getTileUrls, isValidHttpUrl } from './utils.js';
 import {
-  openPMtiles,
   getPMtilesInfo,
   getPMtilesTile,
+  openPMtiles,
 } from './pmtiles_adapter.js';
+import { gunzipP, gzipP } from './promises.js';
 
 export const serve_data = {
   init: (options, repo) => {
@@ -89,12 +89,12 @@ export const serve_data = {
             headers['Content-Encoding'] = 'gzip';
             res.set(headers);
 
-            data = zlib.gzipSync(data);
+            data = await gzipP(data);
 
             return res.status(200).send(data);
           }
         } else if (item.sourceType === 'mbtiles') {
-          item.source.getTile(z, x, y, (err, data, headers) => {
+          item.source.getTile(z, x, y, async (err, data, headers) => {
             let isGzipped;
             if (err) {
               if (/does not exist/.test(err.message)) {
@@ -114,7 +114,7 @@ export const serve_data = {
                     data.slice(0, 2).indexOf(Buffer.from([0x1f, 0x8b])) === 0;
                   if (options.dataDecoratorFunc) {
                     if (isGzipped) {
-                      data = zlib.unzipSync(data);
+                      data = await gunzipP(data);
                       isGzipped = false;
                     }
                     data = options.dataDecoratorFunc(id, 'data', data, z, x, y);
@@ -126,7 +126,7 @@ export const serve_data = {
                   headers['Content-Type'] = 'application/json';
 
                   if (isGzipped) {
-                    data = zlib.unzipSync(data);
+                    data = await gunzipP(data);
                     isGzipped = false;
                   }
 
@@ -151,7 +151,7 @@ export const serve_data = {
                 res.set(headers);
 
                 if (!isGzipped) {
-                  data = zlib.gzipSync(data);
+                  data = await gzipP(data);
                 }
 
                 return res.status(200).send(data);
@@ -212,7 +212,7 @@ export const serve_data = {
     };
 
     if (!isValidHttpUrl(inputFile)) {
-      const inputFileStats = fs.statSync(inputFile);
+      const inputFileStats = await fsp.stat(inputFile);
       if (!inputFileStats.isFile() || inputFileStats.size === 0) {
         throw Error(`Not valid input file: "${inputFile}"`);
       }

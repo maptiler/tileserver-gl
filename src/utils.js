@@ -2,9 +2,10 @@
 
 import path from 'path';
 import fsPromises from 'fs/promises';
-import fs, { existsSync } from 'node:fs';
+import fs from 'node:fs';
 import clone from 'clone';
 import { combine } from '@jsse/pbfont';
+import { existsP } from './promises.js';
 
 /**
  * Restrict user input to an allowed set of options.
@@ -225,7 +226,7 @@ export const listFonts = async (fontPath) => {
     const stats = await fsPromises.stat(path.join(fontPath, file));
     if (
       stats.isDirectory() &&
-      existsSync(path.join(fontPath, file, '0-255.pbf'))
+      (await existsP(path.join(fontPath, file, '0-255.pbf')))
     ) {
       existingFonts[path.basename(file)] = true;
     }
