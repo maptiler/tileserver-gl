@@ -23,11 +23,7 @@
         if(!details) continue;
         var name = details.getElementsByTagName('h3')[0].textContent.toLowerCase();
         var identifier = details.getElementsByClassName('identifier')[0].textContent.toLowerCase().replace(/^identifier: /, '');
-        if (name.indexOf(filter) > -1 || identifier.indexOf(filter) > -1) {
-          item.style.display = 'block';
-        } else {
-          item.style.display = 'none';
-        }
+        item.hidden = !(name.indexOf(filter) > -1 || identifier.indexOf(filter) > -1);
       }
     }
   </script>
