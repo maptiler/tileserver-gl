@@ -18,12 +18,10 @@
       var filter = document.getElementById('filter').value.toLowerCase();
       var items = document.getElementsByClassName('item');
       for (var i = 0; i < items.length; i++) {
-        var item = items[i];
-        var details = item.getElementsByClassName('details')[0];
-        if(!details) continue;
-        var name = details.getElementsByTagName('h3')[0].textContent.toLowerCase();
-        var identifier = details.getElementsByClassName('identifier')[0].textContent.toLowerCase().replace(/^identifier: /, '');
-        item.hidden = !(name.indexOf(filter) > -1 || identifier.indexOf(filter) > -1);
+          var item = items[i];
+          var dataName = item.getAttribute('data-name')?.toLowerCase() ?? '';
+          var dataIdentifier = item.getAttribute('data-id')?.toLowerCase() ?? '';
+          item.hidden = !(dataName.indexOf(filter) > -1 || dataIdentifier.indexOf(filter) > -1);
       }
     }
   </script>
@@ -35,11 +33,11 @@
     <h2 class="box-header">Filter</h2>
     <!-- filter box -->
     <div class="box">
-      <div class="item">
+      <div class="filter-item">
         <div class="filter-details">
-          <h3>Filter styles and data by name or identifier.</h3>
+          <h3>Filter styles and data by name or identifier</h3>
           <!-- filter input , needs to call filter() when content changes...-->
-          <input id="filter" type="text" oninput="filter()" placeholder="Filter by name or identifier" />
+          <input id="filter" type="text" oninput="filter()" placeholder="Start typing name or identifier" />
         </div>
       </div>
     </div>
@@ -47,7 +45,7 @@
       <h2 class="box-header">Styles</h2>
       <div class="box">
       {{#each styles}}
-        <div class="item">
+        <div class="item" data-id="{{@key}}" data-name="{{name}}">
           {{#if thumbnail}}
             <img src="{{public_url}}styles/{{@key}}/{{thumbnail}}{{&../key_query}}" alt="{{name}} preview" />
           {{else}}
@@ -94,7 +92,7 @@
       <h2 class="box-header">Data</h2>
       <div class="box">
       {{#each data}}
-        <div class="item">
+        <div class="item" data-id="{{@key}}" data-name="{{tileJSON.name}}">
           {{#if thumbnail}}
             <img src="{{public_url}}data/{{@key}}/{{thumbnail}}{{&../key_query}}" alt="{{name}} preview" />
           {{else}}

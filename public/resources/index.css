@@ -90,6 +90,12 @@ section {
   border: 1px solid #ededed;
   border-top: none;
 }
+.filter-item {
+  background: #fbfbfb;
+  height: 150px;
+  border: 1px solid #ededed;
+  border-top: none;
+}
 .item:nth-child(odd) {
   background-color: #fbfbfb;
 }
