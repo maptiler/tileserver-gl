@@ -18,7 +18,7 @@
     "prepare": "node -e \"if (process.env.NODE_ENV !== 'production'){ process.exit(1) } \" || husky"
   },
   "dependencies": {
-    "@jsse/pbfont": "^0.1.2",
+    "@jsse/pbfont": "^0.2.0",
     "@mapbox/mbtiles": "0.12.1",
     "@mapbox/polyline": "^1.2.1",
     "@mapbox/sphericalmercator": "1.2.0",
@@ -53,11 +53,11 @@
     "chai": "5.1.1",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-jsdoc": "^48.10.2",
+    "eslint-plugin-jsdoc": "^48.11.0",
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-security": "^1.7.1",
     "husky": "^9.1.4",
-    "lint-staged": "^15.2.7",
+    "lint-staged": "^15.2.8",
     "mocha": "^10.7.0",
     "node-addon-api": "^8",
     "prettier": "^3.3.3",
