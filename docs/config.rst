@@ -23,9 +23,13 @@ Example:
         "localhost:8080",
         "127.0.0.1:8080"
       ],
-      "formatQuality": {
-        "jpeg": 80,
-        "webp": 90
+      "formatOptions": {
+        "jpeg": {
+          "quality": 80
+        },
+        "webp": {
+          "quality": 90
+        }
       },
       "maxScaleFactor": 3,
       "maxSize": 2048,
@@ -85,10 +89,23 @@ Path to the html (relative to ``root`` path) to use as a front page.
 Use ``true`` (or nothing) to serve the default TileServer GL front page with list of styles and data.
 Use ``false`` to disable the front page altogether (404).
 
-``formatQuality``
+``formatOptions``
 -----------------
 
-Quality of the compression of individual image formats. [0-100]
+You can use this to specify options for the generation of images in the supported file formats.
+For JPEG and WebP, the only supported option is ``quality`` [0-100].
+For PNG, the full set of options `exposed by the sharp library <https://sharp.pixelplumbing.com/api-output#png>`_ is available, except ``force`` and ``colours`` (use ``colors``). If not set, their values are the defaults from ``sharp``.
+
+For example::
+
+  "formatOptions": {
+    "png": {
+      "palette": true,
+      "colors": 4
+    }
+  }
+
+Note: ``formatOptions`` replaced the ``formatQuality`` option in previous versions of TileServer GL. 
 
 ``maxScaleFactor``
 -----------

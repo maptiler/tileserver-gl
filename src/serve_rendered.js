@@ -504,14 +504,32 @@ const respondImage = (
         image.composite(composites);
       }
 
-      const formatQuality = (options.formatQuality || {})[format];
+      // Legacy formatQuality is deprecated but still works
+      const formatQualities = options.formatQuality || {};
+      if (Object.keys(formatQualities).length !== 0) {
+        console.log(
+          'WARNING: The formatQuality option is deprecated and has been replaced with formatOptions. Please see the documentation. The values from formatQuality will be used if a quality setting is not provided via formatOptions.',
+        );
+      }
+      const formatQuality = formatQualities[format];
+
+      const formatOptions = (options.formatOptions || {})[format] || {};
 
       if (format === 'png') {
-        image.png({ adaptiveFiltering: false });
+        image.png({
+          progressive: formatOptions.progressive,
+          compressionLevel: formatOptions.compressionLevel,
+          adaptiveFiltering: formatOptions.adaptiveFiltering,
+          palette: formatOptions.palette,
+          quality: formatOptions.quality,
+          effort: formatOptions.effort,
+          colors: formatOptions.colors,
+          dither: formatOptions.dither,
+        });
       } else if (format === 'jpeg') {
-        image.jpeg({ quality: formatQuality || 80 });
+        image.jpeg({ quality: formatOptions.quality || formatQuality || 80 });
       } else if (format === 'webp') {
-        image.webp({ quality: formatQuality || 90 });
+        image.webp({ quality: formatOptions.quality || formatQuality || 90 });
       }
       image.toBuffer((err, buffer, info) => {
         if (!buffer) {
