@@ -8,9 +8,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import axios from 'axios';
 import { server } from './server.js';
-import MBTiles from '@mapbox/mbtiles';
 import { isValidHttpUrl } from './utils.js';
 import { openPMtiles, getPMtilesInfo } from './pmtiles_adapter.js';
+import { program } from 'commander';
+import { existsP } from './promises.js';
+import { openMbTilesWrapper } from './mbtiles_wrapper.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,8 +25,6 @@ if (args.length >= 3 && args[2][0] !== '-') {
   args.splice(2, 0, '--mbtiles');
 }
 
-import { program } from 'commander';
-import { existsP } from './promises.js';
 program
   .description('tileserver-gl startup options')
   .usage('tileserver-gl [mbtiles] [options]')
@@ -184,62 +184,55 @@ const startWithInputFile = async (inputFile) => {
       );
       process.exit(1);
     }
-    const instance = new MBTiles(inputFile + '?mode=ro', (err) => {
-      if (err) {
-        console.log('ERROR: Unable to open MBTiles.');
-        console.log(`Make sure ${path.basename(inputFile)} is valid MBTiles.`);
-        process.exit(1);
+    let info;
+    try {
+      const mbw = await openMbTilesWrapper(inputFile);
+      info = await mbw.getInfo();
+      if (!info) throw new Error('Metadata missing in the MBTiles.');
+    } catch (err) {
+      console.log('ERROR: Unable to open MBTiles or read metadata:', err);
+      console.log(`Make sure ${path.basename(inputFile)} is valid MBTiles.`);
+      process.exit(1);
+    }
+    const bounds = info.bounds;
+
+    if (
+      info.format === 'pbf' &&
+      info.name.toLowerCase().indexOf('openmaptiles') > -1
+    ) {
+      config['data'][`v3`] = {
+        mbtiles: path.basename(inputFile),
+      };
+
+      const styles = await fsp.readdir(path.resolve(styleDir, 'styles'));
+      for (const styleName of styles) {
+        const styleFileRel = styleName + '/style.json';
+        const styleFile = path.resolve(styleDir, 'styles', styleFileRel);
+        if (await existsP(styleFile)) {
+          config['styles'][styleName] = {
+            style: styleFileRel,
+            tilejson: {
+              bounds,
+            },
+          };
+        }
       }
+    } else {
+      console.log(
+        `WARN: MBTiles not in "openmaptiles" format. Serving raw data only...`,
+      );
+      config['data'][(info.id || 'mbtiles').replace(/[?/:]/g, '_')] = {
+        mbtiles: path.basename(inputFile),
+      };
+    }
 
-      instance.getInfo(async (err, info) => {
-        if (err || !info) {
-          console.log('ERROR: Metadata missing in the MBTiles.');
-          console.log(
-            `Make sure ${path.basename(inputFile)} is valid MBTiles.`,
-          );
-          process.exit(1);
-        }
-        const bounds = info.bounds;
+    if (opts.verbose) {
+      console.log(JSON.stringify(config, undefined, 2));
+    } else {
+      console.log('Run with --verbose to see the config file here.');
+    }
 
-        if (
-          info.format === 'pbf' &&
-          info.name.toLowerCase().indexOf('openmaptiles') > -1
-        ) {
-          config['data'][`v3`] = {
-            mbtiles: path.basename(inputFile),
-          };
-
-          const styles = await fsp.readdir(path.resolve(styleDir, 'styles'));
-          for (const styleName of styles) {
-            const styleFileRel = styleName + '/style.json';
-            const styleFile = path.resolve(styleDir, 'styles', styleFileRel);
-            if (await existsP(styleFile)) {
-              config['styles'][styleName] = {
-                style: styleFileRel,
-                tilejson: {
-                  bounds,
-                },
-              };
-            }
-          }
-        } else {
-          console.log(
-            `WARN: MBTiles not in "openmaptiles" format. Serving raw data only...`,
-          );
-          config['data'][(info.id || 'mbtiles').replace(/[?/:]/g, '_')] = {
-            mbtiles: path.basename(inputFile),
-          };
-        }
-
-        if (opts.verbose) {
-          console.log(JSON.stringify(config, undefined, 2));
-        } else {
-          console.log('Run with --verbose to see the config file here.');
-        }
-
-        return startServer(null, config);
-      });
-    });
+    return startServer(null, config);
   }
 };
 

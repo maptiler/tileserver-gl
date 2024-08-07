@@ -5,7 +5,6 @@ import path from 'path';
 
 import clone from 'clone';
 import express from 'express';
-import MBTiles from '@mapbox/mbtiles';
 import Pbf from 'pbf';
 import { VectorTile } from '@mapbox/vector-tile';
 
@@ -16,6 +15,7 @@ import {
   openPMtiles,
 } from './pmtiles_adapter.js';
 import { gunzipP, gzipP } from './promises.js';
+import { openMbTilesWrapper } from './mbtiles_wrapper.js';
 
 export const serve_data = {
   init: (options, repo) => {
@@ -242,39 +242,25 @@ export const serve_data = {
       }
     } else if (inputType === 'mbtiles') {
       sourceType = 'mbtiles';
-      const sourceInfoPromise = new Promise((resolve, reject) => {
-        source = new MBTiles(inputFile + '?mode=ro', (err) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          source.getInfo((err, info) => {
-            if (err) {
-              reject(err);
-              return;
-            }
-            tileJSON['name'] = id;
-            tileJSON['format'] = 'pbf';
+      const mbw = await openMbTilesWrapper(inputFile);
+      const info = await mbw.getInfo();
+      source = mbw.getMbTiles();
+      tileJSON['name'] = id;
+      tileJSON['format'] = 'pbf';
 
-            Object.assign(tileJSON, info);
+      Object.assign(tileJSON, info);
 
-            tileJSON['tilejson'] = '2.0.0';
-            delete tileJSON['filesize'];
-            delete tileJSON['mtime'];
-            delete tileJSON['scheme'];
+      tileJSON['tilejson'] = '2.0.0';
+      delete tileJSON['filesize'];
+      delete tileJSON['mtime'];
+      delete tileJSON['scheme'];
 
-            Object.assign(tileJSON, params.tilejson || {});
-            fixTileJSONCenter(tileJSON);
+      Object.assign(tileJSON, params.tilejson || {});
+      fixTileJSONCenter(tileJSON);
 
-            if (options.dataDecoratorFunc) {
-              tileJSON = options.dataDecoratorFunc(id, 'tilejson', tileJSON);
-            }
-            resolve();
-          });
-        });
-      });
-
-      await sourceInfoPromise;
+      if (options.dataDecoratorFunc) {
+        tileJSON = options.dataDecoratorFunc(id, 'tilejson', tileJSON);
+      }
     }
 
     repo[id] = {
