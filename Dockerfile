@@ -107,8 +107,8 @@ COPY --from=builder /usr/src/app /usr/src/app
 
 COPY . /usr/src/app
 
-RUN mkdir -p /data && chown node:node /data
-VOLUME /data
+RUN mkdir -p /data /usr/src/app/public/files && chown node:node /data /usr/src/app/public/files
+VOLUME [ "/data", "/usr/src/app/public/files" ]
 WORKDIR /data
 
 EXPOSE 8080

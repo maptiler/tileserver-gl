@@ -109,6 +109,11 @@ const startWithInputFile = async (inputFile) => {
     '../node_modules/tileserver-gl-styles/',
   );
 
+  const filesDir = path.resolve(
+    __dirname,
+    '../public/files',
+  );
+
   const config = {
     options: {
       paths: {
@@ -117,6 +122,7 @@ const startWithInputFile = async (inputFile) => {
         styles: 'styles',
         mbtiles: inputFilePath,
         pmtiles: inputFilePath,
+        files: filesDir
       },
     },
     styles: {},
