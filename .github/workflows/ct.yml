@@ -46,7 +46,7 @@ jobs:
           https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
 
       - name: Prepare test data 📦
-        run: unzip -q test_data.zip -d test_data
+        run: unzip -q test_data.zip
 
       - name: Run tests 🧪
         run: xvfb-run --server-args="-screen 0 1024x768x24" npm test

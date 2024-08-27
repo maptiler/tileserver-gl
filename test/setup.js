@@ -9,7 +9,6 @@ global.supertest = supertest;
 
 before(function () {
   console.log('global setup');
-  process.chdir('test_data');
   const running = server({
     configPath: 'config.json',
     port: 8888,

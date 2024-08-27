@@ -1,8 +1,10 @@
 docs/_build
 node_modules
-test_data
+test_data.zip
 data
 light
 plugins
 config.json
 *.mbtiles
+styles
+fonts

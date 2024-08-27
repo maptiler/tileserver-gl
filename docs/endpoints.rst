@@ -100,6 +100,18 @@ Source data
 
   * TileJSON at ``/data/{id}.json``
 
+Static files
+===========
+* Static files are served at ``/files/{filename}``
+
+  * The source folder can be configured (``options.paths.files``), default is ``public/files``
+
+  * This feature can be used to serve ``geojson`` files for styles and rendered tiles.
+
+    * Keep in mind, that each rendered tile loads the whole geojson file, if performance matters a conversion to a tiled format (e.g. with https://github.com/felt/tippecanoe)may be a better approch.
+
+    * Use ``file://{filename}`` to have matching paths for both endoints
+
 TileJSON arrays
 ===============
 Array of all TileJSONs is at ``[/{tileSize}]/index.json`` (``[/{tileSize}]/rendered.json``; ``/data.json``)

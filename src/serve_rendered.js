@@ -42,7 +42,7 @@ import {
 } from './pmtiles_adapter.js';
 import { renderOverlay, renderWatermark, renderAttribution } from './render.js';
 import fsp from 'node:fs/promises';
-import { gunzipP } from './promises.js';
+import { existsP, gunzipP } from './promises.js';
 
 const FLOAT_PATTERN = '[+-]?(?:\\d+|\\d+.?\\d+)';
 const PATH_PATTERN =
@@ -893,13 +893,15 @@ export const serve_rendered = {
             // console.log('Handling request:', req);
             if (protocol === 'sprites') {
               const dir = options.paths[protocol];
-              const file = unescape(req.url).substring(protocol.length + 3);
+              const file = decodeURIComponent(req.url).substring(
+                protocol.length + 3,
+              );
               fs.readFile(path.join(dir, file), (err, data) => {
                 callback(err, { data: data });
               });
             } else if (protocol === 'fonts') {
               const parts = req.url.split('/');
-              const fontstack = unescape(parts[2]);
+              const fontstack = decodeURIComponent(parts[2]);
               const range = parts[3].split('.')[0];
 
               try {
@@ -1038,6 +1040,25 @@ export const serve_rendered = {
                 const extension = path.extname(parts.pathname).toLowerCase();
                 const format = extensionToFormat[extension] || '';
                 createEmptyResponse(format, '', callback);
+              }
+            } else if (protocol === 'file') {
+              const name = decodeURI(req.url).substring(protocol.length + 3);
+              const file = path.join(options.paths['files'], name);
+              if (await existsP(file)) {
+                const inputFileStats = await fsp.stat(file);
+                if (!inputFileStats.isFile() || inputFileStats.size === 0) {
+                  throw Error(
+                    `File is not valid: "${req.url}" - resolved to "${file}"`,
+                  );
+                }
+
+                fs.readFile(file, (err, data) => {
+                  callback(err, { data: data });
+                });
+              } else {
+                throw Error(
+                  `File does not exist: "${req.url}" - resolved to "${file}"`,
+                );
               }
             }
           },
