@@ -18,7 +18,7 @@
     "prepare": "node -e \"if (process.env.NODE_ENV !== 'production'){ process.exit(1) } \" || husky"
   },
   "dependencies": {
-    "@jsse/pbfont": "^0.2.1",
+    "@jsse/pbfont": "^0.2.2",
     "@mapbox/mbtiles": "0.12.1",
     "@mapbox/polyline": "^1.2.1",
     "@mapbox/sphericalmercator": "1.2.0",
