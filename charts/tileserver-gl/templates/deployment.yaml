@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "dev.fullname" . }}
+  labels:
+    app: {{ template "dev.name" . }}
+    chart: {{ template "dev.chart" . }}
+    draft: {{ .Values.draft | default "draft-app" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "dev.name" . }}
+      release: {{ .Release.Name }}  
+  template:
+    metadata:
+      labels: 
+        app: {{ template "dev.name" . }}
+        draft: {{ .Values.draft | default "draft-app" }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}  
+          #command: ["sh", "-c", "tail -f /dev/null"]
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: {{ .Values.volume.name }}
+              mountPath: {{ .Values.volume.mountPath }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.deployment.containerPort }}
+              protocol: TCP
+          securityContext:
+           allowPrivilegeEscalation: false
+           runAsUser: 0
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+      volumes:
+        - name:  {{ .Values.volume.name }}
+          persistentVolumeClaim:
+            claimName:  {{ .Values.volume.persistentVolumeClaim.claimName }}
+ 
