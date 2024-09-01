@@ -1,6 +1,6 @@
 {
   "name": "tileserver-gl",
-  "version": "4.12.0",
+  "version": "4.13.1",
   "description": "Map tile server for JSON GL styles - vector and server side generated raster tiles",
   "main": "src/main.js",
   "bin": "src/main.js",
@@ -18,16 +18,16 @@
     "prepare": "node -e \"if (process.env.NODE_ENV !== 'production'){ process.exit(1) } \" || husky"
   },
   "dependencies": {
-    "@jsse/pbfont": "^0.2.1",
+    "@jsse/pbfont": "^0.2.2",
     "@mapbox/mbtiles": "0.12.1",
     "@mapbox/polyline": "^1.2.1",
     "@mapbox/sphericalmercator": "1.2.0",
     "@mapbox/vector-tile": "2.0.3",
-    "@maplibre/maplibre-gl-native": "5.4.0",
+    "@maplibre/maplibre-gl-native": "5.4.1",
     "@maplibre/maplibre-gl-style-spec": "20.3.1",
     "@sindresorhus/fnv1a": "3.1.0",
     "advanced-pool": "0.3.3",
-    "axios": "^1.7.5",
+    "axios": "^1.7.6",
     "canvas": "2.11.2",
     "chokidar": "3.6.0",
     "clone": "2.1.2",
@@ -46,8 +46,8 @@
     "tileserver-gl-styles": "2.0.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "^19.4.0",
-    "@commitlint/config-conventional": "^19.2.2",
+    "@commitlint/cli": "^19.4.1",
+    "@commitlint/config-conventional": "^19.4.1",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "chai": "5.1.1",

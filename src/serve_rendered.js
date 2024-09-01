@@ -24,7 +24,6 @@ import express from 'express';
 import sanitize from 'sanitize-filename';
 import SphericalMercator from '@mapbox/sphericalmercator';
 import mlgl from '@maplibre/maplibre-gl-native';
-import MBTiles from '@mapbox/mbtiles';
 import polyline from '@mapbox/polyline';
 import proj4 from 'proj4';
 import axios from 'axios';
@@ -43,6 +42,7 @@ import {
 import { renderOverlay, renderWatermark, renderAttribution } from './render.js';
 import fsp from 'node:fs/promises';
 import { existsP, gunzipP } from './promises.js';
+import { openMbTilesWrapper } from './mbtiles_wrapper.js';
 
 const FLOAT_PATTERN = '[+-]?(?:\\d+|\\d+.?\\d+)';
 const PATH_PATTERN =
@@ -1152,7 +1152,6 @@ export const serve_rendered = {
     };
     repo[id] = repoobj;
 
-    const queue = [];
     for (const name of Object.keys(styleJSON.sources)) {
       let sourceType;
       let source = styleJSON.sources[name];
@@ -1226,68 +1225,51 @@ export const serve_rendered = {
             }
           }
         } else {
-          queue.push(
-            new Promise(async (resolve, reject) => {
-              inputFile = path.resolve(options.paths.mbtiles, inputFile);
-              const inputFileStats = await fsp.stat(inputFile);
-              if (!inputFileStats.isFile() || inputFileStats.size === 0) {
-                throw Error(`Not valid MBTiles file: "${inputFile}"`);
+          const inputFileStats = await fsp.stat(inputFile);
+          if (!inputFileStats.isFile() || inputFileStats.size === 0) {
+            throw Error(`Not valid MBTiles file: "${inputFile}"`);
+          }
+          const mbw = await openMbTilesWrapper(inputFile);
+          const info = await mbw.getInfo();
+          map.sources[name] = mbw.getMbTiles();
+          map.sourceTypes[name] = 'mbtiles';
+
+          if (!repoobj.dataProjWGStoInternalWGS && info.proj4) {
+            // how to do this for multiple sources with different proj4 defs?
+            const to3857 = proj4('EPSG:3857');
+            const toDataProj = proj4(info.proj4);
+            repoobj.dataProjWGStoInternalWGS = (xy) =>
+              to3857.inverse(toDataProj.forward(xy));
+          }
+
+          const type = source.type;
+          Object.assign(source, info);
+          source.type = type;
+          source.tiles = [
+            // meta url which will be detected when requested
+            `mbtiles://${name}/{z}/{x}/{y}.${info.format || 'pbf'}`,
+          ];
+          delete source.scheme;
+
+          if (options.dataDecoratorFunc) {
+            source = options.dataDecoratorFunc(name, 'tilejson', source);
+          }
+
+          if (
+            !attributionOverride &&
+            source.attribution &&
+            source.attribution.length > 0
+          ) {
+            if (!tileJSON.attribution.includes(source.attribution)) {
+              if (tileJSON.attribution.length > 0) {
+                tileJSON.attribution += ' | ';
               }
-              map.sources[name] = new MBTiles(inputFile + '?mode=ro', (err) => {
-                map.sources[name].getInfo((err, info) => {
-                  if (err) {
-                    console.error(err);
-                    return;
-                  }
-                  map.sourceTypes[name] = 'mbtiles';
-
-                  if (!repoobj.dataProjWGStoInternalWGS && info.proj4) {
-                    // how to do this for multiple sources with different proj4 defs?
-                    const to3857 = proj4('EPSG:3857');
-                    const toDataProj = proj4(info.proj4);
-                    repoobj.dataProjWGStoInternalWGS = (xy) =>
-                      to3857.inverse(toDataProj.forward(xy));
-                  }
-
-                  const type = source.type;
-                  Object.assign(source, info);
-                  source.type = type;
-                  source.tiles = [
-                    // meta url which will be detected when requested
-                    `mbtiles://${name}/{z}/{x}/{y}.${info.format || 'pbf'}`,
-                  ];
-                  delete source.scheme;
-
-                  if (options.dataDecoratorFunc) {
-                    source = options.dataDecoratorFunc(
-                      name,
-                      'tilejson',
-                      source,
-                    );
-                  }
-
-                  if (
-                    !attributionOverride &&
-                    source.attribution &&
-                    source.attribution.length > 0
-                  ) {
-                    if (!tileJSON.attribution.includes(source.attribution)) {
-                      if (tileJSON.attribution.length > 0) {
-                        tileJSON.attribution += ' | ';
-                      }
-                      tileJSON.attribution += source.attribution;
-                    }
-                  }
-                  resolve();
-                });
-              });
-            }),
-          );
+              tileJSON.attribution += source.attribution;
+            }
+          }
         }
       }
     }
-
-    await Promise.all(queue);
 
     // standard and @2x tiles are much more usual -> default to larger pools
     const minPoolSizes = options.minRendererPoolSizes || [8, 4, 2];
