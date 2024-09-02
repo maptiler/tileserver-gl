@@ -14,8 +14,7 @@
     "lint:eslint:fix": "eslint --fix \"{,!(node_modules|dist|static|public)/**/}*.{js,ts,cjs,mjs}\" --ignore-path .gitignore",
     "lint:prettier": "prettier --check \"{,!(node_modules|dist|static|public)/**/}*.{js,ts,cjs,mjs,json}\" --ignore-path .gitignore",
     "lint:prettier:fix": "prettier --write \"{,!(node_modules|dist|static|public)/**/}*.{js,ts,cjs,mjs,json}\" --ignore-path .gitignore",
-    "docker": "docker build . && docker run --rm -i -p 8080:8080 $(docker build -q .)",
-    "prepare": "node -e \"if (process.env.NODE_ENV !== 'production'){ process.exit(1) } \" || husky"
+    "docker": "docker build . && docker run --rm -i -p 8080:8080 $(docker build -q .)"
   },
   "dependencies": {
     "@jsse/pbfont": "^0.2.2",
@@ -56,7 +55,6 @@
     "eslint-plugin-jsdoc": "^50.2.2",
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-security": "^1.7.1",
-    "husky": "^9.1.5",
     "lint-staged": "^15.2.9",
     "mocha": "^10.7.3",
     "node-addon-api": "^8",
