@@ -56,7 +56,7 @@ MacOS 12 (x64/arm64)
 
 Windows (x64)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-- `Microsoft Visual C++ 2015-2022 Redistributable <https://aka.ms/vs/17/release/vc_redist.x64.exe>`_
+- `Microsoft Visual C++ Redistributable <https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170>`_
 
 ``tileserver-gl-light`` on npm
 ==============================
