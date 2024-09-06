@@ -39,7 +39,7 @@
     "morgan": "1.10.0",
     "pbf": "4.0.1",
     "pmtiles": "3.0.7",
-    "proj4": "2.12.0",
+    "proj4": "2.12.1",
     "sanitize-filename": "1.6.3",
     "sharp": "0.33.5",
     "tileserver-gl-styles": "2.0.0"
