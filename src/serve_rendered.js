@@ -527,7 +527,10 @@ const respondImage = (
           dither: formatOptions.dither,
         });
       } else if (format === 'jpeg') {
-        image.jpeg({ quality: formatOptions.quality || formatQuality || 80 });
+        image.jpeg({
+          quality: formatOptions.quality || formatQuality || 80,
+          progressive: formatOptions.progressive,
+        });
       } else if (format === 'webp') {
         image.webp({ quality: formatOptions.quality || formatQuality || 90 });
       }

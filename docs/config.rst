@@ -94,7 +94,8 @@ Use ``false`` to disable the front page altogether (404).
 -----------------
 
 You can use this to specify options for the generation of images in the supported file formats.
-For JPEG and WebP, the only supported option is ``quality`` [0-100].
+For WebP, the only supported option is ``quality`` [0-100].
+For JPEG, the only supported options are ``quality`` [0-100] and ``progressive`` [true, false]. 
 For PNG, the full set of options `exposed by the sharp library <https://sharp.pixelplumbing.com/api-output#png>`_ is available, except ``force`` and ``colours`` (use ``colors``). If not set, their values are the defaults from ``sharp``.
 
 For example::
