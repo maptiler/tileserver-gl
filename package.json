@@ -33,7 +33,7 @@
     "color": "4.2.3",
     "commander": "12.1.0",
     "cors": "2.8.5",
-    "express": "4.19.2",
+    "express": "4.21.1",
     "handlebars": "4.7.8",
     "http-shutdown": "1.2.2",
     "morgan": "1.10.0",
