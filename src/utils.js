@@ -50,6 +50,12 @@ const getUrlObject = (req) => {
   // support overriding hostname by sending X-Forwarded-Host http header
   urlObject.hostname = req.hostname;
 
+  // support overriding port by sending X-Forwarded-Port http header
+  const xForwardedPort = req.get('X-Forwarded-Port');
+  if (xForwardedPort) {
+    urlObject.port = xForwardedPort;
+  }
+
   // support add url prefix by sending X-Forwarded-Path http header
   const xForwardedPath = req.get('X-Forwarded-Path');
   if (xForwardedPath) {
