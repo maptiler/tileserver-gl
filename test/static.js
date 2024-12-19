@@ -123,14 +123,16 @@ describe('Static endpoints', function () {
       });
 
       describe('different parameters', function () {
-        testStatic(prefix, '-180,-90,180,90/20x20', 'png', 200, 2);
+        testStatic(prefix, '-180,-80,0,80/280x160', 'png', 200);
+        testStatic(prefix, '-180,-80,180,80/20x20', 'png', 200, 2);
         testStatic(prefix, '0,0,1,1/200x200', 'png', 200, 3);
-
-        testStatic(prefix, '-280,-80,0,80/280x160', 'png', 200);
       });
     });
 
     describe('invalid requests return 4xx', function () {
+      //invalid center
+      testStatic(prefix, '-280,-80,0,80/280x160', 'png', 400);
+      testStatic(prefix, '-180,-90,180,90/20x20', 'png', 400, 2);
       testStatic(prefix, '0,87,1,88/5x2', 'png', 400);
 
       testStatic(prefix, '0,0,1,1/1x1', 'gif', 400);
