@@ -4,20 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{name}} - TileServer GL</title>
-  {{#is_vector}}
+  {{#use_maplibre}}
   <link rel="stylesheet" type="text/css" href="{{public_url}}maplibre-gl.css{{&key_query}}" />
   <link rel="stylesheet" type="text/css" href="{{public_url}}maplibre-gl-inspect.css{{&key_query}}" />
   <script src="{{public_url}}maplibre-gl.js{{&key_query}}"></script>
   <script src="{{public_url}}maplibre-gl-inspect.js{{&key_query}}"></script>
   <style>
     body {background:#fff;color:#333;font-family:Arial, sans-serif;}
+    {{^is_terrain}}
     #map {position:absolute;top:0;left:0;right:250px;bottom:0;}
+    {{/is_terrain}}
+    {{#is_terrain}}
+    #map { position:absolute; top:0; bottom:0; width:100%; }
+    {{/is_terrain}}
     h1 {position:absolute;top:5px;right:0;width:240px;margin:0;line-height:20px;font-size:20px;}
     #layerList {position:absolute;top:35px;right:0;bottom:0;width:240px;overflow:auto;}
     #layerList div div {width:15px;height:15px;display:inline-block;}
   </style>
-  {{/is_vector}}
-  {{^is_vector}}
+  {{/use_maplibre}}
+  {{^use_maplibre}}
   <link rel="stylesheet" type="text/css" href="{{public_url}}leaflet.css{{&key_query}}" />
   <script src="{{public_url}}leaflet.js{{&key_query}}"></script>
   <script src="{{public_url}}leaflet-hash.js{{&key_query}}"></script>
@@ -37,23 +42,22 @@
       background-image: url({{public_url}}images/marker-icon.png{{&key_query}});
     }
   </style>
-  {{/is_vector}}
+  {{/use_maplibre}}
 </head>
 <body>
-  {{#is_vector}}
+  {{#use_maplibre}}
   <h1>{{name}}</h1>
   <div id="map"></div>
+  {{^is_terrain}}
   <div id="layerList"></div>
   <pre id="propertyList"></pre>
+  {{/is_terrain}}
   <script>
-  var keyMatch = location.search.match(/[\?\&]key=([^&]+)/i);
-  var keyParam = keyMatch ? '?key=' + keyMatch[1] : '';
-    
-  var map = new maplibregl.Map({
-    container: 'map',
-    hash: true,
-    maxPitch: 85,
-    style: {
+    var keyMatch = location.search.match(/[\?\&]key=([^&]+)/i);
+    var keyParam = keyMatch ? '?key=' + keyMatch[1] : '';
+
+    {{^is_terrain}}
+    var style = {
       version: 8,
       sources: {
         'vector_layer_': {
@@ -62,37 +66,88 @@
         }
       },
       layers: []
-    }
-  });
-  map.addControl(new maplibregl.NavigationControl());
-  var inspect = new MaplibreInspect({
-    showInspectMap: true,
-    showInspectButton: false
-  });
-  map.addControl(inspect);
-  map.on('styledata', function() {
-    var layerList = document.getElementById('layerList');
-    layerList.innerHTML = '';
-    Object.keys(inspect.sources).forEach(function(sourceId) {
-      var layerIds = inspect.sources[sourceId];
-      layerIds.forEach(function(layerId) {
-        var item = document.createElement('div');
-        item.innerHTML = '<div style="' +
-          'background:' + inspect.assignLayerColor(layerId) + ';' +
-        '"></div> ' + layerId;
-        layerList.appendChild(item);
-      });
-    })
-  });
+    };
+    {{/is_terrain}}
+    {{#is_terrain}}
+    var style = {
+      version: 8,
+      sources: {
+        "terrain": {
+          "type": "raster-dem",
+          "url": "{{public_url}}data/{{id}}.json",
+          "encoding": "{{terrain_encoding}}"
+        },
+        "hillshade": {
+          "type": "raster-dem",
+          "url": "{{public_url}}data/{{id}}.json",
+          "encoding": "{{terrain_encoding}}"
+        }
+      },
+      "terrain": {
+        "source": "terrain"
+      },
+      layers: [
+        {
+          "id": "background",
+          "paint": {
+            {{^if is_terrainrgb}}
+            "background-color": "hsl(190, 99%, 63%)"
+            {{else}}
+            "background-color": "hsl(0, 100%, 25%)"
+            {{/if}}
+          },
+          "type": "background"
+        },
+        {
+          "id": "hillshade",
+          "source": "hillshade",
+          "type": "hillshade",
+          "paint": {
+            "hillshade-shadow-color": "hsl(39, 21%, 33%)",
+            "hillshade-illumination-direction": 315,
+            "hillshade-exaggeration": 0.8
+          }
+        }
+      ]
+    };
+    {{/is_terrain}}
+
+    var map = new maplibregl.Map({
+      container: 'map',
+      hash: true,
+      maxPitch: 85,
+      style: style
+    });
+    map.addControl(new maplibregl.NavigationControl());
+    {{^is_terrain}}
+    var inspect = new MaplibreInspect({
+      showInspectMap: true,
+      showInspectButton: false
+    });
+    map.addControl(inspect);
+    map.on('styledata', function() {
+      var layerList = document.getElementById('layerList');
+      layerList.innerHTML = '';
+      Object.keys(inspect.sources).forEach(function(sourceId) {
+        var layerIds = inspect.sources[sourceId];
+        layerIds.forEach(function(layerId) {
+          var item = document.createElement('div');
+          item.innerHTML = '<div style="' +
+            'background:' + inspect.assignLayerColor(layerId) + ';' +
+          '"></div> ' + layerId;
+          layerList.appendChild(item);
+        });
+      })
+    });
+    {{/is_terrain}}
   </script>
-  {{/is_vector}}
-  {{^is_vector}}
+  {{/use_maplibre}}
+  {{^use_maplibre}}
   <h1 style="display:none;">{{name}}</h1>
   <div id='map'></div>
   <script>
-  var keyMatch = location.search.match(/[\?\&]key=([^&]+)/i);
-  var keyParam = keyMatch ? '?key=' + keyMatch[1] : '';    
-    
+    var keyMatch = location.search.match(/[\?\&]key=([^&]+)/i);
+    var keyParam = keyMatch ? '?key=' + keyMatch[1] : '';
     var map = L.map('map', { zoomControl: false });
     new L.Control.Zoom({ position: 'topright' }).addTo(map);
 
@@ -129,7 +184,7 @@
                 attribution: tile_attribution
             }).addTo(map);
         }
-        
+
         map.eachLayer(function(layer) {
           // do not add scale prefix even if retina display is detected
           layer.scalePrefix = '.';
@@ -141,6 +196,6 @@
       new L.Hash(map);
     }, 0);
   </script>
-  {{/is_vector}}
+  {{/use_maplibre}}
 </body>
 </html>

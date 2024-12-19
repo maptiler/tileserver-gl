@@ -258,12 +258,18 @@ For example::
     "source1": {
       "url": "mbtiles://source1.mbtiles",
       "type": "vector"
+    },
+    "terrain": {
+      "url": "mbtiles://terrain.mbtiles",
+      "encoding": "mapbox"
     }
   }
 
 Alternatively, you can use ``mbtiles://{source1}`` to reference existing data object from the config.
 In this case, the server will look into the ``config.json`` to determine what file to use by data id.
 For the config above, this is equivalent to ``mbtiles://source1.mbtiles``.
+
+If you use terrain tiles, it is possible to configure an ``encoding`` with ``mapbox`` or ``terrarium`` to enable a terrain preview mode and the ``elevation`` api for the ``data`` endpoint.
 
 PMTiles
 -------

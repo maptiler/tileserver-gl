@@ -7,6 +7,9 @@ import clone from 'clone';
 import express from 'express';
 import Pbf from 'pbf';
 import { VectorTile } from '@mapbox/vector-tile';
+import SphericalMercator from '@mapbox/sphericalmercator';
+import { Image, createCanvas } from 'canvas';
+import sharp from 'sharp';
 
 import { fixTileJSONCenter, getTileUrls, isValidHttpUrl } from './utils.js';
 import {
@@ -162,6 +165,146 @@ export const serve_data = {
       },
     );
 
+    app.get(
+      '^/:id/elevation/:z([0-9]+)/:x([-.0-9]+)/:y([-.0-9]+)',
+      async (req, res, next) => {
+        const item = repo[req.params.id];
+        if (!item) {
+          return res.sendStatus(404);
+        }
+
+        if (
+          item.source._info.encoding != 'terrarium' &&
+          item.source._info.encoding != 'mapbox'
+        ) {
+          return res.status(404).send('Missing encoding');
+        }
+
+        const tileJSONFormat = item.tileJSON.format;
+        const z = req.params.z | 0;
+        var x = req.params.x;
+        var y = req.params.y;
+
+        if (item.sourceType === 'pmtiles') {
+          return res.status(404).send('Invalid format');
+        } else if (item.sourceType === 'mbtiles') {
+          const mercator = new SphericalMercator();
+          let tileCenter;
+          let xy;
+          const int = /^-?[0-9]+$/;
+          if (int.test(x) && int.test(y)) {
+            //console.log("int")
+
+            if (
+              z < item.tileJSON.minzoom ||
+              0 ||
+              x < 0 ||
+              y < 0 ||
+              z > item.tileJSON.maxzoom ||
+              x >= Math.pow(2, z) ||
+              y >= Math.pow(2, z)
+            ) {
+              return res.status(404).send('Out of bounds');
+            }
+
+            xy = [x | 0, y | 0];
+            tileCenter = mercator.bbox(x, y, z);
+          } else {
+            //console.log("float")
+
+            if (
+              z < item.tileJSON.minzoom ||
+              x < -180 ||
+              y < -90 ||
+              z > item.tileJSON.maxzoom ||
+              x > 180 ||
+              y > 90
+            ) {
+              return res.status(404).send('Out of bounds');
+            }
+
+            x = parseFloat(x);
+            y = parseFloat(y);
+            tileCenter = [y, x, y + 0.1, x + 0.1];
+            xy = mercator.xyz(tileCenter, z);
+            xy = [xy.minX, xy.minY];
+          }
+
+          //console.log(tileCenter + " ## " + xy);
+          item.source.getTile(z, xy[0], xy[1], async (err, data, headers) => {
+            if (err) {
+              if (/does not exist/.test(err.message)) {
+                return res.status(204).send();
+              } else {
+                return res
+                  .status(500)
+                  .header('Content-Type', 'text/plain')
+                  .send(err.message);
+              }
+            } else {
+              if (data == null) {
+                return res.status(404).send('Not found');
+              } else {
+                if (tileJSONFormat === 'pbf') {
+                  return res.status(404).send('Invalid format');
+                }
+                var image = new Image();
+                image.onload = function () {
+                  const imgSize = 256;
+                  var canvas = createCanvas(imgSize, imgSize);
+
+                  var context = canvas.getContext('2d');
+                  context.drawImage(image, 0, 0);
+
+                  var imgdata = context.getImageData(0, 0, imgSize, imgSize);
+
+                  var index = (xy[1] * imgdata.width + xy[0]) * 4;
+                  var red = imgdata.data[index];
+                  var green = imgdata.data[index + 1];
+                  var blue = imgdata.data[index + 2];
+                  let elevation;
+                  if (item.source._info.encoding == 'mapbox') {
+                    elevation =
+                      -10000 + (red * 256 * 256 + green * 256 + blue) * 0.1;
+                  } else if (item.source._info.encoding == 'terrarium') {
+                    elevation = red * 256 + green + blue / 256 - 32768;
+                  } else {
+                    elevation = 'invalid encoding';
+                  }
+                  //"index": index, "length": imgdata.data.length,
+                  return res.status(200).send({
+                    z: z,
+                    x: xy[0],
+                    y: xy[1],
+                    red: red,
+                    green: green,
+                    blue: blue,
+                    latitude: tileCenter[0],
+                    longitude: tileCenter[1],
+                    elevation: elevation,
+                  });
+                };
+                image.onerror = (err) => {
+                  return res
+                    .status(500)
+                    .header('Content-Type', 'text/plain')
+                    .send(err.message);
+                };
+                //image.onerror = err => { return res.status(200).header('Content-Type', 'image/webp').send(data); }
+
+                if (item.source._info.format == 'webp') {
+                  const img = await sharp(data).toFormat('png').toBuffer();
+                  image.src = img;
+                } else {
+                  image.src = data;
+                }
+              }
+            }
+          });
+        }
+      },
+    );
+
     app.get('/:id.json', (req, res, next) => {
       const item = repo[req.params.id];
       if (!item) {
@@ -245,6 +388,7 @@ export const serve_data = {
       const mbw = await openMbTilesWrapper(inputFile);
       const info = await mbw.getInfo();
       source = mbw.getMbTiles();
+      info['encoding'] = params['encoding'];
       tileJSON['name'] = id;
       tileJSON['format'] = 'pbf';
 

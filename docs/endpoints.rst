@@ -100,6 +100,14 @@ Source data
 
   * TileJSON at ``/data/{id}.json``
 
+  * If terrain mbtile data is served and ``encoding`` is configured (see config) the elevation can be queried 
+
+    * by ``/data/{id}/elevation/{z}/{x}/{y}`` for the tile
+
+    * or ``/data/{id}/elevation/{z}/{long}/{lat}`` for the coordinate
+
+    * the result will be a json object like ``{"z":7,"x":68,"y":45,"red":134,"green":66,"blue":0,"latitude":11.84069,"longitude":46.04798,"elevation":1602}``
+
 Static files
 ===========
 * Static files are served at ``/files/{filename}``

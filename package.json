@@ -7,6 +7,7 @@
   "type": "module",
   "scripts": {
     "test": "mocha test/**.js --timeout 10000 --exit",
+    "test-docker": "xvfb-run npm test",
     "lint:yml": "yamllint --schema=CORE_SCHEMA *.{yml,yaml}",
     "lint:js": "npm run lint:eslint && npm run lint:prettier",
     "lint:js:fix": "npm run lint:eslint:fix && npm run lint:prettier:fix",

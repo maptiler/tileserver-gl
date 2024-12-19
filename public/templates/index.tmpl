@@ -6,10 +6,15 @@
   <title>TileServer GL - Server for vector and raster maps with GL styles</title>
   <link rel="stylesheet" type="text/css" href="{{public_url}}index.css{{&key_query}}" />
   <script>
-    function toggle_xyz(id) {
+    function toggle_link(id, link) {
       var el = document.getElementById(id);
       var s = el.style;
-      s.display = s.display == 'none' ? 'inline-block' : 'none';
+      if (s.display == 'none') {
+        s.display = 'inline-block';
+      } else if (el.value == link) {
+        s.display = 'none';
+      }
+      el.value = link;
       el.setSelectionRange(0, el.value.length);
       return false;
     }
@@ -37,7 +42,7 @@
         <div class="filter-details">
           <h3>Filter styles and data by name or identifier</h3>
           <!-- filter input , needs to call filter() when content changes...-->
-          <input id="filter" type="text" oninput="filter()" placeholder="Start typing name or identifier" />
+          <input id="filter" type="text" oninput="filter()" placeholder="Start typing name or identifier" autofocus />
         </div>
       </div>
     </div>
@@ -66,8 +71,8 @@
                 | <a href="{{public_url}}styles/{{@key}}/wmts.xml{{&../key_query}}">WMTS</a>
               {{/if}}
               {{#if xyz_link}}
-                | <a href="#" onclick="return toggle_xyz('xyz_style_{{@key}}');">XYZ</a>
-                  <input id="xyz_style_{{@key}}" type="text" value="{{&xyz_link}}" style="display:none;" />
+                | <a href="#" onclick="return toggle_link('xyz_style_{{@key}}', '{{&xyz_link}}');">XYZ</a>
+                  <input id="xyz_style_{{@key}}" type="text" value="" style="display:none;" />
               {{/if}}
             </p>
           </div>
@@ -105,9 +110,12 @@
             <p class="services">
               services: <a href="{{public_url}}data/{{@key}}.json{{&../key_query}}">TileJSON</a>
               {{#if xyz_link}}
-                | <a href="#" onclick="return toggle_xyz('xyz_data_{{@key}}');">XYZ</a>
-                  <input id="xyz_data_{{@key}}" type="text" value="{{&xyz_link}}" style="display:none;" />
+                | <a href="#" onclick="return toggle_link('link_data_{{@key}}', '{{&xyz_link}}');">XYZ</a>
               {{/if}}
+              {{#if elevation_link}}
+                | <a href="#" onclick="return toggle_link('link_data_{{@key}}', '{{&elevation_link}}');">Elevation</a>
+              {{/if}}
+                <input id="link_data_{{@key}}" type="text" value="" style="display:none;" />
             </p>
           </div>
           <div class="viewers">
@@ -116,6 +124,9 @@
             {{/is_vector}}
             {{^is_vector}}
             <a class="btn" href="{{public_url}}data/{{@key}}/{{&../key_query}}{{viewer_hash}}">View</a>
+              {{#elevation_link}}
+            <a class="btn" href="{{public_url}}data/preview/{{@key}}/{{&../key_query}}{{viewer_hash}}">Preview</a>
+              {{/elevation_link}}
             {{/is_vector}}
           </div>
         </div>

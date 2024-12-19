@@ -119,16 +119,22 @@ export const getTileUrls = (
     tileParams = `${tileSize}/{z}/{x}/{y}`;
   }
 
+  if (format && format != '') {
+    format = `.${format}`;
+  } else {
+    format = '';
+  }
+
   const uris = [];
   if (!publicUrl) {
     let xForwardedPath = `${req.get('X-Forwarded-Path') ? '/' + req.get('X-Forwarded-Path') : ''}`;
     for (const domain of domains) {
       uris.push(
-        `${req.protocol}://${domain}${xForwardedPath}/${path}/${tileParams}.${format}${query}`,
+        `${req.protocol}://${domain}${xForwardedPath}/${path}/${tileParams}${format}${query}`,
       );
     }
   } else {
-    uris.push(`${publicUrl}${path}/${tileParams}.${format}${query}`);
+    uris.push(`${publicUrl}${path}/${tileParams}${format}${query}`);
   }
 
   return uris;
