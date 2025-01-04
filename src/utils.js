@@ -6,12 +6,14 @@ import fs from 'node:fs';
 import clone from 'clone';
 import { combine } from '@jsse/pbfont';
 import { existsP } from './promises.js';
+import { getPMtilesTile } from './pmtiles_adapter.js';
 
 /**
  * Restrict user input to an allowed set of options.
- * @param opts
- * @param root0
- * @param root0.defaultValue
+ * @param {string[]} opts - An array of allowed option strings.
+ * @param {object} [config] - Optional configuration object.
+ * @param {string} [config.defaultValue] - The default value to return if input doesn't match.
+ * @returns {function(string): string} - A function that takes a value and returns it if valid or a default.
  */
 export function allowedOptions(opts, { defaultValue } = {}) {
   const values = Object.fromEntries(opts.map((key) => [key, key]));
@@ -19,10 +21,11 @@ export function allowedOptions(opts, { defaultValue } = {}) {
 }
 
 /**
- * Replace local:// urls with public http(s):// urls
- * @param req
- * @param url
- * @param publicUrl
+ * Replaces local:// URLs with public http(s):// URLs.
+ * @param {object} req - Express request object.
+ * @param {string} url - The URL string to fix.
+ * @param {string} publicUrl - The public URL prefix to use for replacements.
+ * @returns {string} - The fixed URL string.
  */
 export function fixUrl(req, url, publicUrl) {
   if (!url || typeof url !== 'string' || url.indexOf('local://') !== 0) {
@@ -40,12 +43,11 @@ export function fixUrl(req, url, publicUrl) {
 }
 
 /**
- * Generate new URL object
- * @param req
- * @params {object} req - Express request
- * @returns {URL} object
+ * Generates a new URL object from the Express request.
+ * @param {object} req - Express request object.
+ * @returns {URL} - URL object with correct host and optionally path.
  */
-const getUrlObject = (req) => {
+function getUrlObject(req) {
   const urlObject = new URL(`${req.protocol}://${req.headers.host}/`);
   // support overriding hostname by sending X-Forwarded-Host http header
   urlObject.hostname = req.hostname;
@@ -62,16 +64,33 @@ const getUrlObject = (req) => {
     urlObject.pathname = path.posix.join(xForwardedPath, urlObject.pathname);
   }
   return urlObject;
-};
+}
 
-export const getPublicUrl = (publicUrl, req) => {
+/**
+ * Gets the public URL, either from a provided publicUrl or generated from the request.
+ * @param {string} publicUrl - The optional public URL to use.
+ * @param {object} req - The Express request object.
+ * @returns {string} - The final public URL string.
+ */
+export function getPublicUrl(publicUrl, req) {
   if (publicUrl) {
     return publicUrl;
   }
   return getUrlObject(req).toString();
-};
+}
 
-export const getTileUrls = (
+/**
+ * Generates an array of tile URLs based on given parameters.
+ * @param {object} req - Express request object.
+ * @param {string | string[]} domains - Domain(s) to use for tile URLs.
+ * @param {string} path - The base path for the tiles.
+ * @param {number} [tileSize] - The size of the tile (optional).
+ * @param {string} format - The format of the tiles (e.g., 'png', 'jpg').
+ * @param {string} publicUrl - The public URL to use (if not using domains).
+ * @param {object} [aliases] - Aliases for format extensions.
+ * @returns {string[]} An array of tile URL strings.
+ */
+export function getTileUrls(
   req,
   domains,
   path,
@@ -79,7 +98,7 @@ export const getTileUrls = (
   format,
   publicUrl,
   aliases,
-) => {
+) {
   const urlObject = getUrlObject(req);
   if (domains) {
     if (domains.constructor === String && domains.length > 0) {
@@ -144,9 +163,14 @@ export const getTileUrls = (
   }
 
   return uris;
-};
+}
 
-export const fixTileJSONCenter = (tileJSON) => {
+/**
+ * Fixes the center in the tileJSON if no center is available.
+ * @param {object} tileJSON - The tileJSON object to process.
+ * @returns {void}
+ */
+export function fixTileJSONCenter(tileJSON) {
   if (tileJSON.bounds && !tileJSON.center) {
     const fitWidth = 1024;
     const tiles = fitWidth / 256;
@@ -159,23 +183,48 @@ export const fixTileJSONCenter = (tileJSON) => {
       ),
     ];
   }
-};
+}
 
-const getFontPbf = (allowedFonts, fontPath, name, range, fallbacks) =>
-  new Promise((resolve, reject) => {
+/**
+ * Retrieves font data for a given font and range.
+ * @param {object} allowedFonts - An object of allowed fonts.
+ * @param {string} fontPath - The path to the font directory.
+ * @param {string} name - The name of the font.
+ * @param {string} range - The range (e.g., '0-255') of the font to load.
+ * @param {object} [fallbacks] - Optional fallback font list.
+ * @returns {Promise<Buffer>} A promise that resolves with the font data Buffer or rejects with an error.
+ */
+function getFontPbf(allowedFonts, fontPath, name, range, fallbacks) {
+  return new Promise((resolve, reject) => {
+    const fontMatch = name?.match(/^[\w\s-]+$/);
+    if (!name || typeof name !== 'string' || name.trim() === '' || !fontMatch) {
+      console.error('ERROR: Invalid font name: %s', 'invalid');
+      return reject('Invalid font name');
+    }
+    const sanitizedName = fontMatch[0];
+    const filename = path.join(fontPath, sanitizedName, `${range}.pbf`);
+
+    if (!/^\d+-\d+$/.test(range)) {
+      console.error('ERROR: Invalid range: %s', range);
+      return reject('Invalid range');
+    }
     if (!allowedFonts || (allowedFonts[name] && fallbacks)) {
-      const filename = path.join(fontPath, name, `${range}.pbf`);
       if (!fallbacks) {
         fallbacks = clone(allowedFonts || {});
       }
       delete fallbacks[name];
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
       fs.readFile(filename, (err, data) => {
         if (err) {
-          console.error(`ERROR: Font not found: ${name}`);
+          console.error(
+            'ERROR: Font not found: %s, Error: %s',
+            filename,
+            String(err),
+          );
           if (fallbacks && Object.keys(fallbacks).length) {
             let fallbackName;
 
-            let fontStyle = name.split(' ').pop();
+            let fontStyle = sanitizedName.split(' ').pop();
             if (['Regular', 'Bold', 'Italic'].indexOf(fontStyle) < 0) {
               fontStyle = 'Regular';
             }
@@ -186,32 +235,45 @@ const getFontPbf = (allowedFonts, fontPath, name, range, fallbacks) =>
                 fallbackName = Object.keys(fallbacks)[0];
               }
             }
-
-            console.error(`ERROR: Trying to use ${fallbackName} as a fallback`);
+            console.error(
+              `ERROR: Trying to use %s as a fallback for: %s`,
+              fallbackName,
+              sanitizedName,
+            );
             delete fallbacks[fallbackName];
             getFontPbf(null, fontPath, fallbackName, range, fallbacks).then(
               resolve,
               reject,
             );
           } else {
-            reject(`Font load error: ${name}`);
+            reject('Font load error');
           }
         } else {
           resolve(data);
         }
       });
     } else {
-      reject(`Font not allowed: ${name}`);
+      reject('Font not allowed');
     }
   });
+}
 
-export const getFontsPbf = async (
+/**
+ * Combines multiple font pbf buffers into one.
+ * @param {object} allowedFonts - An object of allowed fonts.
+ * @param {string} fontPath - The path to the font directory.
+ * @param {string} names - Comma-separated font names.
+ * @param {string} range - The range of the font (e.g., '0-255').
+ * @param {object} [fallbacks] - Fallback font list.
+ * @returns {Promise<Buffer>} - A promise that resolves to the combined font data buffer.
+ */
+export async function getFontsPbf(
   allowedFonts,
   fontPath,
   names,
   range,
   fallbacks,
-) => {
+) {
   const fonts = names.split(',');
   const queue = [];
   for (const font of fonts) {
@@ -228,9 +290,14 @@ export const getFontsPbf = async (
 
   const combined = combine(await Promise.all(queue), names);
   return Buffer.from(combined.buffer, 0, combined.buffer.length);
-};
+}
 
-export const listFonts = async (fontPath) => {
+/**
+ * Lists available fonts in a given font directory.
+ * @param {string} fontPath - The path to the font directory.
+ * @returns {Promise<object>} - Promise that resolves with an object where keys are the font names.
+ */
+export async function listFonts(fontPath) {
   const existingFonts = {};
 
   const files = await fsPromises.readdir(fontPath);
@@ -245,9 +312,14 @@ export const listFonts = async (fontPath) => {
   }
 
   return existingFonts;
-};
+}
 
-export const isValidHttpUrl = (string) => {
+/**
+ * Checks if a string is a valid HTTP or HTTPS URL.
+ * @param {string} string - The string to validate.
+ * @returns {boolean} True if the string is a valid HTTP/HTTPS URL, false otherwise.
+ */
+export function isValidHttpUrl(string) {
   let url;
 
   try {
@@ -257,4 +329,32 @@ export const isValidHttpUrl = (string) => {
   }
 
   return url.protocol === 'http:' || url.protocol === 'https:';
-};
+}
+
+/**
+ * Fetches tile data from either PMTiles or MBTiles source.
+ * @param {object} source - The source object, which may contain a mbtiles object, or pmtiles object.
+ * @param {string} sourceType - The source type, which should be `pmtiles` or `mbtiles`
+ * @param {number} z - The zoom level.
+ * @param {number} x - The x coordinate of the tile.
+ * @param {number} y - The y coordinate of the tile.
+ * @returns {Promise<object | null>} - A promise that resolves to an object with data and headers or null if no data is found.
+ */
+export async function fetchTileData(source, sourceType, z, x, y) {
+  if (sourceType === 'pmtiles') {
+    return await new Promise(async (resolve) => {
+      const tileinfo = await getPMtilesTile(source, z, x, y);
+      if (!tileinfo?.data) return resolve(null);
+      resolve({ data: tileinfo.data, headers: tileinfo.header });
+    });
+  } else if (sourceType === 'mbtiles') {
+    return await new Promise((resolve) => {
+      source.getTile(z, x, y, (err, tileData, tileHeader) => {
+        if (err) {
+          return resolve(null);
+        }
+        resolve({ data: tileData, headers: tileHeader });
+      });
+    });
+  }
+}

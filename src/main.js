@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 
 'use strict';
+import os from 'os';
+
+const envSize = parseInt(process.env.UV_THREADPOOL_SIZE, 10);
+process.env.UV_THREADPOOL_SIZE = Math.ceil(
+  Math.max(4, isNaN(envSize) ? os.cpus().length * 1.5 : envSize),
+);
 
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';

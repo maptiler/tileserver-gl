@@ -60,16 +60,16 @@ describe('Raster tiles', function () {
 
   describe('invalid requests return 4xx', function () {
     testTile('non_existent', 256, 0, 0, 0, 'png', 404);
-    testTile(prefix, 256, -1, 0, 0, 'png', 404);
-    testTile(prefix, 256, 25, 0, 0, 'png', 404);
-    testTile(prefix, 256, 0, 1, 0, 'png', 404);
-    testTile(prefix, 256, 0, 0, 1, 'png', 404);
+    testTile(prefix, 256, -1, 0, 0, 'png', 400);
+    testTile(prefix, 256, 25, 0, 0, 'png', 400);
+    testTile(prefix, 256, 0, 1, 0, 'png', 400);
+    testTile(prefix, 256, 0, 0, 1, 'png', 400);
     testTile(prefix, 256, 0, 0, 0, 'gif', 400);
     testTile(prefix, 256, 0, 0, 0, 'pbf', 400);
 
-    testTile(prefix, 256, 0, 0, 0, 'png', 404, 1);
-    testTile(prefix, 256, 0, 0, 0, 'png', 404, 5);
+    testTile(prefix, 256, 0, 0, 0, 'png', 400, 1);
+    testTile(prefix, 256, 0, 0, 0, 'png', 400, 5);
 
-    testTile(prefix, 300, 0, 0, 0, 'png', 404);
+    testTile(prefix, 300, 0, 0, 0, 'png', 400);
   });
 });

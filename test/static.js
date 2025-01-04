@@ -78,7 +78,7 @@ describe('Static endpoints', function () {
       testStatic(prefix, '0,0,0/256x256', 'png', 404, 1);
 
       testStatic(prefix, '0,0,-1/256x256', 'png', 404);
-      testStatic(prefix, '0,0,0/256.5x256.5', 'png', 404);
+      testStatic(prefix, '0,0,0/256.5x256.5', 'png', 400);
 
       testStatic(prefix, '0,0,0,/256x256', 'png', 404);
       testStatic(prefix, '0,0,0,0,/256x256', 'png', 404);
@@ -135,7 +135,7 @@ describe('Static endpoints', function () {
 
       testStatic(prefix, '0,0,1,1/1x1', 'gif', 400);
 
-      testStatic(prefix, '-180,-80,180,80/0.5x2.6', 'png', 404);
+      testStatic(prefix, '-180,-80,180,80/0.5x2.6', 'png', 400);
     });
   });
 

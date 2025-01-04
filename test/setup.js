@@ -7,10 +7,10 @@ import { server } from '../src/server.js';
 global.expect = expect;
 global.supertest = supertest;
 
-before(function () {
+before(async function () {
   console.log('global setup');
   process.chdir('test_data');
-  const running = server({
+  const running = await server({
     configPath: 'config.json',
     port: 8888,
     publicUrl: '/test/',
