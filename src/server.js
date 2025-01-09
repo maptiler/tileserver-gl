@@ -292,6 +292,69 @@ function start(opts) {
     startupPromises.push(
       serve_data.add(options, serving.data, item, id, opts.publicUrl),
     );
+
+    if (options.watchMbtiles) {
+      console.log(`Watching Mbtile "${item.mbtiles}" for changes...`);
+
+      const watcher = chokidar.watch(
+        path.join(options.paths.mbtiles, item.mbtiles),
+        {
+          ignoreInitial: true,
+          // wait 10 seconds after the last change before updating. Otherwise, cases where a file is constantly replaced
+          // will create race conditions and can crash the server
+          awaitWriteFinish: { stabilityThreshold: 10000 },
+        },
+      );
+
+      watcher.on('all', (eventType, filename) => {
+        if (filename) {
+          if (eventType === 'add' || eventType === 'change') {
+            console.log(`MBTiles "${filename}" changed, updating...`);
+
+            serve_data.remove(serving.data, id);
+            let newItem = {
+              mbtiles: filename,
+            };
+            serve_data.add(options, serving.data, newItem, id, opts.publicUrl);
+
+            if (!isLight) {
+              Object.entries(serving.rendered).forEach(
+                ([serving_key, serving_value]) => {
+                  // check if source is used in serving
+                  Object.values(serving_value.map.sources).forEach(
+                    (source_value) => {
+                      const newFileInode = fs.statSync(filename).ino;
+                      // we check if the filename is the same and the inode has changed
+                      // the inode check is necessary because it could be that multiple mbtiles
+                      // were changed and we already changed to the new file. This can lead to race-conditions
+                      if (
+                        source_value.filename === filename &&
+                        source_value._stat.ino !== newFileInode
+                      ) {
+                        // remove from serving and add back
+                        serve_style.remove(serving.styles, serving_key);
+                        serve_rendered.remove(serving.rendered, serving_key);
+
+                        const item = {
+                          style: serving_value.map.styleFile,
+                        };
+                        addStyle(serving_key, item, false, false);
+                      }
+                    },
+                  );
+                },
+              );
+            }
+          }
+          // we intentionally don't handle the 'unlink' event here. If the file is deleted, the file descriptor is still valid,
+          // everything will continue to work
+        }
+      });
+
+      watcher.on('error', (error) => {
+        console.error(`Failed to watch file: ${error}`);
+      });
+    }
   }
 
   if (options.serveAllStyles) {

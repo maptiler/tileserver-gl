@@ -111,6 +111,7 @@ const startWithInputFile = async (inputFile) => {
 
   const config = {
     options: {
+      watchMbtiles: true,
       paths: {
         root: styleDir,
         fonts: 'fonts',
