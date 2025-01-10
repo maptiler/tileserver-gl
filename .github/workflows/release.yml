@@ -58,7 +58,7 @@ jobs:
     env:
       PACKAGE_VERSION: ${{ needs.release-check.outputs.version }}
       PRERELEASE: ${{ needs.release-check.outputs.prerelease }}
-      TAG: ${{ env.PRERELEASE == 'true' && 'next' || 'latest' }}
+      TAG: ${{ needs.release-check.outputs.prerelease == 'true' && 'next' || 'latest' }}
     steps:
       - name: Check out repository ✨
         uses: actions/checkout@v4
