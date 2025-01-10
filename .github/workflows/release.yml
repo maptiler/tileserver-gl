@@ -45,10 +45,10 @@ jobs:
           echo "currentVersion: $currentVersion"
           echo "isPublished: $isPublished"
           echo "prerelease: ${prerelease}"
-        outputs:
-          published: ${{ steps.check.outputs.published }}
-          prerelease: ${{ steps.check.outputs.prerelease }}
-          version: ${{ steps.check.outputs.version }}
+    outputs:
+      published: ${{ steps.check.outputs.published }}
+      prerelease: ${{ steps.check.outputs.prerelease }}
+      version: ${{ steps.check.outputs.version }}
 
   release:
     needs: release-check
