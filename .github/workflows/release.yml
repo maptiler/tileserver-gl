@@ -17,8 +17,6 @@ jobs:
   release:
     name: 'Build, Test, Publish'
     runs-on: ubuntu-22.04
-    outputs:
-      prerelease: ${{ steps.prepare_release.outputs.prerelease }}
     steps:
       - name: Check out repository ✨
         uses: actions/checkout@v4
