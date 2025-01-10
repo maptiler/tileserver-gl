@@ -14,7 +14,45 @@ on:
         required: true
 
 jobs:
+  release-check:
+    name: Check if version is published
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: 'package.json'
+          check-latest: true
+          cache: 'npm'
+
+      - name: Check if version is published
+        id: check
+        run: |
+          currentVersion="$( node -e "console.log(require('./package.json').version)" )"
+          isPublished="$( npm view tileserver-gl versions --json | jq -c --arg cv "$currentVersion" 'any(. == $cv)' )"
+          RELEASE_TYPE="$(node -e "console.log(require('semver').prerelease('$PACKAGE_VERSION') ? 'prerelease' : 'regular')")"
+          echo "version=$currentVersion" >> "$GITHUB_OUTPUT"
+          echo "published=$isPublished" >> "$GITHUB_OUTPUT"
+          if [[ $RELEASE_TYPE == 'regular' ]]; then
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "currentVersion: $currentVersion"
+          echo "isPublished: $isPublished"
+          echo "prerelease: $prerelease"
+    outputs:
+      published: ${{ steps.check.outputs.published }}
+      prerelease: ${{ steps.check.outputs.prerelease }}
+      version: ${{ steps.check.outputs.version }}
+
   release:
+    needs: release-check
+    if: ${{ needs.release-check.outputs.published == 'false' }}
     name: 'Build, Test, Publish'
     runs-on: ubuntu-22.04
     steps:
@@ -54,22 +92,10 @@ jobs:
       - name: Remove Test Data
         run: rm -R test_data*
 
-      - name: Get Release Info
-        id: prepare_release
-        run: |
-          PACKAGE_VERSION=$(grep '"version"' package.json | cut -d '"' -f 4 | head -n 1)
-          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> $GITHUB_ENV
-          RELEASE_TYPE="$(node -e "console.log(require('semver').prerelease('$PACKAGE_VERSION') ? 'prerelease' : 'regular')")"
-          if [[ $RELEASE_TYPE == 'regular' ]]; then
-            echo "prerelease=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "prerelease=true" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Publish to NPM
         run: |
           npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
-          npm publish --access public --tag ${{ steps.prepare_release.outputs.prerelease == 'true' && 'next' || 'latest' }}
+          npm publish --access public --tag ${{ needs.release-check.outputs.prerelease == 'true' && 'next' || 'latest' }}
         env:
           NPM_TOKEN: ${{ github.event.inputs.npm_token }}
 
@@ -93,11 +119,28 @@ jobs:
           context: .
           push: true
           tags: |
-            maptiler/tileserver-gl:${{ steps.prepare_release.outputs.prerelease == 'true' && 'next' || 'latest' }},
+            maptiler/tileserver-gl:${{ needs.release-check.outputs.prerelease == 'true' && 'next' || 'latest' }},
             maptiler/tileserver-gl:v${{ env.PACKAGE_VERSION }}
           platforms: linux/arm64,linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Extract changelog for version
+        run: |
+          awk '/^##/ { p = 0 }; p == 1 { print }; $0 == "## ${{ needs.release-check.outputs.version }}" { p = 1 };' CHANGELOG.md > changelog_for_version.md
+          cat changelog_for_version.md
+
+      - name: Publish to Github
+        uses: ncipollo/release-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag: v${{ needs.release-check.outputs.version }}
+          name: v${{ needs.release-check.outputs.version }}
+          bodyFile: changelog_for_version.md
+          allowUpdates: true
+          draft: false
+          prerelease: ${{ needs.release-check.outputs.prerelease }}
 
       - name: Create Tileserver Light Directory
         run: node publish.js --no-publish
@@ -110,7 +153,7 @@ jobs:
         working-directory: ./light
         run: |
           npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
-          npm publish --access public --tag ${{ steps.prepare_release.outputs.prerelease == 'true' && 'next' || 'latest' }}
+          npm publish --access public --tag ${{ needs.release-check.outputs.prerelease == 'true' && 'next' || 'latest' }}
         env:
           NPM_TOKEN: ${{ github.event.inputs.npm_token }}
 
@@ -121,7 +164,7 @@ jobs:
           file: ./light/Dockerfile
           push: true
           tags: |
-            maptiler/tileserver-gl-light:${{ steps.prepare_release.outputs.prerelease == 'true' && 'next' || 'latest' }},
+            maptiler/tileserver-gl-light:${{ needs.release-check.outputs.prerelease == 'true' && 'next' || 'latest' }},
             maptiler/tileserver-gl-light:v${{ env.PACKAGE_VERSION }}
           platforms: linux/arm64,linux/amd64
           cache-from: type=gha
