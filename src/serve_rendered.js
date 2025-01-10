@@ -855,7 +855,7 @@ export const serve_rendered = {
       );
     }
 
-    app.get('/(:tileSize(256|512)/)?:id.json', (req, res, next) => {
+    app.get('/(:tileSize(256|512)/)?:id([^/]+).json', (req, res, next) => {
       const item = repo[req.params.id];
       if (!item) {
         return res.sendStatus(404);
