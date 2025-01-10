@@ -17,6 +17,8 @@ jobs:
   release:
     name: 'Build, Test, Publish'
     runs-on: ubuntu-22.04
+    outputs:
+      prerelease: ${{ steps.prepare_release.outputs.prerelease }}
     steps:
       - name: Check out repository ✨
         uses: actions/checkout@v4
@@ -54,16 +56,24 @@ jobs:
       - name: Remove Test Data
         run: rm -R test_data*
 
-      - name: Publish to Full Version NPM
+      - name: Get Release Info
+        id: prepare_release
+        run: |
+          PACKAGE_VERSION=$(grep '"version"' package.json | cut -d '"' -f 4 | head -n 1)
+          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> $GITHUB_ENV
+          RELEASE_TYPE="$(node -e "console.log(require('semver').prerelease('$PACKAGE_VERSION') ? 'prerelease' : 'regular')")"
+          if [[ $RELEASE_TYPE == 'regular' ]]; then
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to NPM
         run: |
           npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
-          npm publish --access public
+          npm publish --access public --tag ${{ steps.prepare_release.outputs.prerelease == 'true' && 'next' || 'latest' }}
         env:
           NPM_TOKEN: ${{ github.event.inputs.npm_token }}
-
-      - name: Get version
-        run: |
-          echo "PACKAGE_VERSION=$(grep '"version"' package.json | cut -d '"' -f 4 | head -n 1)" >> $GITHUB_ENV
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -84,9 +94,10 @@ jobs:
         with:
           context: .
           push: true
-          tags: maptiler/tileserver-gl:latest, maptiler/tileserver-gl:v${{ env.PACKAGE_VERSION }}
+          tags: |
+            maptiler/tileserver-gl:${{ steps.prepare_release.outputs.prerelease == 'true' && 'next' || 'latest' }},
+            maptiler/tileserver-gl:v${{ env.PACKAGE_VERSION }}
           platforms: linux/arm64,linux/amd64
-          # experimental: https://github.com/docker/build-push-action/blob/master/docs/advanced/cache.md#cache-backend-api
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -101,7 +112,7 @@ jobs:
         working-directory: ./light
         run: |
           npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
-          npm publish --access public
+          npm publish --access public --tag ${{ steps.prepare_release.outputs.prerelease == 'true' && 'next' || 'latest' }}
         env:
           NPM_TOKEN: ${{ github.event.inputs.npm_token }}
 
@@ -111,8 +122,10 @@ jobs:
           context: ./light
           file: ./light/Dockerfile
           push: true
-          tags: maptiler/tileserver-gl-light:latest, maptiler/tileserver-gl-light:v${{ env.PACKAGE_VERSION }}
+          tags: |
+            maptiler/tileserver-gl-light:${{ steps.prepare_release.outputs.prerelease == 'true' && 'next' || 'latest' }},
+            maptiler/tileserver-gl-light:v${{ env.PACKAGE_VERSION }}
           platforms: linux/arm64,linux/amd64
-          # experimental: https://github.com/docker/build-push-action/blob/master/docs/advanced/cache.md#cache-backend-api
           cache-from: type=gha
           cache-to: type=gha,mode=max
+ 
