@@ -12,7 +12,7 @@ You can use prerelease to bump the version for a new pre-release version. E.g. y
 For regular versions, you can use patch, minor, or major. E.g. npm version major --no-git-tag-version.
 
 2.) Update the changelog, which can be found in CHANGELOG.md. The heading must match ## <VERSION> exactly, or it will not be picked up. For example, for version 5.0.0:
-## 5.0.0
+```## 5.0.0```
 
 3.) Commit and push the changes.
 
