@@ -99,7 +99,7 @@ jobs:
       - name: Publish to NPM
         run: |
           npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
-          npm publish --access public --tag ${{ needs.release-check.outputs.prerelease == 'true' && 'next' || 'latest' }}
+          npm publish --access public --tag ${{ steps.prepare_release.outputs.prerelease == 'true' && 'next' || 'latest' }}
         env:
           NPM_TOKEN: ${{ github.event.inputs.npm_token }}
 
@@ -123,7 +123,7 @@ jobs:
           context: .
           push: true
           tags: |
-            maptiler/tileserver-gl:${{ needs.release-check.outputs.prerelease == 'true' && 'next' || 'latest' }},
+            maptiler/tileserver-gl:${{ steps.prepare_release.outputs.prerelease == 'true' && 'next' || 'latest' }},
             maptiler/tileserver-gl:v${{ env.PACKAGE_VERSION }}
           platforms: linux/arm64,linux/amd64
           cache-from: type=gha
@@ -157,7 +157,7 @@ jobs:
         working-directory: ./light
         run: |
           npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
-          npm publish --access public --tag ${{ needs.release-check.outputs.prerelease == 'true' && 'next' || 'latest' }}
+          npm publish --access public --tag ${{ steps.prepare_release.outputs.prerelease == 'true' && 'next' || 'latest' }}
         env:
           NPM_TOKEN: ${{ github.event.inputs.npm_token }}
 
@@ -168,7 +168,7 @@ jobs:
           file: ./light/Dockerfile
           push: true
           tags: |
-            maptiler/tileserver-gl-light:${{ needs.release-check.outputs.prerelease == 'true' && 'next' || 'latest' }},
+            maptiler/tileserver-gl-light:${{ steps.prepare_release.outputs.prerelease == 'true' && 'next' || 'latest' }},
             maptiler/tileserver-gl-light:v${{ env.PACKAGE_VERSION }}
           platforms: linux/arm64,linux/amd64
           cache-from: type=gha
