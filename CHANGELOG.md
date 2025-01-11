@@ -1,6 +1,6 @@
 # tileserver-gl changelog
 
-## 5.1.1-pre.0
+## 5.1.1
 * Fix wrong node version in Docker image (https://github.com/maptiler/tileserver-gl/pull/1438) by @acalcutt
 
 ## 5.1.0
