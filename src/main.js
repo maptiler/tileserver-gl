@@ -70,6 +70,12 @@ const opts = program.opts();
 
 console.log(`Starting ${packageJson.name} v${packageJson.version}`);
 
+/**
+ * Starts the tile server with the given configuration.
+ * @param {string|null} configPath - The path to the configuration file, or null if not using a config file.
+ * @param {object|null} config - The configuration object, or null if reading from a file.
+ * @returns {Promise<void>} - A Promise that resolves when the server starts.
+ */
 const startServer = (configPath, config) => {
   let publicUrl = opts.public_url;
   if (publicUrl && publicUrl.lastIndexOf('/') !== publicUrl.length - 1) {
@@ -89,6 +95,12 @@ const startServer = (configPath, config) => {
   });
 };
 
+/**
+ * Starts the server with a given input file (MBTiles or PMTiles).
+ * Automatically creates a basic config file based on the input file.
+ * @param {string} inputFile - The path to the input MBTiles or PMTiles file.
+ * @returns {Promise<void>} - A Promise that resolves when the server starts.
+ */
 const startWithInputFile = async (inputFile) => {
   console.log(`[INFO] Automatically creating config file for ${inputFile}`);
   console.log(`[INFO] Only a basic preview style will be used.`);
@@ -242,6 +254,14 @@ const startWithInputFile = async (inputFile) => {
   }
 };
 
+/**
+ * Main function to start the server. Checks for a config file or input file,
+ * and starts the server based on the available inputs.
+ * If no config or input file are provided, downloads a demo file.
+ * @async
+ * @returns {Promise<void>} - A Promise that resolves when the server starts or finishes the download.
+ */
+// eslint-disable-next-line security/detect-non-literal-fs-filename
 fs.stat(path.resolve(opts.config), async (err, stats) => {
   if (err || !stats.isFile() || stats.size === 0) {
     let inputFile;

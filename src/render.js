@@ -1,34 +1,47 @@
 'use strict';
 
 import { createCanvas, Image } from 'canvas';
-
 import SphericalMercator from '@mapbox/sphericalmercator';
 
 const mercator = new SphericalMercator();
 
 /**
- * Transforms coordinates to pixels.
- * @param {List[Number]} ll Longitude/Latitude coordinate pair.
- * @param {number} zoom Map zoom level.
+ * Transforms geographical coordinates (longitude/latitude) to pixel coordinates at a given zoom level.
+ * Uses spherical mercator projection and calculates pixel coordinates relative to zoom level 20 then scales it.
+ * @param {number[]} ll - Longitude/Latitude coordinate pair [longitude, latitude].
+ * @param {number} zoom - Map zoom level.
+ * @returns {number[]} Pixel coordinates [x, y].
  */
-const precisePx = (ll, zoom) => {
+function precisePx(ll, zoom) {
   const px = mercator.px(ll, 20);
   const scale = Math.pow(2, zoom - 20);
   return [px[0] * scale, px[1] * scale];
-};
+}
 
 /**
- * Draws a marker in canvas context.
- * @param {object} ctx Canvas context object.
- * @param {object} marker Marker object parsed by extractMarkersFromQuery.
- * @param {number} z Map zoom level.
+ * Draws a marker on a canvas context.
+ * The marker image is loaded asynchronously.
+ * @async
+ * @param {CanvasRenderingContext2D} ctx - Canvas context object.
+ * @param {object} marker - Marker object, with properties like `icon`, `location`, `offsetX`, `offsetY`, `scale`.
+ * @param {number} z - Map zoom level.
+ * @returns {Promise<void>} A promise that resolves when the marker image is loaded and drawn.
+ * @throws {Error} If there is an error loading the marker image.
  */
-const drawMarker = (ctx, marker, z) => {
+function drawMarker(ctx, marker, z) {
   return new Promise((resolve) => {
     const img = new Image();
     const pixelCoords = precisePx(marker.location, z);
 
-    const getMarkerCoordinates = (imageWidth, imageHeight, scale) => {
+    /**
+     * Calculates the pixel coordinates for placing the marker image on the canvas.
+     * Takes into account the image dimensions, scaling, and any offsets.
+     * @param {number} imageWidth - The width of the marker image.
+     * @param {number} imageHeight - The height of the marker image.
+     * @param {number} scale - The scaling factor.
+     * @returns {{x: number, y: number}} An object containing the x and y pixel coordinates.
+     */
+    function getMarkerCoordinates(imageWidth, imageHeight, scale) {
       // Images are placed with their top-left corner at the provided location
       // within the canvas but we expect icons to be centered and above it.
 
@@ -53,9 +66,12 @@ const drawMarker = (ctx, marker, z) => {
         x: xCoordinate,
         y: yCoordinate,
       };
-    };
+    }
 
-    const drawOnCanvas = () => {
+    /**
+     *
+     */
+    function drawOnCanvas() {
       // Check if the images should be resized before beeing drawn
       const defaultScale = 1;
       const scale = marker.scale ? marker.scale : defaultScale;
@@ -75,7 +91,7 @@ const drawMarker = (ctx, marker, z) => {
       }
       // Resolve the promise when image has been drawn
       resolve();
-    };
+    }
 
     img.onload = drawOnCanvas;
     img.onerror = (err) => {
@@ -83,18 +99,20 @@ const drawMarker = (ctx, marker, z) => {
     };
     img.src = marker.icon;
   });
-};
+}
 
 /**
  * Draws a list of markers onto a canvas.
  * Wraps drawing of markers into list of promises and awaits them.
- * It's required because images are expected to load asynchronous in canvas js
+ * It's required because images are expected to load asynchronously in canvas js
  * even when provided from a local disk.
- * @param {object} ctx Canvas context object.
- * @param {List[Object]} markers Marker objects parsed by extractMarkersFromQuery.
- * @param {number} z Map zoom level.
+ * @async
+ * @param {CanvasRenderingContext2D} ctx - Canvas context object.
+ * @param {object[]} markers - Array of marker objects, see drawMarker for individual marker properties.
+ * @param {number} z - Map zoom level.
+ * @returns {Promise<void>} A promise that resolves when all marker images are loaded and drawn.
  */
-const drawMarkers = async (ctx, markers, z) => {
+async function drawMarkers(ctx, markers, z) {
   const markerPromises = [];
 
   for (const marker of markers) {
@@ -104,17 +122,18 @@ const drawMarkers = async (ctx, markers, z) => {
 
   // Await marker drawings before continuing
   await Promise.all(markerPromises);
-};
+}
 
 /**
- * Draws a list of coordinates onto a canvas and styles the resulting path.
- * @param {object} ctx Canvas context object.
- * @param {List[Number]} path List of coordinates.
- * @param {object} query Request query parameters.
- * @param {string} pathQuery Path query parameter.
- * @param {number} z Map zoom level.
+ * Draws a path (polyline or polygon) on a canvas with specified styles.
+ * @param {CanvasRenderingContext2D} ctx - Canvas context object.
+ * @param {number[][]} path - List of coordinates [longitude, latitude] representing the path.
+ * @param {object} query - Request query parameters, which can include `fill`, `width`, `borderwidth`, `linecap`, `linejoin`, `border`, and `stroke` styles.
+ * @param {string} pathQuery - Path specific query parameters, which can include `fill:`, `width:`, `stroke:` styles.
+ * @param {number} z - Map zoom level.
+ * @returns {void | null}
  */
-const drawPath = (ctx, path, query, pathQuery, z) => {
+function drawPath(ctx, path, query, pathQuery, z) {
   const splitPaths = pathQuery.split('|');
 
   if (!path || path.length < 2) {
@@ -209,9 +228,26 @@ const drawPath = (ctx, path, query, pathQuery, z) => {
     ctx.strokeStyle = 'rgba(0,64,255,0.7)';
   }
   ctx.stroke();
-};
+  return;
+}
 
-export const renderOverlay = async (
+/**
+ * Renders an overlay on a canvas, including paths and markers.
+ * @async
+ * @param {number} z - Map zoom level.
+ * @param {number} x - X tile coordinate.
+ * @param {number} y - Y tile coordinate.
+ * @param {number} bearing - Map bearing in degrees.
+ * @param {number} pitch - Map pitch in degrees.
+ * @param {number} w - Width of the canvas.
+ * @param {number} h - Height of the canvas.
+ * @param {number} scale - Scaling factor.
+ * @param {number[][][]} paths - Array of paths, each path is an array of coordinate pairs [longitude, latitude].
+ * @param {object[]} markers - Array of marker objects, see drawMarker for individual marker properties.
+ * @param {object} query - Request query parameters.
+ * @returns {Promise<Buffer | null>} A promise that resolves with the canvas as a Buffer or null if nothing to draw.
+ */
+export async function renderOverlay(
   z,
   x,
   y,
@@ -223,7 +259,7 @@ export const renderOverlay = async (
   paths,
   markers,
   query,
-) => {
+) {
   if ((!paths || paths.length === 0) && (!markers || markers.length === 0)) {
     return null;
   }
@@ -261,9 +297,17 @@ export const renderOverlay = async (
   await drawMarkers(ctx, markers, z);
 
   return canvas.toBuffer();
-};
+}
 
-export const renderWatermark = (width, height, scale, text) => {
+/**
+ * Renders a watermark text on a canvas.
+ * @param {number} width - Width of the canvas.
+ * @param {number} height - Height of the canvas.
+ * @param {number} scale - Scaling factor.
+ * @param {string} text - The watermark text to render.
+ * @returns {HTMLCanvasElement} A canvas element with the rendered watermark text.
+ */
+export function renderWatermark(width, height, scale, text) {
   const canvas = createCanvas(scale * width, scale * height);
   const ctx = canvas.getContext('2d');
   ctx.scale(scale, scale);
@@ -276,9 +320,17 @@ export const renderWatermark = (width, height, scale, text) => {
   ctx.fillText(text, 5, height - 5);
 
   return canvas;
-};
+}
 
-export const renderAttribution = (width, height, scale, text) => {
+/**
+ * Renders an attribution text on a canvas with a background.
+ * @param {number} width - Width of the canvas.
+ * @param {number} height - Height of the canvas.
+ * @param {number} scale - Scaling factor.
+ * @param {string} text - The attribution text to render.
+ * @returns {HTMLCanvasElement} A canvas element with the rendered attribution text.
+ */
+export function renderAttribution(width, height, scale, text) {
   const canvas = createCanvas(scale * width, scale * height);
   const ctx = canvas.getContext('2d');
   ctx.scale(scale, scale);
@@ -300,4 +352,4 @@ export const renderAttribution = (width, height, scale, text) => {
   ctx.fillText(text, width - textWidth - padding / 2, height - textHeight + 8);
 
   return canvas;
-};
+}
