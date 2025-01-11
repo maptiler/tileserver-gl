@@ -43,7 +43,7 @@ An alternative to npm to start the packed software easier is to install [Docker]
 Example using a mbtiles file
 ```bash
 wget https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/zurich_switzerland.mbtiles
-docker run --rm -it -v $(pwd):/data -p 8080:8080 maptiler/tileserver-gl --file zurich_switzerland.mbtiles
+docker run --rm -it -v $(pwd):/data -p 8080:8080 maptiler/tileserver-gl:latest --file zurich_switzerland.mbtiles
 [in your browser, visit http://[server ip]:8080]
 ```
 
@@ -51,18 +51,18 @@ Example using a config.json + style + mbtiles file
 ```bash
 wget https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
 unzip test_data.zip
-docker run --rm -it -v $(pwd):/data -p 8080:8080 maptiler/tileserver-gl
+docker run --rm -it -v $(pwd):/data -p 8080:8080 maptiler/tileserver-gl:latest
 [in your browser, visit http://[server ip]:8080]
 ```
 
 Example using a different path
 ```bash
-docker run --rm -it -v /your/local/config/path:/data -p 8080:8080 maptiler/tileserver-gl
+docker run --rm -it -v /your/local/config/path:/data -p 8080:8080 maptiler/tileserver-gl:latest
 ```
 replace '/your/local/config/path' with the path to your config file
 
 
-Alternatively, you can use the `maptiler/tileserver-gl-light` docker image instead, which is pure javascript, does not have any native dependencies, and can run anywhere, but does not contain rasterization on the server side made with Maplibre GL Native.
+Alternatively, you can use the `maptiler/tileserver-gl-light:latest` docker image instead, which is pure javascript, does not have any native dependencies, and can run anywhere, but does not contain rasterization on the server side made with Maplibre GL Native.
 
 ## Getting Started with Linux cli
 

@@ -1,6 +1,6 @@
 # tileserver-gl changelog
 
-## 5.1.0-pre.1
+## 5.1.0
 * Update recommended node to v22 + Update docker images to use node 22 (https://github.com/maptiler/tileserver-gl/pull/1438) by @acalcutt
 * Upgrade Express to v5 + Canvas to v3 + code cleanup (https://github.com/maptiler/tileserver-gl/pull/1429) by @acalcutt
 * Terrain Preview and simple Elevation Query (https://github.com/maptiler/tileserver-gl/pull/1425 and https://github.com/maptiler/tileserver-gl/pull/1432) by @okimiko
