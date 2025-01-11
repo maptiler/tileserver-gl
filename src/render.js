@@ -69,7 +69,8 @@ function drawMarker(ctx, marker, z) {
     }
 
     /**
-     *
+     * Draws the marker image on the canvas, handling scaling if necessary.
+     * Resolves the parent promise once the image is drawn.
      */
     function drawOnCanvas() {
       // Check if the images should be resized before beeing drawn
