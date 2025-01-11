@@ -1,5 +1,10 @@
 # tileserver-gl changelog
 
+## 5.1.0-pre.0
+* Upgrade Express to v5 +Canvas v3 + code cleanup (https://github.com/maptiler/tileserver-gl/pull/1429) by @acalcutt
+* Terrain Preview and simple Elevation Query (https://github.com/maptiler/tileserver-gl/pull/1425 and #https://github.com/maptiler/tileserver-gl/pull/1432) by @okimiko
+* add progressive rendering option for static jpeg images (#1397) by @samuel-git
+
 ## 5.0.0
 * Update Maplibre-Native to [v6.0.0](https://github.com/maplibre/maplibre-native/releases/tag/node-v6.0.0) release by @acalcutt in https://github.com/maptiler/tileserver-gl/pull/1376 and @dependabot in https://github.com/maptiler/tileserver-gl/pull/1381 
   *  This first release that use Metal for rendering instead of OpenGL (ES) for macOS. 
