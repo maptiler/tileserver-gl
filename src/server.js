@@ -775,8 +775,8 @@ export async function server(opts) {
     console.log(`Caught signal ${signal}, refreshing`);
     console.log('Stopping server and reloading config');
 
-    running.server.shutdown(() => {
-      const restarted = start(opts);
+    running.server.shutdown(async () => {
+      const restarted = await start(opts);
       running.server = restarted.server;
       running.app = restarted.app;
     });
