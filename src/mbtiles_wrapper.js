@@ -2,7 +2,8 @@ import MBTiles from '@mapbox/mbtiles';
 import util from 'node:util';
 
 /**
- * Promise-ful wrapper around the MBTiles class.
+ * A promise-based wrapper around the `@mapbox/mbtiles` class,
+ * providing asynchronous access to MBTiles database functionality.
  */
 class MBTilesWrapper {
   constructor(mbtiles) {
@@ -11,27 +12,30 @@ class MBTilesWrapper {
   }
 
   /**
-   * Get the underlying MBTiles object.
-   * @returns {MBTiles}
+   * Gets the underlying MBTiles object.
+   * @returns {MBTiles} The underlying MBTiles object.
    */
   getMbTiles() {
     return this._mbtiles;
   }
 
   /**
-   * Get the MBTiles metadata object.
-   * @returns {Promise<object>}
+   * Gets the MBTiles metadata object.
+   * @async
+   * @returns {Promise<object>} A promise that resolves with the MBTiles metadata.
    */
-  getInfo() {
+  async getInfo() {
     return this._getInfoP();
   }
 }
 
 /**
- * Open the given MBTiles file and return a promise that resolves with a
- * MBTilesWrapper instance.
- * @param inputFile Input file
- * @returns {Promise<MBTilesWrapper>}
+ * Opens an MBTiles file and returns a promise that resolves with an MBTilesWrapper instance.
+ *
+ * The MBTiles database is opened in read-only mode.
+ * @param {string} inputFile - The path to the MBTiles file.
+ * @returns {Promise<MBTilesWrapper>} A promise that resolves with a new MBTilesWrapper instance.
+ * @throws {Error} If there is an error opening the MBTiles file.
  */
 export function openMbTilesWrapper(inputFile) {
   return new Promise((resolve, reject) => {
