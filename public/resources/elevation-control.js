@@ -18,7 +18,7 @@ class ElevationInfoControl {
 
       map.on('click', (e) => {
         var url = this.url;
-        var coord = {"z": Math.floor(map.getZoom()), "x": e.lngLat["lng"], "y": e.lngLat["lat"]};
+        var coord = {"z": Math.floor(map.getZoom()), "x": e.lngLat["lng"].toFixed(7), "y": e.lngLat["lat"].toFixed(7)};
         for(var key in coord) {
           url = url.replace(new RegExp('{'+ key +'}','g'), coord[key]);
         }
