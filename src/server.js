@@ -658,11 +658,12 @@ async function start(opts) {
     if (opts.publicUrl) {
       baseUrl = opts.publicUrl;
     } else {
+      let xForwardedPath = req.get('X-Forwarded-Path') ? '/' + req.get('X-Forwarded-Path') : '';
       baseUrl = `${
         req.get('X-Forwarded-Protocol')
           ? req.get('X-Forwarded-Protocol')
           : req.protocol
-      }://${req.get('host')}/`;
+      }://${req.get('host')}${xForwardedPath}/`;
     }
 
     return {
