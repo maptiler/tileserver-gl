@@ -4,6 +4,7 @@
 * Use npm packages for public/resources (https://github.com/maptiler/tileserver-gl/pull/1427) by @okimiko
 * use ttf files of googlefonts/opensans (https://github.com/maptiler/tileserver-gl/pull/1447) by @okimiko
 * fix memory leak on SIGHUP (https://github.com/maptiler/tileserver-gl/pull/1455) by @okimiko
+* Limit Elevation Lat/Long Output Length (https://github.com/maptiler/tileserver-gl/pull/1457) by @okimiko
 
 ## 5.1.3
 * Fix SIGHUP (broken since 5.1.x) (https://github.com/maptiler/tileserver-gl/pull/1452) by @okimiko
