@@ -764,6 +764,7 @@ async function start(opts) {
     app,
     server,
     startupPromise,
+    serving,
   };
 }
 /**
@@ -798,8 +799,13 @@ export async function server(opts) {
 
     running.server.shutdown(async () => {
       const restarted = await start(opts);
+      if (!isLight) {
+        serve_rendered.clear(running.serving.rendered);
+      }
       running.server = restarted.server;
       running.app = restarted.app;
+      running.startupPromise = restarted.startupPromise;
+      running.serving = restarted.serving;
     });
   });
   return running;

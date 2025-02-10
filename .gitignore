@@ -1,4 +1,15 @@
 docs/_build
+public/resources/leaflet-hash.js
+public/resources/leaflet.css
+public/resources/leaflet.js
+public/resources/leaflet.js.map
+public/resources/mapbox-gl-rtl-text.js
+public/resources/maplibre-gl-inspect.css
+public/resources/maplibre-gl-inspect.js
+public/resources/maplibre-gl-inspect.js.map
+public/resources/maplibre-gl.css
+public/resources/maplibre-gl.js
+public/resources/maplibre-gl.js.map
 node_modules
 test_data
 test_data.zip

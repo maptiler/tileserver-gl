@@ -1,0 +1,38 @@
+FROM ubuntu:jammy AS builder
+
+ENV NODE_ENV="devel"
+
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends --no-install-suggests \
+      build-essential \
+      ca-certificates \
+      curl \
+      gnupg \
+      pkg-config \
+      xvfb \
+      libglfw3-dev \
+      libuv1-dev \
+      libjpeg-turbo8 \
+      libicu70 \
+      libcairo2-dev \
+      libpango1.0-dev \
+      libjpeg-dev \
+      libgif-dev \
+      librsvg2-dev \
+      gir1.2-rsvg-2.0 \
+      librsvg2-2 \
+      librsvg2-common \
+      libcurl4-openssl-dev \
+      libpixman-1-dev \
+      libpixman-1-0 && \
+    mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list && \
+    apt-get -qq update && \
+    apt-get install -y --no-install-recommends --no-install-suggests nodejs && \
+    npm i -g npm@latest && \
+    apt-get -y remove curl gnupg && \
+    apt-get -y --purge autoremove && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
