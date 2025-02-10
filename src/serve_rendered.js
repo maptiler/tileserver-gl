@@ -15,7 +15,6 @@ import '@maplibre/maplibre-gl-native';
 import advancedPool from 'advanced-pool';
 import path from 'path';
 import url from 'url';
-import util from 'util';
 import sharp from 'sharp';
 import clone from 'clone';
 import Color from 'color';
@@ -1461,7 +1460,25 @@ export const serve_rendered = {
     }
     delete repo[id];
   },
-
+  /**
+   * Removes all items from the repository.
+   * @param {object} repo Repository object.
+   * @returns {void}
+   */
+  clear: function (repo) {
+    Object.keys(repo).forEach((id) => {
+      const item = repo[id];
+      if (item) {
+        item.map.renderers.forEach((pool) => {
+          pool.close();
+        });
+        item.map.renderersStatic.forEach((pool) => {
+          pool.close();
+        });
+      }
+      delete repo[id];
+    });
+  },
   /**
    * Get the elevation of terrain tile data by rendering it to a canvas image
    * @param {object} data The background color (or empty string for transparent).
