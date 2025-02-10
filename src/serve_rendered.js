@@ -1027,10 +1027,19 @@ export const serve_rendered = {
    * @param {object} params Parameters object.
    * @param {string} id ID of the item.
    * @param {object} programOpts - An object containing the program options
+   * @param {object} style pre-fetched/read StyleJSON object.
    * @param {Function} dataResolver Function to resolve data.
    * @returns {Promise<void>}
    */
-  add: async function (options, repo, params, id, programOpts, dataResolver) {
+  add: async function (
+    options,
+    repo,
+    params,
+    id,
+    programOpts,
+    style,
+    dataResolver,
+  ) {
     const map = {
       renderers: [],
       renderersStatic: [],
@@ -1040,7 +1049,7 @@ export const serve_rendered = {
 
     const { publicUrl, verbose } = programOpts;
 
-    let styleJSON;
+    const styleJSON = clone(style);
     /**
      * Creates a pool of renderers.
      * @param {number} ratio Pixel ratio
@@ -1229,12 +1238,6 @@ export const serve_rendered = {
 
     const styleFile = params.style;
     const styleJSONPath = path.resolve(options.paths.styles, styleFile);
-    try {
-      styleJSON = JSON.parse(await fsp.readFile(styleJSONPath));
-    } catch (e) {
-      console.log('Error parsing style file');
-      return false;
-    }
 
     if (styleJSON.sprite) {
       if (!Array.isArray(styleJSON.sprite)) {
