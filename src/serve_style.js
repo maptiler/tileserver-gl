@@ -213,7 +213,7 @@ export const serve_style = {
     reportFont,
   ) {
     const { publicUrl } = programOpts;
-    const styleFile = path.resolve(options.paths.styles, params.style)
+    const styleFile = path.resolve(options.paths.styles, params.style);
     const styleJSON = clone(style);
 
     const validationErrors = validateStyleMin(styleJSON);

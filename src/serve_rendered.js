@@ -1032,7 +1032,15 @@ export const serve_rendered = {
    * @param {Function} dataResolver Function to resolve data.
    * @returns {Promise<void>}
    */
-  add: async function (options, repo, params, id, programOpts, style, dataResolver) {
+  add: async function (
+    options,
+    repo,
+    params,
+    id,
+    programOpts,
+    style,
+    dataResolver,
+  ) {
     const map = {
       renderers: [],
       renderersStatic: [],

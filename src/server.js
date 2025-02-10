@@ -185,13 +185,12 @@ async function start(opts) {
 
     let styleJSON;
     try {
-      if (isValidHttpUrl(item.style)){
+      if (isValidHttpUrl(item.style)) {
         const res = await fetch(item.style);
         if (!res.ok) {
           throw new Error(`fetch error ${res.status}`);
         }
         styleJSON = await res.json();
-
       } else {
         const styleFile = path.resolve(options.paths.styles, item.style);
         const styleFileData = await fs.promises.readFile(styleFile);
@@ -302,7 +301,6 @@ async function start(opts) {
       console.log(`Missing "style" property for ${id}`);
       continue;
     }
-  
     startupPromises.push(addStyle(id, item, true, true));
   }
   startupPromises.push(
