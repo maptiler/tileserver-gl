@@ -202,7 +202,7 @@ async function start(opts) {
     }
 
     if (item.serve_data !== false) {
-      success = await serve_style.add(
+      success = serve_style.add(
         options,
         serving.styles,
         item,

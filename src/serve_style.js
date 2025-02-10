@@ -12,7 +12,6 @@ import {
   allowedSpriteFormats,
   fixUrl,
   readFile,
-  isValidHttpUrl,
 } from './utils.js';
 
 const httpTester = /^https?:\/\//i;
@@ -200,9 +199,9 @@ export const serve_style = {
    * @param {object} style pre-fetched/read StyleJSON object.
    * @param {Function} reportTiles Function for reporting tile sources.
    * @param {Function} reportFont Function for reporting font usage
-   * @returns {Promise<boolean>} true if add is successful
+   * @returns {boolean} true if add is successful
    */
-  add: async function (
+  add: function (
     options,
     repo,
     params,
