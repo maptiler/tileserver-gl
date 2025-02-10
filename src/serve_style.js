@@ -198,9 +198,9 @@ export const serve_style = {
    * @param {object} programOpts - An object containing the program options
    * @param {Function} reportTiles Function for reporting tile sources.
    * @param {Function} reportFont Function for reporting font usage
-   * @returns {boolean} true if add is succesful
+   * @returns {Promise<boolean>} true if add is successful
    */
-  add: function (
+  add: async function (
     options,
     repo,
     params,
@@ -214,13 +214,20 @@ export const serve_style = {
 
     let styleFileData;
     try {
-      styleFileData = fs.readFileSync(styleFile); // TODO: could be made async if this function was
+      styleFileData = await fs.promises.readFile(styleFile);
     } catch (e) {
       console.log(`Error reading style file "${params.style}"`);
       return false;
     }
 
-    const styleJSON = JSON.parse(styleFileData);
+    let styleJSON;
+    try {
+      styleJSON = JSON.parse(styleFileData);
+    } catch (e) {
+      console.log(`Error parsing style JSON from "${params.style}"`);
+      return false;
+    }
+
     const validationErrors = validateStyleMin(styleJSON);
     if (validationErrors.length > 0) {
       console.log(`The file "${params.style}" is not a valid style file:`);

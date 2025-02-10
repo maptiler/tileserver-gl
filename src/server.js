@@ -178,12 +178,12 @@ async function start(opts) {
    * @param {object} item - The style configuration object.
    * @param {boolean} allowMoreData - Whether to allow adding more data sources.
    * @param {boolean} reportFonts - Whether to report fonts.
-   * @returns {void}
+   * @returns {Promise<void>}
    */
-  function addStyle(id, item, allowMoreData, reportFonts) {
+  async function addStyle(id, item, allowMoreData, reportFonts) {
     let success = true;
     if (item.serve_data !== false) {
-      success = serve_style.add(
+      success = await serve_style.add(
         options,
         serving.styles,
         item,
@@ -271,6 +271,7 @@ async function start(opts) {
         item.serve_rendered = false;
       }
     }
+    return success;
   }
 
   for (const id of Object.keys(config.styles || {})) {
@@ -279,8 +280,8 @@ async function start(opts) {
       console.log(`Missing "style" property for ${id}`);
       continue;
     }
-
-    addStyle(id, item, true, true);
+  
+    startupPromises.push(addStyle(id, item, true, true));
   }
   startupPromises.push(
     serve_font(options, serving.fonts, opts).then((sub) => {
