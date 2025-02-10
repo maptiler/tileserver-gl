@@ -182,6 +182,26 @@ async function start(opts) {
    */
   async function addStyle(id, item, allowMoreData, reportFonts) {
     let success = true;
+
+    let styleJSON;
+    try {
+      if (isValidHttpUrl(item.style)){
+        const res = await fetch(item.style);
+        if (!res.ok) {
+          throw new Error(`fetch error ${res.status}`);
+        }
+        styleJSON = await res.json();
+
+      } else {
+        const styleFile = path.resolve(options.paths.styles, item.style);
+        const styleFileData = await fs.promises.readFile(styleFile);
+        styleJSON = JSON.parse(styleFileData);
+      }
+    } catch (e) {
+      console.log(`Error getting style file "${item.style}"`);
+      return false;
+    }
+
     if (item.serve_data !== false) {
       success = await serve_style.add(
         options,
@@ -189,6 +209,7 @@ async function start(opts) {
         item,
         id,
         opts,
+        styleJSON,
         (styleSourceId, protocol) => {
           let dataItemId;
           for (const id of Object.keys(data)) {
@@ -246,6 +267,7 @@ async function start(opts) {
             item,
             id,
             opts,
+            styleJSON,
             function dataResolver(styleSourceId) {
               let fileType;
               let inputFile;

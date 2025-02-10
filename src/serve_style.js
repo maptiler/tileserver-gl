@@ -12,6 +12,7 @@ import {
   allowedSpriteFormats,
   fixUrl,
   readFile,
+  isValidHttpUrl,
 } from './utils.js';
 
 const httpTester = /^https?:\/\//i;
@@ -196,6 +197,7 @@ export const serve_style = {
    * @param {object} params Parameters object containing style path
    * @param {string} id ID of the style.
    * @param {object} programOpts - An object containing the program options
+   * @param {object} style pre-fetched/read StyleJSON object.
    * @param {Function} reportTiles Function for reporting tile sources.
    * @param {Function} reportFont Function for reporting font usage
    * @returns {Promise<boolean>} true if add is successful
@@ -206,27 +208,13 @@ export const serve_style = {
     params,
     id,
     programOpts,
+    style,
     reportTiles,
     reportFont,
   ) {
     const { publicUrl } = programOpts;
-    const styleFile = path.resolve(options.paths.styles, params.style);
-
-    let styleFileData;
-    try {
-      styleFileData = await fs.promises.readFile(styleFile);
-    } catch (e) {
-      console.log(`Error reading style file "${params.style}"`);
-      return false;
-    }
-
-    let styleJSON;
-    try {
-      styleJSON = JSON.parse(styleFileData);
-    } catch (e) {
-      console.log(`Error parsing style JSON from "${params.style}"`);
-      return false;
-    }
+    const styleFile = path.resolve(options.paths.styles, params.style)
+    const styleJSON = clone(style);
 
     const validationErrors = validateStyleMin(styleJSON);
     if (validationErrors.length > 0) {
