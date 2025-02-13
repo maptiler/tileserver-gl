@@ -92,7 +92,7 @@ export function fixUrl(req, url, publicUrl) {
  * @param {object} req - Express request object.
  * @returns {URL} - URL object with correct host and optionally path.
  */
-function getUrlObject(req) {
+function getUrlObject(req, prefix) {
   const urlObject = new URL(`${req.protocol}://${req.headers.host}/`);
   // support overriding hostname by sending X-Forwarded-Host http header
   urlObject.hostname = req.hostname;
@@ -104,7 +104,7 @@ function getUrlObject(req) {
   }
 
   // support add url prefix by sending X-Forwarded-Path http header
-  const xForwardedPath = req.get('X-Forwarded-Path');
+  const xForwardedPath = prefix || req.get('X-Forwarded-Path');
   if (xForwardedPath) {
     urlObject.pathname = path.posix.join(xForwardedPath, urlObject.pathname);
   }
@@ -119,8 +119,13 @@ function getUrlObject(req) {
  */
 export function getPublicUrl(publicUrl, req) {
   if (publicUrl) {
-    return publicUrl;
+    if (/^https?:\/\//.test(publicUrl)) {
+      return publicUrl;
+    } else {
+      return getUrlObject(req, publicUrl).toString();
+    }
   }
+
   return getUrlObject(req).toString();
 }
 
@@ -196,11 +201,11 @@ export function getTileUrls(
   }
 
   const uris = [];
-  if (!publicUrl) {
-    let xForwardedPath = `${req.get('X-Forwarded-Path') ? '/' + req.get('X-Forwarded-Path') : ''}`;
+  if (!publicUrl || !/^https?:\/\//.test(publicUrl)) {
+    let xForwardedPath = publicUrl || `${req.get('X-Forwarded-Path') ? '/' + req.get('X-Forwarded-Path') : ''}`;
     for (const domain of domains) {
       uris.push(
-        `${req.protocol}://${domain}${xForwardedPath}/${path}/${tileParams}${format}${query}`,
+        `${req.protocol}://${domain}${xForwardedPath.replace(/\/$/, "")}/${path}/${tileParams}${format}${query}`,
       );
     }
   } else {
