@@ -21,7 +21,7 @@ import { openMbTilesWrapper } from './mbtiles_wrapper.js';
 
 import fs from 'node:fs';
 import { fileURLToPath } from 'url';
-import zlib from 'zlib';
+
 const packageJson = JSON.parse(
   fs.readFileSync(
     path.dirname(fileURLToPath(import.meta.url)) + '/../package.json',
