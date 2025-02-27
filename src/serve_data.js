@@ -117,8 +117,7 @@ export const serve_data = {
       if (isGzipped) {
           data = await gunzipP(data);
           isGzipped = false;
-      }      
-      delete headers['Content-Encoding'];
+      }
       
       if (tileJSONFormat === 'pbf') {
         if (options.dataDecoratorFunc) {
