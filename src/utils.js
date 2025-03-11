@@ -119,7 +119,11 @@ function getUrlObject(req) {
  */
 export function getPublicUrl(publicUrl, req) {
   if (publicUrl) {
-    return publicUrl;
+    try {
+      return new URL(publicUrl).toString();
+    } catch {
+      return new URL(publicUrl, getUrlObject(req)).toString();
+    }
   }
   return getUrlObject(req).toString();
 }
