@@ -65,6 +65,22 @@ jobs:
           context: .
           push: false
           platforms: linux/arm64,linux/amd64
-          # experimental: https://github.com/docker/build-push-action/blob/master/docs/advanced/cache.md#cache-backend-api
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Create Tileserver Light Directory
+        run: node publish.js --no-publish
+
+      - name: Install node dependencies
+        run: npm ci --prefer-offline --no-audit
+        working-directory: ./light
+
+      - name: Test Light Version to Docker Hub
+        uses: docker/build-push-action@v6
+        with:
+          context: ./light
+          file: ./light/Dockerfile
+          push: false
+          platforms: linux/arm64,linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
