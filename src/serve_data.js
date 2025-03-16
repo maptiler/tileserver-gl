@@ -115,10 +115,10 @@ export const serve_data = {
       let isGzipped = data.slice(0, 2).indexOf(Buffer.from([0x1f, 0x8b])) === 0;
 
       if (isGzipped) {
-          data = await gunzipP(data);
-          isGzipped = false;
+        data = await gunzipP(data);
+        isGzipped = false;
       }
-      
+
       if (tileJSONFormat === 'pbf') {
         if (options.dataDecoratorFunc) {
           data = options.dataDecoratorFunc(
