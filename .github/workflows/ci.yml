@@ -34,7 +34,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies 🚀
-        run: npm ci --prefer-offline --no-audit
+        run: npm ci --prefer-offline --no-audit --omit=optional
 
       - name: Run linter(s) 💅
         uses: wearerequired/lint-action@v2
