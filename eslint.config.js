@@ -25,8 +25,12 @@ export default [
       globals: {
         ...globals.node, // Add Node.js globals
         ...globals.browser, // Add browser globals
-        ...globals.es6, // Add ES6 globals (if not already included)
-        // ...js.configs.recommended.languageOptions?.globals, // Remove if you want to completely rely on globals package
+        ...globals.es6, // Add ES6 globals
+        ...globals.mocha, // Add Mocha globals (describe, it, before, after, etc.)
+        supertest: 'readonly', // Mark supertest as a global read-only variable
+        expect: 'readonly', // Mark expect as a global read-only variable if your assertion library isn't automatically detected
+        app: 'readonly', // Mark app as a global read-only variable
+        server: 'readonly', // Mark server as a global read-only variable
       },
     },
   },

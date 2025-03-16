@@ -29,8 +29,8 @@ const packageJson = JSON.parse(
 );
 
 const isLight = packageJson.name.slice(-6) === '-light';
-const serve_rendered = (
-  await import(`${!isLight ? `./serve_rendered.js` : `./serve_light.js`}`)
+const serve_rendered = import(
+  `${!isLight ? `./serve_rendered.js` : `./serve_light.js`}`
 ).serve_rendered;
 
 export const serve_data = {
