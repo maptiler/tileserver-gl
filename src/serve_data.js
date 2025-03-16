@@ -261,8 +261,8 @@ export const serve_data = {
 
         let data = fetchTile.data;
         var param = {
-          long: bbox[0],
-          lat: bbox[1],
+          long: bbox[0].toFixed(7),
+          lat: bbox[1].toFixed(7),
           encoding,
           format,
           tile_size: TILE_SIZE,
