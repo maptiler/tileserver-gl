@@ -4,11 +4,11 @@ This document outlines the process for publishing new versions of this project. 
 
 ## Automated Publishing via GitHub Workflow (Recommended)
 
-This is the preferred method for publishing new versions. It automates the entire process, including version bumping, tagging, building, and publishing. We primarily use the "pre" pre-release identifier.
+This is the preferred method for publishing new versions. It automates the entire process, including version bumping, tagging, building, and publishing.
 
 1.  **Prepare the Release:**
 
-    *   **Choose the Version Increment:** Determine the appropriate semantic versioning increment (prerelease, prepatch, preminor, premajor, patch, minor, major). Refer to [Semantic Versioning](https://semver.org/) for guidance.
+    *   **Choose the Version Increment:** Determine the appropriate semantic versioning increment (prerelease, prepatch, preminor, premajor, patch, minor, major).
 
     *   **Update `package.json`:** Use the `npm version` command to bump the version number. This command also supports creating pre-release versions using the `--preid pre` flag.
 
