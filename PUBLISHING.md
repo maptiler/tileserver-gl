@@ -1,4 +1,4 @@
-# Publishing new version
+# Publishing new version with github workflow
 
 1.) Change the version number in package.json. Run the following command in the package root directory, replacing <update_type> with one of the semantic versioning release types (prerelease, prepatch, preminor, premajor, patch, minor, major):
 npm version <update_type> --preid pre --no-git-tag-version
@@ -17,3 +17,17 @@ For regular versions, you can use patch, minor, or major. E.g. npm version major
 3.) Commit and push the changes.
 
 4.) Run the 'Build, Test, Release' github workflow. The workflow will create a NPM, Docker, and Github release and Tag.
+
+# Publishing new version manually
+
+- Update version in `package.json`
+- `git tag vx.x.x`
+- `git push --tags`
+- `docker buildx build --platform linux/amd64 -t maptiler/tileserver-gl:latest -t maptiler/tileserver-gl:[version] .`
+- `docker push maptiler/tileserver-gl --all-tags`
+- `npm publish --access public` or `node publish.js` 
+- `node publish.js --no-publish`
+- `cd light`
+- `docker buildx build --platform linux/amd64 -t maptiler/tileserver-gl-light:latest -t maptiler/tileserver-gl-light:[version] .`
+- `docker push maptiler/tileserver-gl-light --all-tags`
+- `npm publish --access public`
