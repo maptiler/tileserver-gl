@@ -43,7 +43,7 @@ This is the preferred method for publishing new versions. It automates the entir
         *   Added new feature X.
         ```
 
-2.  **Commit and Push:** Commit the changes to `package.json` and `CHANGELOG.md` to a branch. Create a pull request (PR) for review. If you are an administrator, you may push directly, but a PR is generally recommended for code review.
+2.  **Commit and Push:** Commit the changes to `package.json`, `package-lock.json` and `CHANGELOG.md` to a branch. Create a pull request (PR) for review. If you are an administrator, you may push directly, but a PR is generally recommended for code review.
 
 3.  **Run the GitHub Workflow:** Once the PR is merged (or changes pushed directly), trigger the "Build, Test, Release" GitHub workflow. This workflow is responsible for:
 
