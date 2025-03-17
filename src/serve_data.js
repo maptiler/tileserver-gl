@@ -21,6 +21,7 @@ import { openMbTilesWrapper } from './mbtiles_wrapper.js';
 
 import fs from 'node:fs';
 import { fileURLToPath } from 'url';
+
 const packageJson = JSON.parse(
   fs.readFileSync(
     path.dirname(fileURLToPath(import.meta.url)) + '/../package.json',
@@ -113,12 +114,13 @@ export const serve_data = {
       let headers = fetchTile.headers;
       let isGzipped = data.slice(0, 2).indexOf(Buffer.from([0x1f, 0x8b])) === 0;
 
+      if (isGzipped) {
+        data = await gunzipP(data);
+        isGzipped = false;
+      }
+
       if (tileJSONFormat === 'pbf') {
         if (options.dataDecoratorFunc) {
-          if (isGzipped) {
-            data = await gunzipP(data);
-            isGzipped = false;
-          }
           data = options.dataDecoratorFunc(
             req.params.id,
             'data',

@@ -1,4 +1,42 @@
-FROM ubuntu:jammy
+FROM ubuntu:jammy AS builder
+
+ENV NODE_ENV="production"
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends --no-install-suggests \
+      build-essential \
+      ca-certificates \
+      curl \
+      gnupg && \
+    mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list && \
+    apt-get -qq update && \
+    apt-get install -y --no-install-recommends --no-install-suggests nodejs && \
+    npm i -g npm@latest && \
+    apt-get -y remove curl gnupg && \
+    apt-get -y --purge autoremove && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /usr/src/app
+
+WORKDIR /usr/src/app
+
+COPY package.json /usr/src/app
+COPY package-lock.json /usr/src/app
+
+RUN npm config set maxsockets 1 && \
+    npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 100000 && \
+    npm config set fetch-retry-maxtimeout 600000 && \
+    npm ci --omit=dev && \
+    chown -R root:root /usr/src/app
+
+FROM ubuntu:jammy AS final
 
 ENV \
     NODE_ENV="production" \
@@ -26,18 +64,14 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-WORKDIR /usr/src/app
-COPY . .
+COPY --from=builder /usr/src/app /usr/src/app
 
-RUN npm config set maxsockets 1 && \
-    npm config set fetch-retries 5 && \
-    npm config set fetch-retry-mintimeout 100000 && \
-    npm config set fetch-retry-maxtimeout 600000 && \
-    npm install --omit=dev && \
-    chown -R root:root . && \
-    chmod +x ./docker-entrypoint.sh
+COPY . /usr/src/app
 
-RUN mkdir -p /data && chown node:node /data
+RUN mkdir -p /data && \
+    chown node:node /data && \
+    chmod +x /usr/src/app/docker-entrypoint.sh
+
 VOLUME /data
 WORKDIR /data
 
