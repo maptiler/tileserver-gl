@@ -1,6 +1,6 @@
 # tileserver-gl changelog
 
-## 5.2.0-pre.3
+## 5.2.0
 * Use npm packages for public/resources (https://github.com/maptiler/tileserver-gl/pull/1427) by @okimiko
 * use ttf files of googlefonts/opensans (https://github.com/maptiler/tileserver-gl/pull/1447) by @okimiko
 * Limit Elevation Lat/Long Output Length (https://github.com/maptiler/tileserver-gl/pull/1457) by @okimiko
