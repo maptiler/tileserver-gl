@@ -30,8 +30,8 @@ const packageJson = JSON.parse(
 );
 const isLight = packageJson.name.slice(-6) === '-light';
 
-const serve_rendered = (
-  await import(`${!isLight ? `./serve_rendered.js` : `./serve_light.js`}`)
+const serve_rendered = import(
+  `${!isLight ? `./serve_rendered.js` : `./serve_light.js`}`
 ).serve_rendered;
 
 /**
@@ -148,13 +148,19 @@ async function start(opts) {
     }),
   );
 
+  let dataDecoratorFunc = null; // Initialize to null
   if (options.dataDecorator) {
     try {
-      options.dataDecoratorFunc = require(
-        path.resolve(paths.root, options.dataDecorator),
-      );
-    } catch (e) {}
+      const dataDecoratorPath = path.resolve(paths.root, options.dataDecorator);
+      const module = await import(dataDecoratorPath);
+      dataDecoratorFunc = module.default;
+    } catch (e) {
+      console.error(`Error loading data decorator: ${e}`);
+      // Handle the error (e.g., set a default decorator)
+      dataDecoratorFunc = null; // Or a default function
+    }
   }
+  options.dataDecoratorFunc = dataDecoratorFunc;
 
   const data = clone(config.data || {});
 
@@ -671,7 +677,7 @@ async function start(opts) {
       return null;
     }
 
-    if (wmts.hasOwnProperty('serve_rendered') && !wmts.serve_rendered) {
+    if (Object.hasOwn(wmts, 'serve_rendered') && !wmts.serve_rendered) {
       return null;
     }
 
