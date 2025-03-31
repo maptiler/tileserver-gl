@@ -196,9 +196,10 @@ export const serve_style = {
    * @param {object} params Parameters object containing style path
    * @param {string} id ID of the style.
    * @param {object} programOpts - An object containing the program options
+   * @param {object} style pre-fetched/read StyleJSON object.
    * @param {Function} reportTiles Function for reporting tile sources.
    * @param {Function} reportFont Function for reporting font usage
-   * @returns {boolean} true if add is succesful
+   * @returns {boolean} true if add is successful
    */
   add: function (
     options,
@@ -206,21 +207,14 @@ export const serve_style = {
     params,
     id,
     programOpts,
+    style,
     reportTiles,
     reportFont,
   ) {
     const { publicUrl } = programOpts;
     const styleFile = path.resolve(options.paths.styles, params.style);
+    const styleJSON = clone(style);
 
-    let styleFileData;
-    try {
-      styleFileData = fs.readFileSync(styleFile); // TODO: could be made async if this function was
-    } catch (e) {
-      console.log(`Error reading style file "${params.style}"`);
-      return false;
-    }
-
-    const styleJSON = JSON.parse(styleFileData);
     const validationErrors = validateStyleMin(styleJSON);
     if (validationErrors.length > 0) {
       console.log(`The file "${params.style}" is not a valid style file:`);

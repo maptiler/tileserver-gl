@@ -50,7 +50,6 @@ RUN npm config set maxsockets 1 && \
     npm config set fetch-retries 5 && \
     npm config set fetch-retry-mintimeout 100000 && \
     npm config set fetch-retry-maxtimeout 600000 && \
-    npm install -g copyfiles@2.4.1 && \
     npm ci --omit=dev && \
     chown -R root:root /usr/src/app
 

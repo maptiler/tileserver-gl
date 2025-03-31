@@ -57,6 +57,9 @@ Example:
         "tilejson": {
           "format": "webp"
         }
+      },
+      "remote": {
+        "style": "https://demotiles.maplibre.org/style.json"
       }
     },
     "data": {
@@ -209,7 +212,7 @@ Not used by default.
 
 Each item in this object defines one style (map). It can have the following options:
 
-* ``style`` -- name of the style json file [required]
+* ``style`` -- name of the style json file or url of a remote hosted style [required]
 * ``serve_rendered`` -- whether to render the raster tiles for this style or not
 * ``serve_data`` -- whether to allow access to the original tiles, sprites and required glyphs
 * ``tilejson`` -- properties to add to the TileJSON created for the raster data
