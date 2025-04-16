@@ -1,12 +1,12 @@
 {
   "name": "tileserver-gl",
-  "version": "5.2.2",
+  "version": "5.2.1",
   "description": "Map tile server for JSON GL styles - vector and server side generated raster tiles",
   "main": "src/main.js",
   "bin": "src/main.js",
   "type": "module",
   "scripts": {
-    "postinstall": "npm run copy:maplibre && npm run copy:maplibre-inspect && npm run copy:mapbox-rtl-text && npm run copy:leaflet && npm run copy:leaflet-hash",
+    "prepare": "npm run copy:maplibre && npm run copy:maplibre-inspect && npm run copy:mapbox-rtl-text && npm run copy:leaflet && npm run copy:leaflet-hash",
     "copy:maplibre": "copyfiles -EVf node_modules/maplibre-gl/dist/maplibre-gl.js node_modules/maplibre-gl/dist/maplibre-gl.js.map node_modules/maplibre-gl/dist/maplibre-gl.css public/resources/",
     "copy:maplibre-inspect": "copyfiles -EVf node_modules/@maplibre/maplibre-gl-inspect/dist/maplibre-gl-inspect.js node_modules/@maplibre/maplibre-gl-inspect/dist/maplibre-gl-inspect.js.map node_modules/@maplibre/maplibre-gl-inspect/dist/maplibre-gl-inspect.css  public/resources/",
     "copy:mapbox-rtl-text": "copyfiles -EVf node_modules/@mapbox/mapbox-gl-rtl-text/dist/mapbox-gl-rtl-text.js public/resources/",
