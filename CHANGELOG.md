@@ -1,5 +1,9 @@
 # tileserver-gl changelog
 
+## 5.2.2-pre.0
+* Fix - Include public\resources js files on npm publish by specifying included files in package.json (https://github.com/maptiler/tileserver-gl/pull/1490) by @acalcutt
+
+
 ## 5.2.1
 * Fix invalid Delete of 'prepare' Script required for Light Build (https://github.com/maptiler/tileserver-gl/pull/1489) by @okimiko
 
