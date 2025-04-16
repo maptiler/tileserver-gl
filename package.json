@@ -5,6 +5,17 @@
   "main": "src/main.js",
   "bin": "src/main.js",
   "type": "module",
+  "files": [
+    "docs",
+    "src",
+    "public",
+    "test",
+    "package.json",
+    "package-lock.json",
+    "CHANGELOG.md",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "prepare": "npm run copy:maplibre && npm run copy:maplibre-inspect && npm run copy:mapbox-rtl-text && npm run copy:leaflet && npm run copy:leaflet-hash",
     "copy:maplibre": "copyfiles -EVf node_modules/maplibre-gl/dist/maplibre-gl.js node_modules/maplibre-gl/dist/maplibre-gl.js.map node_modules/maplibre-gl/dist/maplibre-gl.css public/resources/",
