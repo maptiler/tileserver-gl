@@ -65,7 +65,7 @@
     "proj4": "2.15.0",
     "sanitize-filename": "1.6.3",
     "semver": "^7.6.3",
-    "sharp": "0.33.5",
+    "sharp": "0.34.1",
     "tileserver-gl-styles": "2.0.0"
   },
   "devDependencies": {
