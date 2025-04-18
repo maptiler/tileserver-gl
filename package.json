@@ -38,7 +38,7 @@
     "@mapbox/mapbox-gl-rtl-text": "0.3.0",
     "@mapbox/mbtiles": "0.12.1",
     "@mapbox/polyline": "^1.2.1",
-    "@mapbox/sphericalmercator": "1.2.0",
+    "@mapbox/sphericalmercator": "2.0.1",
     "@mapbox/vector-tile": "2.0.3",
     "@maplibre/maplibre-gl-inspect": "1.7.0",
     "@maplibre/maplibre-gl-native": "6.0.0",
