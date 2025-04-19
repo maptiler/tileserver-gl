@@ -35,7 +35,6 @@ export function allowedScales(scale, maxScale = 9) {
     return 1;
   }
 
-  // eslint-disable-next-line security/detect-non-literal-regexp
   const regex = new RegExp(`^[2-${maxScale}]x$`);
   if (!regex.test(scale)) {
     return null;
@@ -152,7 +151,7 @@ export function getTileUrls(
     const hostParts = urlObject.host.split('.');
     const relativeSubdomainsUsable =
       hostParts.length > 1 &&
-      !/^([0-9]{1,3}\.){3}[0-9]{1,3}(\:[0-9]+)?$/.test(urlObject.host);
+      !/^([0-9]{1,3}\.){3}[0-9]{1,3}(:[0-9]+)?$/.test(urlObject.host);
     const newDomains = [];
     for (const domain of domains) {
       if (domain.indexOf('*') !== -1) {
@@ -238,7 +237,7 @@ export function fixTileJSONCenter(tileJSON) {
 export function readFile(filename) {
   return new Promise((resolve, reject) => {
     const sanitizedFilename = path.normalize(filename); // Normalize path, remove ..
-    // eslint-disable-next-line security/detect-non-literal-fs-filename
+
     fs.readFile(String(sanitizedFilename), (err, data) => {
       if (err) {
         reject(err);
@@ -260,7 +259,7 @@ export function readFile(filename) {
  */
 async function getFontPbf(allowedFonts, fontPath, name, range, fallbacks) {
   if (!allowedFonts || (allowedFonts[name] && fallbacks)) {
-    const fontMatch = name?.match(/^[\p{L}\p{N} \-\.~!*'()@&=+,#$\[\]]+$/u);
+    const fontMatch = name?.match(/^[\p{L}\p{N} \-.~!*'()@&=+,#$[\]]+$/u);
     const sanitizedName = fontMatch?.[0] || 'invalid';
     if (!name || typeof name !== 'string' || name.trim() === '' || !fontMatch) {
       console.error(
@@ -394,7 +393,8 @@ export function isValidHttpUrl(string) {
 
   try {
     url = new URL(string);
-  } catch (_) {
+  } catch (e) {
+    void e;
     return false;
   }
 
@@ -412,15 +412,19 @@ export function isValidHttpUrl(string) {
  */
 export async function fetchTileData(source, sourceType, z, x, y) {
   if (sourceType === 'pmtiles') {
-    return await new Promise(async (resolve) => {
+    try {
       const tileinfo = await getPMtilesTile(source, z, x, y);
-      if (!tileinfo?.data) return resolve(null);
-      resolve({ data: tileinfo.data, headers: tileinfo.header });
-    });
+      if (!tileinfo?.data) return null;
+      return { data: tileinfo.data, headers: tileinfo.header };
+    } catch (error) {
+      console.error('Error fetching PMTiles tile:', error);
+      return null; // Or throw the error if you want to propagate it
+    }
   } else if (sourceType === 'mbtiles') {
-    return await new Promise((resolve) => {
+    return new Promise((resolve) => {
       source.getTile(z, x, y, (err, tileData, tileHeader) => {
         if (err) {
+          console.error('Error fetching MBTiles tile:', err);
           return resolve(null);
         }
         resolve({ data: tileData, headers: tileHeader });
