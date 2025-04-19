@@ -20,7 +20,7 @@ import clone from 'clone';
 import Color from 'color';
 import express from 'express';
 import sanitize from 'sanitize-filename';
-import SphericalMercator from '@mapbox/sphericalmercator';
+import { SphericalMercator } from '@mapbox/sphericalmercator';
 import mlgl from '@maplibre/maplibre-gl-native';
 import polyline from '@mapbox/polyline';
 import proj4 from 'proj4';

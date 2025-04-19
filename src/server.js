@@ -10,7 +10,7 @@ import cors from 'cors';
 import enableShutdown from 'http-shutdown';
 import express from 'express';
 import handlebars from 'handlebars';
-import SphericalMercator from '@mapbox/sphericalmercator';
+import { SphericalMercator } from '@mapbox/sphericalmercator';
 const mercator = new SphericalMercator();
 import morgan from 'morgan';
 import { serve_data } from './serve_data.js';

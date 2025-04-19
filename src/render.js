@@ -1,8 +1,7 @@
 'use strict';
 
 import { createCanvas, Image } from 'canvas';
-
-import SphericalMercator from '@mapbox/sphericalmercator';
+import { SphericalMercator } from '@mapbox/sphericalmercator';
 
 const mercator = new SphericalMercator();
 

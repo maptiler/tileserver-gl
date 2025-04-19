@@ -8,6 +8,9 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
       build-essential \
       ca-certificates \
       curl \
+      rsync \
+      jq \
+      unzip \
       gnupg \
       pkg-config \
       xvfb \

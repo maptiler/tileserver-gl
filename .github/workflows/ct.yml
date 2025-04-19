@@ -40,6 +40,9 @@ jobs:
       - name: Install dependencies 🚀
         run: npm ci --prefer-offline --no-audit
 
+      - name: Test Publish
+        run: npm publish --dry-run
+
       - name: Pull test data 📦
         run: >-
           wget -O test_data.zip
@@ -73,6 +76,10 @@ jobs:
 
       - name: Install node dependencies
         run: npm ci --prefer-offline --no-audit
+        working-directory: ./light
+
+      - name: Test Light Publish
+        run: npm publish --dry-run
         working-directory: ./light
 
       - name: Test Light Version to Docker Hub
