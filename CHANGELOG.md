@@ -1,5 +1,9 @@
 # tileserver-gl changelog
 
+## 5.3.1-pre.0
+* bump maplibre-gl from 5.4.0 to 5.5.0 (https://github.com/maptiler/tileserver-gl/pull/1546). Fixes (https://github.com/maptiler/tileserver-gl/issues/1539) and (https://github.com/maptiler/tileserver-gl/issues/1530)
+* bump @maplibre/maplibre-gl-native from 6.0.0 to 6.1.0 (https://github.com/maptiler/tileserver-gl/pull/1536).
+
 ## 5.3.0
 * Fix - Include public\resources js files on npm publish by specifying included files in package.json (https://github.com/maptiler/tileserver-gl/pull/1490) by @acalcutt
 * Fix - Various Updates and Fix RTL Plugin Load (https://github.com/maptiler/tileserver-gl/pull/1489) by @okimiko
