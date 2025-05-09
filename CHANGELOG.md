@@ -1,6 +1,6 @@
 # tileserver-gl changelog
 
-## 5.3.1-pre.0
+## 5.3.1
 * bump maplibre-gl from 5.4.0 to 5.5.0 (https://github.com/maptiler/tileserver-gl/pull/1546). Fixes (https://github.com/maptiler/tileserver-gl/issues/1539) and (https://github.com/maptiler/tileserver-gl/issues/1530)
 * bump @maplibre/maplibre-gl-native from 6.0.0 to 6.1.0 (https://github.com/maptiler/tileserver-gl/pull/1536).
 
