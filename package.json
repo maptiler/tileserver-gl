@@ -84,7 +84,7 @@
     "node-addon-api": "^8",
     "prettier": "^3.5.3",
     "should": "^13.2.3",
-    "supertest": "^7.1.0",
+    "supertest": "^7.1.1",
     "yaml-lint": "^1.7.0"
   },
   "keywords": [
