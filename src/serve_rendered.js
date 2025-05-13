@@ -1005,7 +1005,7 @@ export const serve_rendered = {
         );
       }
       const info = clone(item.tileJSON);
-      info.tileSize = (tileSize != undefined ? tileSize : 256);
+      info.tileSize = tileSize != undefined ? tileSize : 256;
       info.tiles = getTileUrls(
         req,
         info.tiles,
