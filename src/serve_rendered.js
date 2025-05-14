@@ -1292,7 +1292,6 @@ export const serve_rendered = {
       attribution: '',
       minzoom: 0,
       maxzoom: 20,
-      sparse: false,
       bounds: [-180, -85.0511, 180, 85.0511],
       format: 'png',
       type: 'baselayer',
