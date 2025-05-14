@@ -270,13 +270,21 @@ async function start(opts) {
             function dataResolver(styleSourceId) {
               let fileType;
               let inputFile;
+              let sparse = false;
               for (const id of Object.keys(data)) {
-                fileType = Object.keys(data[id])[0];
-                if (styleSourceId == id) {
-                  inputFile = data[id][fileType];
-                  break;
-                } else if (data[id][fileType] == styleSourceId) {
-                  inputFile = data[id][fileType];
+                for (const key of Object.keys(data[id])) {
+                  if (key === 'pmtiles' || key === 'mbtiles') {
+                    fileType = key;
+                    if (styleSourceId == id) {
+                      inputFile = data[id][fileType];
+                    } else if (data[id][fileType] == styleSourceId) {
+                      inputFile = data[id][fileType];
+                    }
+                  } else if (key === 'sparse') {
+                    sparse = data[id][key];
+                  }
+                }
+                if (fileType && inputFile) {
                   break;
                 }
               }
@@ -284,7 +292,7 @@ async function start(opts) {
                 inputFile = path.resolve(options.paths[fileType], inputFile);
               }
 
-              return { inputFile, fileType };
+              return { inputFile, fileType, sparse };
             },
           ),
         );

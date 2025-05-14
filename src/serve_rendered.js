@@ -1123,7 +1123,16 @@ export const serve_rendered = {
                 x,
                 y,
               );
-              if (fetchTile == null) {
+              if (fetchTile == null && sourceInfo.sparse == true) {
+                if (verbose) {
+                  console.log(
+                    'fetchTile warning on %s, sparse response',
+                    req.url,
+                  );
+                }
+                callback();
+                return;
+              } else if (fetchTile == null) {
                 if (verbose) {
                   console.log(
                     'fetchTile error on %s, serving empty response',
@@ -1283,6 +1292,7 @@ export const serve_rendered = {
       attribution: '',
       minzoom: 0,
       maxzoom: 20,
+      sparse: false,
       bounds: [-180, -85.0511, 180, 85.0511],
       format: 'png',
       type: 'baselayer',
@@ -1309,6 +1319,7 @@ export const serve_rendered = {
 
     for (const name of Object.keys(styleJSON.sources)) {
       let sourceType;
+      let sparse;
       let source = styleJSON.sources[name];
       let url = source.url;
       if (
@@ -1333,6 +1344,7 @@ export const serve_rendered = {
         if (dataInfo.inputFile) {
           inputFile = dataInfo.inputFile;
           sourceType = dataInfo.fileType;
+          sparse = dataInfo.sparse;
         } else {
           console.error(`ERROR: data "${inputFile}" not found!`);
           process.exit(1);
@@ -1361,6 +1373,7 @@ export const serve_rendered = {
           const type = source.type;
           Object.assign(source, metadata);
           source.type = type;
+          source.sparse = sparse;
           source.tiles = [
             // meta url which will be detected when requested
             `pmtiles://${name}/{z}/{x}/{y}.${metadata.format || 'pbf'}`,
@@ -1400,6 +1413,7 @@ export const serve_rendered = {
           const type = source.type;
           Object.assign(source, info);
           source.type = type;
+          source.sparse = sparse;
           source.tiles = [
             // meta url which will be detected when requested
             `mbtiles://${name}/{z}/{x}/{y}.${info.format || 'pbf'}`,
