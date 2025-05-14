@@ -76,7 +76,7 @@
     "chai": "5.2.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^10.1.5",
-    "eslint-plugin-jsdoc": "^50.6.14",
+    "eslint-plugin-jsdoc": "^50.6.17",
     "eslint-plugin-prettier": "^5.4.0",
     "eslint-plugin-security": "^1.7.1",
     "lint-staged": "^16.0.0",
