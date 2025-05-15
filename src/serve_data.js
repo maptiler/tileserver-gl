@@ -108,7 +108,11 @@ export const serve_data = {
         x,
         y,
       );
-      if (fetchTile == null) return res.status(204).send();
+      if (fetchTile == null && item.tileJSON.sparse) {
+        return res.status(410).send();
+      } else if (fetchTile == null) {
+        return res.status(204).send();
+      }
 
       let data = fetchTile.data;
       let headers = fetchTile.headers;
@@ -366,51 +370,35 @@ export const serve_data = {
 
     let source;
     let sourceType;
+    tileJSON['name'] = id;
+    tileJSON['format'] = 'pbf';
+    tileJSON['encoding'] = params['encoding'];
+    tileJSON['tileSize'] = params['tileSize'];
+    tileJSON['sparse'] = params['sparse'];
+
     if (inputType === 'pmtiles') {
       source = openPMtiles(inputFile);
       sourceType = 'pmtiles';
       const metadata = await getPMtilesInfo(source);
-
-      tileJSON['encoding'] = params['encoding'];
-      tileJSON['tileSize'] = params['tileSize'];
-      tileJSON['name'] = id;
-      tileJSON['format'] = 'pbf';
       Object.assign(tileJSON, metadata);
-
-      tileJSON['tilejson'] = '2.0.0';
-      delete tileJSON['filesize'];
-      delete tileJSON['mtime'];
-      delete tileJSON['scheme'];
-
-      Object.assign(tileJSON, params.tilejson || {});
-      fixTileJSONCenter(tileJSON);
-
-      if (options.dataDecoratorFunc) {
-        tileJSON = options.dataDecoratorFunc(id, 'tilejson', tileJSON);
-      }
     } else if (inputType === 'mbtiles') {
       sourceType = 'mbtiles';
       const mbw = await openMbTilesWrapper(inputFile);
       const info = await mbw.getInfo();
       source = mbw.getMbTiles();
-      tileJSON['encoding'] = params['encoding'];
-      tileJSON['tileSize'] = params['tileSize'];
-      tileJSON['name'] = id;
-      tileJSON['format'] = 'pbf';
-
       Object.assign(tileJSON, info);
+    }
 
-      tileJSON['tilejson'] = '2.0.0';
-      delete tileJSON['filesize'];
-      delete tileJSON['mtime'];
-      delete tileJSON['scheme'];
+    delete tileJSON['filesize'];
+    delete tileJSON['mtime'];
+    delete tileJSON['scheme'];
+    tileJSON['tilejson'] = '3.0.0';
 
-      Object.assign(tileJSON, params.tilejson || {});
-      fixTileJSONCenter(tileJSON);
+    Object.assign(tileJSON, params.tilejson || {});
+    fixTileJSONCenter(tileJSON);
 
-      if (options.dataDecoratorFunc) {
-        tileJSON = options.dataDecoratorFunc(id, 'tilejson', tileJSON);
-      }
+    if (options.dataDecoratorFunc) {
+      tileJSON = options.dataDecoratorFunc(id, 'tilejson', tileJSON);
     }
 
     repo[id] = {
