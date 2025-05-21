@@ -55,11 +55,6 @@ RUN npm config set maxsockets 1 && \
 
 FROM ubuntu:jammy AS final
 
-ENV \
-    NODE_ENV="production" \
-    CHOKIDAR_USEPOLLING=1 \
-    CHOKIDAR_INTERVAL=500
-
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 RUN export DEBIAN_FRONTEND=noninteractive && \
@@ -81,17 +76,27 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
       libpixman-1-0 \
       libcurl4 \
       librsvg2-2 \
-      libpango-1.0-0 && \
+      libpango-1.0-0 \
+      libjemalloc2 && \
     mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
     echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list && \
     apt-get -qq update && \
     apt-get install -y --no-install-recommends --no-install-suggests nodejs && \
     npm i -g npm@latest && \
+    # Create appropriate symlinks if needed
+    ln -sf $(find /usr -name "libjemalloc.so*" | head -n 1) /usr/lib/libjemalloc.so && \
     apt-get -y remove curl gnupg && \
     apt-get -y --purge autoremove && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+ENV \
+    NODE_ENV="production" \
+    CHOKIDAR_USEPOLLING=1 \
+    CHOKIDAR_INTERVAL=500 \
+    LD_PRELOAD="/usr/lib/libjemalloc.so" \
+    MALLOC_CONF="background_thread:true,metadata_thp:auto,dirty_decay_ms:5000,muzzy_decay_ms:5000"
 
 COPY --from=builder /usr/src/app /usr/src/app
 
