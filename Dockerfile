@@ -85,7 +85,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get install -y --no-install-recommends --no-install-suggests nodejs && \
     npm i -g npm@latest && \
     # Create appropriate symlinks if needed
-    ln -sf $(find /usr -name "libjemalloc.so*" | head -n 1) /usr/lib/libjemalloc.so && \
+    ln -sf "$(find /usr -name "libjemalloc.so*" | head -n 1)" /usr/lib/libjemalloc.so && \
     apt-get -y remove curl gnupg && \
     apt-get -y --purge autoremove && \
     apt-get clean && \
