@@ -243,23 +243,46 @@ For example::
 
 The data source does not need to be specified here unless you explicitly want to serve the raw data.
 
-Serving Terrain Tiles
---------------
+Data Source Options
+-------------------
 
-If you serve terrain tiles, it is possible to configure an ``encoding`` with ``mapbox`` or ``terrarium`` to enable a terrain preview mode and the ``elevation`` api for the ``data`` endpoint.
+Within the top-level ``data`` object in your configuration, each defined data source (e.g., `terrain`, `sparse_vector_tiles`) can have several key properties. These properties define how *tileserver-gl* processes and serves the tiles from that source.
 
 For example::
 
   "data": {
-    "terrain1": {
+    "terrain": {
       "mbtiles": "terrain1.mbtiles",
-      "encoding": "mapbox"
+      "encoding": "mapbox",
+      "tileSize": 512,
+      "sparse": true
     },
-    "terrain2": {
-      "pmtiles": "terrain2.pmtiles"
-      "encoding": "terrarium"
+    "sparse_vector_tiles": {
+      "pmtiles": "custom_osm.pmtiles",
+      "sparse": true
     }
   }
+
+.. note::
+    Note that configuration options may be overridden by corresponding metadata found directly within the MBTiles or PMTiles file itself.
+
+Here are the available options for each data source:
+
+``encoding`` (string)
+    Applicable primarily to terrain tiles. Configures the expected encoding of the terrain data.
+    Setting this to ``mapbox`` or ``terrarium`` enables a terrain preview mode and the ``elevation`` API for the ``data`` endpoint (if applicable to the source).
+
+``tileSize`` (integer)
+    Specifies the expected pixel dimensions of the tiles within this data source.
+    This option is crucial if your source data uses 512x512 pixel tiles, as *tileserver-gl* typically assumes 256x256 by default.
+    Allowed values: ``256``, ``512``.
+    Default: ``256``.
+
+``sparse`` (boolean)
+    Controls the HTTP status code returned by *tileserver-gl* when a requested tile is not found in the source.
+    When ``true``, a ``410 Gone`` status is returned for missing tiles. This behaviour is beneficial for clients like MapLibre-GL-JS or MapLibre-Native, as it signals them to attempt loading tiles from lower zoom levels (overzooming) when a higher-zoom tile is explicitly missing.
+    When ``false`` (default), *tileserver-gl* returns a ``204 No Content`` for missing tiles, which typically signals the client to stop trying to load a substitute.
+    Default: ``false``.
 
 Referencing local files from style JSON
 =======================================
