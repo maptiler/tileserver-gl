@@ -244,7 +244,7 @@ For example::
 The data source does not need to be specified here unless you explicitly want to serve the raw data.
 
 Data Source Options
--------------------
+--------------
 
 Within the top-level ``data`` object in your configuration, each defined data source (e.g., `terrain`, `sparse_vector_tiles`) can have several key properties. These properties define how *tileserver-gl* processes and serves the tiles from that source.
 
@@ -264,12 +264,12 @@ For example::
   }
 
 .. note::
-    Note that configuration options may be overridden by corresponding metadata found directly within the MBTiles or PMTiles file itself.
+    Note that configuration options will be overridden by corresponding metadata found directly within the MBTiles or PMTiles file, if it exists.
 
 Here are the available options for each data source:
 
 ``encoding`` (string)
-    Applicable primarily to terrain tiles. Configures the expected encoding of the terrain data.
+    Applicable to terrain tiles. Configures the expected encoding of the terrain data.
     Setting this to ``mapbox`` or ``terrarium`` enables a terrain preview mode and the ``elevation`` API for the ``data`` endpoint (if applicable to the source).
 
 ``tileSize`` (integer)

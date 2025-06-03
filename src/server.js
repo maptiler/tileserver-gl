@@ -285,7 +285,6 @@ async function start(opts) {
                   currentFileType = 'mbtiles';
                   currentInputFileValue = sourceData.mbtiles;
                 }
-                // Add other file types here if necessary (e.g., 'geotiff')
 
                 if (currentFileType && currentInputFileValue) {
                   // Check if this source matches the styleSourceId
@@ -317,7 +316,7 @@ async function start(opts) {
                   inputFile: undefined,
                   fileType: undefined,
                   sparse: false,
-                }; // Or throw new Error()
+                };
               }
 
               if (!isValidHttpUrl(resolvedInputFile)) {
@@ -335,8 +334,6 @@ async function start(opts) {
                   console.warn(
                     `Path configuration missing for fileType: ${resolvedFileType}. Using relative path for: ${resolvedInputFile}`,
                   );
-                  // Or you might want to throw an error here if path resolution is critical
-                  // resolvedInputFile = path.resolve(resolvedInputFile); // Resolves against CWD if base path is missing
                 }
               }
 
