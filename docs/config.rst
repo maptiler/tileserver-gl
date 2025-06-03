@@ -263,9 +263,6 @@ For example::
     }
   }
 
-.. note::
-    Note that these configuration options will be overridden by metadata in the MBTiles or PMTiles file, if they exist in the metadata.
-
 Here are the available options for each data source:
 
 ``encoding`` (string)
@@ -283,6 +280,9 @@ Here are the available options for each data source:
     When ``true``, a ``410 Gone`` status is returned for missing tiles. This behaviour is beneficial for clients like MapLibre-GL-JS or MapLibre-Native, as it signals them to attempt loading tiles from lower zoom levels (overzooming) when a higher-zoom tile is explicitly missing.
     When ``false`` (default), *tileserver-gl* returns a ``204 No Content`` for missing tiles, which typically signals the client to stop trying to load a substitute.
     Default: ``false``.
+
+.. note::
+    Note that these configuration options will be overridden by metadata in the MBTiles or PMTiles file, if they exist in the metadata.
 
 Referencing local files from style JSON
 =======================================
