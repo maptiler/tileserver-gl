@@ -34,7 +34,7 @@
     "docker": "docker build . && docker run --rm -i -p 8080:8080 $(docker build -q .)"
   },
   "dependencies": {
-    "@jsse/pbfont": "^0.2.2",
+    "@jsse/pbfont": "^0.2.8",
     "@mapbox/mapbox-gl-rtl-text": "0.3.0",
     "@mapbox/mbtiles": "0.12.1",
     "@mapbox/polyline": "^1.2.1",
@@ -76,7 +76,7 @@
     "chai": "5.2.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^10.1.5",
-    "eslint-plugin-jsdoc": "^50.6.17",
+    "eslint-plugin-jsdoc": "^50.7.1",
     "eslint-plugin-prettier": "^5.4.0",
     "eslint-plugin-security": "^1.7.1",
     "lint-staged": "^16.1.0",
