@@ -282,7 +282,7 @@ Here are the available options for each data source:
     Default: ``false``.
 
 .. note::
-    Note that these configuration options will be overridden by metadata in the MBTiles or PMTiles file, if they exist in the metadata.
+    These configuration options will be overridden by metadata in the MBTiles or PMTiles file. if corresponding properties exist in the file's metadata, you do not need to specify them in the data configuration.
 
 Referencing local files from style JSON
 =======================================
