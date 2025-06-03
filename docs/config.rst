@@ -264,7 +264,7 @@ For example::
   }
 
 .. note::
-    Note that configuration options will be overridden by corresponding metadata found directly within the MBTiles or PMTiles file, if it exists.
+    Note that these configuration options will be overridden by metadata in the MBTiles or PMTiles file, if they exist in the metadata.
 
 Here are the available options for each data source:
 
