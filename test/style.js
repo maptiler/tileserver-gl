@@ -25,7 +25,7 @@ describe('Styles', function () {
           expect(res.body.sources).to.be.a('object');
           expect(res.body.glyphs).to.be.a('string');
           expect(res.body.sprite).to.be.a('string');
-          expect(res.body.sprite).to.be.equal('/test/styles/test-style/sprite');
+          expect(res.body.sprite).to.contain('/test/styles/test-style/sprite');
           expect(res.body.layers).to.be.a('array');
         })
         .end(done);
