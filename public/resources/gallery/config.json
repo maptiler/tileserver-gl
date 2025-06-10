@@ -1,0 +1,32 @@
+{
+  "options": {
+    "paths": {
+      "root": "/usr/src/app/node_modules/tileserver-gl-styles",
+      "fonts": "fonts",
+      "styles": "styles",
+      "mbtiles": "/data",
+      "pmtiles": "/data"
+    },
+    "staticAttributionText": "© OpenStreetMap",
+    "watermark": "THIS IS A TEST WATERMARK",
+    "allowRemoteMarkerIcons": true
+  },
+  "styles": {
+    "basic-preview": {
+      "style": "basic-preview/style.json",
+      "tilejson": {
+        "bounds": [
+          8.275,
+          47.225,
+          8.8,
+          47.533
+        ]
+      }
+    }
+  },
+  "data": {
+    "v3": {
+      "mbtiles": "/usr/src/app/public/resources/gallery/zurich_switzerland.mbtiles"
+    }
+  }
+}
