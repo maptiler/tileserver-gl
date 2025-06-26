@@ -1283,6 +1283,11 @@ export const serve_rendered = {
         if (layer.paint['fill-extrusion-base']) {
           layer.paint['fill-extrusion-base'] = 0;
         }
+
+        // --- Remove hillshade properties incompatible with MapLibre Native ---
+        if (layer.paint['hillshade-method']) {
+          delete layer.paint['hillshade-method'];
+        }
       }
     }
 
