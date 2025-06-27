@@ -1288,6 +1288,15 @@ export const serve_rendered = {
         if (layer.paint['hillshade-method']) {
           delete layer.paint['hillshade-method'];
         }
+        if (layer.paint['hillshade-illumination-direction']) {
+          delete layer.paint['hillshade-illumination-direction'];
+        }
+        if (layer.paint['hillshade-highlight-color']) {
+          delete layer.paint['hillshade-highlight-color'];
+        }
+        if (Array.isArray(layer.paint['hillshade-shadow-color'])) {
+          delete layer.paint['hillshade-shadow-color'];
+        }
       }
     }
 
