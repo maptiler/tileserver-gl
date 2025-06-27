@@ -1276,6 +1276,8 @@ export const serve_rendered = {
 
     for (const layer of styleJSON.layers || []) {
       if (layer && layer.paint) {
+        const layerIdForWarning = layer.id || 'unnamed-layer';
+
         // Remove (flatten) 3D buildings
         if (layer.paint['fill-extrusion-height']) {
           layer.paint['fill-extrusion-height'] = 0;
@@ -1293,18 +1295,28 @@ export const serve_rendered = {
 
         for (const prop of hillshadePropertiesToRemove) {
           if (prop in layer.paint) {
-            console.log(
-              `Warning: '${prop}' in the style '${id}' is not supported by maplibre-native. This option will be removed in rendered images.`,
-            );
+            if (verbose) {
+              console.warn(
+                `Warning: Layer '${layerIdForWarning}' in style '${id}' has property '${prop}'. ` +
+                  `This property is not supported by MapLibre Native. ` +
+                  `It will be removed in rendered images. ` +
+                  `Note: This property will still work with MapLibre GL JS vector maps.`,
+              );
+            }
             delete layer.paint[prop];
           }
         }
 
-        // --- Remove 'hillshade-shadow-color' if it is an array. it can only be a string in MapLibre Native ---
+        // --- Remove 'hillshade-shadow-color' if it is an array. It can only be a string in MapLibre Native ---
         if (Array.isArray(layer.paint['hillshade-shadow-color'])) {
-          console.log(
-            `Warning: 'hillshade-shadow-color' as an array in the style '${id}' is not supported by maplibre-native. This option will be removed in rendered images.`,
-          );
+          if (verbose) {
+            console.warn(
+              `Warning: Layer '${layerIdForWarning}' in style '${id}' has property 'hillshade-shadow-color'. ` +
+                `An array value is not supported by MapLibre Native for this property (expected string/color). ` +
+                `It will be removed in rendered images. ` +
+                `Note: Using an array for this property will still work with MapLibre GL JS vector maps.`,
+            );
+          }
           delete layer.paint['hillshade-shadow-color'];
         }
       }
