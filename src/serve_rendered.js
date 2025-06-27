@@ -1286,15 +1286,35 @@ export const serve_rendered = {
 
         // --- Remove hillshade properties incompatible with MapLibre Native ---
         if (layer.paint['hillshade-method']) {
+          if (verbose) {
+            console.log(
+              "Warning: 'hillshade-method' is not supported by maplibre-native. This option will be removed in raster images.",
+            );
+          }
           delete layer.paint['hillshade-method'];
         }
         if (layer.paint['hillshade-illumination-direction']) {
+          if (verbose) {
+            console.log(
+              "Warning: 'hillshade-illumination-direction' is not supported by maplibre-native. This option will be removed in raster images.",
+            );
+          }
           delete layer.paint['hillshade-illumination-direction'];
         }
         if (layer.paint['hillshade-highlight-color']) {
+          if (verbose) {
+            console.log(
+              "Warning: 'hillshade-highlight-color' is not supported by maplibre-native. This option will be removed in raster images.",
+            );
+          }
           delete layer.paint['hillshade-highlight-color'];
         }
         if (Array.isArray(layer.paint['hillshade-shadow-color'])) {
+          if (verbose) {
+            console.log(
+              "Warning: 'hillshade-shadow-color' as an array is not supported by maplibre-native. This option will be removed in raster images.",
+            );
+          }
           delete layer.paint['hillshade-shadow-color'];
         }
       }
