@@ -1302,6 +1302,7 @@ export const serve_rendered = {
           }
         }
 
+        // --- Remove 'hillshade-shadow-color' if it is an array. it can only be a string in MapLibre Native ---
         if (Array.isArray(layer.paint['hillshade-shadow-color'])) {
           if (verbose) {
             console.log(
