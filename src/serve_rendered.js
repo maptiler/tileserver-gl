@@ -1285,27 +1285,31 @@ export const serve_rendered = {
         }
 
         // --- Remove hillshade properties incompatible with MapLibre Native ---
-		const hillshadePropertiesToRemove = [
-		  'hillshade-method',
-		  'hillshade-illumination-direction',
-		  'hillshade-highlight-color',
-		];
+        const hillshadePropertiesToRemove = [
+          'hillshade-method',
+          'hillshade-illumination-direction',
+          'hillshade-highlight-color',
+        ];
 
-		for (const prop of hillshadePropertiesToRemove) {
-		  if (prop in layer.paint) {
-			if (verbose) {
-			  console.log(`Warning: '${prop}' is not supported by maplibre-native. This option will be removed in raster images.`);
-			}
-			delete layer.paint[prop];
-		  }
-		}
+        for (const prop of hillshadePropertiesToRemove) {
+          if (prop in layer.paint) {
+            if (verbose) {
+              console.log(
+                `Warning: '${prop}' is not supported by maplibre-native. This option will be removed in raster images.`,
+              );
+            }
+            delete layer.paint[prop];
+          }
+        }
 
-		if (Array.isArray(layer.paint['hillshade-shadow-color'])) {
-		  if (verbose) {
-			console.log("Warning: 'hillshade-shadow-color' as an array is not supported by maplibre-native. This option will be removed in raster images.");
-		  }
-		  delete layer.paint['hillshade-shadow-color'];
-		}
+        if (Array.isArray(layer.paint['hillshade-shadow-color'])) {
+          if (verbose) {
+            console.log(
+              "Warning: 'hillshade-shadow-color' as an array is not supported by maplibre-native. This option will be removed in raster images.",
+            );
+          }
+          delete layer.paint['hillshade-shadow-color'];
+        }
       }
     }
 
