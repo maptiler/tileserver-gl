@@ -1293,22 +1293,18 @@ export const serve_rendered = {
 
         for (const prop of hillshadePropertiesToRemove) {
           if (prop in layer.paint) {
-            if (verbose) {
-              console.log(
-                `Warning: '${prop}' is not supported by maplibre-native. This option will be removed in raster images.`,
-              );
-            }
+            console.log(
+              `Warning: '${prop}' in the style '${id}' is not supported by maplibre-native. This option will be removed in rendered images.`,
+            );
             delete layer.paint[prop];
           }
         }
 
         // --- Remove 'hillshade-shadow-color' if it is an array. it can only be a string in MapLibre Native ---
         if (Array.isArray(layer.paint['hillshade-shadow-color'])) {
-          if (verbose) {
-            console.log(
-              "Warning: 'hillshade-shadow-color' as an array is not supported by maplibre-native. This option will be removed in raster images.",
-            );
-          }
+          console.log(
+            `Warning: 'hillshade-shadow-color' as an array in the style '${id}' is not supported by maplibre-native. This option will be removed in rendered images.`,
+          );
           delete layer.paint['hillshade-shadow-color'];
         }
       }
