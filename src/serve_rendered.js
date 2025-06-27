@@ -1280,9 +1280,25 @@ export const serve_rendered = {
 
         // Remove (flatten) 3D buildings
         if (layer.paint['fill-extrusion-height']) {
+          if (verbose) {
+            console.warn(
+              `Warning: Layer '${layerIdForWarning}' in style '${id}' has property 'fill-extrusion-height'. ` +
+                `3D extrusion may appear distorted or misleading when rendered as a static image due to camera angle limitations. ` +
+                `It will be flattened (set to 0) in rendered images. ` +
+                `Note: This property will still work with MapLibre GL JS vector maps.`,
+            );
+          }
           layer.paint['fill-extrusion-height'] = 0;
         }
         if (layer.paint['fill-extrusion-base']) {
+          if (verbose) {
+            console.warn(
+              `Warning: Layer '${layerIdForWarning}' in style '${id}' has property 'fill-extrusion-base'. ` +
+                `3D extrusion may appear distorted or misleading when rendered as a static image due to camera angle limitations. ` +
+                `It will be flattened (set to 0) in rendered images. ` +
+                `Note: This property will still work with MapLibre GL JS vector maps.`,
+            );
+          }
           layer.paint['fill-extrusion-base'] = 0;
         }
 
