@@ -45,7 +45,7 @@
     "@maplibre/maplibre-gl-style-spec": "23.3.0",
     "@sindresorhus/fnv1a": "3.1.0",
     "advanced-pool": "0.3.3",
-    "axios": "^1.10.0",
+    "axios": "^1.11.0",
     "canvas": "3.1.2",
     "chokidar": "4.0.3",
     "clone": "2.1.2",
