@@ -435,7 +435,7 @@ function start(opts) {
             }
             data['server_version'] =
               `${packageJson.name} v${packageJson.version}`;
-            data['public_url'] = opts.publicUrl || '/';
+            data['public_url'] = `${getPublicUrl(opts.publicUrl, req)}`;
             data['is_light'] = isLight;
             data['key_query_part'] = req.query.key
               ? `key=${encodeURIComponent(req.query.key)}&amp;`
@@ -576,16 +576,7 @@ function start(opts) {
       return null;
     }
 
-    let baseUrl;
-    if (opts.publicUrl) {
-      baseUrl = opts.publicUrl;
-    } else {
-      baseUrl = `${
-        req.get('X-Forwarded-Protocol')
-          ? req.get('X-Forwarded-Protocol')
-          : req.protocol
-      }://${req.get('host')}/`;
-    }
+    let baseUrl = `${getPublicUrl(opts.publicUrl, req)}`;
 
     return {
       ...wmts,
