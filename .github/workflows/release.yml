@@ -21,7 +21,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-node@v4
         with:
@@ -51,7 +51,7 @@ jobs:
       PACKAGE_VERSION: ${{ needs.release-check.outputs.version }}
     steps:
       - name: Check out repository ✨
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Update apt-get 🚀
         run: sudo apt-get update -qq
