@@ -79,7 +79,7 @@
     "eslint-plugin-jsdoc": "^51.4.1",
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-security": "^1.7.1",
-    "lint-staged": "^16.1.4",
+    "lint-staged": "^16.1.5",
     "mocha": "^11.7.1",
     "node-addon-api": "^8",
     "prettier": "^3.6.2",
