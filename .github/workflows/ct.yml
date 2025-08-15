@@ -7,29 +7,37 @@ permissions:
   checks: write
   contents: read
 
+env:
+  LOCAL_BASE_IMAGE_NAME: test-tileserver-gl
+  LOCAL_MANIFEST_NAME: test-tileserver-gl-manifest
+
 jobs:
-  ct:
-    runs-on: ubuntu-22.04
+  # Job 1: Build individual architecture images locally
+  build_arch_images_local:
+    name: Build and Tag ${{ matrix.runs-on }} Locally
+    runs-on: ${{ matrix.runs-on }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runs-on: ubuntu-22.04
+            arch: amd64
+          - runs-on: ubuntu-22.04-arm
+            arch: arm64
+
     steps:
-      - name: Check out repository ✨ (non-dependabot)
-        if: ${{ github.actor != 'dependabot[bot]' }}
-        uses: actions/checkout@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Check out repository 🎉 (dependabot)
-        if: ${{ github.actor == 'dependabot[bot]' }}
-        uses: actions/checkout@v5
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Update apt-get 🚀
-        run: sudo apt-get update -qq
+      - name: Get OS Architecture
+        run: uname -m
 
       - name: Install dependencies (Ubuntu) 🚀
         run: >-
           sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev
           libgif-dev build-essential g++ xvfb libgles2-mesa-dev libgbm-dev
           libxxf86vm-dev
-
       - name: Setup node env 📦
         uses: actions/setup-node@v4
         with:
@@ -54,22 +62,27 @@ jobs:
       - name: Run tests 🧪
         run: xvfb-run --server-args="-screen 0 1024x768x24" npm test
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: 'arm64'
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          install: true
 
-      - name: Test Docker Build
+      - name: Build and tag ${{ matrix.arch }} image locally
+        id: build_local_arch # Give it a unique ID for this job
         uses: docker/build-push-action@v6
         with:
           context: .
+          platforms: linux/${{ matrix.arch }}
+          tags: ${{ env.LOCAL_BASE_IMAGE_NAME }}:${{ matrix.arch }}
+          outputs: type=image,push=false,name-canonical=true
           push: false
-          platforms: linux/arm64,linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Print Local Image Info for ${{ matrix.arch }}
+        run: |
+          echo "Built and tagged image locally for ${{ matrix.arch }} as ${{ env.LOCAL_BASE_IMAGE_NAME }}:${{ matrix.arch }}"
+          echo "Digest for ${{ matrix.arch }}: ${{ steps.build_local_arch.outputs.digest }}"
 
       - name: Create Tileserver Light Directory
         run: node publish.js --no-publish
@@ -82,12 +95,14 @@ jobs:
         run: npm publish --dry-run
         working-directory: ./light
 
-      - name: Test Light Version to Docker Hub
+      - name: Build and tag ${{ matrix.arch }} light image locally
+        id: build_local_light_arch
         uses: docker/build-push-action@v6
         with:
           context: ./light
           file: ./light/Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          tags: ${{ env.LOCAL_BASE_IMAGE_NAME }}-light:${{ matrix.arch }}
           push: false
-          platforms: linux/arm64,linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
