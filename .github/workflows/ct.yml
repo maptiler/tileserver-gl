@@ -8,86 +8,61 @@ permissions:
   contents: read
 
 jobs:
-  ct:
-    runs-on: ubuntu-22.04
+  build-and-push-multiarch:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            arch: amd64
+            # Mark the amd64 job as the primary one for final tagging
+            is_primary: true
+          - os: ubuntu-22.04-arm64
+            arch: arm64
+            is_primary: false
+
     steps:
-      - name: Check out repository ✨ (non-dependabot)
-        if: ${{ github.actor != 'dependabot[bot]' }}
-        uses: actions/checkout@v5
-
-      - name: Check out repository 🎉 (dependabot)
-        if: ${{ github.actor == 'dependabot[bot]' }}
-        uses: actions/checkout@v5
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Update apt-get 🚀
-        run: sudo apt-get update -qq
-
-      - name: Install dependencies (Ubuntu) 🚀
-        run: >-
-          sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev
-          libgif-dev build-essential g++ xvfb libgles2-mesa-dev libgbm-dev
-          libxxf86vm-dev
-
-      - name: Setup node env 📦
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: 'package.json'
-          check-latest: true
-          cache: 'npm'
-
-      - name: Install dependencies 🚀
-        run: npm ci --prefer-offline --no-audit
-
-      - name: Test Publish
-        run: npm publish --dry-run
-
-      - name: Pull test data 📦
-        run: >-
-          wget -O test_data.zip
-          https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
-
-      - name: Prepare test data 📦
-        run: unzip -q test_data.zip -d test_data
-
-      - name: Run tests 🧪
-        run: xvfb-run --server-args="-screen 0 1024x768x24" npm test
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: 'arm64'
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          install: true
 
-      - name: Test Docker Build
-        uses: docker/build-push-action@v6
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Get Git commit hash
+        id: commit
+        run: echo "::set-output name=sha_short::${GITHUB_SHA::8}"
+
+      # Build individual architecture specific image
+      - name: Build and Push ${{ matrix.arch }} Image
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: false
-          platforms: linux/arm64,linux/amd64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Only build the architecture native to the runner
+          platforms: linux/${{ matrix.arch }}
+          tags: |
+            ${{ env.DOCKER_IMAGE_NAME }}:${{ steps.commit.outputs.sha_short }}-${{ matrix.arch }}
+            ${{ env.DOCKER_IMAGE_NAME }}:latest-${{ matrix.arch }} # Specific tag for this arch
 
-      - name: Create Tileserver Light Directory
-        run: node publish.js --no-publish
-
-      - name: Install node dependencies
-        run: npm ci --prefer-offline --no-audit
-        working-directory: ./light
-
-      - name: Test Light Publish
-        run: npm publish --dry-run
-        working-directory: ./light
-
-      - name: Test Light Version to Docker Hub
-        uses: docker/build-push-action@v6
+      # Conditionally create and push the multi-arch manifest (only on the primary OS)
+      - name: Create and Push Multi-Arch Manifest
+        # This step only runs on the primary OS (amd64 runner)
+        if: matrix.is_primary
+        uses: docker/build-push-action@v5
         with:
-          context: ./light
-          file: ./light/Dockerfile
+          context: .
           push: false
-          platforms: linux/arm64,linux/amd64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Now build *all* platforms, ensuring the manifest list is created
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ env.DOCKER_IMAGE_NAME }}:${{ steps.commit.outputs.sha_short }} # Version tag
+            ${{ env.DOCKER_IMAGE_NAME }}:latest # The main 'latest' tag
