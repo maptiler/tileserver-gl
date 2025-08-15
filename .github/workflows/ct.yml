@@ -30,6 +30,38 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Get OS Architecture
+        run: uname -m
+
+      - name: Install dependencies (Ubuntu) 🚀
+        run: >-
+          sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev
+          libgif-dev build-essential g++ xvfb libgles2-mesa-dev libgbm-dev
+          libxxf86vm-dev
+      - name: Setup node env 📦
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: 'package.json'
+          check-latest: true
+          cache: 'npm'
+
+      - name: Install dependencies 🚀
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Test Publish
+        run: npm publish --dry-run
+
+      - name: Pull test data 📦
+        run: >-
+          wget -O test_data.zip
+          https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
+
+      - name: Prepare test data 📦
+        run: unzip -q test_data.zip -d test_data
+
+      - name: Run tests 🧪
+        run: xvfb-run --server-args="-screen 0 1024x768x24" npm test
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
