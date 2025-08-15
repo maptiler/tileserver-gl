@@ -14,7 +14,7 @@ env:
 jobs:
   # Job 1: Build individual architecture images locally
   build_arch_images_local:
-    name: Build and Tag ${{ matrix.os }} Locally
+    name: Build and Tag ${{ matrix.runs-on }} Locally
     runs-on: ${{ matrix.runs-on }}
 
     strategy:
