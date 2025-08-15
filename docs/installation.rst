@@ -25,7 +25,7 @@ npm is supported on the following platforms with `Native Dependencies <#id1>`_ i
   - macOS 14 (x64/arm64)
   - Windows (x64)
 
-- Node.js 18,20
+- Node.js 18(>=18.17.0),20,22
   
 Install globally from npmjs.
 ------------------------------
@@ -52,7 +52,7 @@ Ubuntu 22.04 (x64/arm64)
 
 MacOS 14 (x64/arm64)
 ~~~~~~~~~~~~~~~~~~~~~~
-- brew install pkg-config cairo pango libpng jpeg giflib librsvg
+- brew install pkg-config cairo pango libpng jpeg giflib librsvg harfbuzz
 
 Windows (x64)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
