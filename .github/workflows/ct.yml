@@ -43,20 +43,5 @@ jobs:
           push: false
           # Only build the architecture native to the runner
           platforms: linux/${{ matrix.arch }}
-          tags: |
-            ${{ env.DOCKER_IMAGE_NAME }}:${{ steps.commit.outputs.sha_short }}-${{ matrix.arch }}
-            ${{ env.DOCKER_IMAGE_NAME }}:latest-${{ matrix.arch }} # Specific tag for this arch
-
-      # Conditionally create and push the multi-arch manifest (only on the primary OS)
-      - name: Create and Push Multi-Arch Manifest
-        # This step only runs on the primary OS (amd64 runner)
-        if: matrix.is_primary
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: false
-          # Now build *all* platforms, ensuring the manifest list is created
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            ${{ env.DOCKER_IMAGE_NAME }}:${{ steps.commit.outputs.sha_short }} # Version tag
-            ${{ env.DOCKER_IMAGE_NAME }}:latest # The main 'latest' tag
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
