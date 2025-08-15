@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 env:
-  LOCAL_BASE_IMAGE_NAME: local-build-base
+  LOCAL_BASE_IMAGE_NAME: test-tileserver-gl
   LOCAL_MANIFEST_NAME: test-tileserver-gl-manifest
 
 jobs:
@@ -75,8 +75,34 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           tags: ${{ env.LOCAL_BASE_IMAGE_NAME }}:${{ matrix.arch }}
           outputs: type=image,push=false,name-canonical=true
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Print Local Image Info for ${{ matrix.arch }}
         run: |
           echo "Built and tagged image locally for ${{ matrix.arch }} as ${{ env.LOCAL_BASE_IMAGE_NAME }}:${{ matrix.arch }}"
           echo "Digest for ${{ matrix.arch }}: ${{ steps.build_local_arch.outputs.digest }}"
+
+      - name: Create Tileserver Light Directory
+        run: node publish.js --no-publish
+
+      - name: Install node dependencies
+        run: npm ci --prefer-offline --no-audit
+        working-directory: ./light
+
+      - name: Test Light Publish
+        run: npm publish --dry-run
+        working-directory: ./light
+
+      - name: Build and tag ${{ matrix.arch }} light image locally
+        id: build_local_light_arch
+        uses: docker/build-push-action@v6
+        with:
+          context: ./light
+          file: ./light/Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          tags: ${{ env.LOCAL_BASE_IMAGE_NAME }}-light:${{ matrix.arch }}
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
