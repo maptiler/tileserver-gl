@@ -15,16 +15,15 @@ jobs:
   # Job 1: Build individual architecture images locally
   build_arch_images_local:
     name: Build and Tag ${{ matrix.os }} Locally
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runs-on }}
 
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, ubuntu-22.04-arm64]
         include:
-          - os: ubuntu-22.04
+          - runs-on: ubuntu-22.04
             arch: amd64
-          - os: ubuntu-22.04-arm64
+          - runs-on: ubuntu-22.04-arm
             arch: arm64
 
     steps:
