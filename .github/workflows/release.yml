@@ -13,6 +13,9 @@ on:
         description: 'NPM Token'
         required: true
 
+permissions:
+  contents: write
+
 env:
   DOCKER_IMAGE_NAME: maptiler/tileserver-gl
   LOCAL_LIGHT_IMAGE_NAME: maptiler/tileserver-gl-light
