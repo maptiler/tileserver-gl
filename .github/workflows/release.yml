@@ -13,6 +13,10 @@ on:
         description: 'NPM Token'
         required: true
 
+env:
+  DOCKER_IMAGE_NAME: maptiler/tileserver-gl
+  LOCAL_LIGHT_IMAGE_NAME: maptiler/tileserver-gl-light
+
 jobs:
   release-check:
     name: Check if version is published
@@ -33,23 +37,21 @@ jobs:
         id: check
         run: |
           currentVersion="$( node -e "console.log(require('./package.json').version)" )"
-          # Use npm view for published versions. Fallback if unavailable.
-          # Ensure jq is installed if using it here, otherwise use Node.js logic for checking.
-          # For safety, let's keep the Node.js based check:
-          IS_PUBLISHED=$(node -e "const semver = require('semver'); const versions = JSON.parse(require('child_process').execSync('npm view tileserver-gl versions --json', { encoding: 'utf-8' })); console.log(semver.satisfies(process.argv[1], versions.join(' || ')))" "${currentVersion}" || echo "false")
-
+          isPublished="$( npm view tileserver-gl versions --json | jq -c --arg cv "$currentVersion" 'any(. == $cv)' )"
           echo "version=$currentVersion" >> "$GITHUB_OUTPUT"
-          echo "published=$IS_PUBLISHED" >> "$GITHUB_OUTPUT"
+          echo "published=$isPublished" >> "$GITHUB_OUTPUT"
           echo "currentVersion: $currentVersion"
-          echo "isPublished: $IS_PUBLISHED"
+          echo "isPublished: $isPublished"
     outputs:
       published: ${{ steps.check.outputs.published }}
       version: ${{ steps.check.outputs.version }}
 
-  # Job 1: Build and push individual architecture images
+  # Build and push individual architecture images (with tests)
   build_arch_images:
-    name: Build and Push ${{ matrix.arch }} Image
+    name: Test and Build ${{ matrix.arch }} Image
     runs-on: ${{ matrix.runs-on }}
+    needs: release-check
+    if: ${{ needs.release-check.outputs.published == 'false' }}
 
     strategy:
       fail-fast: false
@@ -79,12 +81,23 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev
           libgif-dev build-essential g++ xvfb libgles2-mesa-dev libgbm-dev
           libxxf86vm-dev zip wget
-        shell: bash
+
+      - name: Pull test data 📦
+        run: >-
+          wget -O test_data.zip
+          https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
+
+      - name: Prepare test data 📦
+        run: unzip -q test_data.zip -d test_data
+
+      - name: Run tests 🧪
+        run: xvfb-run --server-args="-screen 0 1024x768x24" npm test
+
+      - name: Remove Test Data
+        run: rm -R test_data*
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          install: true
 
       - name: Login to DockerHub
         uses: docker/login-action@v3
@@ -92,32 +105,23 @@ jobs:
           username: ${{ github.event.inputs.docker_user }}
           password: ${{ github.event.inputs.docker_token }}
 
-      - name: Get release version and type for tagging
+      - name: Get release info
         id: release_info
         run: |
-          # Access outputs from the release-check job
           PACKAGE_VERSION="${{ needs.release-check.outputs.version }}"
           RELEASE_TYPE="$(node -e "const semver = require('semver'); const prerelease = semver.prerelease('$PACKAGE_VERSION'); console.log(prerelease ? 'prerelease' : 'regular')")"
-
-          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV" # Make available to all steps in this job
-          echo "RELEASE_TYPE=$RELEASE_TYPE" >> "$GITHUB_ENV"
-          echo "PACKAGE_VERSION: $PACKAGE_VERSION"
-          echo "RELEASE_TYPE: $RELEASE_TYPE"
-
+          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "RELEASE_TYPE=$RELEASE_TYPE" >> "$GITHUB_OUTPUT"
 
       # Build and Push Main Image
       - name: Build and Push Main ${{ matrix.arch }} Image
-        id: build_push_main_arch
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          platforms: linux/${{ matrix.arch }} # Build only for the current runner's architecture
+          platforms: linux/${{ matrix.arch }}
           tags: |
-            ${{ env.DOCKER_IMAGE_NAME }}:${{ env.PACKAGE_VERSION }}-${{ matrix.arch }} # Architecture-specific tag
-            ${{ env.DOCKER_IMAGE_NAME }}:latest-${{ matrix.arch }} # Arch-specific latest tag
-            # We *don't* push the final 'latest' or versioned tag here to avoid race conditions.
-            # That's handled by the manifest creation job.
+            ${{ env.DOCKER_IMAGE_NAME }}:${{ steps.release_info.outputs.PACKAGE_VERSION }}-${{ matrix.arch }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -130,30 +134,23 @@ jobs:
         working-directory: ./light
 
       - name: Build and Push Light ${{ matrix.arch }} Image
-        id: build_push_light_arch
         uses: docker/build-push-action@v6
         with:
           context: ./light
           file: ./light/Dockerfile
           push: true
-          platforms: linux/${{ matrix.arch }} # Build only for the current runner's architecture
+          platforms: linux/${{ matrix.arch }}
           tags: |
-            ${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${{ env.PACKAGE_VERSION }}-${{ matrix.arch }} # Architecture-specific tag
-            ${{ env.LOCAL_LIGHT_IMAGE_NAME }}:latest-${{ matrix.arch }} # Arch-specific latest tag
+            ${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${{ steps.release_info.outputs.PACKAGE_VERSION }}-${{ matrix.arch }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # Job 2: Create and publish the multi-arch manifest list, NPM packages, and GitHub release
+  # Create manifests, publish NPM, and create GitHub release
   release_orchestrator:
     name: Release Orchestration
-    runs-on: ubuntu-latest # Can run on any OS, orchestrates Docker commands
-    needs:
-      - release-check
-      - build_arch_images
-    # Only run if the version is not published and the previous jobs completed
-    if: |
-      needs.release-check.outputs.published == 'false' &&
-      needs.build_arch_images.result == 'success'
+    runs-on: ubuntu-latest
+    needs: [release-check, build_arch_images]
+    if: ${{ needs.release-check.outputs.published == 'false' }}
 
     steps:
       - name: Checkout code
@@ -169,39 +166,46 @@ jobs:
       - name: Install NPM dependencies 🚀
         run: npm ci --prefer-offline --no-audit
 
-      # --- NPM Publishing ---
+      - name: Get release type
+        id: prepare_release
+        run: |
+          RELEASE_TYPE="$(node -e "console.log(require('semver').prerelease('${{ needs.release-check.outputs.version }}') ? 'prerelease' : 'regular')")"
+          if [[ $RELEASE_TYPE == 'regular' ]]; then
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "tag=next" >> "$GITHUB_OUTPUT"
+          fi
+
+      # NPM Publishing
       - name: Publish to NPM
         run: |
-          npm config set //registry.npmjs.org/:_authToken ${{ github.event.inputs.npm_token }}
-          # Determine tag: 'next' for prereleases, 'latest' otherwise.
-          # Use 'next' if RELEASE_TYPE is 'prerelease', otherwise use 'latest'.
-          NPM_TAG="${{ env.RELEASE_TYPE == 'prerelease' && 'next' || 'latest' }}"
-          echo "Publishing with NPM tag: $NPM_TAG"
-          npm publish --access public --tag "$NPM_TAG"
+          npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
+          npm publish --access public --tag ${{ steps.prepare_release.outputs.tag }}
         env:
-          # These env vars are set based on release-check and the current job's determined env.
           NPM_TOKEN: ${{ github.event.inputs.npm_token }}
-          PACKAGE_VERSION: ${{ needs.release-check.outputs.version }}
-          RELEASE_TYPE: $(node -e "const semver = require('semver'); const prerelease = semver.prerelease('${{ needs.release-check.outputs.version }}'); console.log(prerelease ? 'prerelease' : 'regular')")
+
+      - name: Create Tileserver Light Directory
+        run: node publish.js --no-publish
+
+      - name: Install Light NPM dependencies
+        run: npm ci --prefer-offline --no-audit
+        working-directory: ./light
 
       - name: Publish Light to NPM
         working-directory: ./light
         run: |
-          npm config set //registry.npmjs.org/:_authToken ${{ github.event.inputs.npm_token }}
-          NPM_TAG="${{ env.RELEASE_TYPE == 'prerelease' && 'next' || 'latest' }}"
-          echo "Publishing light version with NPM tag: $NPM_TAG"
-          npm publish --access public --tag "$NPM_TAG"
+          npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
+          npm publish --access public --tag ${{ steps.prepare_release.outputs.tag }}
         env:
           NPM_TOKEN: ${{ github.event.inputs.npm_token }}
-          RELEASE_TYPE: $(node -e "const semver = require('semver'); const prerelease = semver.prerelease('${{ needs.release-check.outputs.version }}'); console.log(prerelease ? 'prerelease' : 'regular')")
 
-      # --- Docker Manifest Creation ---
-      - name: Set up Docker Buildx for Manifest
+      # Docker Manifest Creation
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          install: true
 
-      - name: Login to DockerHub for Manifest
+      - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
           username: ${{ github.event.inputs.docker_user }}
@@ -209,54 +213,25 @@ jobs:
 
       - name: Create and push Main Multi-Arch Manifest
         run: |
-          echo "Creating and pushing main multi-arch manifest..."
-          # Use the architecture-specific tags pushed in the previous job as references.
-          # Docker buildx imagetools create will look for these locally tagged images.
-          # However, since build_arch_images runs on different runners, the local tags won't exist here.
-          # We need to use the digest or arch-specific tags that are pushed to Docker Hub.
-          # Re-using the tags pushed in build_arch_images:
-          # e.g., maptiler/tileserver-gl:1.2.3-amd64, maptiler/tileserver-gl:latest-amd64
-
-          # Determine the correct tags for the manifest
           PACKAGE_VERSION="${{ needs.release-check.outputs.version }}"
-          RELEASE_TYPE="$(node -e "const semver = require('semver'); const prerelease = semver.prerelease('$PACKAGE_VERSION'); console.log(prerelease ? 'prerelease' : 'regular')")"
-          MAIN_TAG_LATEST="${RELEASE_TYPE == 'prerelease' && 'next' || 'latest'}"
-          MAIN_TAG_SEMVER="v${PACKAGE_VERSION}"
-
-          echo "Main manifest tags: ${MAIN_TAG_LATEST}, ${MAIN_TAG_SEMVER}"
-
+          
           docker buildx imagetools create \
-            --tag "${{ env.DOCKER_IMAGE_NAME }}:${MAIN_TAG_LATEST}" \
-            --tag "${{ env.DOCKER_IMAGE_NAME }}:${MAIN_TAG_SEMVER}" \
-            --tag "${{ env.DOCKER_IMAGE_NAME }}:${PACKAGE_VERSION}" \
+            --tag "${{ env.DOCKER_IMAGE_NAME }}:${{ steps.prepare_release.outputs.tag }}" \
+            --tag "${{ env.DOCKER_IMAGE_NAME }}:v${PACKAGE_VERSION}" \
             "${{ env.DOCKER_IMAGE_NAME }}:${PACKAGE_VERSION}-amd64" \
             "${{ env.DOCKER_IMAGE_NAME }}:${PACKAGE_VERSION}-arm64"
 
       - name: Create and push Light Multi-Arch Manifest
         run: |
-          echo "Creating and pushing light multi-arch manifest..."
           PACKAGE_VERSION="${{ needs.release-check.outputs.version }}"
-          RELEASE_TYPE="$(node -e "const semver = require('semver'); const prerelease = semver.prerelease('$PACKAGE_VERSION'); console.log(prerelease ? 'prerelease' : 'regular')")"
-          LIGHT_TAG_LATEST="${RELEASE_TYPE == 'prerelease' && 'next' || 'latest'}}"
-          LIGHT_TAG_SEMVER="v${PACKAGE_VERSION}"
-
-          echo "Light manifest tags: ${LIGHT_TAG_LATEST}, ${LIGHT_TAG_SEMVER}"
-
+          
           docker buildx imagetools create \
-            --tag "${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${LIGHT_TAG_LATEST}" \
-            --tag "${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${LIGHT_TAG_SEMVER}" \
-            --tag "${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${PACKAGE_VERSION}" \
+            --tag "${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${{ steps.prepare_release.outputs.tag }}" \
+            --tag "${{ env.LOCAL_LIGHT_IMAGE_NAME }}:v${PACKAGE_VERSION}" \
             "${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${PACKAGE_VERSION}-amd64" \
             "${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${PACKAGE_VERSION}-arm64"
 
-      - name: Inspect the Docker Hub manifests
-        run: |
-          echo "Inspecting main manifest: ${{ env.DOCKER_IMAGE_NAME }}:latest"
-          docker buildx imagetools inspect "${{ env.DOCKER_IMAGE_NAME }}:latest"
-          echo "Inspecting light manifest: ${{ env.LOCAL_LIGHT_IMAGE_NAME }}:latest"
-          docker buildx imagetools inspect "${{ env.LOCAL_LIGHT_IMAGE_NAME }}:latest"
-
-      # --- GitHub Release ---
+      # GitHub Release
       - name: Extract changelog for version
         run: |
           awk '/^##/ { p = 0 }; p == 1 { print }; $0 == "## ${{ needs.release-check.outputs.version }}" { p = 1 };' CHANGELOG.md > changelog_for_version.md
@@ -272,4 +247,4 @@ jobs:
           bodyFile: changelog_for_version.md
           allowUpdates: true
           draft: false
-          prerelease: $(node -e "const semver = require('semver'); const prerelease = semver.prerelease('${{ needs.release-check.outputs.version }}'); console.log(prerelease ? 'true' : 'false')")
+          prerelease: ${{ steps.prepare_release.outputs.prerelease }}
