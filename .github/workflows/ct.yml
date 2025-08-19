@@ -79,7 +79,6 @@ jobs:
           context: .
           platforms: linux/${{ matrix.arch }}
           tags: ${{ env.LOCAL_BASE_IMAGE_NAME }}:${{ matrix.arch }}
-          outputs: type=image,push=false,name-canonical=true
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -109,7 +108,6 @@ jobs:
           file: ./light/Dockerfile
           platforms: linux/${{ matrix.arch }}
           tags: ${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${{ matrix.arch }}
-          outputs: type=image,push=false,name-canonical=true
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -118,36 +116,3 @@ jobs:
         run: |
           echo "Built and tagged light image locally for ${{ matrix.arch }} as ${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${{ matrix.arch }}"
           echo "Light image digest for ${{ matrix.arch }}: ${{ steps.build_light_arch.outputs.digest }}"
-
-      # Optional: Test the built images
-      - name: Test main Docker image
-        run: |
-          echo "Testing main image..."
-          # Add basic smoke tests for your Docker image here
-          # Example: docker run --rm ${{ env.LOCAL_BASE_IMAGE_NAME }}:${{ matrix.arch }} --help
-
-      - name: Test light Docker image  
-        run: |
-          echo "Testing light image..."
-          # Add basic smoke tests for your light Docker image here
-          # Example: docker run --rm ${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${{ matrix.arch }} --help
-
-  # Optional: Create local manifest (for testing multi-arch locally)
-  test_multiarch_manifest:
-    name: Test Multi-Arch Manifest Creation
-    runs-on: ubuntu-22.04
-    needs: test_and_build_arch_images
-    if: always() && needs.test_and_build_arch_images.result == 'success'
-    
-    steps:
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      # Note: In a real scenario, you'd need the images to be pushed to a registry
-      # to create manifests. This is just a demonstration of the process.
-      - name: Simulate manifest creation process
-        run: |
-          echo "In a real scenario, you would create multi-arch manifests here"
-          echo "Main image would combine: ${{ env.LOCAL_BASE_IMAGE_NAME }}:amd64 and ${{ env.LOCAL_BASE_IMAGE_NAME }}:arm64"
-          echo "Light image would combine: ${{ env.LOCAL_LIGHT_IMAGE_NAME }}:amd64 and ${{ env.LOCAL_LIGHT_IMAGE_NAME }}:arm64"
-          echo "This validates that the manifest creation process would work in the release workflow"
