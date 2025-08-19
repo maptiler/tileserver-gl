@@ -10,7 +10,6 @@ permissions:
 env:
   LOCAL_BASE_IMAGE_NAME: test-tileserver-gl
   LOCAL_LIGHT_IMAGE_NAME: test-tileserver-gl-light
-  LOCAL_MANIFEST_NAME: test-tileserver-gl-manifest
 
 jobs:
   # Test and build individual architecture images locally
