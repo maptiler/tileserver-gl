@@ -83,7 +83,7 @@ jobs:
         run: >-
           sudo apt-get update -qq && sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev
           libgif-dev build-essential g++ xvfb libgles2-mesa-dev libgbm-dev
-          libxxf86vm-dev zip wget
+          libxxf86vm-dev
 
       - name: Pull test data 📦
         run: >-
