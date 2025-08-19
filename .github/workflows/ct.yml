@@ -24,7 +24,7 @@ jobs:
         include:
           - runs-on: ubuntu-22.04
             arch: amd64
-          - runs-on: ubuntu-22.04-arm64  # Fixed runner name to match release workflow
+          - runs-on: ubuntu-22.04-arm
             arch: arm64
     
     steps:
