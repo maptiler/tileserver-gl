@@ -29,8 +29,7 @@ WORKDIR /usr/src/app
 COPY package.json /usr/src/app
 COPY package-lock.json /usr/src/app
 
-RUN npm config set maxsockets 1 && \
-    npm config set fetch-retries 5 && \
+RUN npm config set fetch-retries 5 && \
     npm config set fetch-retry-mintimeout 100000 && \
     npm config set fetch-retry-maxtimeout 600000 && \
     npm ci --omit=dev && \
