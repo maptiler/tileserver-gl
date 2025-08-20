@@ -13,6 +13,13 @@ on:
         description: 'NPM Token'
         required: true
 
+permissions:
+  contents: write
+
+env:
+  DOCKER_IMAGE_NAME: maptiler/tileserver-gl
+  LOCAL_LIGHT_IMAGE_NAME: maptiler/tileserver-gl-light
+
 jobs:
   release-check:
     name: Check if version is published
@@ -42,25 +49,25 @@ jobs:
       published: ${{ steps.check.outputs.published }}
       version: ${{ steps.check.outputs.version }}
 
-  release:
+  # Build and push individual architecture images (with tests)
+  build_arch_images:
+    name: Test and Build ${{ matrix.arch }} Image
+    runs-on: ${{ matrix.runs-on }}
     needs: release-check
     if: ${{ needs.release-check.outputs.published == 'false' }}
-    name: 'Build, Test, Publish'
-    runs-on: ubuntu-22.04
-    env:
-      PACKAGE_VERSION: ${{ needs.release-check.outputs.version }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runs-on: ubuntu-22.04
+            arch: amd64
+          - runs-on: ubuntu-22.04-arm
+            arch: arm64
+
     steps:
-      - name: Check out repository ✨
+      - name: Checkout code
         uses: actions/checkout@v5
-
-      - name: Update apt-get 🚀
-        run: sudo apt-get update -qq
-
-      - name: Install dependencies (Ubuntu) 🚀
-        run: >-
-          sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev
-          libgif-dev build-essential g++ xvfb libgles2-mesa-dev libgbm-dev
-          libxxf86vm-dev
 
       - name: Setup node env 📦
         uses: actions/setup-node@v4
@@ -69,8 +76,14 @@ jobs:
           check-latest: true
           cache: 'npm'
 
-      - name: Install dependencies 🚀
+      - name: Install NPM dependencies 🚀
         run: npm ci --prefer-offline --no-audit
+
+      - name: Install dependencies (Ubuntu) 🚀
+        run: >-
+          sudo apt-get update -qq && sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev
+          libgif-dev build-essential g++ xvfb libgles2-mesa-dev libgbm-dev
+          libxxf86vm-dev
 
       - name: Pull test data 📦
         run: >-
@@ -86,90 +99,155 @@ jobs:
       - name: Remove Test Data
         run: rm -R test_data*
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ github.event.inputs.docker_user }}
+          password: ${{ github.event.inputs.docker_token }}
+
+      - name: Get release info
+        id: release_info
+        run: |
+          PACKAGE_VERSION="${{ needs.release-check.outputs.version }}"
+          RELEASE_TYPE="$(node -e "const semver = require('semver'); const prerelease = semver.prerelease('$PACKAGE_VERSION'); console.log(prerelease ? 'prerelease' : 'regular')")"
+          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "RELEASE_TYPE=$RELEASE_TYPE" >> "$GITHUB_OUTPUT"
+
+      # Build and Push Main Image
+      - name: Build and Push Main ${{ matrix.arch }} Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/${{ matrix.arch }}
+          tags: |
+            ${{ env.DOCKER_IMAGE_NAME }}:${{ steps.release_info.outputs.PACKAGE_VERSION }}-${{ matrix.arch }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Build and Push Light Image
+      - name: Create Tileserver Light Directory
+        run: node publish.js --no-publish
+
+      - name: Install Light NPM dependencies
+        run: npm ci --prefer-offline --no-audit
+        working-directory: ./light
+
+      - name: Build and Push Light ${{ matrix.arch }} Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./light
+          file: ./light/Dockerfile
+          push: true
+          platforms: linux/${{ matrix.arch }}
+          tags: |
+            ${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${{ steps.release_info.outputs.PACKAGE_VERSION }}-${{ matrix.arch }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Create manifests, publish NPM, and create GitHub release
+  release:
+    name: Release
+    runs-on: ubuntu-22.04
+    needs: [release-check, build_arch_images]
+    if: ${{ needs.release-check.outputs.published == 'false' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup node env 📦
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: 'package.json'
+          check-latest: true
+          cache: 'npm'
+
+      - name: Install NPM dependencies 🚀
+        run: npm ci --prefer-offline --no-audit
+
       - name: Get release type
         id: prepare_release
         run: |
           RELEASE_TYPE="$(node -e "console.log(require('semver').prerelease('${{ needs.release-check.outputs.version }}') ? 'prerelease' : 'regular')")"
           if [[ $RELEASE_TYPE == 'regular' ]]; then
             echo "prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
           else
             echo "prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "tag=next" >> "$GITHUB_OUTPUT"
           fi
 
+      # NPM Publishing
       - name: Publish to NPM
         run: |
           npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
-          npm publish --access public --tag ${{ steps.prepare_release.outputs.prerelease == 'true' && 'next' || 'latest' }}
+          npm publish --access public --tag ${{ steps.prepare_release.outputs.tag }}
         env:
           NPM_TOKEN: ${{ github.event.inputs.npm_token }}
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: 'arm64'
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ github.event.inputs.docker_user }}
-          password: ${{ github.event.inputs.docker_token }}
-
-      - name: Build and publish Full Version to Docker Hub
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            maptiler/tileserver-gl:${{ steps.prepare_release.outputs.prerelease == 'true' && 'next' || 'latest' }},
-            maptiler/tileserver-gl:v${{ env.PACKAGE_VERSION }}
-          platforms: linux/arm64,linux/amd64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Extract changelog for version
-        run: |
-          awk '/^##/ { p = 0 }; p == 1 { print }; $0 == "## ${{ env.PACKAGE_VERSION }}" { p = 1 };' CHANGELOG.md > changelog_for_version.md
-          cat changelog_for_version.md
-
-      - name: Publish to Github
-        uses: ncipollo/release-action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag: v${{ env.PACKAGE_VERSION }}
-          name: v${{ env.PACKAGE_VERSION }}
-          bodyFile: changelog_for_version.md
-          allowUpdates: true
-          draft: false
-          prerelease: ${{ steps.prepare_release.outputs.prerelease }}
 
       - name: Create Tileserver Light Directory
         run: node publish.js --no-publish
 
-      - name: Install node dependencies
+      - name: Install Light NPM dependencies
         run: npm ci --prefer-offline --no-audit
         working-directory: ./light
 
-      - name: Publish to Light Version NPM
+      - name: Publish Light to NPM
         working-directory: ./light
         run: |
           npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
-          npm publish --access public --tag ${{ steps.prepare_release.outputs.prerelease == 'true' && 'next' || 'latest' }}
+          npm publish --access public --tag ${{ steps.prepare_release.outputs.tag }}
         env:
           NPM_TOKEN: ${{ github.event.inputs.npm_token }}
 
-      - name: Build and publish Light Version to Docker Hub
-        uses: docker/build-push-action@v6
+      # Docker Manifest Creation
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
         with:
-          context: ./light
-          file: ./light/Dockerfile
-          push: true
-          tags: |
-            maptiler/tileserver-gl-light:${{ steps.prepare_release.outputs.prerelease == 'true' && 'next' || 'latest' }},
-            maptiler/tileserver-gl-light:v${{ env.PACKAGE_VERSION }}
-          platforms: linux/arm64,linux/amd64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          username: ${{ github.event.inputs.docker_user }}
+          password: ${{ github.event.inputs.docker_token }}
+
+      - name: Create and push Main Multi-Arch Manifest
+        run: |
+          PACKAGE_VERSION="${{ needs.release-check.outputs.version }}"
+          
+          docker buildx imagetools create \
+            --tag "${{ env.DOCKER_IMAGE_NAME }}:${{ steps.prepare_release.outputs.tag }}" \
+            --tag "${{ env.DOCKER_IMAGE_NAME }}:v${PACKAGE_VERSION}" \
+            "${{ env.DOCKER_IMAGE_NAME }}:${PACKAGE_VERSION}-amd64" \
+            "${{ env.DOCKER_IMAGE_NAME }}:${PACKAGE_VERSION}-arm64"
+
+      - name: Create and push Light Multi-Arch Manifest
+        run: |
+          PACKAGE_VERSION="${{ needs.release-check.outputs.version }}"
+          
+          docker buildx imagetools create \
+            --tag "${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${{ steps.prepare_release.outputs.tag }}" \
+            --tag "${{ env.LOCAL_LIGHT_IMAGE_NAME }}:v${PACKAGE_VERSION}" \
+            "${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${PACKAGE_VERSION}-amd64" \
+            "${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${PACKAGE_VERSION}-arm64"
+
+      # GitHub Release
+      - name: Extract changelog for version
+        run: |
+          awk '/^##/ { p = 0 }; p == 1 { print }; $0 == "## ${{ needs.release-check.outputs.version }}" { p = 1 };' CHANGELOG.md > changelog_for_version.md
+          cat changelog_for_version.md
+
+      - name: Publish to GitHub Release
+        uses: ncipollo/release-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag: v${{ needs.release-check.outputs.version }}
+          name: v${{ needs.release-check.outputs.version }}
+          bodyFile: changelog_for_version.md
+          allowUpdates: true
+          draft: false
+          prerelease: ${{ steps.prepare_release.outputs.prerelease }}

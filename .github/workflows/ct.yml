@@ -7,28 +7,31 @@ permissions:
   checks: write
   contents: read
 
+env:
+  LOCAL_BASE_IMAGE_NAME: test-tileserver-gl
+  LOCAL_LIGHT_IMAGE_NAME: test-tileserver-gl-light
+
 jobs:
-  ct:
-    runs-on: ubuntu-22.04
+  # Test and build individual architecture images locally
+  test_and_build_arch_images:
+    name: Test and Build ${{ matrix.arch }} Image
+    runs-on: ${{ matrix.runs-on }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runs-on: ubuntu-22.04
+            arch: amd64
+          - runs-on: ubuntu-22.04-arm
+            arch: arm64
+    
     steps:
-      - name: Check out repository ✨ (non-dependabot)
-        if: ${{ github.actor != 'dependabot[bot]' }}
-        uses: actions/checkout@v5
+      - name: Checkout code
+        uses: actions/checkout@v5  # Updated to v5 for consistency
 
-      - name: Check out repository 🎉 (dependabot)
-        if: ${{ github.actor == 'dependabot[bot]' }}
-        uses: actions/checkout@v5
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Update apt-get 🚀
-        run: sudo apt-get update -qq
-
-      - name: Install dependencies (Ubuntu) 🚀
-        run: >-
-          sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev
-          libgif-dev build-essential g++ xvfb libgles2-mesa-dev libgbm-dev
-          libxxf86vm-dev
+      - name: Get OS Architecture
+        run: uname -m
 
       - name: Setup node env 📦
         uses: actions/setup-node@v4
@@ -37,10 +40,16 @@ jobs:
           check-latest: true
           cache: 'npm'
 
-      - name: Install dependencies 🚀
+      - name: Install NPM dependencies 🚀
         run: npm ci --prefer-offline --no-audit
 
-      - name: Test Publish
+      - name: Install system dependencies (Ubuntu) 🚀
+        run: >-
+          sudo apt-get update -qq && sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev
+          libgif-dev build-essential g++ xvfb libgles2-mesa-dev libgbm-dev
+          libxxf86vm-dev
+
+      - name: Test NPM publish (dry-run)
         run: npm publish --dry-run
 
       - name: Pull test data 📦
@@ -54,40 +63,55 @@ jobs:
       - name: Run tests 🧪
         run: xvfb-run --server-args="-screen 0 1024x768x24" npm test
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: 'arm64'
+      - name: Remove test data
+        run: rm -R test_data*
 
+      # Docker Build Setup
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Test Docker Build
+      # Build Main Image
+      - name: Build and tag ${{ matrix.arch }} main image locally
+        id: build_main_arch
         uses: docker/build-push-action@v6
         with:
           context: .
+          platforms: linux/${{ matrix.arch }}
+          tags: ${{ env.LOCAL_BASE_IMAGE_NAME }}:${{ matrix.arch }}
           push: false
-          platforms: linux/arm64,linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Print main image info for ${{ matrix.arch }}
+        run: |
+          echo "Built and tagged main image locally for ${{ matrix.arch }} as ${{ env.LOCAL_BASE_IMAGE_NAME }}:${{ matrix.arch }}"
+          echo "Main image digest for ${{ matrix.arch }}: ${{ steps.build_main_arch.outputs.digest }}"
+
+      # Build Light Image
       - name: Create Tileserver Light Directory
         run: node publish.js --no-publish
 
-      - name: Install node dependencies
+      - name: Install Light NPM dependencies
         run: npm ci --prefer-offline --no-audit
         working-directory: ./light
 
-      - name: Test Light Publish
+      - name: Test Light NPM publish (dry-run)
         run: npm publish --dry-run
         working-directory: ./light
 
-      - name: Test Light Version to Docker Hub
+      - name: Build and tag ${{ matrix.arch }} light image locally
+        id: build_light_arch
         uses: docker/build-push-action@v6
         with:
           context: ./light
           file: ./light/Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          tags: ${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${{ matrix.arch }}
           push: false
-          platforms: linux/arm64,linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Print light image info for ${{ matrix.arch }}
+        run: |
+          echo "Built and tagged light image locally for ${{ matrix.arch }} as ${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${{ matrix.arch }}"
+          echo "Light image digest for ${{ matrix.arch }}: ${{ steps.build_light_arch.outputs.digest }}"
