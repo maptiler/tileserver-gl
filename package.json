@@ -1,6 +1,6 @@
 {
   "name": "tileserver-gl",
-  "version": "5.4.0",
+  "version": "5.4.1-pre.0",
   "description": "Map tile server for JSON GL styles - vector and server side generated raster tiles",
   "main": "src/main.js",
   "bin": "src/main.js",
@@ -46,7 +46,7 @@
     "@sindresorhus/fnv1a": "3.1.0",
     "advanced-pool": "0.3.3",
     "axios": "^1.11.0",
-    "canvas": "3.1.2",
+    "canvas": "3.2.0",
     "chokidar": "4.0.3",
     "clone": "2.1.2",
     "color": "5.0.0",

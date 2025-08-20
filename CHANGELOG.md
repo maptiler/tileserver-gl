@@ -1,5 +1,8 @@
 # tileserver-gl changelog
 
+## 5.4.1-pre.0
+* This release is only to test the new release workflow (https://github.com/maptiler/tileserver-gl/pull/1685)
+
 ## 5.4.0
 * Fix the issue where the tile URL cannot be correctly parsed with the HTTPS protocol when using an nginx proxy service (https://github.com/maptiler/tileserver-gl/pull/1578) by @dakanggo
 * Use jemalloc as memory allocator in the docker image (https://github.com/maptiler/tileserver-gl/pull/1574) by @MichielMortier

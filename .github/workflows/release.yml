@@ -124,7 +124,7 @@ jobs:
           push: true
           platforms: linux/${{ matrix.arch }}
           tags: |
-            ${{ env.DOCKER_IMAGE_NAME }}:${{ steps.release_info.outputs.PACKAGE_VERSION }}-${{ matrix.arch }}
+            ${{ env.DOCKER_IMAGE_NAME }}:v${{ steps.release_info.outputs.PACKAGE_VERSION }}-${{ matrix.arch }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -144,7 +144,7 @@ jobs:
           push: true
           platforms: linux/${{ matrix.arch }}
           tags: |
-            ${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${{ steps.release_info.outputs.PACKAGE_VERSION }}-${{ matrix.arch }}
+            ${{ env.LOCAL_LIGHT_IMAGE_NAME }}:v${{ steps.release_info.outputs.PACKAGE_VERSION }}-${{ matrix.arch }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -221,8 +221,8 @@ jobs:
           docker buildx imagetools create \
             --tag "${{ env.DOCKER_IMAGE_NAME }}:${{ steps.prepare_release.outputs.tag }}" \
             --tag "${{ env.DOCKER_IMAGE_NAME }}:v${PACKAGE_VERSION}" \
-            "${{ env.DOCKER_IMAGE_NAME }}:${PACKAGE_VERSION}-amd64" \
-            "${{ env.DOCKER_IMAGE_NAME }}:${PACKAGE_VERSION}-arm64"
+            "${{ env.DOCKER_IMAGE_NAME }}:v${PACKAGE_VERSION}-amd64" \
+            "${{ env.DOCKER_IMAGE_NAME }}:v${PACKAGE_VERSION}-arm64"
 
       - name: Create and push Light Multi-Arch Manifest
         run: |
@@ -231,8 +231,8 @@ jobs:
           docker buildx imagetools create \
             --tag "${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${{ steps.prepare_release.outputs.tag }}" \
             --tag "${{ env.LOCAL_LIGHT_IMAGE_NAME }}:v${PACKAGE_VERSION}" \
-            "${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${PACKAGE_VERSION}-amd64" \
-            "${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${PACKAGE_VERSION}-arm64"
+            "${{ env.LOCAL_LIGHT_IMAGE_NAME }}:v${PACKAGE_VERSION}-amd64" \
+            "${{ env.LOCAL_LIGHT_IMAGE_NAME }}:v${PACKAGE_VERSION}-arm64"
 
       # GitHub Release
       - name: Extract changelog for version
