@@ -274,23 +274,80 @@ async function start(opts) {
             opts,
             styleJSON,
             function dataResolver(styleSourceId) {
-              let fileType;
-              let inputFile;
+              let resolvedFileType;
+              let resolvedInputFile;
+              let resolvedSparse = false;
+
               for (const id of Object.keys(data)) {
-                fileType = Object.keys(data[id])[0];
-                if (styleSourceId == id) {
-                  inputFile = data[id][fileType];
-                  break;
-                } else if (data[id][fileType] == styleSourceId) {
-                  inputFile = data[id][fileType];
-                  break;
+                const sourceData = data[id];
+                let currentFileType;
+                let currentInputFileValue;
+
+                // Check for recognized file type keys
+                if (sourceData.hasOwnProperty('pmtiles')) {
+                  currentFileType = 'pmtiles';
+                  currentInputFileValue = sourceData.pmtiles;
+                } else if (sourceData.hasOwnProperty('mbtiles')) {
+                  currentFileType = 'mbtiles';
+                  currentInputFileValue = sourceData.mbtiles;
+                }
+
+                if (currentFileType && currentInputFileValue) {
+                  // Check if this source matches the styleSourceId
+                  if (
+                    styleSourceId === id ||
+                    styleSourceId === currentInputFileValue
+                  ) {
+                    resolvedFileType = currentFileType;
+                    resolvedInputFile = currentInputFileValue;
+
+                    // Get sparse flag specifically from this matching source
+                    // Default to false if 'sparse' key doesn't exist or is falsy in a boolean context
+                    if (sourceData.hasOwnProperty('sparse')) {
+                      resolvedSparse = !!sourceData.sparse; // Ensure boolean
+                    } else {
+                      resolvedSparse = false; // Explicitly set default if not present on item
+                    }
+                    break; // Found our match, exit the outer loop
+                  }
                 }
               }
-              if (!isValidHttpUrl(inputFile)) {
-                inputFile = path.resolve(options.paths[fileType], inputFile);
+
+              // If no match was found
+              if (!resolvedInputFile || !resolvedFileType) {
+                console.warn(
+                  `Data source not found for styleSourceId: ${styleSourceId}`,
+                );
+                return {
+                  inputFile: undefined,
+                  fileType: undefined,
+                  sparse: false,
+                };
               }
 
-              return { inputFile, fileType };
+              if (!isValidHttpUrl(resolvedInputFile)) {
+                // Ensure options.paths and options.paths[resolvedFileType] exist before trying to use them
+                if (
+                  options &&
+                  options.paths &&
+                  options.paths[resolvedFileType]
+                ) {
+                  resolvedInputFile = path.resolve(
+                    options.paths[resolvedFileType],
+                    resolvedInputFile,
+                  );
+                } else {
+                  console.warn(
+                    `Path configuration missing for fileType: ${resolvedFileType}. Using relative path for: ${resolvedInputFile}`,
+                  );
+                }
+              }
+
+              return {
+                inputFile: resolvedInputFile,
+                fileType: resolvedFileType,
+                sparse: resolvedSparse,
+              };
             },
           ),
         );

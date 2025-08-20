@@ -1,6 +1,16 @@
 # tileserver-gl changelog
 
-## 5.3.0-pre.0
+## 5.4.0-pre.2
+* Fix the issue where the tile URL cannot be correctly parsed with the HTTPS protocol when using an nginx proxy service (https://github.com/maptiler/tileserver-gl/pull/1578) by @dakanggo
+* Use jemalloc as memory allocator in the docker image (https://github.com/maptiler/tileserver-gl/pull/1574) by @MichielMortier
+* Rasters: Add tileSize to TileJSON (https://github.com/maptiler/tileserver-gl/pull/1559) by @roblabs
+* Allow a 'sparse' option per data source (https://github.com/maptiler/tileserver-gl/pull/1558) by @acalcutt
+* Updates Maplibre-gl-js to v5.6.2 and adds color-relief support (note: this is not yet supported by maplibre-native) (https://github.com/maptiler/tileserver-gl/pull/1591)
+* Fix getPublicUrl to handle relative and absolute URLs (https://github.com/maptiler/tileserver-gl/pull/1472) by @Monnte
+* Workaround for 'hillshade-method' not yet being suported in maplibre-native (https://github.com/maptiler/tileserver-gl/pull/1620) by @acalcutt
+* Updates Maplibre-native to v6.2.0. This should fix the macos metal support in Issue: (https://github.com/maptiler/tileserver-gl/issues/1402)
+
+## 5.3.0
 * Fix - Include public\resources js files on npm publish by specifying included files in package.json (https://github.com/maptiler/tileserver-gl/pull/1490) by @acalcutt
 * Fix - Various Updates and Fix RTL Plugin Load (https://github.com/maptiler/tileserver-gl/pull/1489) by @okimiko
 * Updates Maplibre-gl-js to v5 and adds globe support.

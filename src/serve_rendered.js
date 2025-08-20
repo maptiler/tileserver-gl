@@ -1007,6 +1007,7 @@ export const serve_rendered = {
         );
       }
       const info = clone(item.tileJSON);
+      info.tileSize = tileSize != undefined ? tileSize : 256;
       info.tiles = getTileUrls(
         req,
         info.tiles,
@@ -1124,7 +1125,16 @@ export const serve_rendered = {
                 x,
                 y,
               );
-              if (fetchTile == null) {
+              if (fetchTile == null && sourceInfo.sparse == true) {
+                if (verbose) {
+                  console.log(
+                    'fetchTile warning on %s, sparse response',
+                    req.url,
+                  );
+                }
+                callback();
+                return;
+              } else if (fetchTile == null) {
                 if (verbose) {
                   console.log(
                     'fetchTile error on %s, serving empty response',
@@ -1194,10 +1204,30 @@ export const serve_rendered = {
                 parsedResponse.data = responseData;
                 callback(null, parsedResponse);
               } catch (error) {
-                const parts = url.parse(req.url);
-                const extension = path.extname(parts.pathname).toLowerCase();
-                const format = extensionToFormat[extension] || '';
-                createEmptyResponse(format, '', callback);
+                if (error.response && error.response.status === 410) {
+                  // This is the 410 "Gone" error, treat as sparse
+                  if (verbose) {
+                    console.log(
+                      'fetchTile warning on %s, sparse response due to 410 Gone',
+                      req.url,
+                    );
+                  }
+                  callback();
+                } else {
+                  // For all other errors (e.g., network errors, 404, 500, etc.) return empty content.
+                  console.error(
+                    `Error fetching remote URL ${req.url}:`,
+                    error.message || error,
+                    error.response
+                      ? `Status: ${error.response.status}`
+                      : 'No response received',
+                  );
+
+                  const parts = url.parse(req.url);
+                  const extension = path.extname(parts.pathname).toLowerCase();
+                  const format = extensionToFormat[extension] || '';
+                  createEmptyResponse(format, '', callback);
+                }
               }
             } else if (protocol === 'file') {
               const name = decodeURI(req.url).substring(protocol.length + 3);
@@ -1268,12 +1298,64 @@ export const serve_rendered = {
 
     for (const layer of styleJSON.layers || []) {
       if (layer && layer.paint) {
+        const layerIdForWarning = layer.id || 'unnamed-layer';
+
         // Remove (flatten) 3D buildings
         if (layer.paint['fill-extrusion-height']) {
+          if (verbose) {
+            console.warn(
+              `Warning: Layer '${layerIdForWarning}' in style '${id}' has property 'fill-extrusion-height'. ` +
+                `3D extrusion may appear distorted or misleading when rendered as a static image due to camera angle limitations. ` +
+                `It will be flattened (set to 0) in rendered images. ` +
+                `Note: This property will still work with MapLibre GL JS vector maps.`,
+            );
+          }
           layer.paint['fill-extrusion-height'] = 0;
         }
         if (layer.paint['fill-extrusion-base']) {
+          if (verbose) {
+            console.warn(
+              `Warning: Layer '${layerIdForWarning}' in style '${id}' has property 'fill-extrusion-base'. ` +
+                `3D extrusion may appear distorted or misleading when rendered as a static image due to camera angle limitations. ` +
+                `It will be flattened (set to 0) in rendered images. ` +
+                `Note: This property will still work with MapLibre GL JS vector maps.`,
+            );
+          }
           layer.paint['fill-extrusion-base'] = 0;
+        }
+
+        // --- Remove hillshade properties incompatible with MapLibre Native ---
+        const hillshadePropertiesToRemove = [
+          'hillshade-method',
+          'hillshade-illumination-direction',
+          'hillshade-highlight-color',
+        ];
+
+        for (const prop of hillshadePropertiesToRemove) {
+          if (prop in layer.paint) {
+            if (verbose) {
+              console.warn(
+                `Warning: Layer '${layerIdForWarning}' in style '${id}' has property '${prop}'. ` +
+                  `This property is not supported by MapLibre Native. ` +
+                  `It will be removed in rendered images. ` +
+                  `Note: This property will still work with MapLibre GL JS vector maps.`,
+              );
+            }
+            delete layer.paint[prop];
+          }
+        }
+
+        // --- Remove 'hillshade-shadow-color' if it is an array. It can only be a string in MapLibre Native ---
+        if (Array.isArray(layer.paint['hillshade-shadow-color'])) {
+          if (verbose) {
+            console.warn(
+              `Warning: Layer '${layerIdForWarning}' in style '${id}' has property 'hillshade-shadow-color'. ` +
+                `An array value is not supported by MapLibre Native for this property (expected string/color). ` +
+                `It will be removed in rendered images. ` +
+                `Note: Using an array for this property will still work with MapLibre GL JS vector maps.`,
+            );
+          }
+          delete layer.paint['hillshade-shadow-color'];
         }
       }
     }
@@ -1310,6 +1392,7 @@ export const serve_rendered = {
 
     for (const name of Object.keys(styleJSON.sources)) {
       let sourceType;
+      let sparse;
       let source = styleJSON.sources[name];
       let url = source.url;
       if (
@@ -1334,6 +1417,7 @@ export const serve_rendered = {
         if (dataInfo.inputFile) {
           inputFile = dataInfo.inputFile;
           sourceType = dataInfo.fileType;
+          sparse = dataInfo.sparse;
         } else {
           console.error(`ERROR: data "${inputFile}" not found!`);
           process.exit(1);
@@ -1362,6 +1446,7 @@ export const serve_rendered = {
           const type = source.type;
           Object.assign(source, metadata);
           source.type = type;
+          source.sparse = sparse;
           source.tiles = [
             // meta url which will be detected when requested
             `pmtiles://${name}/{z}/{x}/{y}.${metadata.format || 'pbf'}`,
@@ -1401,6 +1486,7 @@ export const serve_rendered = {
           const type = source.type;
           Object.assign(source, info);
           source.type = type;
+          source.sparse = sparse;
           source.tiles = [
             // meta url which will be detected when requested
             `mbtiles://${name}/{z}/{x}/{y}.${info.format || 'pbf'}`,

@@ -118,7 +118,11 @@ function getUrlObject(req) {
  */
 export function getPublicUrl(publicUrl, req) {
   if (publicUrl) {
-    return publicUrl;
+    try {
+      return new URL(publicUrl).toString();
+    } catch {
+      return new URL(publicUrl, getUrlObject(req)).toString();
+    }
   }
   return getUrlObject(req).toString();
 }
@@ -197,9 +201,12 @@ export function getTileUrls(
   const uris = [];
   if (!publicUrl) {
     let xForwardedPath = `${req.get('X-Forwarded-Path') ? '/' + req.get('X-Forwarded-Path') : ''}`;
+    let protocol = req.get('X-Forwarded-Protocol')
+      ? req.get('X-Forwarded-Protocol')
+      : req.protocol;
     for (const domain of domains) {
       uris.push(
-        `${req.protocol}://${domain}${xForwardedPath}/${path}/${tileParams}${format}${query}`,
+        `${protocol}://${domain}${xForwardedPath}/${path}/${tileParams}${format}${query}`,
       );
     }
   } else {
