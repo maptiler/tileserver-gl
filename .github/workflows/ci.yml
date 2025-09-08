@@ -27,7 +27,7 @@ jobs:
           libgif-dev build-essential
 
       - name: Setup node env 📦
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version-file: 'package.json'
           check-latest: true
