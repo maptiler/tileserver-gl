@@ -59,8 +59,14 @@ export function openPMtiles(FilePath) {
  *
  * @param pmtiles
  */
-export async function getPMtilesInfo(pmtiles) {
-  const header = await pmtiles.getHeader();
+export async function getPMtilesInfo(pmtiles, inputFile) {
+  let header;
+  try {
+    header = await pmtiles.getHeader();
+  } catch (error) {
+    const errorMessage = `${error.message} for file: ${inputFile}`;
+    throw new Error(errorMessage);
+  }
   const metadata = await pmtiles.getMetadata();
 
   //Add missing metadata from header

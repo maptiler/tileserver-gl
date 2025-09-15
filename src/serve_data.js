@@ -379,7 +379,7 @@ export const serve_data = {
     if (inputType === 'pmtiles') {
       source = openPMtiles(inputFile);
       sourceType = 'pmtiles';
-      const metadata = await getPMtilesInfo(source);
+      const metadata = await getPMtilesInfo(source, inputFile);
       Object.assign(tileJSON, metadata);
     } else if (inputType === 'mbtiles') {
       sourceType = 'mbtiles';
