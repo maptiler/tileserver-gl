@@ -132,8 +132,9 @@ const startWithInputFile = async (inputFile) => {
   const extension = inputFile.split('.').pop().toLowerCase();
   if (extension === 'pmtiles') {
     const fileOpenInfo = openPMtiles(inputFile);
+    let metadata;
     try {
-      const metadata = await getPMtilesInfo(fileOpenInfo);
+      metadata = await getPMtilesInfo(fileOpenInfo);
     } catch (error) {
       const errorMessage = `${error.message} for file: ${inputFile}`;
       throw new Error(errorMessage);
