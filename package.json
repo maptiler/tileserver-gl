@@ -58,7 +58,7 @@
     "http-shutdown": "1.2.2",
     "leaflet": "1.9.4",
     "leaflet-hash": "0.2.1",
-    "maplibre-gl": "5.7.1",
+    "maplibre-gl": "5.7.3",
     "morgan": "1.10.1",
     "pbf": "4.0.1",
     "pmtiles": "4.3.0",
