@@ -249,7 +249,7 @@ export const serve_data = {
           if (zoom > tileJSON.maxzoom) {
             zoom = tileJSON.maxzoom;
           }
-          bbox = [x, y, x + 0.1, y + 0.1];
+          bbox = [x, y, x, y];
           const { minX, minY } = new SphericalMercator().xyz(bbox, zoom);
           xy = [minX, minY];
         }
