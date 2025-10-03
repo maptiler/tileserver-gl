@@ -377,21 +377,6 @@ async function start(opts) {
     startupPromises.push(serve_data.add(options, serving.data, item, id, opts));
   }
   if (options.serveAllStyles) {
-    fs.readdir(options.paths.styles, { withFileTypes: true }, (err, files) => {
-      if (err) {
-        return;
-      }
-      for (const file of files) {
-        if (file.isFile() && path.extname(file.name).toLowerCase() == '.json') {
-          const id = path.basename(file.name, '.json');
-          const item = {
-            style: file.name,
-          };
-          addStyle(id, item, false, false);
-        }
-      }
-    });
-
     const watcher = chokidar.watch(
       path.join(options.paths.styles, '*.json'),
       {},
