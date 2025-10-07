@@ -21,6 +21,7 @@ import {
   getTileUrls,
   getPublicUrl,
   isValidHttpUrl,
+  keyValidationMiddleware,
 } from './utils.js';
 
 import { fileURLToPath } from 'url';
@@ -153,7 +154,7 @@ async function start(opts) {
       options.dataDecoratorFunc = require(
         path.resolve(paths.root, options.dataDecorator),
       );
-    } catch (e) {}
+    } catch (e) { }
   }
 
   const data = clone(config.data || {});
@@ -161,6 +162,16 @@ async function start(opts) {
   if (opts.cors) {
     app.use(cors());
   }
+
+  // Enable authentication middleware globally.
+  // This will protect ALL endpoints by requiring a valid JWT token
+  // to be passed as a `key` query parameter.
+  // 
+  // Example:
+  //   GET /api/resource?key=<JWT_TOKEN>
+  //
+  // If you only want to protect specific routes, 
+  // attach `keyValidationMiddleware` to those routes instead of globally.
 
   app.use('/data/', serve_data.init(options, serving.data, opts));
   app.use('/files/', express.static(paths.files));
@@ -736,11 +747,10 @@ async function start(opts) {
     if (opts.publicUrl) {
       baseUrl = opts.publicUrl;
     } else {
-      baseUrl = `${
-        req.get('X-Forwarded-Protocol')
-          ? req.get('X-Forwarded-Protocol')
-          : req.protocol
-      }://${req.get('host')}/`;
+      baseUrl = `${req.get('X-Forwarded-Protocol')
+        ? req.get('X-Forwarded-Protocol')
+        : req.protocol
+        }://${req.get('host')}/`;
     }
 
     return {

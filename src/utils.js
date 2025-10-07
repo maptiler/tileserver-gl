@@ -7,6 +7,9 @@ import clone from 'clone';
 import { combine } from '@jsse/pbfont';
 import { existsP } from './promises.js';
 import { getPMtilesTile } from './pmtiles_adapter.js';
+import jwt from 'jsonwebtoken';
+import { configDotenv } from 'dotenv';
+configDotenv();
 
 export const allowedSpriteFormats = allowedOptions(['png', 'json']);
 
@@ -231,7 +234,7 @@ export function fixTileJSONCenter(tileJSON) {
       (tileJSON.bounds[1] + tileJSON.bounds[3]) / 2,
       Math.round(
         -Math.log((tileJSON.bounds[2] - tileJSON.bounds[0]) / 360 / tiles) /
-          Math.LN2,
+        Math.LN2,
       ),
     ];
   }
@@ -433,5 +436,89 @@ export async function fetchTileData(source, sourceType, z, x, y) {
         resolve({ data: tileData, headers: tileHeader });
       });
     });
+  }
+}
+
+/**
+ * Middleware to validate a JWT token passed in the query string.
+ *
+ * This middleware expects a `key` parameter in the query string.
+ * It verifies the token using the server's symmetric HS256 secret key.
+ *
+ * @function keyValidationMiddleware
+ * @param {import("express").Request} req - The Express request object.
+ * @param {import("express").Response} res - The Express response object.
+ * @param {import("express").NextFunction} next - The next middleware function.
+ * @returns {void} - Calls `next()` if the token is valid, otherwise responds with 401 Unauthorized.
+ *
+ * @example
+ * // Example usage:
+ * app.use("/api", keyValidationMiddleware, apiRoutes);
+ */
+export function keyValidationMiddleware(req, res, next) {
+  const { key } = req.query;
+
+  // load your Private Key it must be symmetric HS256
+  var privateKey = process.env.YOUR_PRIVATE_KEY
+  if (!privateKey) {
+    throw new Error("Missing environment variable: YOUR_PRIVATE_KEY");
+  }
+
+  if (!key || !verifyJwtSignature(key, privateKey)) {
+    return res.status(401).send("Unauthorized: invalid or missing token");
+  }
+
+  next();
+}
+
+/**
+ * Signs a new JWT token with a given secret key and user identifier.
+ *
+ * Creates a JSON Web Token (JWT) using the HS256 algorithm.
+ * The token includes the provided `id` in its payload and expires in 1 hour.
+ *
+ * @function signJwtSignature
+ * @param {string} secretKey - The symmetric secret key used to sign the token.
+ * @param {string|number} id - The identifier to embed in the token payload.
+ * @returns {string} - A signed JWT token.
+ *
+ * @example
+ * const token = signJwtSignature(process.env.YOUR_PRIVATE_KEY, 12345);
+ * console.log("Generated Token:", token);
+ */
+function signJwtSignature(secrete_key, id) {
+  const payload = {
+    id: id,
+  }
+  const signingOptions = {
+    algorithm: 'HS256', // or your chosen algorithm
+  };
+  const token = jwt.sign({
+    data: payload
+  }, secrete_key, { expiresIn: "1h" }, signingOptions);
+
+  return token;
+}
+
+/**
+ * Verifies a JWT token using the provided secret key.
+ *
+ * Attempts to decode and validate the token
+ * If verification fails due to an invalid signature, malformed token, or expiration, it returns `false`.
+ * 
+ * @function verifyJwtSignature
+ * @param {string} token - The JWT token to verify.
+ * @param {string} secretKey - The symmetric secret key used to verify the token.
+ * @returns {boolean} - Returns `true` if the token is valid, otherwise `false`.
+ */
+function verifyJwtSignature(token, secrete_key) {
+  try {
+    // it returns jwt payload if not the token is malformd or unvalid
+    const decoded = jwt.verify(token, secrete_key)
+    if (!decoded) { return false; }
+
+    return true;
+  } catch (e) {
+    return false;
   }
 }
