@@ -21,9 +21,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runs-on: ubuntu-22.04
+          - runs-on: ubuntu-24.04
             arch: amd64
-          - runs-on: ubuntu-22.04-arm
+          - runs-on: ubuntu-24.04-arm
             arch: arm64
     
     steps:
@@ -32,6 +32,12 @@ jobs:
 
       - name: Get OS Architecture
         run: uname -m
+
+      - name: Install system dependencies (Ubuntu) 🚀
+        run: >-
+          sudo apt-get update -qq && sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev
+          libgif-dev build-essential g++ xvfb libgles2-mesa-dev libgbm-dev
+          libxxf86vm-dev
 
       - name: Setup node env 📦
         uses: actions/setup-node@v6
@@ -43,14 +49,20 @@ jobs:
       - name: Install NPM dependencies 🚀
         run: npm ci --prefer-offline --no-audit
 
-      - name: Install system dependencies (Ubuntu) 🚀
-        run: >-
-          sudo apt-get update -qq && sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev
-          libgif-dev build-essential g++ xvfb libgles2-mesa-dev libgbm-dev
-          libxxf86vm-dev
+      - name: Get release type
+        id: prepare_release
+        run: |
+          RELEASE_TYPE="$(node -e "console.log(require('semver').prerelease('${{ needs.release-check.outputs.version }}') ? 'prerelease' : 'regular')")"
+          if [[ $RELEASE_TYPE == 'regular' ]]; then
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "tag=next" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Test NPM publish (dry-run)
-        run: npm publish --dry-run --tag next
+        run: npm publish --dry-run --tag ${{ steps.prepare_release.outputs.tag }}
 
       - name: Pull test data 📦
         run: >-
