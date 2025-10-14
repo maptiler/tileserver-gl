@@ -35,9 +35,13 @@ jobs:
 
       - name: Install system dependencies (Ubuntu) 🚀
         run: >-
-          sudo apt-get update -qq && sudo apt-get install -qq libcairo2-dev libjpeg-dev libpng-dev libwebp-dev libpango1.0-dev
-          libgif-dev build-essential g++ xvfb libgles2-mesa-dev libgbm-dev
-          libxxf86vm-dev
+          sudo apt-get update -qq && sudo apt-get install -qq xvfb \
+            libcurl4-openssl-dev \
+            libglfw3-dev \
+            libuv1-dev \
+            libjpeg-dev \
+            libpng-dev \
+            libwebp-dev
 
       - name: Setup node env 📦
         uses: actions/setup-node@v6
