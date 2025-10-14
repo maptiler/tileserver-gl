@@ -35,7 +35,7 @@ jobs:
 
       - name: Install system dependencies (Ubuntu) 🚀
         run: >-
-          sudo apt-get update -qq && sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev
+          sudo apt-get update -qq && sudo apt-get install -qq libcairo2-dev libjpeg-dev libpng-dev libwebp-dev libpango1.0-dev
           libgif-dev build-essential g++ xvfb libgles2-mesa-dev libgbm-dev
           libxxf86vm-dev
 
