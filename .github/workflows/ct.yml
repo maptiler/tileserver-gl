@@ -50,7 +50,7 @@ jobs:
           libxxf86vm-dev
 
       - name: Test NPM publish (dry-run)
-        run: npm publish --dry-run
+        run: npm publish --dry-run --tag next
 
       - name: Pull test data 📦
         run: >-
@@ -96,7 +96,7 @@ jobs:
         working-directory: ./light
 
       - name: Test Light NPM publish (dry-run)
-        run: npm publish --dry-run
+        run: npm publish --dry-run --tag next
         working-directory: ./light
 
       - name: Build and tag ${{ matrix.arch }} light image locally
