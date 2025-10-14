@@ -3,7 +3,9 @@
   "version": "5.5.0-pre.9",
   "description": "Map tile server for JSON GL styles - vector and server side generated raster tiles",
   "main": "src/main.js",
-  "bin": "src/main.js",
+  "bin": {
+    "tileserver-gl": "src/main.js"
+  },
   "type": "module",
   "files": [
     "docs",
