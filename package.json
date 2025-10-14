@@ -43,7 +43,7 @@
     "@mapbox/sphericalmercator": "2.0.2",
     "@mapbox/vector-tile": "2.0.4",
     "@maplibre/maplibre-gl-inspect": "1.8.2",
-    "@maplibre/maplibre-gl-native": "6.2.0",
+    "@maplibre/maplibre-gl-native": "6.3.0-pre.0",
     "@maplibre/maplibre-gl-style-spec": "24.4.1",
     "@sindresorhus/fnv1a": "3.1.0",
     "advanced-pool": "0.3.3",
@@ -98,7 +98,7 @@
   ],
   "license": "BSD-2-Clause",
   "engines": {
-    "node": ">=18.17.0 <23"
+    "node": "20 || 22 || 24"
   },
   "repository": {
     "url": "https://github.com/maptiler/tileserver-gl",
