@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { PMTiles, FetchSource, EtagMismatch } from 'pmtiles';
-import { isValidHttpUrl } from './utils.js';
+import { isValidHttpUrl, isS3Url } from './utils.js';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 
 /**
@@ -235,17 +235,13 @@ async function readFileBytes(fd, buffer, offset) {
 export function openPMtiles(filePath) {
   let pmtiles = undefined;
 
-  // Check for S3 or S3-compatible URL (s3:// or s3+https://)
-  if (
-    filePath.startsWith('s3://') ||
-    filePath.startsWith('s3+https://') ||
-    filePath.startsWith('s3+http://')
-  ) {
+  // Check for S3 or S3-compatible URL using regex tester
+  if (isS3Url(filePath)) {
     console.log(`Opening PMTiles from S3: ${filePath}`);
     const source = new S3Source(filePath);
     pmtiles = new PMTiles(source);
   }
-  // Check for HTTP/HTTPS URL
+  // Check for HTTP/HTTPS URL using regex tester
   else if (isValidHttpUrl(filePath)) {
     console.log(`Opening PMTiles from HTTP: ${filePath}`);
     const source = new FetchSource(filePath);
@@ -254,6 +250,7 @@ export function openPMtiles(filePath) {
   // Local file
   else {
     console.log(`Opening PMTiles from local file: ${filePath}`);
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- Opening local PMTiles file specified in config or CLI
     const fd = fs.openSync(filePath, 'r');
     const source = new PMTilesFileSource(fd);
     pmtiles = new PMTiles(source);

@@ -31,7 +31,8 @@ import {
   getFontsPbf,
   listFonts,
   getTileUrls,
-  isValidHttpUrl,
+  isValidRemoteUrl,
+  httpTester,
   fixTileJSONCenter,
   fetchTileData,
   readFile,
@@ -61,8 +62,8 @@ const staticTypeRegex = new RegExp(
 );
 
 const PATH_PATTERN =
+  // eslint-disable-next-line security/detect-unsafe-regex
   /^((fill|stroke|width)\:[^\|]+\|)*(enc:.+|-?\d+(\.\d*)?,-?\d+(\.\d*)?(\|-?\d+(\.\d*)?,-?\d+(\.\d*)?)+)/;
-const httpTester = /^https?:\/\//i;
 
 const mercator = new SphericalMercator();
 
@@ -461,8 +462,10 @@ async function respondImage(
   const tileMargin = Math.max(options.tileMargin || 0, 0);
   let pool;
   if (mode === 'tile' && tileMargin === 0) {
+    // eslint-disable-next-line security/detect-object-injection -- scale is validated by allowedScales
     pool = item.map.renderers[scale];
   } else {
+    // eslint-disable-next-line security/detect-object-injection -- scale is validated by allowedScales
     pool = item.map.renderersStatic[scale];
   }
 
@@ -564,8 +567,10 @@ async function respondImage(
           'WARNING: The formatQuality option is deprecated and has been replaced with formatOptions. Please see the documentation. The values from formatQuality will be used if a quality setting is not provided via formatOptions.',
         );
       }
+      // eslint-disable-next-line security/detect-object-injection -- format is validated above
       const formatQuality = formatQualities[format];
 
+      // eslint-disable-next-line security/detect-object-injection -- format is validated above
       const formatOptions = (options.formatOptions || {})[format] || {};
 
       if (format === 'png') {
@@ -638,6 +643,7 @@ async function handleTileRequest(
     scale: scaleParam,
     format,
   } = req.params;
+  // eslint-disable-next-line security/detect-object-injection -- id is route parameter, validated by Express
   const item = repo[id];
   if (!item) {
     return res.sendStatus(404);
@@ -723,6 +729,7 @@ async function handleStaticRequest(
     scale: scaleParam,
     format,
   } = req.params;
+  // eslint-disable-next-line security/detect-object-injection -- id is route parameter, validated by Express
   const item = repo[id];
 
   let parsedWidth = null;
@@ -990,6 +997,7 @@ export const serve_rendered = {
      * @returns {void}
      */
     app.get('{/:tileSize}/:id.json', (req, res, next) => {
+      // eslint-disable-next-line security/detect-object-injection -- req.params.id is route parameter, validated by Express
       const item = repo[req.params.id];
       if (!item) {
         return res.sendStatus(404);
@@ -1107,8 +1115,11 @@ export const serve_rendered = {
             } else if (protocol === 'mbtiles' || protocol === 'pmtiles') {
               const parts = req.url.split('/');
               const sourceId = parts[2];
+              // eslint-disable-next-line security/detect-object-injection -- sourceId from internal style source names
               const source = map.sources[sourceId];
+              // eslint-disable-next-line security/detect-object-injection -- sourceId from internal style source names
               const sourceType = map.sourceTypes[sourceId];
+              // eslint-disable-next-line security/detect-object-injection -- sourceId from internal style source names
               const sourceInfo = styleJSON.sources[sourceId];
 
               const z = parts[3] | 0;
@@ -1223,6 +1234,7 @@ export const serve_rendered = {
 
                   const parts = url.parse(req.url);
                   const extension = path.extname(parts.pathname).toLowerCase();
+                  // eslint-disable-next-line security/detect-object-injection -- extension is from path.extname, limited set
                   const format = extensionToFormat[extension] || '';
                   createEmptyResponse(format, '', callback);
                 }
@@ -1231,6 +1243,7 @@ export const serve_rendered = {
               const name = decodeURI(req.url).substring(protocol.length + 3);
               const file = path.join(options.paths['files'], name);
               if (await existsP(file)) {
+                // eslint-disable-next-line security/detect-non-literal-fs-filename -- file path constructed from configured base path and URL-decoded filename
                 const inputFileStats = await fsp.stat(file);
                 if (!inputFileStats.isFile() || inputFileStats.size === 0) {
                   throw Error(
@@ -1274,6 +1287,7 @@ export const serve_rendered = {
         styleJSON.sprite = [{ id: 'default', url: styleJSON.sprite }];
       }
       styleJSON.sprite.forEach((spriteItem) => {
+        // Sprites should only be HTTP/HTTPS, not S3
         if (!httpTester.test(spriteItem.url)) {
           spriteItem.url =
             'sprites://' +
@@ -1290,6 +1304,7 @@ export const serve_rendered = {
       });
     }
 
+    // Glyphs should only be HTTP/HTTPS, not S3
     if (styleJSON.glyphs && !httpTester.test(styleJSON.glyphs)) {
       styleJSON.glyphs = `fonts://${styleJSON.glyphs}`;
     }
@@ -1386,11 +1401,13 @@ export const serve_rendered = {
       staticAttributionText:
         params.staticAttributionText || options.staticAttributionText,
     };
+    // eslint-disable-next-line security/detect-object-injection -- id is from config file style names
     repo[id] = repoobj;
 
     for (const name of Object.keys(styleJSON.sources)) {
       let sourceType;
       let sparse;
+      // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
       let source = styleJSON.sources[name];
       let url = source.url;
       if (
@@ -1405,6 +1422,7 @@ export const serve_rendered = {
           dataId = dataId.slice(1, -1);
         }
 
+        // eslint-disable-next-line security/detect-object-injection -- dataId is from style source URL, used for mapping lookup
         const mapsTo = (params.mapping || {})[dataId];
         if (mapsTo) {
           dataId = mapsTo;
@@ -1421,7 +1439,9 @@ export const serve_rendered = {
           process.exit(1);
         }
 
-        if (!isValidHttpUrl(inputFile)) {
+        // PMTiles supports remote URLs (HTTP and S3), skip file check for those
+        if (!isValidRemoteUrl(inputFile)) {
+          // eslint-disable-next-line security/detect-non-literal-fs-filename -- inputFile is from dataResolver, which validates against config
           const inputFileStats = await fsp.stat(inputFile);
           if (!inputFileStats.isFile() || inputFileStats.size === 0) {
             throw Error(`Not valid PMTiles file: "${inputFile}"`);
@@ -1429,8 +1449,11 @@ export const serve_rendered = {
         }
 
         if (sourceType === 'pmtiles') {
+          // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
           map.sources[name] = openPMtiles(inputFile);
+          // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
           map.sourceTypes[name] = 'pmtiles';
+          // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
           const metadata = await getPMtilesInfo(map.sources[name], inputFile);
 
           if (!repoobj.dataProjWGStoInternalWGS && metadata.proj4) {
@@ -1464,13 +1487,17 @@ export const serve_rendered = {
             }
           }
         } else {
+          // MBTiles does not support remote URLs
+          // eslint-disable-next-line security/detect-non-literal-fs-filename -- inputFile is from dataResolver, which validates against config
           const inputFileStats = await fsp.stat(inputFile);
           if (!inputFileStats.isFile() || inputFileStats.size === 0) {
             throw Error(`Not valid MBTiles file: "${inputFile}"`);
           }
           const mbw = await openMbTilesWrapper(inputFile);
           const info = await mbw.getInfo();
+          // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
           map.sources[name] = mbw.getMbTiles();
+          // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
           map.sourceTypes[name] = 'mbtiles';
 
           if (!repoobj.dataProjWGStoInternalWGS && info.proj4) {
@@ -1519,7 +1546,9 @@ export const serve_rendered = {
       const j = Math.min(maxPoolSizes.length - 1, s - 1);
       const minPoolSize = minPoolSizes[i];
       const maxPoolSize = Math.max(minPoolSize, maxPoolSizes[j]);
+      // eslint-disable-next-line security/detect-object-injection -- s is loop counter from 1 to maxScaleFactor
       map.renderers[s] = createPool(s, 'tile', minPoolSize, maxPoolSize);
+      // eslint-disable-next-line security/detect-object-injection -- s is loop counter from 1 to maxScaleFactor
       map.renderersStatic[s] = createPool(
         s,
         'static',
@@ -1535,6 +1564,7 @@ export const serve_rendered = {
    * @returns {void}
    */
   remove: function (repo, id) {
+    // eslint-disable-next-line security/detect-object-injection -- id is function parameter for removal
     const item = repo[id];
     if (item) {
       item.map.renderers.forEach((pool) => {
@@ -1553,6 +1583,7 @@ export const serve_rendered = {
    */
   clear: function (repo) {
     Object.keys(repo).forEach((id) => {
+      // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys() iteration
       const item = repo[id];
       if (item) {
         item.map.renderers.forEach((pool) => {

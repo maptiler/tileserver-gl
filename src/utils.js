@@ -9,8 +9,12 @@ import { existsP } from './promises.js';
 import { getPMtilesTile } from './pmtiles_adapter.js';
 
 export const allowedSpriteFormats = allowedOptions(['png', 'json']);
-
 export const allowedTileSizes = allowedOptions(['256', '512']);
+export const httpTester = /^https?:\/\//i;
+export const s3Tester = /^s3:\/\//i; // Plain AWS S3 format
+export const s3HttpTester = /^s3\+https?:\/\//i; // S3-compatible with custom endpoint
+export const pmtilesTester = /^pmtiles:\/\//i;
+export const mbtilesTester = /^mbtiles:\/\//i;
 
 /**
  * Restrict user input to an allowed set of options.
@@ -392,20 +396,68 @@ export async function listFonts(fontPath) {
 }
 
 /**
- * Checks if a string is a valid HTTP or HTTPS URL.
- * @param {string} string - The string to validate.
- * @returns {boolean} True if the string is a valid HTTP/HTTPS URL, false otherwise.
+ * Checks if a string is a valid HTTP/HTTPS URL.
+ * @param {string} string - The string to check.
+ * @returns {boolean} - True if the string is a valid HTTP/HTTPS URL.
  */
 export function isValidHttpUrl(string) {
-  let url;
-
   try {
-    url = new URL(string);
-  } catch (_) {
+    return httpTester.test(string);
+  } catch (e) {
     return false;
   }
+}
 
-  return url.protocol === 'http:' || url.protocol === 'https:';
+/**
+ * Checks if a string is a valid S3 URL.
+ * @param {string} string - The string to check.
+ * @returns {boolean} - True if the string is a valid S3 URL.
+ */
+export function isS3Url(string) {
+  try {
+    return s3Tester.test(string) || s3HttpTester.test(string);
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Checks if a string is a valid remote URL (HTTP, HTTPS, or S3).
+ * @param {string} string - The string to check.
+ * @returns {boolean} - True if the string is a valid remote URL.
+ */
+export function isValidRemoteUrl(string) {
+  try {
+    return httpTester.test(string) || s3Tester.test(string);
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Checks if a string uses the pmtiles:// protocol.
+ * @param {string} string - The string to check.
+ * @returns {boolean} - True if the string uses pmtiles:// protocol.
+ */
+export function isPMTilesProtocol(string) {
+  try {
+    return pmtilesTester.test(string);
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Checks if a string uses the mbtiles:// protocol.
+ * @param {string} string - The string to check.
+ * @returns {boolean} - True if the string uses mbtiles:// protocol.
+ */
+export function isMBTilesProtocol(string) {
+  try {
+    return mbtilesTester.test(string);
+  } catch (e) {
+    return false;
+  }
 }
 
 /**

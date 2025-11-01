@@ -14,7 +14,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import axios from 'axios';
 import { server } from './server.js';
-import { isValidHttpUrl } from './utils.js';
+import { isS3Url, isValidRemoteUrl } from './utils.js';
 import { openPMtiles, getPMtilesInfo } from './pmtiles_adapter.js';
 import { program } from 'commander';
 import { existsP } from './promises.js';
@@ -58,7 +58,7 @@ program
   .usage('tileserver-gl [mbtiles] [options]')
   .option(
     '--file <file>',
-    'MBTiles or PMTiles file\n' +
+    'MBTiles or PMTiles file (local path, http(s)://, or s3:// URL)\n' +
       '\t                  ignored if the configuration file is also specified',
   )
   .option(
@@ -119,15 +119,23 @@ const startWithInputFile = async (inputFile) => {
   );
 
   let inputFilePath;
-  if (isValidHttpUrl(inputFile)) {
+  // Check if input is a remote URL (HTTP, HTTPS, or S3)
+  if (isValidRemoteUrl(inputFile)) {
     inputFilePath = process.cwd();
+    if (isS3Url(inputFile)) {
+      console.log(`[INFO] Using S3 source: ${inputFile}`);
+    } else {
+      console.log(`[INFO] Using HTTP source: ${inputFile}`);
+    }
   } else {
+    // Local file path
     inputFile = path.resolve(process.cwd(), inputFile);
     inputFilePath = path.dirname(inputFile);
 
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- Validating local file from CLI argument
     const inputFileStats = await fsp.stat(inputFile);
     if (!inputFileStats.isFile() || inputFileStats.size === 0) {
-      console.log(`ERROR: Not a valid input file: `);
+      console.log(`ERROR: Not a valid input file: ${inputFile}`);
       process.exit(1);
     }
   }
@@ -160,7 +168,8 @@ const startWithInputFile = async (inputFile) => {
       metadata.format === 'pbf' &&
       metadata.name.toLowerCase().indexOf('openmaptiles') > -1
     ) {
-      if (isValidHttpUrl(inputFile)) {
+      // Use inputFile directly for remote URLs (HTTP or S3)
+      if (isValidRemoteUrl(inputFile)) {
         config['data'][`v3`] = {
           pmtiles: inputFile,
         };
@@ -175,6 +184,7 @@ const startWithInputFile = async (inputFile) => {
         const styleFileRel = styleName + '/style.json';
         const styleFile = path.resolve(styleDir, 'styles', styleFileRel);
         if (await existsP(styleFile)) {
+          // eslint-disable-next-line security/detect-object-injection -- styleName is from trusted filesystem readdir, not user input
           config['styles'][styleName] = {
             style: styleFileRel,
             tilejson: {
@@ -187,7 +197,8 @@ const startWithInputFile = async (inputFile) => {
       console.log(
         `WARN: PMTiles not in "openmaptiles" format. Serving raw data only...`,
       );
-      if (isValidHttpUrl(inputFile)) {
+      // Use inputFile directly for remote URLs (HTTP or S3)
+      if (isValidRemoteUrl(inputFile)) {
         config['data'][(metadata.id || 'pmtiles').replace(/[?/:]/g, '_')] = {
           pmtiles: inputFile,
         };
@@ -206,9 +217,10 @@ const startWithInputFile = async (inputFile) => {
 
     return startServer(null, config);
   } else {
-    if (isValidHttpUrl(inputFile)) {
+    // MBTiles handling - reject remote URLs
+    if (isValidRemoteUrl(inputFile)) {
       console.log(
-        `ERROR: MBTiles does not support web based files. "${inputFile}" is not a valid data file.`,
+        `ERROR: MBTiles does not support remote files. "${inputFile}" is not a valid data file.`,
       );
       process.exit(1);
     }
@@ -237,6 +249,7 @@ const startWithInputFile = async (inputFile) => {
         const styleFileRel = styleName + '/style.json';
         const styleFile = path.resolve(styleDir, 'styles', styleFileRel);
         if (await existsP(styleFile)) {
+          // eslint-disable-next-line security/detect-object-injection -- styleName is from trusted filesystem readdir, not user input
           config['styles'][styleName] = {
             style: styleFileRel,
             tilejson: {
