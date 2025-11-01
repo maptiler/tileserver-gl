@@ -243,7 +243,7 @@ For example::
       "pmtiles": "s3://my-bucket/tiles/terrain.pmtiles"
     },
     "source5": {
-      "pmtiles": "s3+https://eu2.contabostorage.com/bucket-id:path/tiles.pmtiles"
+      "pmtiles": "s3+https://example-storage.com/bucket-abc123:tiles/terrain.pmtiles"
     }
   }
 
@@ -362,8 +362,8 @@ For example::
       "url": "pmtiles://s3://my-bucket/tiles/terrain.pmtiles",
       "type": "vector"
     },
-    "contabo-tiles": {
-      "url": "pmtiles://s3+https://eu2.contabostorage.com/ec819d9f7ec146e3a52cea2ba4118719:terrain/tiles.pmtiles",
+    "custom-storage": {
+      "url": "pmtiles://s3+https://example-storage.com/bucket-abc123:tiles/terrain.pmtiles",
       "type": "vector"
     },
     "spaces-tiles": {
