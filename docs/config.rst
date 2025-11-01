@@ -225,7 +225,7 @@ Each item in this object defines one style (map). It can have the following opti
 Each item specifies one data source which should be made accessible by the server. It has to have one of the following options:
 
 * ``mbtiles`` -- name of the mbtiles file
-* ``pmtiles`` -- name of the pmtiles file or url.
+* ``pmtiles`` -- name of the pmtiles file, url, or S3 path.
 
 For example::
 
@@ -238,6 +238,12 @@ For example::
     },
     "source3": {
       "pmtiles": "https://foo.lan/source3.pmtiles"
+    },
+    "source4": {
+      "pmtiles": "s3://my-bucket/tiles/terrain.pmtiles"
+    },
+    "source5": {
+      "pmtiles": "s3+https://eu2.contabostorage.com/bucket-id:path/tiles.pmtiles"
     }
   }
 
@@ -331,7 +337,67 @@ For example::
 
 Alternatively, you can use ``pmtiles://{source2}`` to reference existing data object from the config.
 In this case, the server will look into the ``config.json`` to determine what file to use by data id.
-For the config above, this is equivalent to ``pmtiles://source2.mbtiles``.
+For the config above, this is equivalent to ``pmtiles://source2.pmtiles``.
+
+S3 and S3-Compatible Storage
+-----------------------------
+
+PMTiles files can be accessed directly from AWS S3 or S3-compatible storage services (such as Contabo, DigitalOcean Spaces, MinIO, etc.) using S3 URLs. This provides better performance and eliminates HTTP rate limiting issues.
+
+**Supported URL Formats:**
+
+1. **AWS S3 (default):**
+   ``s3://bucket-name/path/to/file.pmtiles``
+
+2. **S3-compatible storage with endpoint:**
+   ``s3://endpoint-url/bucket-name/path/to/file.pmtiles``
+
+3. **Custom format (for services like Contabo):**
+   ``s3+https://endpoint-url/bucket-id:path/to/file.pmtiles``
+
+For example::
+
+  "sources": {
+    "aws-tiles": {
+      "url": "pmtiles://s3://my-bucket/tiles/terrain.pmtiles",
+      "type": "vector"
+    },
+    "contabo-tiles": {
+      "url": "pmtiles://s3+https://eu2.contabostorage.com/ec819d9f7ec146e3a52cea2ba4118719:terrain/tiles.pmtiles",
+      "type": "vector"
+    },
+    "spaces-tiles": {
+      "url": "pmtiles://s3://nyc3.digitaloceanspaces.com/my-bucket/tiles.pmtiles",
+      "type": "vector"
+    }
+  }
+
+**AWS Credentials Setup:**
+
+S3 sources require AWS credentials to be configured. The server will automatically use credentials from:
+
+* Environment variables: ``AWS_ACCESS_KEY_ID``, ``AWS_SECRET_ACCESS_KEY``, ``AWS_REGION``
+* AWS credentials file: ``~/.aws/credentials`` (``C:\Users\YourUsername\.aws\credentials`` on Windows)
+* IAM role (when running on AWS EC2, ECS, or Lambda)
+
+For S3-compatible storage providers, use the same AWS credential format with your provider's access keys.
+
+Example environment variables::
+
+  export AWS_ACCESS_KEY_ID=your_access_key
+  export AWS_SECRET_ACCESS_KEY=your_secret_key
+  export AWS_REGION=us-east-1
+
+**Benefits of S3 Sources:**
+
+* No HTTP 429 rate limiting errors
+* Better performance with optimized byte-range requests
+* Secure authentication with IAM or access keys
+* Automatic retry logic for transient failures
+* Cost-effective (no data transfer fees within same AWS region)
+
+.. note::
+    S3 support requires the ``@aws-sdk/client-s3`` package to be installed. Install it with: ``npm install @aws-sdk/client-s3``
 
 Sprites
 -------
