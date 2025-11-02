@@ -1434,6 +1434,8 @@ export const serve_rendered = {
 
         let inputFile;
         let s3Profile;
+        let requestPayer;
+        let s3Region;
         const dataInfo = dataResolver(dataId);
         if (dataInfo.inputFile) {
           inputFile = dataInfo.inputFile;
@@ -1441,6 +1443,7 @@ export const serve_rendered = {
           sparse = dataInfo.sparse;
           s3Profile = dataInfo.s3Profile;
           requestPayer = dataInfo.requestPayer;
+          s3Region = dataInfo.s3Region;
         } else {
           console.error(`ERROR: data "${inputFile}" not found!`);
           process.exit(1);
@@ -1457,7 +1460,12 @@ export const serve_rendered = {
 
         if (sourceType === 'pmtiles') {
           // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
-          map.sources[name] = openPMtiles(inputFile, s3Profile, requestPayer);
+          map.sources[name] = openPMtiles(
+            inputFile,
+            s3Profile,
+            requestPayer,
+            s3Region,
+          );
           // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
           map.sourceTypes[name] = 'pmtiles';
           // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys

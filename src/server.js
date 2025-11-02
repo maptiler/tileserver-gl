@@ -292,6 +292,7 @@ async function start(opts) {
               let resolvedSparse = false;
               let resolvedS3Profile;
               let resolvedRequestPayer;
+              let resolvedS3Region;
 
               for (const id of Object.keys(data)) {
                 // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys of data config
@@ -317,12 +318,11 @@ async function start(opts) {
                     resolvedFileType = currentFileType;
                     resolvedInputFile = currentInputFileValue;
 
-                    // Get sparse flag specifically from this matching source
-                    // Default to false if 'sparse' key doesn't exist or is falsy in a boolean context
+                    // Get sparse if present
                     if (sourceData.hasOwnProperty('sparse')) {
-                      resolvedSparse = !!sourceData.sparse; // Ensure boolean
+                      resolvedSparse = !!sourceData.sparse;
                     } else {
-                      resolvedSparse = false; // Explicitly set default if not present on item
+                      resolvedSparse = false;
                     }
 
                     // Get s3Profile if present
@@ -332,7 +332,12 @@ async function start(opts) {
 
                     // Get requestPayer if present
                     if (sourceData.hasOwnProperty('requestPayer')) {
-                      resolvedRequestPayer = !!sourceData.requestPayer; // Ensure boolean
+                      resolvedRequestPayer = !!sourceData.requestPayer;
+                    }
+
+                    // Get s3Region if present
+                    if (sourceData.hasOwnProperty('s3Region')) {
+                      resolvedS3Region = sourceData.s3Region;
                     }
 
                     break; // Found our match, exit the outer loop
@@ -351,6 +356,7 @@ async function start(opts) {
                   sparse: false,
                   s3Profile: undefined,
                   requestPayer: false,
+                  s3Region: undefined,
                 };
               }
 
@@ -381,6 +387,7 @@ async function start(opts) {
                 sparse: resolvedSparse,
                 s3Profile: resolvedS3Profile,
                 requestPayer: resolvedRequestPayer,
+                s3Region: resolvedS3Region,
               };
             },
           ),

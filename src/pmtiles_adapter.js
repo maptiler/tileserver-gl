@@ -17,26 +17,27 @@ class S3Source {
    * Creates an S3Source instance.
    * @param {string} s3Url - The S3 URL in one of the supported formats.
    * @param {string} [s3Profile] - Optional AWS credential profile name from config.
-   * @param {boolean} [requestPayer] - Optional flag to enable requester pays buckets.
+   * @param {boolean} [configRequestPayer] - Optional flag from config for requester pays buckets.
+   * @param {string} [configRegion] - Optional AWS region from config.
    */
-  constructor(s3Url, s3Profile, requestPayer) {
+  constructor(s3Url, s3Profile, configRequestPayer, configRegion) {
     const parsed = this.parseS3Url(s3Url);
     this.bucket = parsed.bucket;
     this.key = parsed.key;
     this.endpoint = parsed.endpoint;
-    this.region = parsed.region;
     this.url = s3Url;
-    this.requestPayer = requestPayer;
 
-    // Determine the final profile
+    // Determine the final profile: Config takes precedence over URL
     const profile = s3Profile || parsed.profile;
 
+    // Determine requestPayer: Config takes precedence over URL
+    this.requestPayer = configRequestPayer ?? parsed.requestPayer;
+
+    // Determine region: Config takes precedence over URL, which takes precedence over environment/default
+    this.region = configRegion || parsed.region;
+
     // Create S3 client
-    this.s3Client = this.createS3Client(
-      parsed.endpoint,
-      parsed.region,
-      profile,
-    );
+    this.s3Client = this.createS3Client(parsed.endpoint, this.region, profile);
   }
 
   /**
@@ -46,17 +47,34 @@ class S3Source {
    * @throws {Error} - Throws an error if the URL format is invalid.
    */
   parseS3Url(url) {
-    // eslint-disable-next-line security/detect-object-injection -- accessing AWS_REGION from environment variables
     let region = process.env.AWS_REGION || 'us-east-1';
     let profile = null;
+    let requestPayer = false;
 
+    // Extract profile parameter from URL
     const profileMatch = url.match(/[?&]profile=([^&]+)/);
     if (profileMatch) {
       profile = profileMatch[1];
     }
 
-    // Remove profile parameter and optional trailing slashes for cleaner regex matching
-    let cleanUrl = url.replace(/[?&]profile=[^&]+/, '').replace(/\/+$/, '');
+    // Extract region parameter from URL
+    const regionMatch = url.match(/[?&]region=([^&]+)/);
+    if (regionMatch) {
+      region = decodeURIComponent(regionMatch[1]);
+    }
+
+    // Extract requestPayer parameter from URL
+    const requestPayerMatch = url.match(/[?&]requestPayer=(true|1)/i);
+    if (requestPayerMatch) {
+      requestPayer = true;
+    }
+
+    // Remove query parameters for cleaner regex matching
+    let cleanUrl = url
+      .replace(/[?&]profile=[^&]+/, '')
+      .replace(/[?&]region=[^&]+/, '')
+      .replace(/[?&]requestPayer=[^&]+/, '')
+      .replace(/\/+$/, '');
 
     // Format 1: s3+https://endpoint/bucket:key (Contabo-style)
     // Example: s3+https://eu2.contabostorage.com/mybucket:terrain/tiles.pmtiles
@@ -70,6 +88,7 @@ class S3Source {
         key: customMatch[4],
         region,
         profile,
+        requestPayer,
       };
     }
 
@@ -273,14 +292,15 @@ async function readFileBytes(fd, buffer, offset) {
  * @param {string} filePath - The path to the PMTiles file.
  * @param {string} [s3Profile] - Optional AWS credential profile name.
  * @param {boolean} [requestPayer] - Optional flag for requester pays buckets.
+ * @param {string} [s3Region] - Optional AWS region.
  * @returns {PMTiles} - A PMTiles instance.
  */
-export function openPMtiles(filePath, s3Profile, requestPayer) {
+export function openPMtiles(filePath, s3Profile, requestPayer, s3Region) {
   let pmtiles = undefined;
 
   if (isS3Url(filePath)) {
     console.log(`Opening PMTiles from S3: ${filePath}`);
-    const source = new S3Source(filePath, s3Profile, requestPayer);
+    const source = new S3Source(filePath, s3Profile, requestPayer, s3Region);
     pmtiles = new PMTiles(source);
   }
   // Check for HTTP/HTTPS URL using regex tester

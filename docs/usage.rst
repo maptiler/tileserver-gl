@@ -46,15 +46,14 @@ The ``--file`` option supports multiple source types:
 **S3 URLs:**
 ::
 
-  # AWS S3
-  tileserver-gl --file s3://my-bucket/tiles.pmtiles
+  # AWS S3 with specific region
+  tileserver-gl --file "s3://my-bucket/tiles.pmtiles?region=us-west-2"
 
-  # With AWS credential profile
-  tileserver-gl --file "s3://my-bucket/tiles.pmtiles?profile=production"
+  # With profile and region
+  tileserver-gl --file "s3://my-bucket/tiles.pmtiles?profile=production&region=eu-central-1"
 
-  # S3-compatible storage (e.g., Contabo, DigitalOcean Spaces)
-  tileserver-gl --file s3://endpoint.digitaloceanspaces.com/bucket/tiles.pmtiles
-  tileserver-gl --file "s3+https://eu2.contabostorage.com/bucket-id:path/tiles.pmtiles"
+  # All options combined
+  tileserver-gl --file "s3://bucket/tiles.pmtiles?profile=prod&region=us-west-2&requestPayer=true"
 
 **Protocol prefixes:**
 

@@ -301,7 +301,17 @@ Here are the available options for each data source:
 ``requestPayer`` (boolean)
     Enables support for "requester pays" S3 buckets where the requester (not the bucket owner) pays for data transfer costs.
     Set to ``true`` if accessing a requester pays bucket.
+    Can be specified in the URL using ``?requestPayer=true`` or in the configuration.
+    If both are specified, the configuration value takes precedence.
     Default: ``false``.
+    Optional, only applicable to PMTiles sources using S3 URLs.
+
+``s3Region`` (string)
+    Specifies the AWS region for the S3 bucket.
+    Important for optimizing performance and reducing data transfer costs when accessing AWS S3 buckets.
+    Can be specified in the URL using ``?region=region-name`` or in the configuration.
+    If both are specified, the configuration value takes precedence.
+    If not specified, uses ``AWS_REGION`` environment variable or defaults to ``us-east-1``.
     Optional, only applicable to PMTiles sources using S3 URLs.
 
 .. note::
@@ -389,7 +399,7 @@ For example::
     }
   }
 
-**AWS Credentials Setup:**
+**AWS Credentials:**
 
 S3 sources require AWS credentials to be configured. The server will automatically use credentials from:
 
@@ -399,17 +409,15 @@ S3 sources require AWS credentials to be configured. The server will automatical
 
 For S3-compatible storage providers, use the same AWS credential format with your provider's access keys.
 
-Example environment variables::
+Example using environment variables::
 
   export AWS_ACCESS_KEY_ID=your_access_key
   export AWS_SECRET_ACCESS_KEY=your_secret_key
-  export AWS_REGION=us-east-1
+  export AWS_REGION=us-west-2
 
-**Using Multiple AWS Credential Profiles:**
+**Multiple AWS Credential Profiles:**
 
-If you need to access S3 buckets with different credentials, you can use AWS credential profiles. Profiles are defined in your AWS credentials file (``~/.aws/credentials`` on Linux/macOS or ``C:\Users\USERNAME\.aws\credentials`` on Windows):
-
-Example credentials file::
+If you need to access S3 buckets with different credentials, you can use AWS credential profiles. Profiles are defined in your AWS credentials file (``~/.aws/credentials`` on Linux/macOS or ``C:\Users\USERNAME\.aws\credentials`` on Windows)::
 
   [default]
   aws_access_key_id=YOUR_DEFAULT_KEY
@@ -423,45 +431,71 @@ Example credentials file::
   aws_access_key_id=YOUR_STAGING_KEY
   aws_secret_access_key=YOUR_STAGING_SECRET
 
-**Option 1: Profile in URL**
+**S3 Configuration Options:**
 
-You can specify the profile directly in the S3 URL using the ``profile`` query parameter::
+You can configure S3 sources using URL query parameters or configuration properties. Configuration properties take precedence over URL parameters.
+
+*Profile* - Specifies which AWS credential profile to use::
+
+  # URL parameter
+  "pmtiles": "s3://bucket/tiles.pmtiles?profile=production"
+  
+  # Configuration property
+  "pmtiles": "s3://bucket/tiles.pmtiles",
+  "s3Profile": "production"
+
+Precedence order (highest to lowest): Configuration property ``s3Profile``, URL parameter ``?profile=...``, default AWS credential chain.
+
+*Region* - Specifies the AWS region (important for performance and cost optimization)::
+
+  # URL parameter
+  "pmtiles": "s3://bucket/tiles.pmtiles?region=us-west-2"
+  
+  # Configuration property
+  "pmtiles": "s3://bucket/tiles.pmtiles",
+  "s3Region": "us-west-2"
+
+Precedence order (highest to lowest): Configuration property ``s3Region``, URL parameter ``?region=...``, Environment variable ``AWS_REGION``, Default: ``us-east-1``.
+
+*RequestPayer* - Enables "requester pays" buckets where you pay for data transfer::
+
+  # URL parameter
+  "pmtiles": "s3://bucket/tiles.pmtiles?requestPayer=true"
+  
+  # Configuration property
+  "pmtiles": "s3://bucket/tiles.pmtiles",
+  "requestPayer": true
+
+Precedence order (highest to lowest): Configuration property ``requestPayer``, URL parameter ``?requestPayer=true``, Default: ``false``.
+
+**Complete Configuration Examples:**
+
+Using URL parameters::
 
   "data": {
-    "production-tiles": {
-      "pmtiles": "s3://prod-bucket/tiles.pmtiles?profile=production"
+    "us-west-tiles": {
+      "pmtiles": "s3://prod-bucket/tiles.pmtiles?profile=production&region=us-west-2"
     },
-    "staging-tiles": {
-      "pmtiles": "s3://staging-bucket/tiles.pmtiles?profile=staging"
+    "eu-requester-pays": {
+      "pmtiles": "s3://bucket/tiles.pmtiles?profile=prod&region=eu-central-1&requestPayer=true"
     }
   }
 
-Or in style sources::
-
-  "sources": {
-    "terrain": {
-      "url": "pmtiles://s3://my-bucket/terrain.pmtiles?profile=production",
-      "type": "raster-dem"
-    }
-  }
-
-**Option 2: Profile in Configuration**
-
-You can also specify the profile in the configuration file using the ``s3Profile`` property::
+Using configuration properties (recommended)::
 
   "data": {
-    "production-tiles": {
+    "us-west-tiles": {
       "pmtiles": "s3://prod-bucket/tiles.pmtiles",
-      "s3Profile": "production"
+      "s3Profile": "production",
+      "s3Region": "us-west-2"
     },
-    "staging-tiles": {
-      "pmtiles": "s3://staging-bucket/tiles.pmtiles",
-      "s3Profile": "staging"
+    "eu-requester-pays": {
+      "pmtiles": "s3://bucket/tiles.pmtiles",
+      "s3Profile": "production",
+      "s3Region": "eu-central-1",
+      "requestPayer": true
     }
   }
-
-.. note::
-    If both URL and configuration profiles are specified, the configuration ``s3Profile`` takes precedence.
 
 **Command-Line Usage with Profiles:**
 
