@@ -388,7 +388,7 @@ export const serve_data = {
     tileJSON['sparse'] = params['sparse'];
 
     if (inputType === 'pmtiles') {
-      source = openPMtiles(inputFile);
+      source = openPMtiles(inputFile, params.s3Profile);
       sourceType = 'pmtiles';
       const metadata = await getPMtilesInfo(source, inputFile);
       Object.assign(tileJSON, metadata);

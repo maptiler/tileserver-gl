@@ -1454,7 +1454,7 @@ export const serve_rendered = {
 
         if (sourceType === 'pmtiles') {
           // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
-          map.sources[name] = openPMtiles(inputFile);
+          map.sources[name] = openPMtiles(inputFile, source.s3Profile);
           // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
           map.sourceTypes[name] = 'pmtiles';
           // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys

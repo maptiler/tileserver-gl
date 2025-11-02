@@ -266,6 +266,10 @@ For example::
     "sparse_vector_tiles": {
       "pmtiles": "custom_osm.pmtiles",
       "sparse": true
+    },
+    "production-s3-tiles": {
+      "pmtiles": "s3://prod-bucket/tiles.pmtiles",
+      "s3Profile": "production"
     }
   }
 
@@ -286,6 +290,13 @@ Here are the available options for each data source:
     When ``true``, a ``410 Gone`` status is returned for missing tiles. This behaviour is beneficial for clients like MapLibre-GL-JS or MapLibre-Native, as it signals them to attempt loading tiles from lower zoom levels (overzooming) when a higher-zoom tile is explicitly missing.
     When ``false`` (default), *tileserver-gl* returns a ``204 No Content`` for missing tiles, which typically signals the client to stop trying to load a substitute.
     Default: ``false``.
+
+``s3Profile`` (string)
+    Specifies the AWS credential profile to use for S3 PMTiles sources. The profile must be defined in your ``~/.aws/credentials`` file.
+    This is useful when you need to access multiple S3 buckets with different credentials.
+    Alternatively, you can specify the profile in the URL using ``?profile=profile-name``.
+    If both are specified, the configuration ``s3Profile`` takes precedence.
+    Optional, only applicable to PMTiles sources using S3 URLs.
 
 .. note::
     These configuration options will be overridden by metadata in the MBTiles or PMTiles file. if corresponding properties exist in the file's metadata, you do not need to specify them in the data configuration.
@@ -388,16 +399,69 @@ Example environment variables::
   export AWS_SECRET_ACCESS_KEY=your_secret_key
   export AWS_REGION=us-east-1
 
-**Benefits of S3 Sources:**
+**Using Multiple AWS Credential Profiles:**
 
-* No HTTP 429 rate limiting errors
-* Better performance with optimized byte-range requests
-* Secure authentication with IAM or access keys
-* Automatic retry logic for transient failures
-* Cost-effective (no data transfer fees within same AWS region)
+If you need to access S3 buckets with different credentials, you can use AWS credential profiles. Profiles are defined in your ``~/.aws/credentials`` file:
+
+Example ``~/.aws/credentials`` file::
+
+  [default]
+  aws_access_key_id=YOUR_DEFAULT_KEY
+  aws_secret_access_key=YOUR_DEFAULT_SECRET
+
+  [production]
+  aws_access_key_id=YOUR_PRODUCTION_KEY
+  aws_secret_access_key=YOUR_PRODUCTION_SECRET
+
+  [staging]
+  aws_access_key_id=YOUR_STAGING_KEY
+  aws_secret_access_key=YOUR_STAGING_SECRET
+
+**Option 1: Profile in URL**
+
+You can specify the profile directly in the S3 URL using the ``profile`` query parameter::
+
+  "data": {
+    "production-tiles": {
+      "pmtiles": "s3://prod-bucket/tiles.pmtiles?profile=production"
+    },
+    "staging-tiles": {
+      "pmtiles": "s3://staging-bucket/tiles.pmtiles?profile=staging"
+    }
+  }
+
+Or in style sources::
+
+  "sources": {
+    "terrain": {
+      "url": "pmtiles://s3://my-bucket/terrain.pmtiles?profile=production",
+      "type": "raster-dem"
+    }
+  }
+
+**Option 2: Profile in Configuration**
+
+You can also specify the profile in the configuration file using the ``s3Profile`` property::
+
+  "data": {
+    "production-tiles": {
+      "pmtiles": "s3://prod-bucket/tiles.pmtiles",
+      "s3Profile": "production"
+    },
+    "staging-tiles": {
+      "pmtiles": "s3://staging-bucket/tiles.pmtiles",
+      "s3Profile": "staging"
+    }
+  }
 
 .. note::
-    S3 support requires the ``@aws-sdk/client-s3`` package to be installed. Install it with: ``npm install @aws-sdk/client-s3``
+    If both URL and configuration profiles are specified, the configuration ``s3Profile`` takes precedence.
+
+**Command-Line Usage with Profiles:**
+
+When using the ``--file`` parameter, you can only specify profiles via the URL::
+
+  tileserver-gl --file "s3://my-bucket/tiles.pmtiles?profile=production"
 
 Sprites
 -------

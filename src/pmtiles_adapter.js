@@ -2,11 +2,13 @@ import fs from 'node:fs';
 import { PMTiles, FetchSource, EtagMismatch } from 'pmtiles';
 import { isValidHttpUrl, isS3Url } from './utils.js';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { fromIni } from '@aws-sdk/credential-provider-ini';
 
 /**
  * S3 Source for PMTiles
  * Supports:
  * - AWS S3: s3://bucket-name/path/to/file.pmtiles
+ * - Profile in URL: s3://bucket-name/path/to/file.pmtiles?profile=my-profile
  * - S3-compatible with endpoint: s3://endpoint-url/bucket/path/to/file.pmtiles
  * - Custom format: s3+https://eu2.contabostorage.com/bucket:path/file.pmtiles
  */
@@ -14,8 +16,9 @@ class S3Source {
   /**
    * Creates an S3Source instance.
    * @param {string} s3Url - The S3 URL in one of the supported formats.
+   * @param {string} [s3Profile] - Optional AWS credential profile name from config (Option 2).
    */
-  constructor(s3Url) {
+  constructor(s3Url, s3Profile) {
     const parsed = this.parseS3Url(s3Url);
     this.bucket = parsed.bucket;
     this.key = parsed.key;
@@ -23,50 +26,74 @@ class S3Source {
     this.region = parsed.region;
     this.url = s3Url;
 
-    // Create S3 client with custom endpoint if provided
-    this.s3Client = this.createS3Client(parsed.endpoint, parsed.region);
+    // Determine the final profile: Config profile (Option 2) takes precedence over URL profile (Option 1)
+    const profile = s3Profile || parsed.profile;
+
+    // Create S3 client with custom endpoint, region, and profile
+    this.s3Client = this.createS3Client(
+      parsed.endpoint,
+      parsed.region,
+      profile,
+    );
   }
 
   /**
-   * Parses various S3 URL formats into bucket, key, endpoint, and region.
+   * Parses various S3 URL formats into bucket, key, endpoint, region, and profile.
    * @param {string} url - The S3 URL to parse.
-   * @returns {object} - An object containing bucket, key, endpoint, and region.
+   * @returns {object} - An object containing bucket, key, endpoint, region, and profile.
    * @throws {Error} - Throws an error if the URL format is invalid.
    */
   parseS3Url(url) {
+    // eslint-disable-next-line security/detect-object-injection -- accessing AWS_REGION from environment variables
+    let region = process.env.AWS_REGION || 'us-east-1';
+    let profile = null;
+
+    const profileMatch = url.match(/[?&]profile=([^&]+)/);
+    if (profileMatch) {
+      profile = profileMatch[1];
+    }
+
+    // Remove profile parameter and optional trailing slashes for cleaner regex matching
+    let cleanUrl = url.replace(/[?&]profile=[^&]+/, '').replace(/\/+$/, '');
+
     // Format 1: s3+https://endpoint/bucket:key (Contabo-style)
     // Example: s3+https://eu2.contabostorage.com/mybucket:terrain/tiles.pmtiles
-    const customMatch = url.match(/^s3\+(https?):\/\/([^\/]+)\/([^:]+):(.+)$/);
+    const customMatch = cleanUrl.match(
+      /^s3\+(https?):\/\/([^\/]+)\/([^:]+):(.+)$/,
+    );
     if (customMatch) {
       return {
         endpoint: `${customMatch[1]}://${customMatch[2]}`,
         bucket: customMatch[3],
         key: customMatch[4],
-        region: process.env.AWS_REGION || 'us-east-1',
+        region,
+        profile,
       };
     }
 
     // Format 2: s3://endpoint/bucket/key (generic S3-compatible)
     // Example: s3://eu2.contabostorage.com/mybucket/terrain/tiles.pmtiles
-    const endpointMatch = url.match(/^s3:\/\/([^\/]+)\/([^\/]+)\/(.+)$/);
+    const endpointMatch = cleanUrl.match(/^s3:\/\/([^\/]+)\/([^\/]+)\/(.+)$/);
     if (endpointMatch) {
       return {
         endpoint: `https://${endpointMatch[1]}`,
         bucket: endpointMatch[2],
         key: endpointMatch[3],
-        region: process.env.AWS_REGION || 'us-east-1',
+        region,
+        profile,
       };
     }
 
     // Format 3: s3://bucket/key (AWS S3 default)
     // Example: s3://my-bucket/path/to/tiles.pmtiles
-    const awsMatch = url.match(/^s3:\/\/([^\/]+)\/(.+)$/);
+    const awsMatch = cleanUrl.match(/^s3:\/\/([^\/]+)\/(.+)$/);
     if (awsMatch) {
       return {
         endpoint: null, // Use default AWS endpoint
         bucket: awsMatch[1],
         key: awsMatch[2],
-        region: process.env.AWS_REGION || 'us-east-1',
+        region,
+        profile,
       };
     }
 
@@ -74,12 +101,13 @@ class S3Source {
   }
 
   /**
-   * Creates an S3 client with optional custom endpoint for S3-compatible storage.
+   * Creates an S3 client with optional custom endpoint and AWS profile support.
    * @param {string|null} endpoint - The custom endpoint URL, or null for default AWS S3.
    * @param {string} region - The AWS region.
+   * @param {string} [profile] - Optional AWS credential profile name.
    * @returns {S3Client} - Configured S3Client instance.
    */
-  createS3Client(endpoint, region) {
+  createS3Client(endpoint, region, profile) {
     const config = {
       region: region,
       requestHandler: {
@@ -94,6 +122,13 @@ class S3Source {
     if (endpoint) {
       config.endpoint = endpoint;
       console.log(`Using custom S3 endpoint: ${endpoint}`);
+    }
+
+    // Add profile credentials if provided
+    if (profile) {
+      // Use specific profile from ~/.aws/credentials
+      config.credentials = fromIni({ profile });
+      console.log(`Using AWS profile: ${profile}`);
     }
 
     return new S3Client(config);
@@ -230,15 +265,17 @@ async function readFileBytes(fd, buffer, offset) {
 /**
  * Opens a PMTiles file from local filesystem, HTTP URL, or S3 URL.
  * @param {string} filePath - The path to the PMTiles file (local path, http(s):// URL, or s3:// URL).
+ * @param {string} [s3Profile] - Optional AWS credential profile name from configuration.
  * @returns {PMTiles} - A PMTiles instance configured with the appropriate source.
  */
-export function openPMtiles(filePath) {
+export function openPMtiles(filePath, s3Profile) {
   let pmtiles = undefined;
 
   // Check for S3 or S3-compatible URL using regex tester
   if (isS3Url(filePath)) {
     console.log(`Opening PMTiles from S3: ${filePath}`);
-    const source = new S3Source(filePath);
+    // Pass the optional s3Profile to the S3Source constructor
+    const source = new S3Source(filePath, s3Profile);
     pmtiles = new PMTiles(source);
   }
   // Check for HTTP/HTTPS URL using regex tester
