@@ -14,7 +14,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import axios from 'axios';
 import { server } from './server.js';
-import { isS3Url, isValidRemoteUrl } from './utils.js';
+import { isValidRemoteUrl } from './utils.js';
 import { openPMtiles, getPMtilesInfo } from './pmtiles_adapter.js';
 import { program } from 'commander';
 import { existsP } from './promises.js';
@@ -81,21 +81,15 @@ program
   )
   .option(
     '-V, --verbose [level]',
-    'More verbose output (can specify level 1-3, or use -V, -VV, -VVV)',
-    (value, previous) => {
-      // If value is a string number, parse it
-      if (typeof value === 'string') {
-        const level = parseInt(value, 10);
-        if (!isNaN(level)) {
-          return Math.min(Math.max(level, 1), 3);
-        }
-      }
-      // If no value provided (flag only), increment from previous
-      // This allows -V -V -V to count up
-      const previousLevel = previous || 0;
-      return Math.min(previousLevel + 1, 3);
+    'More verbose output (can specify level 1-3, default 1)',
+    (value) => {
+      // If no value provided, return 1 (boolean true case)
+      if (value === undefined || value === true) return 1;
+      // Parse the numeric value
+      const level = parseInt(value, 10);
+      // Validate level is between 1-3
+      return isNaN(level) ? 1 : Math.min(Math.max(level, 1), 3);
     },
-    0,
   )
   .option('-s, --silent', 'Less verbose output')
   .option('-l|--log_file <file>', 'output log file (defaults to standard out)')
