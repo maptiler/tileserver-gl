@@ -1,7 +1,6 @@
 'use strict';
 
 import path from 'path';
-import fs from 'node:fs';
 
 import clone from 'clone';
 import express from 'express';

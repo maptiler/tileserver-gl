@@ -7,8 +7,9 @@ const mercator = new SphericalMercator();
 
 /**
  * Transforms coordinates to pixels.
- * @param {List[Number]} ll Longitude/Latitude coordinate pair.
- * @param {number} zoom Map zoom level.
+ * @param {Array<number>} ll - Longitude/Latitude coordinate pair.
+ * @param {number} zoom - Map zoom level.
+ * @returns {Array<number>} Pixel coordinates as [x, y].
  */
 const precisePx = (ll, zoom) => {
   const px = mercator.px(ll, 20);
@@ -18,9 +19,10 @@ const precisePx = (ll, zoom) => {
 
 /**
  * Draws a marker in canvas context.
- * @param {object} ctx Canvas context object.
- * @param {object} marker Marker object parsed by extractMarkersFromQuery.
- * @param {number} z Map zoom level.
+ * @param {CanvasRenderingContext2D} ctx - Canvas context object.
+ * @param {object} marker - Marker object parsed by extractMarkersFromQuery.
+ * @param {number} z - Map zoom level.
+ * @returns {Promise<void>} A promise that resolves when the marker is drawn.
  */
 const drawMarker = (ctx, marker, z) => {
   return new Promise((resolve) => {
@@ -89,9 +91,10 @@ const drawMarker = (ctx, marker, z) => {
  * Wraps drawing of markers into list of promises and awaits them.
  * It's required because images are expected to load asynchronous in canvas js
  * even when provided from a local disk.
- * @param {object} ctx Canvas context object.
- * @param {List[Object]} markers Marker objects parsed by extractMarkersFromQuery.
- * @param {number} z Map zoom level.
+ * @param {CanvasRenderingContext2D} ctx - Canvas context object.
+ * @param {Array<object>} markers - Marker objects parsed by extractMarkersFromQuery.
+ * @param {number} z - Map zoom level.
+ * @returns {Promise<void>} A promise that resolves when all markers are drawn.
  */
 const drawMarkers = async (ctx, markers, z) => {
   const markerPromises = [];
@@ -107,11 +110,12 @@ const drawMarkers = async (ctx, markers, z) => {
 
 /**
  * Draws a list of coordinates onto a canvas and styles the resulting path.
- * @param {object} ctx Canvas context object.
- * @param {List[Number]} path List of coordinates.
- * @param {object} query Request query parameters.
- * @param {string} pathQuery Path query parameter.
- * @param {number} z Map zoom level.
+ * @param {CanvasRenderingContext2D} ctx - Canvas context object.
+ * @param {Array<Array<number>>} path - List of coordinate pairs.
+ * @param {object} query - Request query parameters.
+ * @param {string} pathQuery - Path query parameter string.
+ * @param {number} z - Map zoom level.
+ * @returns {void}
  */
 const drawPath = (ctx, path, query, pathQuery, z) => {
   const splitPaths = pathQuery.split('|');
@@ -210,6 +214,21 @@ const drawPath = (ctx, path, query, pathQuery, z) => {
   ctx.stroke();
 };
 
+/**
+ * Renders an overlay with paths and markers on a map tile.
+ * @param {number} z - Map zoom level.
+ * @param {number} x - Longitude of center point.
+ * @param {number} y - Latitude of center point.
+ * @param {number} bearing - Map bearing in degrees.
+ * @param {number} pitch - Map pitch in degrees.
+ * @param {number} w - Width of the canvas.
+ * @param {number} h - Height of the canvas.
+ * @param {number} scale - Scale factor for rendering.
+ * @param {Array<Array<Array<number>>>} paths - Array of path coordinate arrays.
+ * @param {Array<object>} markers - Array of marker objects.
+ * @param {object} query - Request query parameters.
+ * @returns {Promise<Buffer|null>} A promise that resolves with the canvas buffer or null if no overlay is needed.
+ */
 export const renderOverlay = async (
   z,
   x,
@@ -262,6 +281,14 @@ export const renderOverlay = async (
   return canvas.toBuffer();
 };
 
+/**
+ * Renders a watermark on a canvas.
+ * @param {number} width - Width of the canvas.
+ * @param {number} height - Height of the canvas.
+ * @param {number} scale - Scale factor for rendering.
+ * @param {string} text - Watermark text to render.
+ * @returns {object} The canvas with the rendered attribution.
+ */
 export const renderWatermark = (width, height, scale, text) => {
   const canvas = createCanvas(scale * width, scale * height);
   const ctx = canvas.getContext('2d');
@@ -277,6 +304,14 @@ export const renderWatermark = (width, height, scale, text) => {
   return canvas;
 };
 
+/**
+ * Renders an attribution box on a canvas.
+ * @param {number} width - Width of the canvas.
+ * @param {number} height - Height of the canvas.
+ * @param {number} scale - Scale factor for rendering.
+ * @param {string} text - Attribution text to render.
+ * @returns {object} The canvas with the rendered attribution.
+ */
 export const renderAttribution = (width, height, scale, text) => {
   const canvas = createCanvas(scale * width, scale * height);
   const ctx = canvas.getContext('2d');
