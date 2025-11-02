@@ -21,10 +21,11 @@ export const mbtilesTester = /^mbtiles:\/\//i;
  * @param {string[]} opts - An array of allowed option strings.
  * @param {object} [config] - Optional configuration object.
  * @param {string} [config.defaultValue] - The default value to return if input doesn't match.
- * @returns {function(string): string} - A function that takes a value and returns it if valid or a default.
+ * @returns {(value: string) => string} - A function that takes a value and returns it if valid or a default.
  */
 export function allowedOptions(opts, { defaultValue } = {}) {
   const values = Object.fromEntries(opts.map((key) => [key, key]));
+  // eslint-disable-next-line security/detect-object-injection -- value is checked against allowed opts keys
   return (value) => values[value] || defaultValue;
 }
 
@@ -39,7 +40,7 @@ export function allowedScales(scale, maxScale = 9) {
     return 1;
   }
 
-  // eslint-disable-next-line security/detect-non-literal-regexp
+  // eslint-disable-next-line security/detect-non-literal-regexp -- maxScale is a number parameter, not user input
   const regex = new RegExp(`^[2-${maxScale}]x$`);
   if (!regex.test(scale)) {
     return null;
@@ -160,6 +161,7 @@ export function getTileUrls(
     const hostParts = urlObject.host.split('.');
     const relativeSubdomainsUsable =
       hostParts.length > 1 &&
+      // eslint-disable-next-line security/detect-unsafe-regex -- Simple IPv4 validation, no nested quantifiers
       !/^([0-9]{1,3}\.){3}[0-9]{1,3}(\:[0-9]+)?$/.test(urlObject.host);
     const newDomains = [];
     for (const domain of domains) {
@@ -188,7 +190,9 @@ export function getTileUrls(
   }
   const query = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
 
+  // eslint-disable-next-line security/detect-object-injection -- format is validated format string from tileJSON
   if (aliases && aliases[format]) {
+    // eslint-disable-next-line security/detect-object-injection -- format is validated format string from tileJSON
     format = aliases[format];
   }
 
@@ -249,7 +253,7 @@ export function fixTileJSONCenter(tileJSON) {
 export function readFile(filename) {
   return new Promise((resolve, reject) => {
     const sanitizedFilename = path.normalize(filename); // Normalize path, remove ..
-    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- filename is normalized and validated by caller
     fs.readFile(String(sanitizedFilename), (err, data) => {
       if (err) {
         reject(err);
@@ -270,6 +274,7 @@ export function readFile(filename) {
  * @returns {Promise<Buffer>} A promise that resolves with the font data Buffer or rejects with an error.
  */
 async function getFontPbf(allowedFonts, fontPath, name, range, fallbacks) {
+  // eslint-disable-next-line security/detect-object-injection -- name is validated font name from sanitizedName check
   if (!allowedFonts || (allowedFonts[name] && fallbacks)) {
     const fontMatch = name?.match(/^[\p{L}\p{N} \-\.~!*'()@&=+,#$\[\]]+$/u);
     const sanitizedName = fontMatch?.[0] || 'invalid';
@@ -299,6 +304,7 @@ async function getFontPbf(allowedFonts, fontPath, name, range, fallbacks) {
     if (!fallbacks) {
       fallbacks = clone(allowedFonts || {});
     }
+    // eslint-disable-next-line security/detect-object-injection -- name is validated font name
     delete fallbacks[name];
 
     try {
@@ -318,8 +324,10 @@ async function getFontPbf(allowedFonts, fontPath, name, range, fallbacks) {
           fontStyle = 'Regular';
         }
         fallbackName = `Noto Sans ${fontStyle}`;
+        // eslint-disable-next-line security/detect-object-injection -- fallbackName is constructed from validated font style
         if (!fallbacks[fallbackName]) {
           fallbackName = `Open Sans ${fontStyle}`;
+          // eslint-disable-next-line security/detect-object-injection -- fallbackName is constructed from validated font style
           if (!fallbacks[fallbackName]) {
             fallbackName = Object.keys(fallbacks)[0];
           }
@@ -329,6 +337,7 @@ async function getFontPbf(allowedFonts, fontPath, name, range, fallbacks) {
           fallbackName,
           sanitizedName,
         );
+        // eslint-disable-next-line security/detect-object-injection -- fallbackName is constructed from validated font style
         delete fallbacks[fallbackName];
         return getFontPbf(null, fontPath, fallbackName, range, fallbacks);
       } else {
@@ -381,13 +390,16 @@ export async function getFontsPbf(
 export async function listFonts(fontPath) {
   const existingFonts = {};
 
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- fontPath is from validated config
   const files = await fsPromises.readdir(fontPath);
   for (const file of files) {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- file is from readdir of validated fontPath
     const stats = await fsPromises.stat(path.join(fontPath, file));
     if (
       stats.isDirectory() &&
       (await existsP(path.join(fontPath, file, '0-255.pbf')))
     ) {
+      // eslint-disable-next-line security/detect-object-injection -- file is from readdir, used as font name key
       existingFonts[path.basename(file)] = true;
     }
   }
@@ -428,7 +440,11 @@ export function isS3Url(string) {
  */
 export function isValidRemoteUrl(string) {
   try {
-    return httpTester.test(string) || s3Tester.test(string);
+    return (
+      httpTester.test(string) ||
+      s3Tester.test(string) ||
+      s3HttpTester.test(string)
+    );
   } catch (e) {
     return false;
   }

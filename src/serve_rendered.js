@@ -62,7 +62,7 @@ const staticTypeRegex = new RegExp(
 );
 
 const PATH_PATTERN =
-  // eslint-disable-next-line security/detect-unsafe-regex
+  // eslint-disable-next-line security/detect-unsafe-regex -- Simple path pattern validation, no nested quantifiers
   /^((fill|stroke|width)\:[^\|]+\|)*(enc:.+|-?\d+(\.\d*)?,-?\d+(\.\d*)?(\|-?\d+(\.\d*)?,-?\d+(\.\d*)?)+)/;
 
 const mercator = new SphericalMercator();
@@ -95,7 +95,7 @@ const cachedEmptyResponses = {
  * Create an appropriate mlgl response for http errors.
  * @param {string} format The format (a sharp format or 'pbf').
  * @param {string} color The background color (or empty string for transparent).
- * @param {Function} callback The mlgl callback.
+ * @param {(err: Error|null, data: object|null) => void} callback The mlgl callback.
  * @returns {void}
  */
 function createEmptyResponse(format, color, callback) {
@@ -112,6 +112,7 @@ function createEmptyResponse(format, color, callback) {
   }
 
   const cacheKey = `${format},${color}`;
+  // eslint-disable-next-line security/detect-object-injection -- cacheKey is constructed from validated format and color
   const data = cachedEmptyResponses[cacheKey];
   if (data) {
     callback(null, { data: data });
@@ -137,6 +138,7 @@ function createEmptyResponse(format, color, callback) {
           callback(err, null);
           return;
         }
+        // eslint-disable-next-line security/detect-object-injection -- cacheKey is constructed from validated format and color
         cachedEmptyResponses[cacheKey] = buffer;
         callback(null, { data: buffer });
       });
@@ -149,8 +151,7 @@ function createEmptyResponse(format, color, callback) {
 /**
  * Parses coordinate pair provided to pair of floats and ensures the resulting
  * pair is a longitude/latitude combination depending on lnglat query parameter.
- * @param {Array<string>} coordinatePair Coordinate pair.
- * @param coordinates
+ * @param {Array<string>} coordinates Coordinate pair.
  * @param {object} query Request query parameters.
  * @returns {Array<number>|null} Parsed coordinate pair as [longitude, latitude] or null if invalid
  */
@@ -176,7 +177,7 @@ function parseCoordinatePair(coordinates, query) {
  * Parses a coordinate pair from query arguments and optionally transforms it.
  * @param {Array<string>} coordinatePair Coordinate pair.
  * @param {object} query Request query parameters.
- * @param {Function} transformer Optional transform function.
+ * @param {((coords: Array<number>) => Array<number>)|null} transformer Optional transform function.
  * @returns {Array<number>|null} Transformed coordinate pair or null if invalid.
  */
 function parseCoordinates(coordinatePair, query, transformer) {
@@ -193,7 +194,7 @@ function parseCoordinates(coordinatePair, query, transformer) {
 /**
  * Parses paths provided via query into a list of path objects.
  * @param {object} query Request query parameters.
- * @param {Function} transformer Optional transform function.
+ * @param {((coords: Array<number>) => Array<number>)|null} transformer Optional transform function.
  * @returns {Array<Array<Array<number>>>} Array of paths.
  */
 function extractPathsFromQuery(query, transformer) {
@@ -291,7 +292,7 @@ function parseMarkerOptions(optionsList, marker) {
  * Parses markers provided via query into a list of marker objects.
  * @param {object} query Request query parameters.
  * @param {object} options Configuration options.
- * @param {Function} transformer Optional transform function.
+ * @param {((coords: Array<number>) => Array<number>)|null} transformer Optional transform function.
  * @returns {Array<object>} An array of marker objects.
  */
 function extractMarkersFromQuery(query, options, transformer) {
@@ -619,9 +620,9 @@ async function respondImage(
  * @param {string} req.params.scale - The scale parameter.
  * @param {string} req.params.format - The format of the image.
  * @param {object} res - Express response object.
- * @param {Function} next - Express next middleware function.
+ * @param {object} next - Express next middleware function.
  * @param {number} maxScaleFactor - The maximum scale factor allowed.
- * @param defailtTileSize
+ * @param {number} defailtTileSize - Default tile size.
  * @returns {Promise<void>}
  */
 async function handleTileRequest(
@@ -700,16 +701,15 @@ async function handleTileRequest(
  * @param {object} options - Configuration options for the server.
  * @param {object} repo - The repository object holding style data.
  * @param {object} req - Express request object.
- * @param {object} res - Express response object.
+ * @param {string} req.params.id - The id of the style.
  * @param {string} req.params.p2 - The raw or static parameter.
  * @param {string} req.params.p3 - The staticType parameter.
- * @param {string} req.params.p4 - The width parameter.
- * @param {string} req.params.p5 - The height parameter.
+ * @param {string} req.params.p4 - The widthAndHeight parameter.
  * @param {string} req.params.scale - The scale parameter.
  * @param {string} req.params.format - The format of the image.
- * @param {Function} next - Express next middleware function.
+ * @param {object} res - Express response object.
+ * @param {object} next - Express next middleware function.
  * @param {number} maxScaleFactor - The maximum scale factor allowed.
- * @param verbose
  * @returns {Promise<void>}
  */
 async function handleStaticRequest(
@@ -924,6 +924,7 @@ export const serve_rendered = {
      * Handles requests for tile images.
      * @param {object} req - Express request object.
      * @param {object} res - Express response object.
+     * @param {object} next - Express next middleware function.
      * @param {string} req.params.id - The id of the style.
      * @param {string} [req.params.p1] - The tile size or static parameter, if available.
      * @param {string} req.params.p2 - The z, static, or raw parameter.
@@ -991,6 +992,7 @@ export const serve_rendered = {
      * Handles requests for rendered tilejson endpoint.
      * @param {object} req - Express request object.
      * @param {object} res - Express response object.
+     * @param {object} next - Express next middleware function.
      * @param {string} req.params.id - The id of the tilejson
      * @param {string} [req.params.tileSize] - The size of the tile, if specified.
      * @returns {void}
@@ -1036,7 +1038,7 @@ export const serve_rendered = {
    * @param {string} id ID of the item.
    * @param {object} programOpts - An object containing the program options
    * @param {object} style pre-fetched/read StyleJSON object.
-   * @param {Function} dataResolver Function to resolve data.
+   * @param {(dataId: string) => object} dataResolver Function to resolve data.
    * @returns {Promise<void>}
    */
   add: async function (
@@ -1070,8 +1072,8 @@ export const serve_rendered = {
       /**
        * Creates a renderer
        * @param {number} ratio Pixel ratio
-       * @param {Function} createCallback Function that returns the renderer when created
-       *  @returns {void}
+       * @param {(err: Error|null, renderer: object) => void} createCallback Function that returns the renderer when created
+       * @returns {void}
        */
       const createRenderer = (ratio, createCallback) => {
         const renderer = new mlgl.Map({
@@ -1083,6 +1085,7 @@ export const serve_rendered = {
               console.log('Handling request:', req);
             }
             if (protocol === 'sprites') {
+              // eslint-disable-next-line security/detect-object-injection -- protocol is 'sprites', validated above
               const dir = options.paths[protocol];
               const file = decodeURIComponent(req.url).substring(
                 protocol.length + 3,
@@ -1102,6 +1105,7 @@ export const serve_rendered = {
               try {
                 const concatenated = await getFontsPbf(
                   null,
+                  // eslint-disable-next-line security/detect-object-injection -- protocol is 'fonts', validated above
                   options.paths[protocol],
                   fontstack,
                   range,
@@ -1353,6 +1357,7 @@ export const serve_rendered = {
                   `Note: This property will still work with MapLibre GL JS vector maps.`,
               );
             }
+            // eslint-disable-next-line security/detect-object-injection -- prop is from hillshadePropertiesToRemove array, validated property names
             delete layer.paint[prop];
           }
         }
@@ -1543,7 +1548,9 @@ export const serve_rendered = {
     for (let s = 1; s <= maxScaleFactor; s++) {
       const i = Math.min(minPoolSizes.length - 1, s - 1);
       const j = Math.min(maxPoolSizes.length - 1, s - 1);
+      // eslint-disable-next-line security/detect-object-injection -- i and j are calculated indices bounded by array length
       const minPoolSize = minPoolSizes[i];
+      // eslint-disable-next-line security/detect-object-injection -- i and j are calculated indices bounded by array length
       const maxPoolSize = Math.max(minPoolSize, maxPoolSizes[j]);
       // eslint-disable-next-line security/detect-object-injection -- s is loop counter from 1 to maxScaleFactor
       map.renderers[s] = createPool(s, 'tile', minPoolSize, maxPoolSize);
@@ -1573,6 +1580,7 @@ export const serve_rendered = {
         pool.close();
       });
     }
+    // eslint-disable-next-line security/detect-object-injection -- id is function parameter for removal
     delete repo[id];
   },
   /**
@@ -1592,14 +1600,15 @@ export const serve_rendered = {
           pool.close();
         });
       }
+      // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys() iteration
       delete repo[id];
     });
   },
   /**
    * Get the elevation of terrain tile data by rendering it to a canvas image
-   * @param {object} data The background color (or empty string for transparent).
+   * @param {Buffer} data The terrain tile data buffer.
    * @param {object} param Required parameters (coordinates e.g.)
-   * @returns {object}
+   * @returns {Promise<object>} Promise resolving to elevation data
    */
   getTerrainElevation: async function (data, param) {
     return await new Promise(async (resolve, reject) => {

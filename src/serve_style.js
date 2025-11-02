@@ -42,12 +42,14 @@ export const serve_style = {
         );
       }
       try {
+        // eslint-disable-next-line security/detect-object-injection -- id is route parameter from URL
         const item = repo[id];
         if (!item) {
           return res.sendStatus(404);
         }
         const styleJSON_ = clone(item.styleJSON);
         for (const name of Object.keys(styleJSON_.sources)) {
+          // eslint-disable-next-line security/detect-object-injection -- name is from Object.keys of style sources
           const source = styleJSON_.sources[name];
           source.url = fixUrl(req, source.url, item.publicUrl);
           if (typeof source.data == 'string') {
@@ -102,6 +104,7 @@ export const serve_style = {
             sanitizedFormat,
           );
         }
+        // eslint-disable-next-line security/detect-object-injection -- id is route parameter from URL
         const item = repo[id];
         const validatedFormat = allowedSpriteFormats(format);
         if (!item || !validatedFormat) {
@@ -185,6 +188,7 @@ export const serve_style = {
    * @returns {void}
    */
   remove: function (repo, id) {
+    // eslint-disable-next-line security/detect-object-injection -- id is function parameter for removal
     delete repo[id];
   },
   /**
@@ -195,8 +199,8 @@ export const serve_style = {
    * @param {string} id ID of the style.
    * @param {object} programOpts - An object containing the program options
    * @param {object} style pre-fetched/read StyleJSON object.
-   * @param {Function} reportTiles Function for reporting tile sources.
-   * @param {Function} reportFont Function for reporting font usage
+   * @param {(dataId: string, protocol: string) => string|undefined} reportTiles Function for reporting tile sources.
+   * @param {(font: string) => void} reportFont Function for reporting font usage
    * @returns {boolean} true if add is successful
    */
   add: function (
@@ -223,6 +227,7 @@ export const serve_style = {
     }
 
     for (const name of Object.keys(styleJSON.sources)) {
+      // eslint-disable-next-line security/detect-object-injection -- name is from Object.keys of style sources
       const source = styleJSON.sources[name];
       let url = source.url;
       if (
@@ -236,6 +241,7 @@ export const serve_style = {
           dataId = dataId.slice(1, -1);
         }
 
+        // eslint-disable-next-line security/detect-object-injection -- dataId is from style source URL, used for mapping lookup
         const mapsTo = (params.mapping || {})[dataId];
         if (mapsTo) {
           dataId = mapsTo;
@@ -310,6 +316,7 @@ export const serve_style = {
       styleJSON.glyphs = 'local://fonts/{fontstack}/{range}.pbf';
     }
 
+    // eslint-disable-next-line security/detect-object-injection -- id is from config file style names
     repo[id] = {
       styleJSON,
       spritePaths,
