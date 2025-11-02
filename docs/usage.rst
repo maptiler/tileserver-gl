@@ -9,7 +9,7 @@ Getting started
   Usage: main.js tileserver-gl [file] [options]
 
   Options:
-    --file <file>             MBTiles or PMTiles file (local path, http(s)://, s3://, or pmtiles://mbtiles:// URL)
+    --file <file>             MBTiles or PMTiles file (local path, http(s)://, s3://, or pmtiles:// mbtiles:// URL)
                                 ignored if the configuration file is also specified
     --mbtiles <file>          (DEPRECIATED) MBTiles file
                                 ignored if file is also specified
@@ -19,10 +19,10 @@ Getting started
     -p, --port <port>         Port [8080] (default: 8080)
     -C|--no-cors              Disable Cross-origin resource sharing headers
     -u|--public_url <url>     Enable exposing the server on subpaths, not necessarily the root of the domain
-    -V, --verbose [level]     More verbose output
-                                -V, --verbose, or --verbose 1: Important operations
-                                --verbose 2: Detailed operations  
-                                --verbose 3: All requests and debug info
+    -V, --verbose [level]     More verbose output (level 1-3)
+                                -V, --verbose, -V 1, or --verbose 1: Important operations
+                                -V 2 or --verbose 2: Detailed operations  
+                                -V 3 or --verbose 3: All requests and debug info
     -s, --silent              Less verbose output
     -l|--log_file <file>      output log file (defaults to standard out)
     -f|--log_format <format>  define the log format:  https://github.com/expressjs/morgan#morganformat-options
