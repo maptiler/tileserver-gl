@@ -290,6 +290,7 @@ async function start(opts) {
               let resolvedFileType;
               let resolvedInputFile;
               let resolvedSparse = false;
+              let resolvedS3Profile; // Add this
 
               for (const id of Object.keys(data)) {
                 // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys of data config
@@ -322,6 +323,12 @@ async function start(opts) {
                     } else {
                       resolvedSparse = false; // Explicitly set default if not present on item
                     }
+
+                    // Get s3Profile if present
+                    if (sourceData.hasOwnProperty('s3Profile')) {
+                      resolvedS3Profile = sourceData.s3Profile;
+                    }
+
                     break; // Found our match, exit the outer loop
                   }
                 }
@@ -336,6 +343,7 @@ async function start(opts) {
                   inputFile: undefined,
                   fileType: undefined,
                   sparse: false,
+                  s3Profile: undefined, // Add this
                 };
               }
 
@@ -364,6 +372,7 @@ async function start(opts) {
                 inputFile: resolvedInputFile,
                 fileType: resolvedFileType,
                 sparse: resolvedSparse,
+                s3Profile: resolvedS3Profile, // Add this
               };
             },
           ),
@@ -846,13 +855,39 @@ async function start(opts) {
     process.env.PORT || opts.port,
     process.env.BIND || opts.bind,
     function () {
-      let address = this.address().address;
+      const addressInfo = this.address();
+
+      if (!addressInfo) {
+        console.error('Failed to bind to port');
+        return;
+      }
+
+      let address = addressInfo.address;
       if (address.indexOf('::') === 0) {
         address = `[${address}]`; // literal IPv6 address
       }
-      console.log(`Listening at http://${address}:${this.address().port}/`);
+      console.log(`Listening at http://${address}:${addressInfo.port}/`);
     },
   );
+
+  // Handle server errors
+  server.on('error', (err) => {
+    const port = process.env.PORT || opts.port;
+    if (err.code === 'EADDRINUSE') {
+      console.error(`ERROR: Port ${port} is already in use.`);
+      console.error(`Please choose a different port with -p or --port option.`);
+      process.exit(1);
+    } else if (err.code === 'EACCES') {
+      console.error(`ERROR: Permission denied to bind to port ${port}.`);
+      console.error(
+        `Try using a port number above 1024 or run with appropriate permissions.`,
+      );
+      process.exit(1);
+    } else {
+      console.error('Server error:', err.message);
+      process.exit(1);
+    }
+  });
 
   // add server.shutdown() to gracefully stop serving
   enableShutdown(server);

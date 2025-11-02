@@ -388,7 +388,7 @@ For example::
 S3 sources require AWS credentials to be configured. The server will automatically use credentials from:
 
 * Environment variables: ``AWS_ACCESS_KEY_ID``, ``AWS_SECRET_ACCESS_KEY``, ``AWS_REGION``
-* AWS credentials file: ``~/.aws/credentials`` (``C:\Users\YourUsername\.aws\credentials`` on Windows)
+* AWS credentials file: ``~/.aws/credentials`` on Linux/macOS or ``C:\Users\USERNAME\.aws\credentials`` on Windows
 * IAM role (when running on AWS EC2, ECS, or Lambda)
 
 For S3-compatible storage providers, use the same AWS credential format with your provider's access keys.
@@ -401,9 +401,9 @@ Example environment variables::
 
 **Using Multiple AWS Credential Profiles:**
 
-If you need to access S3 buckets with different credentials, you can use AWS credential profiles. Profiles are defined in your ``~/.aws/credentials`` file:
+If you need to access S3 buckets with different credentials, you can use AWS credential profiles. Profiles are defined in your AWS credentials file (``~/.aws/credentials`` on Linux/macOS or ``C:\Users\USERNAME\.aws\credentials`` on Windows):
 
-Example ``~/.aws/credentials`` file::
+Example credentials file::
 
   [default]
   aws_access_key_id=YOUR_DEFAULT_KEY

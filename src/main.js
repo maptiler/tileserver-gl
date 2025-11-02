@@ -118,6 +118,31 @@ const startWithInputFile = async (inputFile) => {
     `[INFO] See documentation to learn how to create config.json file.`,
   );
 
+  // Determine file type from prefix or extension
+  let fileType = null;
+
+  if (inputFile.startsWith('pmtiles://')) {
+    fileType = 'pmtiles';
+    inputFile = inputFile.replace('pmtiles://', '');
+  } else if (inputFile.startsWith('mbtiles://')) {
+    fileType = 'mbtiles';
+    inputFile = inputFile.replace('mbtiles://', '');
+  } else {
+    // Determine by extension (remove query parameters first)
+    const extension = inputFile.split('?')[0].split('.').pop().toLowerCase();
+    if (extension === 'pmtiles' || extension === 'mbtiles') {
+      fileType = extension;
+    }
+  }
+
+  if (!fileType) {
+    console.log(`ERROR: Unable to determine file type for "${inputFile}".`);
+    console.log(
+      `File must end with .pmtiles or .mbtiles, or use pmtiles:// or mbtiles:// prefix.`,
+    );
+    process.exit(1);
+  }
+
   let inputFilePath;
   // Check if input is a remote URL (HTTP, HTTPS, or S3)
   if (isValidRemoteUrl(inputFile)) {
@@ -159,8 +184,7 @@ const startWithInputFile = async (inputFile) => {
     data: {},
   };
 
-  const extension = inputFile.split('.').pop().toLowerCase();
-  if (extension === 'pmtiles') {
+  if (fileType === 'pmtiles') {
     const fileOpenInfo = openPMtiles(inputFile);
     const metadata = await getPMtilesInfo(fileOpenInfo, inputFile);
 
@@ -216,7 +240,7 @@ const startWithInputFile = async (inputFile) => {
     }
 
     return startServer(null, config);
-  } else {
+  } else if (fileType === 'mbtiles') {
     // MBTiles handling - reject remote URLs
     if (isValidRemoteUrl(inputFile)) {
       console.log(
