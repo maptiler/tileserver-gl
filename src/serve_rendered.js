@@ -31,8 +31,8 @@ import {
   getFontsPbf,
   listFonts,
   getTileUrls,
+  isValidHttpUrl,
   isValidRemoteUrl,
-  httpTester,
   fixTileJSONCenter,
   fetchTileData,
   readFile,
@@ -328,8 +328,7 @@ function extractMarkersFromQuery(query, options, transformer) {
     let iconURI = markerParts[1];
     // Check if icon is served via http otherwise marker icons are expected to
     // be provided as filepaths relative to configured icon path
-    const isRemoteURL =
-      iconURI.startsWith('http://') || iconURI.startsWith('https://');
+    const isRemoteURL = isValidHttpUrl(iconURI);
     const isDataURL = iconURI.startsWith('data:');
     if (!(isRemoteURL || isDataURL)) {
       // Sanitize URI with sanitize-filename
@@ -1288,7 +1287,7 @@ export const serve_rendered = {
       }
       styleJSON.sprite.forEach((spriteItem) => {
         // Sprites should only be HTTP/HTTPS, not S3
-        if (!httpTester.test(spriteItem.url)) {
+        if (!isValidHttpUrl(spriteItem.url)) {
           spriteItem.url =
             'sprites://' +
             spriteItem.url
@@ -1305,7 +1304,7 @@ export const serve_rendered = {
     }
 
     // Glyphs should only be HTTP/HTTPS, not S3
-    if (styleJSON.glyphs && !httpTester.test(styleJSON.glyphs)) {
+    if (styleJSON.glyphs && !isValidHttpUrl(styleJSON.glyphs)) {
       styleJSON.glyphs = `fonts://${styleJSON.glyphs}`;
     }
 
