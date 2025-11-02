@@ -1465,6 +1465,7 @@ export const serve_rendered = {
             s3Profile,
             requestPayer,
             s3Region,
+            verbose,
           );
           // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
           map.sourceTypes[name] = 'pmtiles';

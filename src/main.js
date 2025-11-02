@@ -185,7 +185,13 @@ const startWithInputFile = async (inputFile) => {
   };
 
   if (fileType === 'pmtiles') {
-    const fileOpenInfo = openPMtiles(inputFile);
+    const fileOpenInfo = openPMtiles(
+      inputFile,
+      undefined,
+      undefined,
+      undefined,
+      opts.verbose,
+    );
     const metadata = await getPMtilesInfo(fileOpenInfo, inputFile);
 
     if (

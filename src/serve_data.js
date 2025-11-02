@@ -339,7 +339,7 @@ export const serve_data = {
    * @returns {Promise<void>}
    */
   add: async function (options, repo, params, id, programOpts) {
-    const { publicUrl } = programOpts;
+    const { publicUrl, verbose } = programOpts;
     let inputFile;
     let inputType;
     if (params.pmtiles) {
@@ -347,9 +347,6 @@ export const serve_data = {
       // PMTiles supports HTTP, HTTPS, and S3 URLs
       if (isValidRemoteUrl(params.pmtiles)) {
         inputFile = params.pmtiles;
-        if (isS3Url(params.pmtiles)) {
-          console.log(`[INFO] Using S3 source for ${id}: ${params.pmtiles}`);
-        }
       } else {
         inputFile = path.resolve(options.paths.pmtiles, params.pmtiles);
       }
@@ -364,6 +361,10 @@ export const serve_data = {
       } else {
         inputFile = path.resolve(options.paths.mbtiles, params.mbtiles);
       }
+    }
+
+    if (verbose && inputFile) {
+      console.log(`Using source for ${id}: ${inputFile}`);
     }
 
     let tileJSON = {
@@ -393,6 +394,7 @@ export const serve_data = {
         params.s3Profile,
         params.requestPayer,
         params.s3Region,
+        verbose,
       );
       sourceType = 'pmtiles';
       const metadata = await getPMtilesInfo(source, inputFile);

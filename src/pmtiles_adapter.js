@@ -19,13 +19,21 @@ class S3Source {
    * @param {string} [s3Profile] - Optional AWS credential profile name from config.
    * @param {boolean} [configRequestPayer] - Optional flag from config for requester pays buckets.
    * @param {string} [configRegion] - Optional AWS region from config.
+   * @param {boolean} [verbose] - Whether to show verbose logging.
    */
-  constructor(s3Url, s3Profile, configRequestPayer, configRegion) {
+  constructor(
+    s3Url,
+    s3Profile,
+    configRequestPayer,
+    configRegion,
+    verbose = false,
+  ) {
     const parsed = this.parseS3Url(s3Url);
     this.bucket = parsed.bucket;
     this.key = parsed.key;
     this.endpoint = parsed.endpoint;
     this.url = s3Url;
+    this.verbose = verbose;
 
     // Determine the final profile: Config takes precedence over URL
     const profile = s3Profile || parsed.profile;
@@ -33,11 +41,16 @@ class S3Source {
     // Determine requestPayer: Config takes precedence over URL
     this.requestPayer = configRequestPayer ?? parsed.requestPayer;
 
-    // Determine region: Config takes precedence over URL, which takes precedence over environment/default
+    // Determine region: Config takes precedence over URL
     this.region = configRegion || parsed.region;
 
     // Create S3 client
-    this.s3Client = this.createS3Client(parsed.endpoint, this.region, profile);
+    this.s3Client = this.createS3Client(
+      parsed.endpoint,
+      this.region,
+      profile,
+      this.verbose,
+    );
   }
 
   /**
@@ -126,35 +139,35 @@ class S3Source {
    * @param {string|null} endpoint - The custom endpoint URL, or null for default AWS S3.
    * @param {string} region - The AWS region.
    * @param {string} [profile] - Optional AWS credential profile name.
+   * @param {boolean} [verbose] - Whether to show verbose logging.
    * @returns {S3Client} - Configured S3Client instance.
    */
-  createS3Client(endpoint, region, profile) {
+  createS3Client(endpoint, region, profile, verbose) {
     const config = {
       region: region,
       requestHandler: {
         connectionTimeout: 5000,
         socketTimeout: 5000,
       },
-      // Force path style for S3-compatible storage (not virtual-hosted style)
       forcePathStyle: !!endpoint,
     };
 
-    // Add custom endpoint if provided (for S3-compatible storage)
     if (endpoint) {
       config.endpoint = endpoint;
-      console.log(`Using custom S3 endpoint: ${endpoint}`);
+      if (verbose) {
+        console.log(`Using custom S3 endpoint: ${endpoint}`);
+      }
     }
 
-    // Add profile credentials if provided
     if (profile) {
-      // Use specific profile from ~/.aws/credentials
       config.credentials = fromIni({ profile });
-      console.log(`Using AWS profile: ${profile}`);
+      if (verbose) {
+        console.log(`Using AWS profile: ${profile}`);
+      }
     }
 
     return new S3Client(config);
   }
-
   /**
    * Returns the unique key for this S3 source.
    * @returns {string} - The S3 URL.
@@ -293,25 +306,40 @@ async function readFileBytes(fd, buffer, offset) {
  * @param {string} [s3Profile] - Optional AWS credential profile name.
  * @param {boolean} [requestPayer] - Optional flag for requester pays buckets.
  * @param {string} [s3Region] - Optional AWS region.
+ * @param {boolean} [verbose] - Whether to show verbose logging.
  * @returns {PMTiles} - A PMTiles instance.
  */
-export function openPMtiles(filePath, s3Profile, requestPayer, s3Region) {
+export function openPMtiles(
+  filePath,
+  s3Profile,
+  requestPayer,
+  s3Region,
+  verbose = false,
+) {
   let pmtiles = undefined;
 
   if (isS3Url(filePath)) {
-    console.log(`Opening PMTiles from S3: ${filePath}`);
-    const source = new S3Source(filePath, s3Profile, requestPayer, s3Region);
+    if (verbose) {
+      console.log(`Opening PMTiles from S3: ${filePath}`);
+    }
+    const source = new S3Source(
+      filePath,
+      s3Profile,
+      requestPayer,
+      s3Region,
+      verbose,
+    );
     pmtiles = new PMTiles(source);
-  }
-  // Check for HTTP/HTTPS URL using regex tester
-  else if (isValidHttpUrl(filePath)) {
-    console.log(`Opening PMTiles from HTTP: ${filePath}`);
+  } else if (isValidHttpUrl(filePath)) {
+    if (verbose) {
+      console.log(`Opening PMTiles from HTTP: ${filePath}`);
+    }
     const source = new FetchSource(filePath);
     pmtiles = new PMTiles(source);
-  }
-  // Local file
-  else {
-    console.log(`Opening PMTiles from local file: ${filePath}`);
+  } else {
+    if (verbose) {
+      console.log(`Opening PMTiles from local file: ${filePath}`);
+    }
     // eslint-disable-next-line security/detect-non-literal-fs-filename -- Opening local PMTiles file specified in config or CLI
     const fd = fs.openSync(filePath, 'r');
     const source = new PMTilesFileSource(fd);
