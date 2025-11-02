@@ -12,9 +12,8 @@ import {
   allowedSpriteFormats,
   fixUrl,
   readFile,
+  isValidHttpUrl,
 } from './utils.js';
-
-const httpTester = /^https?:\/\//i;
 
 export const serve_style = {
   /**
@@ -276,7 +275,7 @@ export const serve_style = {
     let spritePaths = [];
     if (styleJSON.sprite) {
       if (!Array.isArray(styleJSON.sprite)) {
-        if (!httpTester.test(styleJSON.sprite)) {
+        if (!isValidHttpUrl(styleJSON.sprite)) {
           let spritePath = path.join(
             options.paths.sprites,
             styleJSON.sprite
@@ -291,7 +290,7 @@ export const serve_style = {
         }
       } else {
         for (let spriteItem of styleJSON.sprite) {
-          if (!httpTester.test(spriteItem.url)) {
+          if (!isValidHttpUrl(spriteItem.url)) {
             let spritePath = path.join(
               options.paths.sprites,
               spriteItem.url
@@ -308,7 +307,7 @@ export const serve_style = {
       }
     }
 
-    if (styleJSON.glyphs && !httpTester.test(styleJSON.glyphs)) {
+    if (styleJSON.glyphs && !isValidHttpUrl(styleJSON.glyphs)) {
       styleJSON.glyphs = 'local://fonts/{fontstack}/{range}.pbf';
     }
 
