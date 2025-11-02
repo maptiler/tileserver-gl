@@ -16,20 +16,22 @@ class S3Source {
   /**
    * Creates an S3Source instance.
    * @param {string} s3Url - The S3 URL in one of the supported formats.
-   * @param {string} [s3Profile] - Optional AWS credential profile name from config (Option 2).
+   * @param {string} [s3Profile] - Optional AWS credential profile name from config.
+   * @param {boolean} [requestPayer] - Optional flag to enable requester pays buckets.
    */
-  constructor(s3Url, s3Profile) {
+  constructor(s3Url, s3Profile, requestPayer) {
     const parsed = this.parseS3Url(s3Url);
     this.bucket = parsed.bucket;
     this.key = parsed.key;
     this.endpoint = parsed.endpoint;
     this.region = parsed.region;
     this.url = s3Url;
+    this.requestPayer = requestPayer;
 
-    // Determine the final profile: Config profile (Option 2) takes precedence over URL profile (Option 1)
+    // Determine the final profile
     const profile = s3Profile || parsed.profile;
 
-    // Create S3 client with custom endpoint, region, and profile
+    // Create S3 client
     this.s3Client = this.createS3Client(
       parsed.endpoint,
       parsed.region,
@@ -154,14 +156,18 @@ class S3Source {
    */
   async getBytes(offset, length, signal, etag) {
     try {
-      const command = new GetObjectCommand({
+      const commandParams = {
         Bucket: this.bucket,
         Key: this.key,
         Range: `bytes=${offset}-${offset + length - 1}`,
         IfMatch: etag,
-        // Uncomment for requester-pays buckets:
-        // RequestPayer: 'requester',
-      });
+      };
+
+      if (this.requestPayer) {
+        commandParams.RequestPayer = 'requester';
+      }
+
+      const command = new GetObjectCommand(commandParams);
 
       const response = await this.s3Client.send(command, {
         abortSignal: signal,
@@ -264,18 +270,17 @@ async function readFileBytes(fd, buffer, offset) {
 
 /**
  * Opens a PMTiles file from local filesystem, HTTP URL, or S3 URL.
- * @param {string} filePath - The path to the PMTiles file (local path, http(s):// URL, or s3:// URL).
- * @param {string} [s3Profile] - Optional AWS credential profile name from configuration.
- * @returns {PMTiles} - A PMTiles instance configured with the appropriate source.
+ * @param {string} filePath - The path to the PMTiles file.
+ * @param {string} [s3Profile] - Optional AWS credential profile name.
+ * @param {boolean} [requestPayer] - Optional flag for requester pays buckets.
+ * @returns {PMTiles} - A PMTiles instance.
  */
-export function openPMtiles(filePath, s3Profile) {
+export function openPMtiles(filePath, s3Profile, requestPayer) {
   let pmtiles = undefined;
 
-  // Check for S3 or S3-compatible URL using regex tester
   if (isS3Url(filePath)) {
     console.log(`Opening PMTiles from S3: ${filePath}`);
-    // Pass the optional s3Profile to the S3Source constructor
-    const source = new S3Source(filePath, s3Profile);
+    const source = new S3Source(filePath, s3Profile, requestPayer);
     pmtiles = new PMTiles(source);
   }
   // Check for HTTP/HTTPS URL using regex tester

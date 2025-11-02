@@ -290,7 +290,8 @@ async function start(opts) {
               let resolvedFileType;
               let resolvedInputFile;
               let resolvedSparse = false;
-              let resolvedS3Profile; // Add this
+              let resolvedS3Profile;
+              let resolvedRequestPayer;
 
               for (const id of Object.keys(data)) {
                 // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys of data config
@@ -329,6 +330,11 @@ async function start(opts) {
                       resolvedS3Profile = sourceData.s3Profile;
                     }
 
+                    // Get requestPayer if present
+                    if (sourceData.hasOwnProperty('requestPayer')) {
+                      resolvedRequestPayer = !!sourceData.requestPayer; // Ensure boolean
+                    }
+
                     break; // Found our match, exit the outer loop
                   }
                 }
@@ -343,7 +349,8 @@ async function start(opts) {
                   inputFile: undefined,
                   fileType: undefined,
                   sparse: false,
-                  s3Profile: undefined, // Add this
+                  s3Profile: undefined,
+                  requestPayer: false,
                 };
               }
 
@@ -372,7 +379,8 @@ async function start(opts) {
                 inputFile: resolvedInputFile,
                 fileType: resolvedFileType,
                 sparse: resolvedSparse,
-                s3Profile: resolvedS3Profile, // Add this
+                s3Profile: resolvedS3Profile,
+                requestPayer: resolvedRequestPayer,
               };
             },
           ),

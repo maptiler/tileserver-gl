@@ -298,6 +298,12 @@ Here are the available options for each data source:
     If both are specified, the configuration ``s3Profile`` takes precedence.
     Optional, only applicable to PMTiles sources using S3 URLs.
 
+``requestPayer`` (boolean)
+    Enables support for "requester pays" S3 buckets where the requester (not the bucket owner) pays for data transfer costs.
+    Set to ``true`` if accessing a requester pays bucket.
+    Default: ``false``.
+    Optional, only applicable to PMTiles sources using S3 URLs.
+
 .. note::
     These configuration options will be overridden by metadata in the MBTiles or PMTiles file. if corresponding properties exist in the file's metadata, you do not need to specify them in the data configuration.
 
