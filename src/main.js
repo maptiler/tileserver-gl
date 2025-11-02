@@ -79,7 +79,24 @@ program
     '-u|--public_url <url>',
     'Enable exposing the server on subpaths, not necessarily the root of the domain',
   )
-  .option('-V, --verbose', 'More verbose output')
+  .option(
+    '-V, --verbose [level]',
+    'More verbose output (can specify level 1-3, or use -V, -VV, -VVV)',
+    (value, previous) => {
+      // If value is a string number, parse it
+      if (typeof value === 'string') {
+        const level = parseInt(value, 10);
+        if (!isNaN(level)) {
+          return Math.min(Math.max(level, 1), 3);
+        }
+      }
+      // If no value provided (flag only), increment from previous
+      // This allows -V -V -V to count up
+      const previousLevel = previous || 0;
+      return Math.min(previousLevel + 1, 3);
+    },
+    0,
+  )
   .option('-s, --silent', 'Less verbose output')
   .option('-l|--log_file <file>', 'output log file (defaults to standard out)')
   .option(
@@ -147,11 +164,6 @@ const startWithInputFile = async (inputFile) => {
   // Check if input is a remote URL (HTTP, HTTPS, or S3)
   if (isValidRemoteUrl(inputFile)) {
     inputFilePath = process.cwd();
-    if (isS3Url(inputFile)) {
-      console.log(`[INFO] Using S3 source: ${inputFile}`);
-    } else {
-      console.log(`[INFO] Using HTTP source: ${inputFile}`);
-    }
   } else {
     // Local file path
     inputFile = path.resolve(process.cwd(), inputFile);
@@ -164,6 +176,7 @@ const startWithInputFile = async (inputFile) => {
       process.exit(1);
     }
   }
+  console.log(`[INFO] Loading data source from: ${inputFile}`);
 
   const styleDir = path.resolve(
     __dirname,

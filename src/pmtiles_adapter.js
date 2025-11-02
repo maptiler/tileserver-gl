@@ -154,14 +154,14 @@ class S3Source {
 
     if (endpoint) {
       config.endpoint = endpoint;
-      if (verbose) {
+      if (this.verbose >= 2) {
         console.log(`Using custom S3 endpoint: ${endpoint}`);
       }
     }
 
     if (profile) {
       config.credentials = fromIni({ profile });
-      if (verbose) {
+      if (this.verbose >= 2) {
         console.log(`Using AWS profile: ${profile}`);
       }
     }
@@ -314,12 +314,12 @@ export function openPMtiles(
   s3Profile,
   requestPayer,
   s3Region,
-  verbose = false,
+  verbose = 0,
 ) {
   let pmtiles = undefined;
 
   if (isS3Url(filePath)) {
-    if (verbose) {
+    if (verbose >= 2) {
       console.log(`Opening PMTiles from S3: ${filePath}`);
     }
     const source = new S3Source(
@@ -331,13 +331,13 @@ export function openPMtiles(
     );
     pmtiles = new PMTiles(source);
   } else if (isValidHttpUrl(filePath)) {
-    if (verbose) {
+    if (verbose >= 2) {
       console.log(`Opening PMTiles from HTTP: ${filePath}`);
     }
     const source = new FetchSource(filePath);
     pmtiles = new PMTiles(source);
   } else {
-    if (verbose) {
+    if (verbose >= 2) {
       console.log(`Opening PMTiles from local file: ${filePath}`);
     }
     // eslint-disable-next-line security/detect-non-literal-fs-filename -- Opening local PMTiles file specified in config or CLI

@@ -363,8 +363,8 @@ export const serve_data = {
       }
     }
 
-    if (verbose && inputFile) {
-      console.log(`Using source for ${id}: ${inputFile}`);
+    if (verbose && verbose >= 1) {
+      console.log(`[INFO] Loading data source '${id}' from: ${inputFile}`);
     }
 
     let tileJSON = {

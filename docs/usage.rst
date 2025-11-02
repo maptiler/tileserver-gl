@@ -19,7 +19,10 @@ Getting started
     -p, --port <port>         Port [8080] (default: 8080)
     -C|--no-cors              Disable Cross-origin resource sharing headers
     -u|--public_url <url>     Enable exposing the server on subpaths, not necessarily the root of the domain
-    -V, --verbose             More verbose output
+    -V, --verbose [level]     More verbose output
+                                -V, --verbose, or --verbose 1: Important operations
+                                --verbose 2: Detailed operations  
+                                --verbose 3: All requests and debug info
     -s, --silent              Less verbose output
     -l|--log_file <file>      output log file (defaults to standard out)
     -f|--log_format <format>  define the log format:  https://github.com/expressjs/morgan#morganformat-options

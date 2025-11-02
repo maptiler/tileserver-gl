@@ -1081,7 +1081,7 @@ export const serve_rendered = {
           ratio,
           request: async (req, callback) => {
             const protocol = req.url.split(':')[0];
-            if (verbose) {
+            if (verbose && verbose >= 3) {
               console.log('Handling request:', req);
             }
             if (protocol === 'sprites') {
