@@ -33,7 +33,7 @@ Getting started
 File Source Options
 ======
 
-The ``--file`` option supports multiple source types:
+The `--file` option supports multiple source types:
 
 **Local files:**
 ::
@@ -72,7 +72,7 @@ The ``--file`` option supports multiple source types:
 
 **Protocol prefixes:**
 
-You can also use ``pmtiles://`` or ``mbtiles://`` prefixes to explicitly specify the file type:
+You can also use `pmtiles://` or `mbtiles://` prefixes to explicitly specify the file type:
 ::
 
   tileserver-gl --file pmtiles://https://example.com/tiles.pmtiles
@@ -80,7 +80,7 @@ You can also use ``pmtiles://`` or ``mbtiles://`` prefixes to explicitly specify
   tileserver-gl --file mbtiles://./data/zurich.mbtiles
 
 .. note::
-   For S3 sources, AWS credentials must be configured via environment variables, AWS credentials file (``~/.aws/credentials`` on Linux/macOS or ``C:\Users\USERNAME\.aws\credentials`` on Windows), or IAM roles. See the Configuration documentation for details on using AWS credential profiles.
+   For S3 sources, AWS credentials must be configured via environment variables, AWS credentials file (`~/.aws/credentials` on Linux/macOS or `C:\Users\USERNAME\.aws\credentials` on Windows), or IAM roles. See the Configuration documentation for details on using AWS credential profiles.
 
 Default preview style and configuration
 ======
@@ -93,11 +93,11 @@ Reloading the configuration
 
 It is possible to reload the configuration file without restarting the whole process by sending a SIGHUP signal to the node process.
 
-- The ``docker kill -s HUP tileserver-gl`` command can be used when running the tileserver-gl docker container.
-- The ``docker-compose kill -s HUP tileserver-gl-service-name`` can be used when tileserver-gl is run as a docker-compose service.
+- The `docker kill -s HUP tileserver-gl` command can be used when running the tileserver-gl docker container.
+- The `docker-compose kill -s HUP tileserver-gl-service-name` can be used when tileserver-gl is run as a docker-compose service.
 
-Docker and ``--port``
+Docker and `--port`
 ======
 
-When running tileserver-gl in a Docker container, using the ``--port`` option would make the container incorrectly seem unhealthy.
+When running tileserver-gl in a Docker container, using the `--port` option would make the container incorrectly seem unhealthy.
 Instead, it is advised to use Docker's port mapping and map the default port 8080 to the desired external port.
