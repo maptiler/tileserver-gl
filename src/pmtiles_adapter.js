@@ -68,11 +68,11 @@ class S3Source {
     const queryString = url.split('?')[1];
     if (queryString) {
       const params = new URLSearchParams(queryString);
-      // Update profile if provided in url paramereters
+      // Update profile if provided in url parameters
       profile = params.get('profile') ?? profile;
-      // Update region if provided in url paramereters
+      // Update region if provided in url parameters
       region = params.get('region') ?? region;
-      // Update requestPayer if provided in url paramereters
+      // Update requestPayer if provided in url parameters
       const payerVal = params.get('requestPayer');
       requestPayer = payerVal === 'true' || payerVal === '1';
     }
@@ -81,24 +81,8 @@ class S3Source {
     const baseUrl = url.split('?')[0];
     const cleanUrl = baseUrl.replace(/\/+$/, '');
 
-    // Format 1: s3+https://endpoint/bucket:key (Contabo-style)
-    // Example: s3+https://eu2.contabostorage.com/mybucket:terrain/tiles.pmtiles
-    const customMatch = cleanUrl.match(
-      /^s3\+(https?):\/\/([^\/]+)\/([^:]+):(.+)$/,
-    );
-    if (customMatch) {
-      return {
-        endpoint: `${customMatch[1]}://${customMatch[2]}`,
-        bucket: customMatch[3],
-        key: customMatch[4],
-        region,
-        profile,
-        requestPayer,
-      };
-    }
-
-    // Format 2: s3://endpoint/bucket/key (generic S3-compatible)
-    // Example: s3://eu2.contabostorage.com/mybucket/terrain/tiles.pmtiles
+    // Format 1: s3://endpoint/bucket/key (S3-compatible storage)
+    // Example: s3://storage.example.com/mybucket/path/to/tiles.pmtile
     const endpointMatch = cleanUrl.match(/^s3:\/\/([^\/]+)\/([^\/]+)\/(.+)$/);
     if (endpointMatch) {
       return {
@@ -111,7 +95,7 @@ class S3Source {
       };
     }
 
-    // Format 3: s3://bucket/key (AWS S3 default)
+    // Format 2: s3://bucket/key (AWS S3 default)
     // Example: s3://my-bucket/path/to/tiles.pmtiles
     const awsMatch = cleanUrl.match(/^s3:\/\/([^\/]+)\/(.+)$/);
     if (awsMatch) {
