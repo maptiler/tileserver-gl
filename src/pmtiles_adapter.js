@@ -68,18 +68,14 @@ class S3Source {
     const queryString = url.split('?')[1];
     if (queryString) {
       const params = new URLSearchParams(queryString);
-
-      // Update profile, falling back to null if param not present
+      // Update profile if provided in url paramereters
       profile = params.get('profile') ?? profile;
-
-      // Update region, falling back to environment value if param not present
+      // Update region if provided in url paramereters
       region = params.get('region') ?? region;
-
-      // Check for explicit 'true' or '1' string values
+      // Update requestPayer if provided in url paramereters
       const payerVal = params.get('requestPayer');
       requestPayer = payerVal === 'true' || payerVal === '1';
     }
-    // -----------------------------------------
 
     // Clean URL for format detection (remove trailing slashes)
     const baseUrl = url.split('?')[0];

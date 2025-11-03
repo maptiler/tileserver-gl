@@ -241,9 +241,6 @@ For example::
     },
     "source4": {
       "pmtiles": "s3://my-bucket/tiles/terrain.pmtiles"
-    },
-    "source5": {
-      "pmtiles": "s3+https://example-storage.com/bucket-abc123:tiles/terrain.pmtiles"
     }
   }
 
@@ -376,25 +373,18 @@ PMTiles files can be accessed directly from AWS S3 or S3-compatible storage serv
 1. **AWS S3 (default):**
    ``s3://bucket-name/path/to/file.pmtiles``
 
-2. **S3-compatible storage with endpoint:**
+2. **S3-compatible storage with custom endpoint:**
    ``s3://endpoint-url/bucket-name/path/to/file.pmtiles``
-
-3. **Custom format (for services like Contabo):**
-   ``s3+https://endpoint-url/bucket-id:path/to/file.pmtiles``
 
 For example::
 
   "sources": {
     "aws-tiles": {
-      "url": "pmtiles://s3://my-bucket/tiles/terrain.pmtiles",
+      "url": "pmtiles://s3://my-bucket/tiles.pmtiles",
       "type": "vector"
     },
     "custom-storage": {
-      "url": "pmtiles://s3+https://example-storage.com/bucket-abc123:tiles/terrain.pmtiles",
-      "type": "vector"
-    },
-    "spaces-tiles": {
-      "url": "pmtiles://s3://nyc3.digitaloceanspaces.com/my-bucket/tiles.pmtiles",
+      "url": "pmtiles://s3://example-storage.com/my-bucket/tiles.pmtiles",
       "type": "vector"
     }
   }
@@ -496,12 +486,6 @@ Using configuration properties (recommended)::
       "requestPayer": true
     }
   }
-
-**Command-Line Usage with Profiles:**
-
-When using the ``--file`` parameter, you can only specify profiles via the URL::
-
-  tileserver-gl --file "s3://my-bucket/tiles.pmtiles?profile=production"
 
 Sprites
 -------

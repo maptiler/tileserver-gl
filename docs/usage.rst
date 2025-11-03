@@ -6,10 +6,10 @@ Getting started
 ======
 ::
 
-  Usage: main.js tileserver-gl [file] [options]
+  Usage: tileserver-gl [file] [options]
 
   Options:
-    --file <file>             MBTiles or PMTiles file (local path, http(s)://, s3://, or pmtiles:// mbtiles:// URL)
+    --file <file>             MBTiles or PMTiles file (local path, http(s)://, s3://, pmtiles://, or mbtiles:// URL)
                                 ignored if the configuration file is also specified
     --mbtiles <file>          (DEPRECIATED) MBTiles file
                                 ignored if file is also specified
@@ -49,14 +49,26 @@ The ``--file`` option supports multiple source types:
 **S3 URLs:**
 ::
 
-  # AWS S3 with specific region
+  # Basic AWS S3
+  tileserver-gl --file s3://my-bucket/tiles.pmtiles
+
+  # With AWS credential profile
+  tileserver-gl --file "s3://my-bucket/tiles.pmtiles?profile=production"
+
+  # With specific region
   tileserver-gl --file "s3://my-bucket/tiles.pmtiles?region=us-west-2"
 
   # With profile and region
   tileserver-gl --file "s3://my-bucket/tiles.pmtiles?profile=production&region=eu-central-1"
 
+  # Requester-pays bucket
+  tileserver-gl --file "s3://bucket/tiles.pmtiles?requestPayer=true"
+
   # All options combined
   tileserver-gl --file "s3://bucket/tiles.pmtiles?profile=prod&region=us-west-2&requestPayer=true"
+
+  # S3-compatible storage (e.g., DigitalOcean Spaces, Contabo)
+  tileserver-gl --file "s3://example-storage.com/my-bucket/tiles.pmtiles?profile=dev"
 
 **Protocol prefixes:**
 
@@ -65,6 +77,7 @@ You can also use ``pmtiles://`` or ``mbtiles://`` prefixes to explicitly specify
 
   tileserver-gl --file pmtiles://https://example.com/tiles.pmtiles
   tileserver-gl --file "pmtiles://s3://my-bucket/tiles.pmtiles?profile=production"
+  tileserver-gl --file mbtiles://./data/zurich.mbtiles
 
 .. note::
    For S3 sources, AWS credentials must be configured via environment variables, AWS credentials file (``~/.aws/credentials`` on Linux/macOS or ``C:\Users\USERNAME\.aws\credentials`` on Windows), or IAM roles. See the Configuration documentation for details on using AWS credential profiles.
