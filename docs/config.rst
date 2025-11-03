@@ -376,19 +376,6 @@ PMTiles files can be accessed directly from AWS S3 or S3-compatible storage serv
 2. **S3-compatible storage with custom endpoint:**
    ``s3://endpoint-url/bucket-name/path/to/file.pmtiles``
 
-For example::
-
-  "sources": {
-    "aws-tiles": {
-      "url": "pmtiles://s3://my-bucket/tiles.pmtiles",
-      "type": "vector"
-    },
-    "custom-storage": {
-      "url": "pmtiles://s3://example-storage.com/my-bucket/tiles.pmtiles",
-      "type": "vector"
-    }
-  }
-
 **AWS Credentials:**
 
 S3 sources require AWS credentials to be configured. The server will automatically use credentials from:
@@ -421,9 +408,9 @@ If you need to access S3 buckets with different credentials, you can use AWS cre
   aws_access_key_id=YOUR_STAGING_KEY
   aws_secret_access_key=YOUR_STAGING_SECRET
 
-**S3 Configuration Options:**
+**S3 Configuration Options (Main Config Data Section):**
 
-You can configure S3 sources using URL query parameters or configuration properties. Configuration properties take precedence over URL parameters.
+When configuring S3 sources in the main configuration file's ``data`` section, you can use URL query parameters or configuration properties. Configuration properties take precedence over URL parameters.
 
 *Profile* - Specifies which AWS credential profile to use::
 
@@ -484,6 +471,21 @@ Using configuration properties (recommended)::
       "s3Profile": "production",
       "s3Region": "eu-central-1",
       "requestPayer": true
+    }
+  }
+
+**Using S3 in Style JSON Sources:**
+
+When referencing S3 sources from within a style JSON file, use the ``pmtiles://`` prefix with S3 URLs. You can only specify profile, region, and requestPayer using URL query parameters (configuration properties are not available in style JSON)::
+
+  "sources": {
+    "aws-tiles": {
+      "url": "pmtiles://s3://my-bucket/tiles.pmtiles?profile=production",
+      "type": "vector"
+    },
+    "spaces-tiles": {
+      "url": "pmtiles://s3://example-storage.com/my-bucket/tiles.pmtiles?region=nyc3",
+      "type": "vector"
     }
   }
 
