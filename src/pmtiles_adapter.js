@@ -64,30 +64,20 @@ class S3Source {
     let profile = null;
     let requestPayer = false;
 
-    // Extract profile parameter from URL
-    const profileMatch = url.match(/[?&]profile=([^&]+)/);
-    if (profileMatch) {
-      profile = profileMatch[1];
+    // Parse query parameters using URLSearchParams
+    const [baseUrl, queryString] = url.split('?');
+    if (queryString) {
+      const params = new URLSearchParams(queryString);
+      profile = params.get('profile') || profile;
+      const regionParam = params.get('region');
+      if (regionParam) region = regionParam;
+      requestPayer =
+        params.get('requestPayer') === 'true' ||
+        params.get('requestPayer') === '1';
     }
 
-    // Extract region parameter from URL
-    const regionMatch = url.match(/[?&]region=([^&]+)/);
-    if (regionMatch) {
-      region = decodeURIComponent(regionMatch[1]);
-    }
-
-    // Extract requestPayer parameter from URL
-    const requestPayerMatch = url.match(/[?&]requestPayer=(true|1)/i);
-    if (requestPayerMatch) {
-      requestPayer = true;
-    }
-
-    // Remove query parameters for cleaner regex matching
-    let cleanUrl = url
-      .replace(/[?&]profile=[^&]+/, '')
-      .replace(/[?&]region=[^&]+/, '')
-      .replace(/[?&]requestPayer=[^&]+/, '')
-      .replace(/\/+$/, '');
+    // Clean URL for format detection (remove trailing slashes)
+    const cleanUrl = baseUrl.replace(/\/+$/, '');
 
     // Format 1: s3+https://endpoint/bucket:key (Contabo-style)
     // Example: s3+https://eu2.contabostorage.com/mybucket:terrain/tiles.pmtiles
@@ -115,6 +105,7 @@ class S3Source {
         key: endpointMatch[3],
         region,
         profile,
+        requestPayer,
       };
     }
 
@@ -128,6 +119,7 @@ class S3Source {
         key: awsMatch[2],
         region,
         profile,
+        requestPayer,
       };
     }
 
@@ -154,14 +146,14 @@ class S3Source {
 
     if (endpoint) {
       config.endpoint = endpoint;
-      if (this.verbose >= 2) {
+      if (verbose >= 2) {
         console.log(`Using custom S3 endpoint: ${endpoint}`);
       }
     }
 
     if (profile) {
       config.credentials = fromIni({ profile });
-      if (this.verbose >= 2) {
+      if (verbose >= 2) {
         console.log(`Using AWS profile: ${profile}`);
       }
     }
