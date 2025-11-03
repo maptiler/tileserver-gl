@@ -60,23 +60,29 @@ class S3Source {
    * @throws {Error} - Throws an error if the URL format is invalid.
    */
   parseS3Url(url) {
+    // Initialize with defaults/environment
     let region = process.env.AWS_REGION || 'us-east-1';
     let profile = null;
     let requestPayer = false;
 
-    // Parse query parameters using URLSearchParams
-    const [baseUrl, queryString] = url.split('?');
+    const queryString = url.split('?')[1];
     if (queryString) {
       const params = new URLSearchParams(queryString);
-      profile = params.get('profile') || profile;
-      const regionParam = params.get('region');
-      if (regionParam) region = regionParam;
-      requestPayer =
-        params.get('requestPayer') === 'true' ||
-        params.get('requestPayer') === '1';
+
+      // Update profile, falling back to null if param not present
+      profile = params.get('profile') ?? profile;
+
+      // Update region, falling back to environment value if param not present
+      region = params.get('region') ?? region;
+
+      // Check for explicit 'true' or '1' string values
+      const payerVal = params.get('requestPayer');
+      requestPayer = payerVal === 'true' || payerVal === '1';
     }
+    // -----------------------------------------
 
     // Clean URL for format detection (remove trailing slashes)
+    const baseUrl = url.split('?')[0];
     const cleanUrl = baseUrl.replace(/\/+$/, '');
 
     // Format 1: s3+https://endpoint/bucket:key (Contabo-style)
