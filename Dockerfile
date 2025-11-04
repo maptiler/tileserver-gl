@@ -90,6 +90,9 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+RUN mkdir -p /home/node/.aws && \
+    chown -R node:node /home/node
+
 ENV \
     NODE_ENV="production" \
     CHOKIDAR_USEPOLLING=1 \

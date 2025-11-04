@@ -63,6 +63,9 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+RUN mkdir -p /home/node/.aws && \
+    chown -R node:node /home/node
+
 COPY --from=builder /usr/src/app /usr/src/app
 
 COPY . /usr/src/app

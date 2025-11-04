@@ -80,7 +80,15 @@ You can also use `pmtiles://` or `mbtiles://` prefixes to explicitly specify the
   tileserver-gl --file mbtiles://./data/zurich.mbtiles
 
 .. note::
-   For S3 sources, AWS credentials must be configured via environment variables, AWS credentials file (`~/.aws/credentials` on Linux/macOS or `C:\Users\USERNAME\.aws\credentials` on Windows), or IAM roles. See the Configuration documentation for details on using AWS credential profiles.
+    For S3 sources, AWS credentials must be configured via environment variables, AWS credentials file (`~/.aws/credentials` on Linux/macOS or `C:\Users\USERNAME\.aws\credentials` on Windows), or IAM roles. 
+    
+    **When using Docker**, the host credentials file can be mounted to the container's user home directory:
+
+    ::
+    
+        docker run -v ~/.aws/credentials:/home/node/.aws/credentials:ro ... maptiler/tileserver-gl:latest
+
+    See the Configuration documentation for details on using AWS credential profiles.
 
 Default preview style and configuration
 ======
