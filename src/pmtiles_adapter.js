@@ -8,9 +8,7 @@ import { fromIni } from '@aws-sdk/credential-provider-ini';
  * S3 Source for PMTiles
  * Supports:
  * - AWS S3: s3://bucket-name/path/to/file.pmtiles
- * - Profile in URL: s3://bucket-name/path/to/file.pmtiles?profile=my-profile
  * - S3-compatible with endpoint: s3://endpoint-url/bucket/path/to/file.pmtiles
- * - Custom format: s3+https://eu2.contabostorage.com/bucket:path/file.pmtiles
  */
 class S3Source {
   /**
