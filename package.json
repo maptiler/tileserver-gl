@@ -41,7 +41,7 @@
     "@mapbox/polyline": "^1.2.1",
     "@mapbox/sphericalmercator": "2.0.2",
     "@mapbox/vector-tile": "2.0.4",
-    "@maplibre/maplibre-gl-inspect": "1.7.1",
+    "@maplibre/maplibre-gl-inspect": "1.8.0",
     "@maplibre/maplibre-gl-native": "6.2.0",
     "@maplibre/maplibre-gl-style-spec": "24.2.0",
     "@sindresorhus/fnv1a": "3.1.0",
