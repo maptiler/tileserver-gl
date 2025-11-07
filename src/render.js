@@ -140,7 +140,7 @@ const drawPath = (ctx, path, query, pathQuery, z) => {
     ctx.closePath();
   }
 
-  // --- NEW: Helper to extract an option from splitPaths ---
+  // Helper to extract an option from splitPaths ---
   const getInlineOption = (optionName) => {
     const found = splitPaths.find((x) => x.startsWith(`${optionName}:`));
     return found ? found.replace(`${optionName}:`, '') : undefined;
