@@ -12,7 +12,7 @@ class MBTilesWrapper {
 
   /**
    * Get the underlying MBTiles object.
-   * @returns {MBTiles}
+   * @returns {MBTiles} The MBTiles instance.
    */
   getMbTiles() {
     return this._mbtiles;
@@ -20,7 +20,7 @@ class MBTilesWrapper {
 
   /**
    * Get the MBTiles metadata object.
-   * @returns {Promise<object>}
+   * @returns {Promise<object>} A promise that resolves with the MBTiles metadata object.
    */
   getInfo() {
     return this._getInfoP();
@@ -28,10 +28,9 @@ class MBTilesWrapper {
 }
 
 /**
- * Open the given MBTiles file and return a promise that resolves with a
- * MBTilesWrapper instance.
- * @param inputFile Input file
- * @returns {Promise<MBTilesWrapper>}
+ * Open the given MBTiles file and return a promise that resolves with a MBTilesWrapper instance.
+ * @param {string} inputFile - The path to the input MBTiles file.
+ * @returns {Promise<MBTilesWrapper>} A promise that resolves with a MBTilesWrapper instance or rejects with an error.
  */
 export function openMbTilesWrapper(inputFile) {
   return new Promise((resolve, reject) => {

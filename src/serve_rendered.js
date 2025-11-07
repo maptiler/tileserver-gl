@@ -32,6 +32,7 @@ import {
   listFonts,
   getTileUrls,
   isValidHttpUrl,
+  isValidRemoteUrl,
   fixTileJSONCenter,
   fetchTileData,
   readFile,
@@ -61,8 +62,8 @@ const staticTypeRegex = new RegExp(
 );
 
 const PATH_PATTERN =
-  /^((fill|stroke|width):[^|]+\|)*(enc:.+|-?\d+(\.\d*)?,-?\d+(\.\d*)?(\|-?\d+(\.\d*)?,-?\d+(\.\d*)?)+)/;
-const httpTester = /^https?:\/\//i;
+  // eslint-disable-next-line security/detect-unsafe-regex -- Simple path pattern validation, no nested quantifiers
+  /^((fill|stroke|width)\:[^\|]+\|)*(enc:.+|-?\d+(\.\d*)?,-?\d+(\.\d*)?(\|-?\d+(\.\d*)?,-?\d+(\.\d*)?)+)/;
 
 const mercator = new SphericalMercator();
 
@@ -94,7 +95,7 @@ const cachedEmptyResponses = {
  * Create an appropriate mlgl response for http errors.
  * @param {string} format The format (a sharp format or 'pbf').
  * @param {string} color The background color (or empty string for transparent).
- * @param {Function} callback The mlgl callback.
+ * @param {(err: Error|null, data: object|null) => void} callback The mlgl callback.
  * @returns {void}
  */
 function createEmptyResponse(format, color, callback) {
@@ -111,6 +112,7 @@ function createEmptyResponse(format, color, callback) {
   }
 
   const cacheKey = `${format},${color}`;
+  // eslint-disable-next-line security/detect-object-injection -- cacheKey is constructed from validated format and color
   const data = cachedEmptyResponses[cacheKey];
   if (data) {
     callback(null, { data: data });
@@ -136,6 +138,7 @@ function createEmptyResponse(format, color, callback) {
           callback(err, null);
           return;
         }
+        // eslint-disable-next-line security/detect-object-injection -- cacheKey is constructed from validated format and color
         cachedEmptyResponses[cacheKey] = buffer;
         callback(null, { data: buffer });
       });
@@ -148,8 +151,7 @@ function createEmptyResponse(format, color, callback) {
 /**
  * Parses coordinate pair provided to pair of floats and ensures the resulting
  * pair is a longitude/latitude combination depending on lnglat query parameter.
- * @param {Array<string>} coordinatePair Coordinate pair.
- * @param coordinates
+ * @param {Array<string>} coordinates Coordinate pair.
  * @param {object} query Request query parameters.
  * @returns {Array<number>|null} Parsed coordinate pair as [longitude, latitude] or null if invalid
  */
@@ -175,7 +177,7 @@ function parseCoordinatePair(coordinates, query) {
  * Parses a coordinate pair from query arguments and optionally transforms it.
  * @param {Array<string>} coordinatePair Coordinate pair.
  * @param {object} query Request query parameters.
- * @param {Function} transformer Optional transform function.
+ * @param {((coords: Array<number>) => Array<number>)|null} transformer Optional transform function.
  * @returns {Array<number>|null} Transformed coordinate pair or null if invalid.
  */
 function parseCoordinates(coordinatePair, query, transformer) {
@@ -192,7 +194,7 @@ function parseCoordinates(coordinatePair, query, transformer) {
 /**
  * Parses paths provided via query into a list of path objects.
  * @param {object} query Request query parameters.
- * @param {Function} transformer Optional transform function.
+ * @param {((coords: Array<number>) => Array<number>)|null} transformer Optional transform function.
  * @returns {Array<Array<Array<number>>>} Array of paths.
  */
 function extractPathsFromQuery(query, transformer) {
@@ -291,7 +293,7 @@ function parseMarkerOptions(optionsList, marker) {
  * Parses markers provided via query into a list of marker objects.
  * @param {object} query Request query parameters.
  * @param {object} options Configuration options.
- * @param {Function} transformer Optional transform function.
+ * @param {((coords: Array<number>) => Array<number>)|null} transformer Optional transform function.
  * @returns {Array<object>} An array of marker objects.
  */
 function extractMarkersFromQuery(query, options, transformer) {
@@ -328,8 +330,7 @@ function extractMarkersFromQuery(query, options, transformer) {
     let iconURI = markerParts[1];
     // Check if icon is served via http otherwise marker icons are expected to
     // be provided as filepaths relative to configured icon path
-    const isRemoteURL =
-      iconURI.startsWith('http://') || iconURI.startsWith('https://');
+    const isRemoteURL = isValidHttpUrl(iconURI);
     const isDataURL = iconURI.startsWith('data:');
     if (!(isRemoteURL || isDataURL)) {
       // Sanitize URI with sanitize-filename
@@ -463,8 +464,10 @@ async function respondImage(
   const tileMargin = Math.max(options.tileMargin || 0, 0);
   let pool;
   if (mode === 'tile' && tileMargin === 0) {
+    // eslint-disable-next-line security/detect-object-injection -- scale is validated by allowedScales
     pool = item.map.renderers[scale];
   } else {
+    // eslint-disable-next-line security/detect-object-injection -- scale is validated by allowedScales
     pool = item.map.renderersStatic[scale];
   }
 
@@ -566,8 +569,10 @@ async function respondImage(
           'WARNING: The formatQuality option is deprecated and has been replaced with formatOptions. Please see the documentation. The values from formatQuality will be used if a quality setting is not provided via formatOptions.',
         );
       }
+      // eslint-disable-next-line security/detect-object-injection -- format is validated above
       const formatQuality = formatQualities[format];
 
+      // eslint-disable-next-line security/detect-object-injection -- format is validated above
       const formatOptions = (options.formatOptions || {})[format] || {};
 
       if (format === 'png') {
@@ -617,9 +622,9 @@ async function respondImage(
  * @param {string} req.params.scale - The scale parameter.
  * @param {string} req.params.format - The format of the image.
  * @param {object} res - Express response object.
- * @param {Function} next - Express next middleware function.
+ * @param {object} next - Express next middleware function.
  * @param {number} maxScaleFactor - The maximum scale factor allowed.
- * @param defailtTileSize
+ * @param {number} defailtTileSize - Default tile size.
  * @returns {Promise<void>}
  */
 async function handleTileRequest(
@@ -640,6 +645,7 @@ async function handleTileRequest(
     scale: scaleParam,
     format,
   } = req.params;
+  // eslint-disable-next-line security/detect-object-injection -- id is route parameter, validated by Express
   const item = repo[id];
   if (!item) {
     return res.sendStatus(404);
@@ -697,16 +703,15 @@ async function handleTileRequest(
  * @param {object} options - Configuration options for the server.
  * @param {object} repo - The repository object holding style data.
  * @param {object} req - Express request object.
- * @param {object} res - Express response object.
+ * @param {string} req.params.id - The id of the style.
  * @param {string} req.params.p2 - The raw or static parameter.
  * @param {string} req.params.p3 - The staticType parameter.
- * @param {string} req.params.p4 - The width parameter.
- * @param {string} req.params.p5 - The height parameter.
+ * @param {string} req.params.p4 - The widthAndHeight parameter.
  * @param {string} req.params.scale - The scale parameter.
  * @param {string} req.params.format - The format of the image.
- * @param {Function} next - Express next middleware function.
+ * @param {object} res - Express response object.
+ * @param {object} next - Express next middleware function.
  * @param {number} maxScaleFactor - The maximum scale factor allowed.
- * @param verbose
  * @returns {Promise<void>}
  */
 async function handleStaticRequest(
@@ -725,6 +730,7 @@ async function handleStaticRequest(
     scale: scaleParam,
     format,
   } = req.params;
+  // eslint-disable-next-line security/detect-object-injection -- id is route parameter, validated by Express
   const item = repo[id];
 
   let parsedWidth = null;
@@ -920,6 +926,7 @@ export const serve_rendered = {
      * Handles requests for tile images.
      * @param {object} req - Express request object.
      * @param {object} res - Express response object.
+     * @param {object} next - Express next middleware function.
      * @param {string} req.params.id - The id of the style.
      * @param {string} [req.params.p1] - The tile size or static parameter, if available.
      * @param {string} req.params.p2 - The z, static, or raw parameter.
@@ -987,11 +994,13 @@ export const serve_rendered = {
      * Handles requests for rendered tilejson endpoint.
      * @param {object} req - Express request object.
      * @param {object} res - Express response object.
+     * @param {object} next - Express next middleware function.
      * @param {string} req.params.id - The id of the tilejson
      * @param {string} [req.params.tileSize] - The size of the tile, if specified.
      * @returns {void}
      */
     app.get('{/:tileSize}/:id.json', (req, res, next) => {
+      // eslint-disable-next-line security/detect-object-injection -- req.params.id is route parameter, validated by Express
       const item = repo[req.params.id];
       if (!item) {
         return res.sendStatus(404);
@@ -1031,7 +1040,7 @@ export const serve_rendered = {
    * @param {string} id ID of the item.
    * @param {object} programOpts - An object containing the program options
    * @param {object} style pre-fetched/read StyleJSON object.
-   * @param {Function} dataResolver Function to resolve data.
+   * @param {(dataId: string) => object} dataResolver Function to resolve data.
    * @returns {Promise<void>}
    */
   add: async function (
@@ -1065,8 +1074,8 @@ export const serve_rendered = {
       /**
        * Creates a renderer
        * @param {number} ratio Pixel ratio
-       * @param {Function} createCallback Function that returns the renderer when created
-       *  @returns {void}
+       * @param {(err: Error|null, renderer: object) => void} createCallback Function that returns the renderer when created
+       * @returns {void}
        */
       const createRenderer = (ratio, createCallback) => {
         const renderer = new mlgl.Map({
@@ -1074,10 +1083,11 @@ export const serve_rendered = {
           ratio,
           request: async (req, callback) => {
             const protocol = req.url.split(':')[0];
-            if (verbose) {
+            if (verbose && verbose >= 3) {
               console.log('Handling request:', req);
             }
             if (protocol === 'sprites') {
+              // eslint-disable-next-line security/detect-object-injection -- protocol is 'sprites', validated above
               const dir = options.paths[protocol];
               const file = decodeURIComponent(req.url).substring(
                 protocol.length + 3,
@@ -1097,6 +1107,7 @@ export const serve_rendered = {
               try {
                 const concatenated = await getFontsPbf(
                   null,
+                  // eslint-disable-next-line security/detect-object-injection -- protocol is 'fonts', validated above
                   options.paths[protocol],
                   fontstack,
                   range,
@@ -1109,8 +1120,11 @@ export const serve_rendered = {
             } else if (protocol === 'mbtiles' || protocol === 'pmtiles') {
               const parts = req.url.split('/');
               const sourceId = parts[2];
+              // eslint-disable-next-line security/detect-object-injection -- sourceId from internal style source names
               const source = map.sources[sourceId];
+              // eslint-disable-next-line security/detect-object-injection -- sourceId from internal style source names
               const sourceType = map.sourceTypes[sourceId];
+              // eslint-disable-next-line security/detect-object-injection -- sourceId from internal style source names
               const sourceInfo = styleJSON.sources[sourceId];
 
               const z = parts[3] | 0;
@@ -1225,6 +1239,7 @@ export const serve_rendered = {
 
                   const parts = url.parse(req.url);
                   const extension = path.extname(parts.pathname).toLowerCase();
+                  // eslint-disable-next-line security/detect-object-injection -- extension is from path.extname, limited set
                   const format = extensionToFormat[extension] || '';
                   createEmptyResponse(format, '', callback);
                 }
@@ -1233,6 +1248,7 @@ export const serve_rendered = {
               const name = decodeURI(req.url).substring(protocol.length + 3);
               const file = path.join(options.paths['files'], name);
               if (await existsP(file)) {
+                // eslint-disable-next-line security/detect-non-literal-fs-filename -- file path constructed from configured base path and URL-decoded filename
                 const inputFileStats = await fsp.stat(file);
                 if (!inputFileStats.isFile() || inputFileStats.size === 0) {
                   throw Error(
@@ -1276,7 +1292,8 @@ export const serve_rendered = {
         styleJSON.sprite = [{ id: 'default', url: styleJSON.sprite }];
       }
       styleJSON.sprite.forEach((spriteItem) => {
-        if (!httpTester.test(spriteItem.url)) {
+        // Sprites should only be HTTP/HTTPS, not S3
+        if (!isValidHttpUrl(spriteItem.url)) {
           spriteItem.url =
             'sprites://' +
             spriteItem.url
@@ -1292,7 +1309,8 @@ export const serve_rendered = {
       });
     }
 
-    if (styleJSON.glyphs && !httpTester.test(styleJSON.glyphs)) {
+    // Glyphs should only be HTTP/HTTPS, not S3
+    if (styleJSON.glyphs && !isValidHttpUrl(styleJSON.glyphs)) {
       styleJSON.glyphs = `fonts://${styleJSON.glyphs}`;
     }
 
@@ -1341,6 +1359,7 @@ export const serve_rendered = {
                   `Note: This property will still work with MapLibre GL JS vector maps.`,
               );
             }
+            // eslint-disable-next-line security/detect-object-injection -- prop is from hillshadePropertiesToRemove array, validated property names
             delete layer.paint[prop];
           }
         }
@@ -1388,11 +1407,13 @@ export const serve_rendered = {
       staticAttributionText:
         params.staticAttributionText || options.staticAttributionText,
     };
+    // eslint-disable-next-line security/detect-object-injection -- id is from config file style names
     repo[id] = repoobj;
 
     for (const name of Object.keys(styleJSON.sources)) {
       let sourceType;
       let sparse;
+      // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
       let source = styleJSON.sources[name];
       let url = source.url;
       if (
@@ -1407,23 +1428,32 @@ export const serve_rendered = {
           dataId = dataId.slice(1, -1);
         }
 
+        // eslint-disable-next-line security/detect-object-injection -- dataId is from style source URL, used for mapping lookup
         const mapsTo = (params.mapping || {})[dataId];
         if (mapsTo) {
           dataId = mapsTo;
         }
 
         let inputFile;
+        let s3Profile;
+        let requestPayer;
+        let s3Region;
         const dataInfo = dataResolver(dataId);
         if (dataInfo.inputFile) {
           inputFile = dataInfo.inputFile;
           sourceType = dataInfo.fileType;
           sparse = dataInfo.sparse;
+          s3Profile = dataInfo.s3Profile;
+          requestPayer = dataInfo.requestPayer;
+          s3Region = dataInfo.s3Region;
         } else {
           console.error(`ERROR: data "${inputFile}" not found!`);
           process.exit(1);
         }
 
-        if (!isValidHttpUrl(inputFile)) {
+        // PMTiles supports remote URLs (HTTP and S3), skip file check for those
+        if (!isValidRemoteUrl(inputFile)) {
+          // eslint-disable-next-line security/detect-non-literal-fs-filename -- inputFile is from dataResolver, which validates against config
           const inputFileStats = await fsp.stat(inputFile);
           if (!inputFileStats.isFile() || inputFileStats.size === 0) {
             throw Error(`Not valid PMTiles file: "${inputFile}"`);
@@ -1431,9 +1461,18 @@ export const serve_rendered = {
         }
 
         if (sourceType === 'pmtiles') {
-          map.sources[name] = openPMtiles(inputFile);
+          // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
+          map.sources[name] = openPMtiles(
+            inputFile,
+            s3Profile,
+            requestPayer,
+            s3Region,
+            verbose,
+          );
+          // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
           map.sourceTypes[name] = 'pmtiles';
-          const metadata = await getPMtilesInfo(map.sources[name]);
+          // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
+          const metadata = await getPMtilesInfo(map.sources[name], inputFile);
 
           if (!repoobj.dataProjWGStoInternalWGS && metadata.proj4) {
             // how to do this for multiple sources with different proj4 defs?
@@ -1466,13 +1505,17 @@ export const serve_rendered = {
             }
           }
         } else {
+          // MBTiles does not support remote URLs
+          // eslint-disable-next-line security/detect-non-literal-fs-filename -- inputFile is from dataResolver, which validates against config
           const inputFileStats = await fsp.stat(inputFile);
           if (!inputFileStats.isFile() || inputFileStats.size === 0) {
             throw Error(`Not valid MBTiles file: "${inputFile}"`);
           }
           const mbw = await openMbTilesWrapper(inputFile);
           const info = await mbw.getInfo();
+          // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
           map.sources[name] = mbw.getMbTiles();
+          // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
           map.sourceTypes[name] = 'mbtiles';
 
           if (!repoobj.dataProjWGStoInternalWGS && info.proj4) {
@@ -1519,9 +1562,13 @@ export const serve_rendered = {
     for (let s = 1; s <= maxScaleFactor; s++) {
       const i = Math.min(minPoolSizes.length - 1, s - 1);
       const j = Math.min(maxPoolSizes.length - 1, s - 1);
+      // eslint-disable-next-line security/detect-object-injection -- i and j are calculated indices bounded by array length
       const minPoolSize = minPoolSizes[i];
+      // eslint-disable-next-line security/detect-object-injection -- i and j are calculated indices bounded by array length
       const maxPoolSize = Math.max(minPoolSize, maxPoolSizes[j]);
+      // eslint-disable-next-line security/detect-object-injection -- s is loop counter from 1 to maxScaleFactor
       map.renderers[s] = createPool(s, 'tile', minPoolSize, maxPoolSize);
+      // eslint-disable-next-line security/detect-object-injection -- s is loop counter from 1 to maxScaleFactor
       map.renderersStatic[s] = createPool(
         s,
         'static',
@@ -1537,6 +1584,7 @@ export const serve_rendered = {
    * @returns {void}
    */
   remove: function (repo, id) {
+    // eslint-disable-next-line security/detect-object-injection -- id is function parameter for removal
     const item = repo[id];
     if (item) {
       item.map.renderers.forEach((pool) => {
@@ -1546,6 +1594,7 @@ export const serve_rendered = {
         pool.close();
       });
     }
+    // eslint-disable-next-line security/detect-object-injection -- id is function parameter for removal
     delete repo[id];
   },
   /**
@@ -1555,6 +1604,7 @@ export const serve_rendered = {
    */
   clear: function (repo) {
     Object.keys(repo).forEach((id) => {
+      // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys() iteration
       const item = repo[id];
       if (item) {
         item.map.renderers.forEach((pool) => {
@@ -1564,14 +1614,15 @@ export const serve_rendered = {
           pool.close();
         });
       }
+      // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys() iteration
       delete repo[id];
     });
   },
   /**
    * Get the elevation of terrain tile data by rendering it to a canvas image
-   * @param {object} data The background color (or empty string for transparent).
+   * @param {Buffer} data The terrain tile data buffer.
    * @param {object} param Required parameters (coordinates e.g.)
-   * @returns {object}
+   * @returns {Promise<object>} Promise resolving to elevation data
    */
   getTerrainElevation: async function (data, param) {
     return new Promise((resolve, reject) => {

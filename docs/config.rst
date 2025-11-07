@@ -225,7 +225,7 @@ Each item in this object defines one style (map). It can have the following opti
 Each item specifies one data source which should be made accessible by the server. It has to have one of the following options:
 
 * ``mbtiles`` -- name of the mbtiles file
-* ``pmtiles`` -- name of the pmtiles file or url.
+* ``pmtiles`` -- name of the pmtiles file, url, or S3 path.
 
 For example::
 
@@ -238,6 +238,9 @@ For example::
     },
     "source3": {
       "pmtiles": "https://foo.lan/source3.pmtiles"
+    },
+    "source4": {
+      "pmtiles": "s3://my-bucket/tiles/terrain.pmtiles"
     }
   }
 
@@ -260,6 +263,10 @@ For example::
     "sparse_vector_tiles": {
       "pmtiles": "custom_osm.pmtiles",
       "sparse": true
+    },
+    "production-s3-tiles": {
+      "pmtiles": "s3://prod-bucket/tiles.pmtiles",
+      "s3Profile": "production"
     }
   }
 
@@ -280,6 +287,29 @@ Here are the available options for each data source:
     When ``true``, a ``410 Gone`` status is returned for missing tiles. This behaviour is beneficial for clients like MapLibre-GL-JS or MapLibre-Native, as it signals them to attempt loading tiles from lower zoom levels (overzooming) when a higher-zoom tile is explicitly missing.
     When ``false`` (default), *tileserver-gl* returns a ``204 No Content`` for missing tiles, which typically signals the client to stop trying to load a substitute.
     Default: ``false``.
+
+``s3Profile`` (string)
+    Specifies the AWS credential profile to use for S3 PMTiles sources. The profile must be defined in your ``~/.aws/credentials`` file.
+    This is useful when you need to access multiple S3 buckets with different credentials.
+    Alternatively, you can specify the profile in the URL using ``?profile=profile-name``.
+    If both are specified, the configuration ``s3Profile`` takes precedence.
+    Optional, only applicable to PMTiles sources using S3 URLs.
+
+``requestPayer`` (boolean)
+    Enables support for "requester pays" S3 buckets where the requester (not the bucket owner) pays for data transfer costs.
+    Set to ``true`` if accessing a requester pays bucket.
+    Can be specified in the URL using ``?requestPayer=true`` or in the configuration.
+    If both are specified, the configuration value takes precedence.
+    Default: ``false``.
+    Optional, only applicable to PMTiles sources using S3 URLs.
+
+``s3Region`` (string)
+    Specifies the AWS region for the S3 bucket.
+    Important for optimizing performance and reducing data transfer costs when accessing AWS S3 buckets.
+    Can be specified in the URL using ``?region=region-name`` or in the configuration.
+    If both are specified, the configuration value takes precedence.
+    If not specified, uses ``AWS_REGION`` environment variable or defaults to ``us-east-1``.
+    Optional, only applicable to PMTiles sources using S3 URLs.
 
 .. note::
     These configuration options will be overridden by metadata in the MBTiles or PMTiles file. if corresponding properties exist in the file's metadata, you do not need to specify them in the data configuration.
@@ -331,7 +361,133 @@ For example::
 
 Alternatively, you can use ``pmtiles://{source2}`` to reference existing data object from the config.
 In this case, the server will look into the ``config.json`` to determine what file to use by data id.
-For the config above, this is equivalent to ``pmtiles://source2.mbtiles``.
+For the config above, this is equivalent to ``pmtiles://source2.pmtiles``.
+
+S3 and S3-Compatible Storage
+-----------------------------
+
+PMTiles files can be accessed directly from AWS S3 or S3-compatible storage services (such as Contabo, DigitalOcean Spaces, MinIO, etc.) using S3 URLs. This provides better performance and eliminates HTTP rate limiting issues.
+
+**Supported URL Formats:**
+
+1. **AWS S3 (default):**
+   ``s3://bucket-name/path/to/file.pmtiles``
+
+2. **S3-compatible storage with custom endpoint:**
+   ``s3://endpoint-url/bucket-name/path/to/file.pmtiles``
+
+**AWS Credentials:**
+
+S3 sources require AWS credentials to be configured. The server will automatically use credentials from:
+
+* Environment variables: ``AWS_ACCESS_KEY_ID``, ``AWS_SECRET_ACCESS_KEY``, ``AWS_REGION``
+* AWS credentials file: ``~/.aws/credentials`` on Linux/macOS or ``C:\Users\USERNAME\.aws\credentials`` on Windows
+* IAM role (when running on AWS EC2, ECS, or Lambda)
+
+For S3-compatible storage providers, use the same AWS credential format with your provider's access keys.
+
+Example using environment variables::
+
+  export AWS_ACCESS_KEY_ID=your_access_key
+  export AWS_SECRET_ACCESS_KEY=your_secret_key
+  export AWS_REGION=us-west-2
+
+**Multiple AWS Credential Profiles:**
+
+If you need to access S3 buckets with different credentials, you can use AWS credential profiles. Profiles are defined in your AWS credentials file (``~/.aws/credentials`` on Linux/macOS or ``C:\Users\USERNAME\.aws\credentials`` on Windows)::
+
+  [default]
+  aws_access_key_id=YOUR_DEFAULT_KEY
+  aws_secret_access_key=YOUR_DEFAULT_SECRET
+
+  [production]
+  aws_access_key_id=YOUR_PRODUCTION_KEY
+  aws_secret_access_key=YOUR_PRODUCTION_SECRET
+
+  [staging]
+  aws_access_key_id=YOUR_STAGING_KEY
+  aws_secret_access_key=YOUR_STAGING_SECRET
+
+**S3 Configuration Options (Main Config Data Section):**
+
+When configuring S3 sources in the main configuration file's ``data`` section, you can use URL query parameters or configuration properties. Configuration properties take precedence over URL parameters.
+
+*Profile* - Specifies which AWS credential profile to use::
+
+  # URL parameter
+  "pmtiles": "s3://bucket/tiles.pmtiles?profile=production"
+  
+  # Configuration property
+  "pmtiles": "s3://bucket/tiles.pmtiles",
+  "s3Profile": "production"
+
+Precedence order (highest to lowest): Configuration property ``s3Profile``, URL parameter ``?profile=...``, default AWS credential chain.
+
+*Region* - Specifies the AWS region (important for performance and cost optimization)::
+
+  # URL parameter
+  "pmtiles": "s3://bucket/tiles.pmtiles?region=us-west-2"
+  
+  # Configuration property
+  "pmtiles": "s3://bucket/tiles.pmtiles",
+  "s3Region": "us-west-2"
+
+Precedence order (highest to lowest): Configuration property ``s3Region``, URL parameter ``?region=...``, Environment variable ``AWS_REGION``, Default: ``us-east-1``.
+
+*RequestPayer* - Enables "requester pays" buckets where you pay for data transfer::
+
+  # URL parameter
+  "pmtiles": "s3://bucket/tiles.pmtiles?requestPayer=true"
+  
+  # Configuration property
+  "pmtiles": "s3://bucket/tiles.pmtiles",
+  "requestPayer": true
+
+Precedence order (highest to lowest): Configuration property ``requestPayer``, URL parameter ``?requestPayer=true``, Default: ``false``.
+
+**Complete Configuration Examples:**
+
+Using URL parameters::
+
+  "data": {
+    "us-west-tiles": {
+      "pmtiles": "s3://prod-bucket/tiles.pmtiles?profile=production&region=us-west-2"
+    },
+    "eu-requester-pays": {
+      "pmtiles": "s3://bucket/tiles.pmtiles?profile=prod&region=eu-central-1&requestPayer=true"
+    }
+  }
+
+Using configuration properties (recommended)::
+
+  "data": {
+    "us-west-tiles": {
+      "pmtiles": "s3://prod-bucket/tiles.pmtiles",
+      "s3Profile": "production",
+      "s3Region": "us-west-2"
+    },
+    "eu-requester-pays": {
+      "pmtiles": "s3://bucket/tiles.pmtiles",
+      "s3Profile": "production",
+      "s3Region": "eu-central-1",
+      "requestPayer": true
+    }
+  }
+
+**Using S3 in Style JSON Sources:**
+
+When referencing S3 sources from within a style JSON file, use the ``pmtiles://`` prefix with S3 URLs. You can only specify profile, region, and requestPayer using URL query parameters (configuration properties are not available in style JSON)::
+
+  "sources": {
+    "aws-tiles": {
+      "url": "pmtiles://s3://my-bucket/tiles.pmtiles?profile=production",
+      "type": "vector"
+    },
+    "spaces-tiles": {
+      "url": "pmtiles://s3://example-storage.com/my-bucket/tiles.pmtiles?region=nyc3",
+      "type": "vector"
+    }
+  }
 
 Sprites
 -------

@@ -6,10 +6,10 @@ Getting started
 ======
 ::
 
-  Usage: main.js tileserver-gl [file] [options]
+  Usage: tileserver-gl [file] [options]
 
   Options:
-    --file <file>             MBTiles or PMTiles file
+    --file <file>             MBTiles or PMTiles file (local path, http(s)://, s3://, pmtiles://, or mbtiles:// URL)
                                 ignored if the configuration file is also specified
     --mbtiles <file>          (DEPRECIATED) MBTiles file
                                 ignored if file is also specified
@@ -19,13 +19,76 @@ Getting started
     -p, --port <port>         Port [8080] (default: 8080)
     -C|--no-cors              Disable Cross-origin resource sharing headers
     -u|--public_url <url>     Enable exposing the server on subpaths, not necessarily the root of the domain
-    -V, --verbose             More verbose output
+    -V, --verbose [level]     More verbose output (level 1-3)
+                                -V, --verbose, -V 1, or --verbose 1: Important operations
+                                -V 2 or --verbose 2: Detailed operations  
+                                -V 3 or --verbose 3: All requests and debug info
     -s, --silent              Less verbose output
     -l|--log_file <file>      output log file (defaults to standard out)
     -f|--log_format <format>  define the log format:  https://github.com/expressjs/morgan#morganformat-options
     -v, --version             output the version number
     -h, --help                display help for command
 
+
+File Source Options
+======
+
+The `--file` option supports multiple source types:
+
+**Local files:**
+::
+
+  tileserver-gl --file ./data/zurich.mbtiles
+  tileserver-gl --file ./data/terrain.pmtiles
+
+**HTTP/HTTPS URLs:**
+::
+
+  tileserver-gl --file https://example.com/tiles.pmtiles
+
+**S3 URLs:**
+::
+
+  # Basic AWS S3
+  tileserver-gl --file s3://my-bucket/tiles.pmtiles
+
+  # With AWS credential profile
+  tileserver-gl --file "s3://my-bucket/tiles.pmtiles?profile=production"
+
+  # With specific region
+  tileserver-gl --file "s3://my-bucket/tiles.pmtiles?region=us-west-2"
+
+  # With profile and region
+  tileserver-gl --file "s3://my-bucket/tiles.pmtiles?profile=production&region=eu-central-1"
+
+  # Requester-pays bucket
+  tileserver-gl --file "s3://bucket/tiles.pmtiles?requestPayer=true"
+
+  # All options combined
+  tileserver-gl --file "s3://bucket/tiles.pmtiles?profile=prod&region=us-west-2&requestPayer=true"
+
+  # S3-compatible storage (e.g., DigitalOcean Spaces, Contabo)
+  tileserver-gl --file "s3://example-storage.com/my-bucket/tiles.pmtiles?profile=dev"
+
+**Protocol prefixes:**
+
+You can also use `pmtiles://` or `mbtiles://` prefixes to explicitly specify the file type:
+::
+
+  tileserver-gl --file pmtiles://https://example.com/tiles.pmtiles
+  tileserver-gl --file "pmtiles://s3://my-bucket/tiles.pmtiles?profile=production"
+  tileserver-gl --file mbtiles://./data/zurich.mbtiles
+
+.. note::
+    For S3 sources, AWS credentials must be configured via environment variables, AWS credentials file (`~/.aws/credentials` on Linux/macOS or `C:\Users\USERNAME\.aws\credentials` on Windows), or IAM roles. 
+    
+    **When using Docker**, the host credentials file can be mounted to the container's user home directory:
+
+    ::
+    
+        docker run -v ~/.aws/credentials:/home/node/.aws/credentials:ro ... maptiler/tileserver-gl:latest
+
+    See the Configuration documentation for details on using AWS credential profiles.
 
 Default preview style and configuration
 ======

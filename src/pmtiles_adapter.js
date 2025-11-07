@@ -1,14 +1,252 @@
 import fs from 'node:fs';
-import { PMTiles, FetchSource } from 'pmtiles';
-import { isValidHttpUrl } from './utils.js';
+import { PMTiles, FetchSource, EtagMismatch } from 'pmtiles';
+import { isValidHttpUrl, isS3Url } from './utils.js';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { fromIni } from '@aws-sdk/credential-provider-ini';
 
+/**
+ * S3 Source for PMTiles
+ * Supports:
+ * - AWS S3: s3://bucket-name/path/to/file.pmtiles
+ * - S3-compatible with endpoint: s3://endpoint-url/bucket/path/to/file.pmtiles
+ */
+class S3Source {
+  /**
+   * Creates an S3Source instance.
+   * @param {string} s3Url - The S3 URL in one of the supported formats.
+   * @param {string} [s3Profile] - Optional AWS credential profile name from config.
+   * @param {boolean} [configRequestPayer] - Optional flag from config for requester pays buckets.
+   * @param {string} [configRegion] - Optional AWS region from config.
+   * @param {boolean} [verbose] - Whether to show verbose logging.
+   */
+  constructor(
+    s3Url,
+    s3Profile,
+    configRequestPayer,
+    configRegion,
+    verbose = false,
+  ) {
+    const parsed = this.parseS3Url(s3Url);
+    this.bucket = parsed.bucket;
+    this.key = parsed.key;
+    this.endpoint = parsed.endpoint;
+    this.url = s3Url;
+    this.verbose = verbose;
+
+    // Determine the final profile: Config takes precedence over URL
+    const profile = s3Profile || parsed.profile;
+
+    // Determine requestPayer: Config takes precedence over URL
+    this.requestPayer = configRequestPayer ?? parsed.requestPayer;
+
+    // Determine region: Config takes precedence over URL
+    this.region = configRegion || parsed.region;
+
+    // Create S3 client
+    this.s3Client = this.createS3Client(
+      parsed.endpoint,
+      this.region,
+      profile,
+      this.verbose,
+    );
+  }
+
+  /**
+   * Parses various S3 URL formats into bucket, key, endpoint, region, and profile.
+   * @param {string} url - The S3 URL to parse.
+   * @returns {object} - An object containing bucket, key, endpoint, region, and profile.
+   * @throws {Error} - Throws an error if the URL format is invalid.
+   */
+  parseS3Url(url) {
+    // Initialize with defaults/environment
+    let region = process.env.AWS_REGION || 'us-east-1';
+    let profile = null;
+    let requestPayer = false;
+
+    const queryString = url.split('?')[1];
+    if (queryString) {
+      const params = new URLSearchParams(queryString);
+      // Update profile if provided in url parameters
+      profile = params.get('profile') ?? profile;
+      // Update region if provided in url parameters
+      region = params.get('region') ?? region;
+      // Update requestPayer if provided in url parameters
+      const payerVal = params.get('requestPayer');
+      requestPayer = payerVal === 'true' || payerVal === '1';
+    }
+
+    // Clean URL for format detection (remove trailing slashes)
+    const baseUrl = url.split('?')[0];
+    const cleanUrl = baseUrl.replace(/\/+$/, '');
+
+    // Format 1: s3://endpoint/bucket/key (S3-compatible storage)
+    // Example: s3://storage.example.com/mybucket/path/to/tiles.pmtile
+    const endpointMatch = cleanUrl.match(/^s3:\/\/([^\/]+)\/([^\/]+)\/(.+)$/);
+    if (endpointMatch) {
+      return {
+        endpoint: `https://${endpointMatch[1]}`,
+        bucket: endpointMatch[2],
+        key: endpointMatch[3],
+        region,
+        profile,
+        requestPayer,
+      };
+    }
+
+    // Format 2: s3://bucket/key (AWS S3 default)
+    // Example: s3://my-bucket/path/to/tiles.pmtiles
+    const awsMatch = cleanUrl.match(/^s3:\/\/([^\/]+)\/(.+)$/);
+    if (awsMatch) {
+      return {
+        endpoint: null, // Use default AWS endpoint
+        bucket: awsMatch[1],
+        key: awsMatch[2],
+        region,
+        profile,
+        requestPayer,
+      };
+    }
+
+    throw new Error(`Invalid S3 URL format: ${url}`);
+  }
+
+  /**
+   * Creates an S3 client with optional custom endpoint and AWS profile support.
+   * @param {string|null} endpoint - The custom endpoint URL, or null for default AWS S3.
+   * @param {string} region - The AWS region.
+   * @param {string} [profile] - Optional AWS credential profile name.
+   * @param {boolean} [verbose] - Whether to show verbose logging.
+   * @returns {S3Client} - Configured S3Client instance.
+   */
+  createS3Client(endpoint, region, profile, verbose) {
+    const config = {
+      region: region,
+      requestHandler: {
+        connectionTimeout: 5000,
+        socketTimeout: 5000,
+      },
+      forcePathStyle: !!endpoint,
+    };
+
+    if (endpoint) {
+      config.endpoint = endpoint;
+      if (verbose >= 2) {
+        console.log(`Using custom S3 endpoint: ${endpoint}`);
+      }
+    }
+
+    if (profile) {
+      config.credentials = fromIni({ profile });
+      if (verbose >= 2) {
+        console.log(`Using AWS profile: ${profile}`);
+      }
+    }
+
+    return new S3Client(config);
+  }
+  /**
+   * Returns the unique key for this S3 source.
+   * @returns {string} - The S3 URL.
+   */
+  getKey() {
+    return this.url;
+  }
+
+  /**
+   * Fetches a byte range from the S3 object.
+   * @param {number} offset - The starting byte offset.
+   * @param {number} length - The number of bytes to fetch.
+   * @param {AbortSignal} [signal] - Optional abort signal for cancelling the request.
+   * @param {string} [etag] - Optional ETag for conditional requests.
+   * @returns {Promise<object>} - A promise that resolves to an object containing data, etag, expires, and cacheControl.
+   * @throws {EtagMismatch} - Throws if ETag doesn't match.
+   * @throws {Error} - Throws on S3 errors like NoSuchKey, AccessDenied, NoSuchBucket.
+   */
+  async getBytes(offset, length, signal, etag) {
+    try {
+      const commandParams = {
+        Bucket: this.bucket,
+        Key: this.key,
+        Range: `bytes=${offset}-${offset + length - 1}`,
+        IfMatch: etag,
+      };
+
+      if (this.requestPayer) {
+        commandParams.RequestPayer = 'requester';
+      }
+
+      const command = new GetObjectCommand(commandParams);
+
+      const response = await this.s3Client.send(command, {
+        abortSignal: signal,
+      });
+
+      const arr = await response.Body.transformToByteArray();
+
+      if (!arr) {
+        throw new Error('Failed to read S3 response body');
+      }
+
+      return {
+        data: arr.buffer,
+        etag: response.ETag,
+        expires: response.Expires?.toISOString(),
+        cacheControl: response.CacheControl,
+      };
+    } catch (error) {
+      // Handle AWS SDK errors
+      if (error.name === 'PreconditionFailed') {
+        throw new EtagMismatch();
+      }
+
+      if (error.name === 'NoSuchKey') {
+        throw new Error(`PMTiles file not found: ${this.bucket}/${this.key}`);
+      }
+
+      if (error.name === 'AccessDenied') {
+        throw new Error(
+          `Access denied: ${this.bucket}/${this.key}. Check credentials and bucket permissions.`,
+        );
+      }
+
+      if (error.name === 'NoSuchBucket') {
+        throw new Error(
+          `Bucket not found: ${this.bucket}. Check bucket name and endpoint.`,
+        );
+      }
+
+      console.error(`S3 error for ${this.bucket}/${this.key}:`, error.message);
+      throw error;
+    }
+  }
+}
+
+/**
+ * Local file source for PMTiles using Node.js file descriptors.
+ */
 class PMTilesFileSource {
+  /**
+   * Creates a PMTilesFileSource instance.
+   * @param {number} fd - The file descriptor for the opened PMTiles file.
+   */
   constructor(fd) {
     this.fd = fd;
   }
+
+  /**
+   * Returns the unique key for this file source.
+   * @returns {number} - The file descriptor.
+   */
   getKey() {
     return this.fd;
   }
+
+  /**
+   * Reads a byte range from the local file.
+   * @param {number} offset - The starting byte offset.
+   * @param {number} length - The number of bytes to read.
+   * @returns {Promise<object>} - A promise that resolves to an object containing the data as an ArrayBuffer.
+   */
   async getBytes(offset, length) {
     const buffer = Buffer.alloc(length);
     await readFileBytes(this.fd, buffer, offset);
@@ -21,10 +259,11 @@ class PMTilesFileSource {
 }
 
 /**
- *
- * @param fd
- * @param buffer
- * @param offset
+ * Reads bytes from a file descriptor into a buffer.
+ * @param {number} fd - The file descriptor.
+ * @param {Buffer} buffer - The buffer to read data into.
+ * @param {number} offset - The file offset to start reading from.
+ * @returns {Promise<void>} - A promise that resolves when the read operation completes.
  */
 async function readFileBytes(fd, buffer, offset) {
   return new Promise((resolve, reject) => {
@@ -38,86 +277,200 @@ async function readFileBytes(fd, buffer, offset) {
 }
 
 /**
- *
- * @param FilePath
+ * Opens a PMTiles file from local filesystem, HTTP URL, or S3 URL.
+ * @param {string} filePath - The path to the PMTiles file.
+ * @param {string} [s3Profile] - Optional AWS credential profile name.
+ * @param {boolean} [requestPayer] - Optional flag for requester pays buckets.
+ * @param {string} [s3Region] - Optional AWS region.
+ * @param {boolean} [verbose] - Whether to show verbose logging.
+ * @returns {PMTiles} - A PMTiles instance.
  */
-export function openPMtiles(FilePath) {
+export function openPMtiles(
+  filePath,
+  s3Profile,
+  requestPayer,
+  s3Region,
+  verbose = 0,
+) {
   let pmtiles = undefined;
 
-  if (isValidHttpUrl(FilePath)) {
-    const source = new FetchSource(FilePath);
+  if (isS3Url(filePath)) {
+    if (verbose >= 2) {
+      console.log(`Opening PMTiles from S3: ${filePath}`);
+    }
+    const source = new S3Source(
+      filePath,
+      s3Profile,
+      requestPayer,
+      s3Region,
+      verbose,
+    );
+    pmtiles = new PMTiles(source);
+  } else if (isValidHttpUrl(filePath)) {
+    if (verbose >= 2) {
+      console.log(`Opening PMTiles from HTTP: ${filePath}`);
+    }
+    const source = new FetchSource(filePath);
     pmtiles = new PMTiles(source);
   } else {
-    const fd = fs.openSync(FilePath, 'r');
+    if (verbose >= 2) {
+      console.log(`Opening PMTiles from local file: ${filePath}`);
+    }
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- Opening local PMTiles file specified in config or CLI
+    const fd = fs.openSync(filePath, 'r');
     const source = new PMTilesFileSource(fd);
     pmtiles = new PMTiles(source);
   }
+
   return pmtiles;
 }
 
 /**
- *
- * @param pmtiles
+ * Retrieves metadata and header information from a PMTiles archive with retry logic for rate limiting.
+ * @param {PMTiles} pmtiles - The PMTiles instance.
+ * @param {string} inputFile - The input file path (used for error messages).
+ * @param {number} [maxRetries] - Maximum number of retry attempts for rate-limited requests.
+ * @returns {Promise<object>} - A promise that resolves to a metadata object containing format, bounds, zoom levels, and center.
+ * @throws {Error} - Throws an error if metadata cannot be retrieved after all retry attempts.
  */
-export async function getPMtilesInfo(pmtiles) {
-  const header = await pmtiles.getHeader();
-  const metadata = await pmtiles.getMetadata();
+export async function getPMtilesInfo(pmtiles, inputFile, maxRetries = 3) {
+  let lastError;
 
-  //Add missing metadata from header
-  metadata['format'] = getPmtilesTileType(header.tileType).type;
-  metadata['minzoom'] = header.minZoom;
-  metadata['maxzoom'] = header.maxZoom;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const header = await pmtiles.getHeader();
+      const metadata = await pmtiles.getMetadata();
 
-  if (header.minLon && header.minLat && header.maxLon && header.maxLat) {
-    metadata['bounds'] = [
-      header.minLon,
-      header.minLat,
-      header.maxLon,
-      header.maxLat,
-    ];
-  } else {
-    metadata['bounds'] = [-180, -85.05112877980659, 180, 85.0511287798066];
+      metadata['format'] = getPmtilesTileType(header.tileType).type;
+      metadata['minzoom'] = header.minZoom;
+      metadata['maxzoom'] = header.maxZoom;
+
+      // Check if bounds are defined (handles null, undefined, but allows 0)
+      const hasBounds =
+        typeof header.minLon === 'number' &&
+        typeof header.minLat === 'number' &&
+        typeof header.maxLon === 'number' &&
+        typeof header.maxLat === 'number' &&
+        !(
+          header.minLon === 0 &&
+          header.minLat === 0 &&
+          header.maxLon === 0 &&
+          header.maxLat === 0
+        );
+
+      if (hasBounds) {
+        metadata['bounds'] = [
+          header.minLon,
+          header.minLat,
+          header.maxLon,
+          header.maxLat,
+        ];
+      } else {
+        metadata['bounds'] = [-180, -85.05112877980659, 180, 85.0511287798066];
+      }
+
+      if (header.centerZoom) {
+        metadata['center'] = [
+          header.centerLon,
+          header.centerLat,
+          header.centerZoom,
+        ];
+      } else {
+        metadata['center'] = [
+          header.centerLon,
+          header.centerLat,
+          parseInt(metadata['maxzoom']) / 2,
+        ];
+      }
+
+      return metadata;
+    } catch (error) {
+      lastError = error;
+
+      if (
+        error.message &&
+        error.message.includes('429') &&
+        attempt < maxRetries - 1
+      ) {
+        const delay = Math.pow(2, attempt) * 1000;
+        console.warn(
+          `Rate limited fetching metadata, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+
+      // If not a 429 or last retry, throw immediately
+      if (!error.message?.includes('429') || attempt === maxRetries - 1) {
+        const errorMessage = `${error.message} for file: ${inputFile}`;
+        throw new Error(errorMessage);
+      }
+    }
   }
 
-  if (header.centerZoom) {
-    metadata['center'] = [
-      header.centerLon,
-      header.centerLat,
-      header.centerZoom,
-    ];
-  } else {
-    metadata['center'] = [
-      header.centerLon,
-      header.centerLat,
-      parseInt(metadata['maxzoom']) / 2,
-    ];
-  }
-
-  return metadata;
+  // This should never be reached, but just in case
+  throw new Error(
+    `Failed to get PMTiles info after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`,
+  );
 }
 
 /**
- *
- * @param pmtiles
- * @param z
- * @param x
- * @param y
+ * Fetches a tile from a PMTiles archive with retry logic for rate limiting and error handling.
+ * @param {PMTiles} pmtiles - The PMTiles instance.
+ * @param {number} z - The zoom level.
+ * @param {number} x - The x coordinate of the tile.
+ * @param {number} y - The y coordinate of the tile.
+ * @param {number} [maxRetries] - Maximum number of retry attempts for rate-limited requests.
+ * @returns {Promise<object>} - A promise that resolves to an object with data (Buffer or undefined) and header (content-type).
  */
-export async function getPMtilesTile(pmtiles, z, x, y) {
+export async function getPMtilesTile(pmtiles, z, x, y, maxRetries = 3) {
   const header = await pmtiles.getHeader();
   const tileType = getPmtilesTileType(header.tileType);
-  let zxyTile = await pmtiles.getZxy(z, x, y);
-  if (zxyTile && zxyTile.data) {
-    zxyTile = Buffer.from(zxyTile.data);
-  } else {
-    zxyTile = undefined;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      let zxyTile = await pmtiles.getZxy(z, x, y);
+
+      if (zxyTile && zxyTile.data) {
+        zxyTile = Buffer.from(zxyTile.data);
+      } else {
+        zxyTile = undefined;
+      }
+
+      return { data: zxyTile, header: tileType.header };
+    } catch (error) {
+      if (
+        error.message &&
+        error.message.includes('429') &&
+        attempt < maxRetries - 1
+      ) {
+        const delay = Math.pow(2, attempt) * 1000;
+        console.warn(
+          `Rate limited for tile ${z}/${x}/${y}, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+
+      if (error.message && error.message.includes('Bad response code:')) {
+        console.error(`HTTP error for tile ${z}/${x}/${y}: ${error.message}`);
+        return { data: undefined, header: tileType.header };
+      }
+
+      throw error;
+    }
   }
-  return { data: zxyTile, header: tileType.header };
+
+  console.error(
+    `Failed to fetch tile ${z}/${x}/${y} after ${maxRetries} attempts`,
+  );
+  return { data: undefined, header: tileType.header };
 }
 
 /**
- *
- * @param typenum
+ * Maps PMTiles tile type number to tile format string and Content-Type header.
+ * @param {number} typenum - The PMTiles tile type number (0=Unknown, 1=MVT/PBF, 2=PNG, 3=JPEG, 4=WebP, 5=AVIF).
+ * @returns {object} - An object containing type (string) and header (object with Content-Type).
  */
 function getPmtilesTileType(typenum) {
   let head = {};

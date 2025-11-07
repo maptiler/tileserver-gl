@@ -27,7 +27,7 @@ jobs:
           libgif-dev build-essential
 
       - name: Setup node env 📦
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version-file: 'package.json'
           check-latest: true
@@ -50,7 +50,7 @@ jobs:
           prettier_extensions: js,cjs,ts,json
 
       - name: Run hadolint 🐳
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@v3.3.0
         with:
           dockerfile: Dockerfile
           ignore: DL3008,DL3015
