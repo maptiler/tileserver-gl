@@ -92,7 +92,7 @@ const tests = [
   {
     name: 'static-border-global',
     // Test border functionality using global query parameters (less common, but valid)
-    url: '/styles/test-style/static/8.5375,47.379,12/400x300.png?stroke:yellow|width:10&border:black|borderwidth:2&path=8.53,47.37|8.54,47.38|8.53,47.39',
+    url: '/styles/test-style/static/8.5375,47.379,12/400x300.png?stroke=yellow&width=10&border=black&borderwidth=2&path=8.53,47.37|8.54,47.38|8.53,47.39',
   },
 ];
 

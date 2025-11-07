@@ -127,9 +127,13 @@ const drawPath = (ctx, path, query, pathQuery, z) => {
   ctx.beginPath();
 
   // Transform coordinates to pixel on canvas and draw lines between points
-  for (const pair of path) {
+  for (const [i, pair] of path.entries()) {
     const px = precisePx(pair, z);
-    ctx.lineTo(px[0], px[1]);
+    if (i === 0) {
+      ctx.moveTo(px[0], px[1]);
+    } else {
+      ctx.lineTo(px[0], px[1]);
+    }
   }
 
   // Check if first coordinate matches last coordinate
