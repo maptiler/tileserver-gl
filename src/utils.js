@@ -488,7 +488,7 @@ export async function fetchTileData(source, sourceType, z, x, y) {
       return { data: tileinfo.data, headers: tileinfo.header };
     } catch (error) {
       console.error('Error fetching PMTiles tile:', error);
-      return null; // Or throw the error if you want to propagate it
+      return null;
     }
   } else if (sourceType === 'mbtiles') {
     return new Promise((resolve) => {
