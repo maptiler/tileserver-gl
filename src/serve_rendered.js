@@ -242,7 +242,7 @@ function extractPathsFromQuery(query, transformer) {
           .map(([lat, lng]) => [lng, lat]);
         paths.push(coords);
       } else {
-        // ... (rest of the coordinate parsing logic using geometryString)
+        // Iterate through paths, parse and validate them
         const currentPath = [];
 
         // Extract coordinate-list from path
