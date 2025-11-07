@@ -163,7 +163,6 @@ const startWithInputFile = async (inputFile) => {
     inputFile = path.resolve(process.cwd(), inputFile);
     inputFilePath = path.dirname(inputFile);
 
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- Validating local file from CLI argument
     const inputFileStats = await fsp.stat(inputFile);
     if (!inputFileStats.isFile() || inputFileStats.size === 0) {
       console.log(`ERROR: Not a valid input file: ${inputFile}`);
@@ -314,7 +313,6 @@ const startWithInputFile = async (inputFile) => {
   }
 };
 
-// eslint-disable-next-line security/detect-non-literal-fs-filename -- Config path from CLI argument is expected behavior
 fs.stat(path.resolve(opts.config), async (err, stats) => {
   if (err || !stats.isFile() || stats.size === 0) {
     let inputFile;
@@ -331,7 +329,6 @@ fs.stat(path.resolve(opts.config), async (err, stats) => {
       const files = await fsp.readdir(process.cwd());
       for (const filename of files) {
         if (filename.endsWith('.mbtiles') || filename.endsWith('.pmtiles')) {
-          // eslint-disable-next-line security/detect-non-literal-fs-filename -- Scanning current directory for tile files
           const inputFilesStats = await fsp.stat(filename);
           if (inputFilesStats.isFile() && inputFilesStats.size > 0) {
             inputFile = filename;
@@ -346,7 +343,7 @@ fs.stat(path.resolve(opts.config), async (err, stats) => {
         const url =
           'https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/zurich_switzerland.mbtiles';
         const filename = 'zurich_switzerland.mbtiles';
-        // eslint-disable-next-line security/detect-non-literal-fs-filename -- Writing demo file to known filename
+
         const writer = fs.createWriteStream(filename);
         console.log(`No input file found`);
         console.log(`[DEMO] Downloading sample data (${filename}) from ${url}`);

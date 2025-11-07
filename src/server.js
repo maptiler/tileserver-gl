@@ -31,9 +31,9 @@ const packageJson = JSON.parse(
 );
 const isLight = packageJson.name.slice(-6) === '-light';
 
-const serve_rendered = import(
+const { serve_rendered } = await import(
   `${!isLight ? `./serve_rendered.js` : `./serve_light.js`}`
-).serve_rendered;
+);
 
 /**
  *  Starts the server.
@@ -60,8 +60,7 @@ async function start(opts) {
     app.use(
       morgan(logFormat, {
         stream: opts.logFile
-          ? // eslint-disable-next-line security/detect-non-literal-fs-filename -- logFile is from CLI/config, admin-controlled
-            fs.createWriteStream(opts.logFile, { flags: 'a' })
+          ? fs.createWriteStream(opts.logFile, { flags: 'a' })
           : process.stdout,
         skip: (req, res) =>
           opts.silent && (res.statusCode === 200 || res.statusCode === 304),
@@ -74,9 +73,8 @@ async function start(opts) {
   if (opts.configPath) {
     configPath = path.resolve(opts.configPath);
     try {
-      // eslint-disable-next-line security/detect-non-literal-fs-filename -- configPath is from CLI argument, expected behavior
       config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    } catch (e) {
+    } catch {
       console.log('ERROR: Config file not found or invalid!');
       console.log('   See README.md for instructions and sample data.');
       process.exit(1);
@@ -109,8 +107,7 @@ async function start(opts) {
   const startupPromises = [];
 
   for (const type of Object.keys(paths)) {
-    // eslint-disable-next-line security/detect-object-injection -- type is from Object.keys of paths config
-    // eslint-disable-next-line security/detect-non-literal-fs-filename, security/detect-object-injection -- paths[type] constructed from validated config paths
+    // eslint-disable-next-line security/detect-object-injection -- paths[type] constructed from validated config paths
     if (!fs.existsSync(paths[type])) {
       console.error(
         // eslint-disable-next-line security/detect-object-injection -- type is from Object.keys of paths config
@@ -128,7 +125,7 @@ async function start(opts) {
    */
   async function getFiles(directory) {
     // Fetch all entries of the directory and attach type information
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- directory is constructed from validated config paths
+
     const dirEntries = await fs.promises.readdir(directory, {
       withFileTypes: true,
     });
@@ -158,7 +155,7 @@ async function start(opts) {
   if (options.dataDecorator) {
     try {
       const dataDecoratorPath = path.resolve(paths.root, options.dataDecorator);
-      // eslint-disable-next-line security/detect-non-literal-require -- dataDecorator path is from config file, admin-controlled
+
       const module = await import(dataDecoratorPath);
       options.dataDecoratorFunc = module.default;
     } catch (e) {
@@ -205,11 +202,11 @@ async function start(opts) {
         styleJSON = await res.json();
       } else {
         const styleFile = path.resolve(options.paths.styles, item.style);
-        // eslint-disable-next-line security/detect-non-literal-fs-filename -- styleFile constructed from config base path and style name
+
         const styleFileData = await fs.promises.readFile(styleFile);
         styleJSON = JSON.parse(styleFileData);
       }
-    } catch (e) {
+    } catch {
       console.log(`Error getting style file "${item.style}"`);
       return false;
     }
@@ -225,7 +222,6 @@ async function start(opts) {
         (styleSourceId, protocol) => {
           let dataItemId;
           for (const id of Object.keys(data)) {
-            // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys of data config
             if (id === styleSourceId) {
               // Style id was found in data ids, return that id
               dataItemId = id;
@@ -428,7 +424,6 @@ async function start(opts) {
     startupPromises.push(serve_data.add(options, serving.data, item, id, opts));
   }
   if (options.serveAllStyles) {
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- options.paths.styles is from validated config
     fs.readdir(options.paths.styles, { withFileTypes: true }, (err, files) => {
       if (err) {
         return;
@@ -600,7 +595,6 @@ async function start(opts) {
       }
     }
     try {
-      // eslint-disable-next-line security/detect-non-literal-fs-filename -- templateFile is from internal templates or config-specified path
       const content = fs.readFileSync(templateFile, 'utf-8');
       const compiled = handlebars.compile(content.toString());
       app.get(urlPath, (req, res, next) => {

@@ -316,7 +316,7 @@ export function openPMtiles(
     if (verbose >= 2) {
       console.log(`Opening PMTiles from local file: ${filePath}`);
     }
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- Opening local PMTiles file specified in config or CLI
+
     const fd = fs.openSync(filePath, 'r');
     const source = new PMTilesFileSource(fd);
     pmtiles = new PMTiles(source);

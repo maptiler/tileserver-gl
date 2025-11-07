@@ -40,7 +40,6 @@ export function allowedScales(scale, maxScale = 9) {
     return 1;
   }
 
-  // eslint-disable-next-line security/detect-non-literal-regexp -- maxScale is a number parameter, not user input
   const regex = new RegExp(`^[2-${maxScale}]x$`);
   if (!regex.test(scale)) {
     return null;
@@ -161,7 +160,6 @@ export function getTileUrls(
     const hostParts = urlObject.host.split('.');
     const relativeSubdomainsUsable =
       hostParts.length > 1 &&
-      // eslint-disable-next-line security/detect-unsafe-regex -- Simple IPv4 validation, no nested quantifiers
       !/^([0-9]{1,3}\.){3}[0-9]{1,3}(:[0-9]+)?$/.test(urlObject.host);
     const newDomains = [];
     for (const domain of domains) {
@@ -253,7 +251,7 @@ export function fixTileJSONCenter(tileJSON) {
 export function readFile(filename) {
   return new Promise((resolve, reject) => {
     const sanitizedFilename = path.normalize(filename); // Normalize path, remove ..
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- filename is normalized and validated by caller
+
     fs.readFile(String(sanitizedFilename), (err, data) => {
       if (err) {
         reject(err);
@@ -390,16 +388,13 @@ export async function getFontsPbf(
 export async function listFonts(fontPath) {
   const existingFonts = {};
 
-  // eslint-disable-next-line security/detect-non-literal-fs-filename -- fontPath is from validated config
   const files = await fsPromises.readdir(fontPath);
   for (const file of files) {
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- file is from readdir of validated fontPath
     const stats = await fsPromises.stat(path.join(fontPath, file));
     if (
       stats.isDirectory() &&
       (await existsP(path.join(fontPath, file, '0-255.pbf')))
     ) {
-      // eslint-disable-next-line security/detect-object-injection -- file is from readdir, used as font name key
       existingFonts[path.basename(file)] = true;
     }
   }
@@ -415,7 +410,7 @@ export async function listFonts(fontPath) {
 export function isValidHttpUrl(string) {
   try {
     return httpTester.test(string);
-  } catch (e) {
+  } catch {
     return false;
   }
 }
@@ -428,7 +423,7 @@ export function isValidHttpUrl(string) {
 export function isS3Url(string) {
   try {
     return s3Tester.test(string) || s3HttpTester.test(string);
-  } catch (e) {
+  } catch {
     return false;
   }
 }
@@ -445,7 +440,7 @@ export function isValidRemoteUrl(string) {
       s3Tester.test(string) ||
       s3HttpTester.test(string)
     );
-  } catch (e) {
+  } catch {
     return false;
   }
 }
@@ -458,7 +453,7 @@ export function isValidRemoteUrl(string) {
 export function isPMTilesProtocol(string) {
   try {
     return pmtilesTester.test(string);
-  } catch (e) {
+  } catch {
     return false;
   }
 }
@@ -471,7 +466,7 @@ export function isPMTilesProtocol(string) {
 export function isMBTilesProtocol(string) {
   try {
     return mbtilesTester.test(string);
-  } catch (e) {
+  } catch {
     return false;
   }
 }

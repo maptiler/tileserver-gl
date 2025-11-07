@@ -8,7 +8,7 @@ export const existsP = async (path) => {
   try {
     await fsp.access(path); // Defaults to F_OK: indicating that the file is visible to the calling process
     return true;
-  } catch (err) {
+  } catch {
     return false;
   }
 };

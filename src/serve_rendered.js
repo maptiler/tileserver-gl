@@ -62,7 +62,6 @@ const staticTypeRegex = new RegExp(
 );
 
 const PATH_PATTERN =
-  // eslint-disable-next-line security/detect-unsafe-regex -- Simple path pattern validation, no nested quantifiers
   /^((fill|stroke|width):[^|]+\|)*(enc:.+|-?\d+(\.\d*)?,-?\d+(\.\d*)?(\|-?\d+(\.\d*)?,-?\d+(\.\d*)?)+)/;
 
 const mercator = new SphericalMercator();
@@ -1000,7 +999,6 @@ export const serve_rendered = {
      * @returns {void}
      */
     app.get('{/:tileSize}/:id.json', (req, res, next) => {
-      // eslint-disable-next-line security/detect-object-injection -- req.params.id is route parameter, validated by Express
       const item = repo[req.params.id];
       if (!item) {
         return res.sendStatus(404);
@@ -1248,7 +1246,6 @@ export const serve_rendered = {
               const name = decodeURI(req.url).substring(protocol.length + 3);
               const file = path.join(options.paths['files'], name);
               if (await existsP(file)) {
-                // eslint-disable-next-line security/detect-non-literal-fs-filename -- file path constructed from configured base path and URL-decoded filename
                 const inputFileStats = await fsp.stat(file);
                 if (!inputFileStats.isFile() || inputFileStats.size === 0) {
                   throw Error(
@@ -1453,7 +1450,6 @@ export const serve_rendered = {
 
         // PMTiles supports remote URLs (HTTP and S3), skip file check for those
         if (!isValidRemoteUrl(inputFile)) {
-          // eslint-disable-next-line security/detect-non-literal-fs-filename -- inputFile is from dataResolver, which validates against config
           const inputFileStats = await fsp.stat(inputFile);
           if (!inputFileStats.isFile() || inputFileStats.size === 0) {
             throw Error(`Not valid PMTiles file: "${inputFile}"`);
@@ -1506,7 +1502,7 @@ export const serve_rendered = {
           }
         } else {
           // MBTiles does not support remote URLs
-          // eslint-disable-next-line security/detect-non-literal-fs-filename -- inputFile is from dataResolver, which validates against config
+
           const inputFileStats = await fsp.stat(inputFile);
           if (!inputFileStats.isFile() || inputFileStats.size === 0) {
             throw Error(`Not valid MBTiles file: "${inputFile}"`);
