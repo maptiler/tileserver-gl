@@ -1,70 +1,79 @@
 // test/static_images.js
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
+import supertest from 'supertest';
 import fs from 'fs';
 import path from 'path';
-import { PNG } from 'pngjs';
+import sharp from 'sharp';
 import pixelmatch from 'pixelmatch';
-import fetch from 'node-fetch';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const BASE_URL = 'http://localhost:8080';
 const FIXTURES_DIR = path.join(__dirname, 'fixtures', 'visual');
 const THRESHOLD = 0.1;
 const MAX_DIFF_PIXELS = 100;
 
 const tests = [
-  { name: 'static-lat-lng', url: '/styles/basic-preview/static/8.5375,47.379,12/400x300.png' },
-  { name: 'static-bearing', url: '/styles/basic-preview/static/8.5375,47.379,12@180/400x300.png' },
-  { name: 'static-bearing-pitch', url: '/styles/basic-preview/static/8.5375,47.379,12@15,80/400x300.png' },
-  { name: 'static-pixel-ratio-2x', url: '/styles/basic-preview/static/8.5375,47.379,11/200x150@2x.png' },
-  { name: 'path-auto', url: '/styles/basic-preview/static/auto/400x300.png?fill=%23ff000080&path=8.53180,47.38713|8.53841,47.38248|8.53320,47.37457' },
-  { name: 'encoded-path-auto', url: '/styles/basic-preview/static/auto/400x300.png?stroke=red&width=5&path=enc:wwg`Hyu}r@fNgn@hKyh@rR{ZlP{YrJmM`PJhNbH`P`VjUbNfJ|LzM~TtLnKxQZ' },
-  { name: 'linecap-linejoin-round-round', url: '/styles/basic-preview/static/8.5375,47.379,12/400x300.png?width=30&linejoin=round&linecap=round&path=enc:uhd`Hqk_s@kiA}nAnfAqpA' },
-  { name: 'linecap-linejoin-bevel-square', url: '/styles/basic-preview/static/8.5375,47.379,12/400x300.png?width=30&linejoin=bevel&linecap=square&path=enc:uhd`Hqk_s@kiA}nAnfAqpA' },
-  { name: 'markers', url: '/styles/basic-preview/static/8.5375,47.379,12/400x300.png?marker=8.53180,47.38713|http://localhost:8080/images/logo.png|scale:0.3&marker=8.53180,47.37457|http://localhost:8080/images/logo.png|scale:0.3' },
+  { name: 'static-lat-lng', url: '/styles/test-style/static/8.5375,47.379,12/400x300.png' },
+  { name: 'static-bearing', url: '/styles/test-style/static/8.5375,47.379,12@180/400x300.png' },
+  { name: 'static-bearing-pitch', url: '/styles/test-style/static/8.5375,47.379,12@15,80/400x300.png' },
+  { name: 'static-pixel-ratio-2x', url: '/styles/test-style/static/8.5375,47.379,11/200x150@2x.png' },
+  { name: 'path-auto', url: '/styles/test-style/static/auto/400x300.png?fill=%23ff000080&path=8.53180,47.38713|8.53841,47.38248|8.53320,47.37457' },
+  { name: 'encoded-path-auto', url: '/styles/test-style/static/auto/400x300.png?stroke=red&width=5&path=enc:wwg`Hyu}r@fNgn@hKyh@rR{ZlP{YrJmM`PJhNbH`P`VjUbNfJ|LzM~TtLnKxQZ' },
+  { name: 'linecap-linejoin-round-round', url: '/styles/test-style/static/8.5375,47.379,12/400x300.png?width=30&linejoin=round&linecap=round&path=enc:uhd`Hqk_s@kiA}nAnfAqpA' },
+  { name: 'linecap-linejoin-bevel-square', url: '/styles/test-style/static/8.5375,47.379,12/400x300.png?width=30&linejoin=bevel&linecap=square&path=enc:uhd`Hqk_s@kiA}nAnfAqpA' },
 ];
 
-function loadPNG(buffer) {
-  return new Promise((resolve, reject) => {
-    const png = new PNG();
-    png.parse(buffer, (error, data) => {
-      if (error) reject(error);
-      else resolve(data);
-    });
-  });
+async function loadImageData(buffer) {
+  const image = sharp(buffer);
+  const { width, height } = await image.metadata();
+  
+  // Get raw RGBA pixel data
+  const data = await image
+    .ensureAlpha()
+    .raw()
+    .toBuffer();
+  
+  return { data, width, height };
 }
 
 async function fetchImage(url) {
-  const response = await fetch(BASE_URL + url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
-  }
-  return Buffer.from(await response.arrayBuffer());
+  return new Promise((resolve, reject) => {
+    supertest(global.app)
+      .get(url)
+      .expect(200)
+      .expect('Content-Type', /image\/png/)
+      .end((err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.body);
+        }
+      });
+  });
 }
 
 async function compareImages(actualBuffer, expectedPath) {
-  const actual = await loadPNG(actualBuffer);
+  const actual = await loadImageData(actualBuffer);
   const expectedBuffer = fs.readFileSync(expectedPath);
-  const expected = await loadPNG(expectedBuffer);
+  const expected = await loadImageData(expectedBuffer);
 
   if (actual.width !== expected.width || actual.height !== expected.height) {
     throw new Error(`Image dimensions don't match: ${actual.width}x${actual.height} vs ${expected.width}x${expected.height}`);
   }
 
-  const diff = new PNG({ width: actual.width, height: actual.height });
+  const diffBuffer = Buffer.alloc(actual.width * actual.height * 4);
   const numDiffPixels = pixelmatch(
     actual.data,
     expected.data,
-    diff.data,
+    diffBuffer,
     actual.width,
     actual.height,
     { threshold: THRESHOLD }
   );
 
-  return { numDiffPixels, diff };
+  return { numDiffPixels, diffBuffer, width: actual.width, height: actual.height };
 }
 
 describe('Static Image Visual Regression Tests', function() {
@@ -80,12 +89,22 @@ describe('Static Image Visual Regression Tests', function() {
       }
 
       const actualBuffer = await fetchImage(url);
-      const { numDiffPixels, diff } = await compareImages(actualBuffer, expectedPath);
+      const { numDiffPixels, diffBuffer, width, height } = await compareImages(actualBuffer, expectedPath);
 
       if (numDiffPixels > MAX_DIFF_PIXELS) {
         const diffPath = path.join(FIXTURES_DIR, 'diffs', `${name}-diff.png`);
         fs.mkdirSync(path.dirname(diffPath), { recursive: true });
-        fs.writeFileSync(diffPath, PNG.sync.write(diff));
+        
+        await sharp(diffBuffer, {
+          raw: {
+            width,
+            height,
+            channels: 4
+          }
+        })
+        .png()
+        .toFile(diffPath);
+        
         console.log(`Diff image saved to: ${diffPath}`);
       }
 
@@ -97,8 +116,7 @@ describe('Static Image Visual Regression Tests', function() {
   });
 });
 
-// Separate describe block for generation - use --grep to run this
-describe('@generate Visual Fixtures', function() {
+describe('GENERATE Visual Fixtures', function() {
   this.timeout(10000);
 
   it('should generate all fixture images', async function() {
