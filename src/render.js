@@ -222,7 +222,7 @@ const drawPath = (ctx, path, query, pathQuery, z) => {
   }
   ctx.stroke();
 };
-// ... (rest of the file: renderOverlay, renderWatermark, renderAttribution are unchanged)
+
 /**
  * Renders an overlay with paths and markers on a map tile.
  * @param {number} z - Map zoom level.
@@ -280,8 +280,6 @@ export const renderOverlay = async (
 
   // Draw provided paths if any
   paths.forEach((path, i) => {
-    // Fix: We must determine which path query string belongs to the current path.
-    // If query.path is an array, we use the corresponding index. Otherwise, we use the single string.
     const pathQuery = Array.isArray(query.path) ? query.path.at(i) : query.path;
     drawPath(ctx, path, query, pathQuery, z);
   });
