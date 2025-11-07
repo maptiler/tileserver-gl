@@ -208,20 +208,45 @@ function extractPathsFromQuery(query, transformer) {
     const providedPaths = Array.isArray(query.path) ? query.path : [query.path];
     // Iterate through paths, parse and validate them
     for (const providedPath of providedPaths) {
+      let geometryString = providedPath;
+
+      // Logic to strip style options (like stroke:red) from the front
+      const parts = providedPath.split('|');
+      let firstGeometryIndex = 0;
+      for (const [index, part] of parts.entries()) {
+        // A part is considered a style option if it contains ':' but is NOT an 'enc:' string or a coordinate
+        if (part.includes(':') && !part.startsWith('enc:')) {
+          // This is a style option, continue
+          continue;
+        } else {
+          // This is the start of the geometry (enc: or coordinate)
+          firstGeometryIndex = index;
+          break;
+        }
+      }
+
+      // If we found a geometry, set the geometryString to the rest of the path
+      if (firstGeometryIndex > 0) {
+        geometryString = parts.slice(firstGeometryIndex).join('|');
+      }
+
       // Logic for pushing coords to path when path includes google polyline
-      if (providedPath.includes('enc:') && PATH_PATTERN.test(providedPath)) {
+      if (
+        geometryString.includes('enc:') &&
+        PATH_PATTERN.test(geometryString)
+      ) {
         // +4 because 'enc:' is 4 characters, everything after 'enc:' is considered to be part of the polyline
-        const encIndex = providedPath.indexOf('enc:') + 4;
+        const encIndex = geometryString.indexOf('enc:') + 4;
         const coords = polyline
-          .decode(providedPath.substring(encIndex))
+          .decode(geometryString.substring(encIndex))
           .map(([lat, lng]) => [lng, lat]);
         paths.push(coords);
       } else {
-        // Iterate through paths, parse and validate them
+        // ... (rest of the coordinate parsing logic using geometryString)
         const currentPath = [];
 
         // Extract coordinate-list from path
-        const pathParts = (providedPath || '').split('|');
+        const pathParts = (geometryString || '').split('|');
 
         // Iterate through coordinate-list, parse the coordinates and validate them
         for (const pair of pathParts) {
@@ -249,6 +274,7 @@ function extractPathsFromQuery(query, transformer) {
   }
   return paths;
 }
+
 /**
  * Parses marker options provided via query and sets corresponding attributes
  * on marker object.

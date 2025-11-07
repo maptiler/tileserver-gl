@@ -140,80 +140,89 @@ const drawPath = (ctx, path, query, pathQuery, z) => {
     ctx.closePath();
   }
 
-  // Optionally fill drawn shape with a rgba color from query
-  const pathHasFill = splitPaths.filter((x) => x.startsWith('fill')).length > 0;
+  // --- NEW: Helper to extract an option from splitPaths ---
+  const getInlineOption = (optionName) => {
+    const found = splitPaths.find((x) => x.startsWith(`${optionName}:`));
+    return found ? found.replace(`${optionName}:`, '') : undefined;
+  };
+  // --------------------------------------------------------
+
+  // --- FILL Logic ---
+  const inlineFill = getInlineOption('fill');
+  const pathHasFill = inlineFill !== undefined;
   if (query.fill !== undefined || pathHasFill) {
-    if ('fill' in query) {
-      ctx.fillStyle = query.fill || 'rgba(255,255,255,0.4)';
-    }
     if (pathHasFill) {
-      ctx.fillStyle = splitPaths
-        .find((x) => x.startsWith('fill:'))
-        .replace('fill:', '');
+      ctx.fillStyle = inlineFill;
+    } else if ('fill' in query) {
+      ctx.fillStyle = query.fill || 'rgba(255,255,255,0.4)';
+    } else {
+      ctx.fillStyle = 'rgba(255,255,255,0.4)'; // Default if only pathHasFill is true but value is empty
     }
     ctx.fill();
   }
 
-  // Get line width from query and fall back to 1 if not provided
-  const pathHasWidth =
-    splitPaths.filter((x) => x.startsWith('width')).length > 0;
-  if (query.width !== undefined || pathHasWidth) {
-    let lineWidth = 1;
-    // Get line width from query
-    if ('width' in query) {
-      lineWidth = Number(query.width);
-    }
-    // Get line width from path in query
-    if (pathHasWidth) {
-      lineWidth = Number(
-        splitPaths.find((x) => x.startsWith('width:')).replace('width:', ''),
-      );
-    }
-    // Get border width from query and fall back to 10% of line width
-    const borderWidth =
-      query.borderwidth !== undefined
-        ? parseFloat(query.borderwidth)
-        : lineWidth * 0.1;
+  // --- WIDTH & BORDER Logic ---
+  const inlineWidth = getInlineOption('width');
+  const pathHasWidth = inlineWidth !== undefined;
+  const inlineBorder = getInlineOption('border');
+  const inlineBorderWidth = getInlineOption('borderwidth');
+  const pathHasBorder = inlineBorder !== undefined;
 
-    // Set rendering style for the start and end points of the path
-    // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineCap
-    ctx.lineCap = query.linecap || 'butt';
-
-    // Set rendering style for overlapping segments of the path with differing directions
-    // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineJoin
-    ctx.lineJoin = query.linejoin || 'miter';
-
-    // In order to simulate a border we draw the path two times with the first
-    // beeing the wider border part.
-    if (query.border !== undefined && borderWidth > 0) {
-      // We need to double the desired border width and add it to the line width
-      // in order to get the desired border on each side of the line.
-      ctx.lineWidth = lineWidth + borderWidth * 2;
-      // Set border style as rgba
-      ctx.strokeStyle = query.border;
-      ctx.stroke();
-    }
-    ctx.lineWidth = lineWidth;
+  let lineWidth = 1;
+  // Prioritize inline width over global width
+  if (pathHasWidth) {
+    lineWidth = Number(inlineWidth);
+  } else if ('width' in query) {
+    lineWidth = Number(query.width);
   }
 
-  const pathHasStroke =
-    splitPaths.filter((x) => x.startsWith('stroke')).length > 0;
-  if (query.stroke !== undefined || pathHasStroke) {
-    if ('stroke' in query) {
-      ctx.strokeStyle = query.stroke;
-    }
-    // Path Stroke gets higher priority
-    if (pathHasStroke) {
-      ctx.strokeStyle = splitPaths
-        .find((x) => x.startsWith('stroke:'))
-        .replace('stroke:', '');
-    }
+  // Get border width, prioritized by inline > global query > default (10% of line width)
+  let borderWidth = lineWidth * 0.1; // Default
+  if (pathHasBorder) {
+    borderWidth = parseFloat(inlineBorderWidth) || lineWidth * 0.1;
+  } else if (query.borderwidth !== undefined) {
+    borderWidth = parseFloat(query.borderwidth);
+  }
+
+  // Set rendering style for the start and end points of the path
+  // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineCap
+  ctx.lineCap = query.linecap || 'butt';
+
+  // Set rendering style for overlapping segments of the path with differing directions
+  // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineJoin
+  ctx.lineJoin = query.linejoin || 'miter';
+
+  // The final border color, prioritized by inline over global query
+  const finalBorder = pathHasBorder ? inlineBorder : query.border;
+
+  // In order to simulate a border we draw the path two times with the first
+  // beeing the wider border part.
+  if (finalBorder !== undefined && borderWidth > 0) {
+    // We need to double the desired border width and add it to the line width
+    // in order to get the desired border on each side of the line.
+    ctx.lineWidth = lineWidth + borderWidth * 2;
+    // Set border style as rgba
+    ctx.strokeStyle = finalBorder;
+    ctx.stroke();
+  }
+
+  // Set line width for the main stroke
+  ctx.lineWidth = lineWidth;
+
+  // --- STROKE Logic ---
+  const inlineStroke = getInlineOption('stroke');
+  const pathHasStroke = inlineStroke !== undefined;
+
+  if (pathHasStroke) {
+    ctx.strokeStyle = inlineStroke;
+  } else if ('stroke' in query) {
+    ctx.strokeStyle = query.stroke;
   } else {
     ctx.strokeStyle = 'rgba(0,64,255,0.7)';
   }
   ctx.stroke();
 };
-
+// ... (rest of the file: renderOverlay, renderWatermark, renderAttribution are unchanged)
 /**
  * Renders an overlay with paths and markers on a map tile.
  * @param {number} z - Map zoom level.
@@ -271,6 +280,8 @@ export const renderOverlay = async (
 
   // Draw provided paths if any
   paths.forEach((path, i) => {
+    // Fix: We must determine which path query string belongs to the current path.
+    // If query.path is an array, we use the corresponding index. Otherwise, we use the single string.
     const pathQuery = Array.isArray(query.path) ? query.path.at(i) : query.path;
     drawPath(ctx, path, query, pathQuery, z);
   });
