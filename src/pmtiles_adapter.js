@@ -81,7 +81,7 @@ class S3Source {
 
     // Format 1: s3://endpoint/bucket/key (S3-compatible storage)
     // Example: s3://storage.example.com/mybucket/path/to/tiles.pmtile
-    const endpointMatch = cleanUrl.match(/^s3:\/\/([^\/]+)\/([^\/]+)\/(.+)$/);
+    const endpointMatch = cleanUrl.match(/^s3:\/\/([^/]+)\/([^/]+)\/(.+)$/);
     if (endpointMatch) {
       return {
         endpoint: `https://${endpointMatch[1]}`,
@@ -95,7 +95,7 @@ class S3Source {
 
     // Format 2: s3://bucket/key (AWS S3 default)
     // Example: s3://my-bucket/path/to/tiles.pmtiles
-    const awsMatch = cleanUrl.match(/^s3:\/\/([^\/]+)\/(.+)$/);
+    const awsMatch = cleanUrl.match(/^s3:\/\/([^/]+)\/(.+)$/);
     if (awsMatch) {
       return {
         endpoint: null, // Use default AWS endpoint

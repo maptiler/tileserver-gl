@@ -12,7 +12,6 @@ import { SphericalMercator } from '@mapbox/sphericalmercator';
 import {
   fixTileJSONCenter,
   getTileUrls,
-  isS3Url,
   isValidRemoteUrl,
   fetchTileData,
 } from './utils.js';

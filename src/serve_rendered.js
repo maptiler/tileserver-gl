@@ -63,7 +63,7 @@ const staticTypeRegex = new RegExp(
 
 const PATH_PATTERN =
   // eslint-disable-next-line security/detect-unsafe-regex -- Simple path pattern validation, no nested quantifiers
-  /^((fill|stroke|width)\:[^\|]+\|)*(enc:.+|-?\d+(\.\d*)?,-?\d+(\.\d*)?(\|-?\d+(\.\d*)?,-?\d+(\.\d*)?)+)/;
+  /^((fill|stroke|width):[^|]+\|)*(enc:.+|-?\d+(\.\d*)?,-?\d+(\.\d*)?(\|-?\d+(\.\d*)?,-?\d+(\.\d*)?)+)/;
 
 const mercator = new SphericalMercator();
 

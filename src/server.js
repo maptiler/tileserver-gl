@@ -302,10 +302,10 @@ async function start(opts) {
                 let currentInputFileValue;
 
                 // Check for recognized file type keys
-                if (sourceData.hasOwnProperty('pmtiles')) {
+                if (Object.hasOwn(sourceData, 'pmtiles')) {
                   currentFileType = 'pmtiles';
                   currentInputFileValue = sourceData.pmtiles;
-                } else if (sourceData.hasOwnProperty('mbtiles')) {
+                } else if (Object.hasOwn(sourceData, 'mbtiles')) {
                   currentFileType = 'mbtiles';
                   currentInputFileValue = sourceData.mbtiles;
                 }
@@ -320,24 +320,24 @@ async function start(opts) {
                     resolvedInputFile = currentInputFileValue;
 
                     // Get sparse if present
-                    if (sourceData.hasOwnProperty('sparse')) {
+                    if (Object.hasOwn(sourceData, 'sparse')) {
                       resolvedSparse = !!sourceData.sparse;
                     } else {
                       resolvedSparse = false;
                     }
 
                     // Get s3Profile if present
-                    if (sourceData.hasOwnProperty('s3Profile')) {
+                    if (Object.hasOwn(sourceData, 's3Profile')) {
                       resolvedS3Profile = sourceData.s3Profile;
                     }
 
                     // Get requestPayer if present
-                    if (sourceData.hasOwnProperty('requestPayer')) {
+                    if (Object.hasOwn(sourceData, 'requestPayer')) {
                       resolvedRequestPayer = !!sourceData.requestPayer;
                     }
 
                     // Get s3Region if present
-                    if (sourceData.hasOwnProperty('s3Region')) {
+                    if (Object.hasOwn(sourceData, 's3Region')) {
                       resolvedS3Region = sourceData.s3Region;
                     }
 

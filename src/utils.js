@@ -162,7 +162,7 @@ export function getTileUrls(
     const relativeSubdomainsUsable =
       hostParts.length > 1 &&
       // eslint-disable-next-line security/detect-unsafe-regex -- Simple IPv4 validation, no nested quantifiers
-      !/^([0-9]{1,3}\.){3}[0-9]{1,3}(\:[0-9]+)?$/.test(urlObject.host);
+      !/^([0-9]{1,3}\.){3}[0-9]{1,3}(:[0-9]+)?$/.test(urlObject.host);
     const newDomains = [];
     for (const domain of domains) {
       if (domain.indexOf('*') !== -1) {
