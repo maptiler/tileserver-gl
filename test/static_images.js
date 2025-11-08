@@ -62,7 +62,7 @@ const tests = [
   {
     name: 'static-markers',
     // Test multiple markers with scale and offset options
-    url: '/styles/test-style/static/8.5375,47.379,12/400x300.png?marker=8.531,47.38|marker-icon.png|scale:0.8&marker=8.545,47.375|marker-icon-2.png|offset:5,-10',
+    url: '/styles/test-style/static/8.5375,47.379,12/400x300.png?marker=8.531,47.38|marker-icon.png|scale:0.8&marker=8.545,47.375|marker-icon-2x.png|offset:5,-10',
   },
   {
     name: 'static-bbox',
