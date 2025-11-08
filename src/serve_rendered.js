@@ -43,6 +43,20 @@ import fsp from 'node:fs/promises';
 import { existsP, gunzipP } from './promises.js';
 import { openMbTilesWrapper } from './mbtiles_wrapper.js';
 
+// Constants
+const CONSTANTS = {
+  MAX_IMAGE_SIZE: 2048,
+  MIN_ZOOM: 0,
+  MAX_ZOOM: 22,
+  MAX_LAT: 85.06,
+  MAX_LON: 180,
+  DEFAULT_TILE_SIZE: 256,
+  MAX_PATH_QUERY_LENGTH: 10000,
+  MAX_COORDINATE_VALUE: 1e7,
+  DEFAULT_PADDING: 0.1,
+  ZOOM_PRECISION: 25,
+};
+
 const FLOAT_PATTERN = '[+-]?(?:\\d+|\\d*\\.\\d+)';
 
 const staticTypeRegex = new RegExp(
@@ -442,9 +456,12 @@ function extractMarkersFromQuery(query, options, transformer) {
  * @returns {number} Calculated zoom level.
  */
 function calcZForBBox(bbox, w, h, query) {
-  let z = 25;
+  let z = CONSTANTS.ZOOM_PRECISION;
 
-  const padding = query.padding !== undefined ? parseFloat(query.padding) : 0.1;
+  const padding =
+    query.padding !== undefined
+      ? Math.max(0, Math.min(0.5, parseFloat(query.padding)))
+      : CONSTANTS.DEFAULT_PADDING;
 
   const minCorner = mercator.px([bbox[0], bbox[3]], z);
   const maxCorner = mercator.px([bbox[2], bbox[1]], z);
@@ -457,9 +474,70 @@ function calcZForBBox(bbox, w, h, query) {
       Math.log((maxCorner[1] - minCorner[1]) / h_),
     ) / Math.LN2;
 
-  z = Math.max(Math.log(Math.max(w, h) / 256) / Math.LN2, Math.min(25, z));
+  // Ensure zoom is reasonable: at least enough to show the image dimensions,
+  // but not more than a sensible maximum (will be further capped by caller)
+  const minZ = Math.log(Math.max(w, h) / 256) / Math.LN2;
+  const maxZ = CONSTANTS.ZOOM_PRECISION;
+  z = Math.max(minZ, Math.min(maxZ, z));
 
   return z;
+}
+
+/**
+ * Validates static image request parameters.
+ * @param {object} params - Request parameters to validate.
+ * @returns {{valid: boolean, error: string|null, values: object|null}} Validation result.
+ */
+function validateStaticImageParams(params) {
+  const { lon, lat, zoom, bearing, pitch, minx, miny, maxx, maxy } = params;
+
+  // Validate center-based parameters
+  if (lon !== undefined) {
+    if (Math.abs(lon) > CONSTANTS.MAX_LON) {
+      return {
+        valid: false,
+        error: `Longitude out of bounds: ${lon}. Must be in [-${CONSTANTS.MAX_LON}, ${CONSTANTS.MAX_LON}]`,
+        values: null,
+      };
+    }
+
+    if (Math.abs(lat) > CONSTANTS.MAX_LAT) {
+      return {
+        valid: false,
+        error: `Latitude out of bounds: ${lat}. Must be in [-${CONSTANTS.MAX_LAT}, ${CONSTANTS.MAX_LAT}]`,
+        values: null,
+      };
+    }
+
+    if (zoom < CONSTANTS.MIN_ZOOM) {
+      return {
+        valid: false,
+        error: `Zoom level too low: ${zoom}. Minimum is ${CONSTANTS.MIN_ZOOM}`,
+        values: null,
+      };
+    }
+  }
+
+  // Validate area-based parameters
+  if (minx !== undefined) {
+    if (minx >= maxx) {
+      return {
+        valid: false,
+        error: `Invalid bounding box: minx (${minx}) must be less than maxx (${maxx})`,
+        values: null,
+      };
+    }
+
+    if (miny >= maxy) {
+      return {
+        valid: false,
+        error: `Invalid bounding box: miny (${miny}) must be less than maxy (${maxy})`,
+        values: null,
+      };
+    }
+  }
+
+  return { valid: true, error: null, values: params };
 }
 
 /**
@@ -478,6 +556,7 @@ function calcZForBBox(bbox, w, h, query) {
  * @param {object} res Express response object.
  * @param {Buffer|null} overlay Optional overlay image.
  * @param {string} mode Rendering mode ('tile' or 'static').
+ * @param {boolean} verbose Verbose logging flag.
  * @returns {Promise<void>}
  */
 async function respondImage(
@@ -495,31 +574,51 @@ async function respondImage(
   res,
   overlay = null,
   mode = 'tile',
+  verbose = false,
 ) {
+  const startTime = Date.now();
+
+  // Validate coordinates
   if (
-    Math.abs(lon) > 180 ||
-    Math.abs(lat) > 85.06 ||
+    Math.abs(lon) > CONSTANTS.MAX_LON ||
+    Math.abs(lat) > CONSTANTS.MAX_LAT ||
     lon !== lon ||
     lat !== lat
   ) {
-    return res.status(400).send('Invalid center');
+    return res
+      .status(400)
+      .send(
+        `Invalid center coordinates: lon=${lon}, lat=${lat}. ` +
+          `Longitude must be in [-${CONSTANTS.MAX_LON}, ${CONSTANTS.MAX_LON}], ` +
+          `latitude must be in [-${CONSTANTS.MAX_LAT}, ${CONSTANTS.MAX_LAT}]`,
+      );
   }
 
+  const maxSize = options.maxSize || CONSTANTS.MAX_IMAGE_SIZE;
   if (
     Math.min(width, height) <= 0 ||
-    Math.max(width, height) * scale > (options.maxSize || 2048) ||
+    Math.max(width, height) * scale > maxSize ||
     width !== width ||
     height !== height
   ) {
-    return res.status(400).send('Invalid size');
+    return res
+      .status(400)
+      .send(
+        `Invalid image size: ${width}x${height}@${scale}x. ` +
+          `Maximum dimension is ${maxSize}px (including scale)`,
+      );
   }
 
   if (format === 'png' || format === 'webp') {
-    /* empty */
+    /* format is valid */
   } else if (format === 'jpg' || format === 'jpeg') {
     format = 'jpeg';
   } else {
-    return res.status(400).send('Invalid format');
+    return res
+      .status(400)
+      .send(
+        `Invalid format: ${format}. Supported formats: png, jpg, jpeg, webp`,
+      );
   }
 
   const tileMargin = Math.max(options.tileMargin || 0, 0);
@@ -533,6 +632,11 @@ async function respondImage(
   }
 
   pool.acquire(async (err, renderer) => {
+    if (err) {
+      console.error('Error acquiring renderer:', err);
+      return res.status(500).send('Internal server error');
+    }
+
     // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
     let mlglZ;
     if (width === 512) {
@@ -550,7 +654,10 @@ async function respondImage(
       height,
     };
 
-    // HACK(Part 1) 256px tiles are a zoom level lower than maplibre-native default tiles. this hack allows tileserver-gl to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native. Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in Part 2.
+    // HACK(Part 1) 256px tiles are a zoom level lower than maplibre-native default tiles.
+    // This hack allows tileserver-gl to support zoom 0 256px tiles, which would actually be
+    // zoom -1 in maplibre-native. Since zoom -1 isn't supported, a double sized zoom 0 tile
+    // is requested and resized in Part 2.
     if (z === 0 && width === 256) {
       params.width *= 2;
       params.height *= 2;
@@ -562,110 +669,147 @@ async function respondImage(
       params.height += tileMargin * 2;
     }
 
-    renderer.render(params, (err, data) => {
+    renderer.render(params, async (err, data) => {
       pool.release(renderer);
       if (err) {
-        console.error(err);
-        return res.status(500).header('Content-Type', 'text/plain').send(err);
+        console.error('Rendering error:', err);
+        const duration = Date.now() - startTime;
+        if (verbose) {
+          console.log(`Rendering failed after ${duration}ms`);
+        }
+        return res
+          .status(500)
+          .header('Content-Type', 'text/plain')
+          .send(err.message || err);
       }
 
-      const image = sharp(data, {
-        raw: {
-          premultiplied: true,
-          width: params.width * scale,
-          height: params.height * scale,
-          channels: 4,
-        },
-      });
-
-      if (z > 0 && tileMargin > 0) {
-        const y = mercator.px(params.center, z)[1];
-        const yoffset = Math.max(
-          Math.min(0, y - 128 - tileMargin),
-          y + 128 + tileMargin - Math.pow(2, z + 8),
-        );
-        image.extract({
-          left: tileMargin * scale,
-          top: (tileMargin + yoffset) * scale,
-          width: width * scale,
-          height: height * scale,
+      try {
+        const image = sharp(data, {
+          raw: {
+            premultiplied: true,
+            width: params.width * scale,
+            height: params.height * scale,
+            channels: 4,
+          },
         });
-      }
-      // HACK(Part 2) 256px tiles are a zoom level lower than maplibre-native default tiles. this hack allows tileserver-gl to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native. Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized here.
-
-      if (z === 0 && width === 256) {
-        image.resize(width * scale, height * scale);
-      }
-      // END HACK(Part 2)
-
-      const composites = [];
-      if (overlay) {
-        composites.push({ input: overlay });
-      }
-      if (item.watermark) {
-        const canvas = renderWatermark(width, height, scale, item.watermark);
-
-        composites.push({ input: canvas.toBuffer() });
-      }
-
-      if (mode === 'static' && item.staticAttributionText) {
-        const canvas = renderAttribution(
-          width,
-          height,
-          scale,
-          item.staticAttributionText,
-        );
-
-        composites.push({ input: canvas.toBuffer() });
-      }
-
-      if (composites.length > 0) {
-        image.composite(composites);
-      }
-
-      // Legacy formatQuality is deprecated but still works
-      const formatQualities = options.formatQuality || {};
-      if (Object.keys(formatQualities).length !== 0) {
-        console.log(
-          'WARNING: The formatQuality option is deprecated and has been replaced with formatOptions. Please see the documentation. The values from formatQuality will be used if a quality setting is not provided via formatOptions.',
-        );
-      }
-      // eslint-disable-next-line security/detect-object-injection -- format is validated above
-      const formatQuality = formatQualities[format];
-
-      // eslint-disable-next-line security/detect-object-injection -- format is validated above
-      const formatOptions = (options.formatOptions || {})[format] || {};
-
-      if (format === 'png') {
-        image.png({
-          progressive: formatOptions.progressive,
-          compressionLevel: formatOptions.compressionLevel,
-          adaptiveFiltering: formatOptions.adaptiveFiltering,
-          palette: formatOptions.palette,
-          quality: formatOptions.quality,
-          effort: formatOptions.effort,
-          colors: formatOptions.colors,
-          dither: formatOptions.dither,
-        });
-      } else if (format === 'jpeg') {
-        image.jpeg({
-          quality: formatOptions.quality || formatQuality || 80,
-          progressive: formatOptions.progressive,
-        });
-      } else if (format === 'webp') {
-        image.webp({ quality: formatOptions.quality || formatQuality || 90 });
-      }
-      image.toBuffer((err, buffer, info) => {
-        if (!buffer) {
-          return res.status(404).send('Not found');
+        if (z > 0 && tileMargin > 0) {
+          const y = mercator.px(params.center, z)[1];
+          const yoffset = Math.max(
+            Math.min(0, y - 128 - tileMargin),
+            y + 128 + tileMargin - Math.pow(2, z + 8),
+          );
+          image.extract({
+            left: tileMargin * scale,
+            top: (tileMargin + yoffset) * scale,
+            width: width * scale,
+            height: height * scale,
+          });
         }
 
-        res.set({
-          'Last-Modified': item.lastModified,
-          'Content-Type': `image/${format}`,
+        // HACK(Part 2) 256px tiles are a zoom level lower than maplibre-native default tiles.
+        // This hack allows tileserver-gl to support zoom 0 256px tiles, which would actually be
+        // zoom -1 in maplibre-native. Since zoom -1 isn't supported, a double sized zoom 0 tile
+        // is requested and resized here.
+        if (z === 0 && width === 256) {
+          image.resize(width * scale, height * scale);
+        }
+        // END HACK(Part 2)
+
+        const composites = [];
+        if (overlay) {
+          composites.push({ input: overlay });
+        }
+        if (item.watermark) {
+          const canvas = renderWatermark(width, height, scale, item.watermark);
+          composites.push({ input: canvas.toBuffer() });
+        }
+
+        if (mode === 'static' && item.staticAttributionText) {
+          const canvas = renderAttribution(
+            width,
+            height,
+            scale,
+            item.staticAttributionText,
+          );
+          composites.push({ input: canvas.toBuffer() });
+        }
+
+        if (composites.length > 0) {
+          image.composite(composites);
+        }
+
+        // Legacy formatQuality is deprecated but still works
+        const formatQualities = options.formatQuality || {};
+        if (Object.keys(formatQualities).length !== 0) {
+          console.log(
+            'WARNING: The formatQuality option is deprecated and has been replaced with formatOptions. ' +
+              'Please see the documentation. The values from formatQuality will be used if a quality setting ' +
+              'is not provided via formatOptions.',
+          );
+        }
+        // eslint-disable-next-line security/detect-object-injection -- format is validated above
+        const formatQuality = formatQualities[format];
+
+        // eslint-disable-next-line security/detect-object-injection -- format is validated above
+        const formatOptions = (options.formatOptions || {})[format] || {};
+
+        if (format === 'png') {
+          image.png({
+            progressive: formatOptions.progressive,
+            compressionLevel: formatOptions.compressionLevel,
+            adaptiveFiltering: formatOptions.adaptiveFiltering,
+            palette: formatOptions.palette,
+            quality: formatOptions.quality,
+            effort: formatOptions.effort,
+            colors: formatOptions.colors,
+            dither: formatOptions.dither,
+          });
+        } else if (format === 'jpeg') {
+          image.jpeg({
+            quality: formatOptions.quality || formatQuality || 80,
+            progressive: formatOptions.progressive,
+          });
+        } else if (format === 'webp') {
+          image.webp({ quality: formatOptions.quality || formatQuality || 90 });
+        }
+
+        image.toBuffer((err, buffer, info) => {
+          if (err) {
+            console.error('Error converting image to buffer:', err);
+            return res.status(500).send('Error processing image');
+          }
+
+          if (!buffer) {
+            return res.status(404).send('Image generation failed');
+          }
+
+          const duration = Date.now() - startTime;
+          if (verbose) {
+            console.log(
+              `Image generated in ${duration}ms (${width}x${height}@${scale}x, ${format})`,
+            );
+          }
+
+          res.set({
+            'Last-Modified': item.lastModified,
+            'Content-Type': `image/${format}`,
+          });
+
+          const response = res.status(200).send(buffer);
+
+          // Clean up sharp instance to free memory
+          try {
+            image.destroy();
+          } catch (e) {
+            // Ignore cleanup errors
+          }
+
+          return response;
         });
-        return res.status(200).send(buffer);
-      });
+      } catch (error) {
+        console.error('Error in image processing pipeline:', error);
+        return res.status(500).send('Error processing image');
+      }
     });
   });
 }
@@ -685,7 +829,8 @@ async function respondImage(
  * @param {object} res - Express response object.
  * @param {object} next - Express next middleware function.
  * @param {number} maxScaleFactor - The maximum scale factor allowed.
- * @param {number} defailtTileSize - Default tile size.
+ * @param {number} defaultTileSize - Default tile size.
+ * @param {boolean} verbose - Verbose logging flag.
  * @returns {Promise<void>}
  */
 async function handleTileRequest(
@@ -695,7 +840,8 @@ async function handleTileRequest(
   res,
   next,
   maxScaleFactor,
-  defailtTileSize,
+  defaultTileSize,
+  verbose,
 ) {
   const {
     id,
@@ -709,7 +855,7 @@ async function handleTileRequest(
   // eslint-disable-next-line security/detect-object-injection -- id is route parameter, validated by Express
   const item = repo[id];
   if (!item) {
-    return res.sendStatus(404);
+    return res.status(404).send(`Style not found: ${id}`);
   }
 
   const modifiedSince = req.get('if-modified-since');
@@ -727,25 +873,45 @@ async function handleTileRequest(
   const y = parseFloat(yParam) | 0;
   const scale = allowedScales(scaleParam, maxScaleFactor);
 
-  let parsedTileSize = parseInt(defailtTileSize, 10);
+  let parsedTileSize = parseInt(defaultTileSize, 10);
   if (tileSize) {
     parsedTileSize = parseInt(allowedTileSizes(tileSize), 10);
 
     if (parsedTileSize == null) {
-      return res.status(400).send('Invalid Tile Size');
+      return res
+        .status(400)
+        .send(`Invalid tile size: ${tileSize}. Allowed sizes: 256, 512`);
     }
   }
 
-  if (
-    scale == null ||
-    z < 0 ||
-    x < 0 ||
-    y < 0 ||
-    z > 22 ||
-    x >= Math.pow(2, z) ||
-    y >= Math.pow(2, z)
-  ) {
-    return res.status(400).send('Out of bounds');
+  // Validate tile coordinates
+  if (scale == null) {
+    return res.status(400).send(`Invalid scale factor: ${scaleParam}`);
+  }
+
+  if (z < CONSTANTS.MIN_ZOOM || z > CONSTANTS.MAX_ZOOM) {
+    return res
+      .status(400)
+      .send(
+        `Zoom level out of bounds: ${z}. Must be in [${CONSTANTS.MIN_ZOOM}, ${CONSTANTS.MAX_ZOOM}]`,
+      );
+  }
+
+  const maxTileCoord = Math.pow(2, z);
+  if (x < 0 || x >= maxTileCoord) {
+    return res
+      .status(400)
+      .send(
+        `X coordinate out of bounds: ${x}. Must be in [0, ${maxTileCoord - 1}] for zoom ${z}`,
+      );
+  }
+
+  if (y < 0 || y >= maxTileCoord) {
+    return res
+      .status(400)
+      .send(
+        `Y coordinate out of bounds: ${y}. Must be in [0, ${maxTileCoord - 1}] for zoom ${z}`,
+      );
   }
 
   const tileCenter = mercator.ll(
@@ -753,9 +919,22 @@ async function handleTileRequest(
     z,
   );
 
-  // prettier-ignore
   return await respondImage(
-    options, item, z, tileCenter[0], tileCenter[1], 0, 0, parsedTileSize, parsedTileSize, scale, format, res,
+    options,
+    item,
+    z,
+    tileCenter[0],
+    tileCenter[1],
+    0,
+    0,
+    parsedTileSize,
+    parsedTileSize,
+    scale,
+    format,
+    res,
+    null,
+    'tile',
+    verbose,
   );
 }
 
@@ -773,6 +952,7 @@ async function handleTileRequest(
  * @param {object} res - Express response object.
  * @param {object} next - Express next middleware function.
  * @param {number} maxScaleFactor - The maximum scale factor allowed.
+ * @param {boolean} verbose - Verbose logging flag.
  * @returns {Promise<void>}
  */
 async function handleStaticRequest(
@@ -782,6 +962,7 @@ async function handleStaticRequest(
   res,
   next,
   maxScaleFactor,
+  verbose,
 ) {
   const {
     id,
@@ -793,7 +974,11 @@ async function handleStaticRequest(
   } = req.params;
   // eslint-disable-next-line security/detect-object-injection -- id is route parameter, validated by Express
   const item = repo[id];
+  if (!item) {
+    return res.status(404).send(`Style not found: ${id}`);
+  }
 
+  // Parse and validate dimensions
   let parsedWidth = null;
   let parsedHeight = null;
   if (widthAndHeight) {
@@ -809,38 +994,80 @@ async function handleStaticRequest(
       ) {
         return res
           .status(400)
-          .send('Invalid width or height provided in size parameter');
+          .send(
+            `Invalid dimensions: ${widthAndHeight}. Width and height must be integers`,
+          );
       }
+
+      // Validate reasonable dimensions
+      const maxDimension = 4096;
+      if (
+        width <= 0 ||
+        height <= 0 ||
+        width > maxDimension ||
+        height > maxDimension
+      ) {
+        return res
+          .status(400)
+          .send(
+            `Invalid dimensions: ${width}x${height}. Must be positive and not exceed ${maxDimension}px`,
+          );
+      }
+
       parsedWidth = width;
       parsedHeight = height;
     } else {
       return res
         .status(400)
-        .send('Invalid width or height provided in size parameter');
+        .send(
+          `Invalid size format: ${widthAndHeight}. Expected format: WIDTHxHEIGHT (e.g., 400x300)`,
+        );
     }
   } else {
-    return res
-      .status(400)
-      .send('Invalid width or height provided in size parameter');
+    return res.status(400).send('Width and height are required');
   }
 
   const scale = allowedScales(scaleParam, maxScaleFactor);
-  let isRaw = raw === 'raw';
-
-  const staticTypeMatch = staticType.match(staticTypeRegex);
-  if (!item || !format || !scale || !staticTypeMatch?.groups) {
-    return res.sendStatus(404);
+  if (scale == null) {
+    return res.status(400).send(`Invalid scale factor: ${scaleParam}`);
   }
 
+  const isRaw = raw === 'raw';
+
+  const staticTypeMatch = staticType.match(staticTypeRegex);
+  if (!format || !staticTypeMatch?.groups) {
+    return res.status(404).send('Invalid static image request format');
+  }
+
+  // Validate format
+  const validFormats = ['png', 'jpg', 'jpeg', 'webp'];
+  if (!validFormats.includes(format)) {
+    return res
+      .status(400)
+      .send(
+        `Invalid format: ${format}. Supported formats: ${validFormats.join(', ')}`,
+      );
+  }
+
+  // Center Based Static Image
   if (staticTypeMatch.groups.lon) {
-    // Center Based Static Image
     const z = parseFloat(staticTypeMatch.groups.zoom) || 0;
     let x = parseFloat(staticTypeMatch.groups.lon) || 0;
     let y = parseFloat(staticTypeMatch.groups.lat) || 0;
     const bearing = parseFloat(staticTypeMatch.groups.bearing) || 0;
     const pitch = parseInt(staticTypeMatch.groups.pitch) || 0;
-    if (z < 0) {
-      return res.status(404).send('Invalid zoom');
+
+    // Validate parameters
+    const validation = validateStaticImageParams({
+      lon: x,
+      lat: y,
+      zoom: z,
+      bearing,
+      pitch,
+    });
+
+    if (!validation.valid) {
+      return res.status(400).send(validation.error);
     }
 
     const transformer = isRaw
@@ -848,28 +1075,70 @@ async function handleStaticRequest(
       : item.dataProjWGStoInternalWGS;
 
     if (transformer) {
-      const ll = transformer([x, y]);
-      x = ll[0];
-      y = ll[1];
+      try {
+        const ll = transformer([x, y]);
+        x = ll[0];
+        y = ll[1];
+      } catch (error) {
+        console.error('Error transforming coordinates:', error);
+        return res.status(400).send('Invalid coordinates for projection');
+      }
     }
 
     const paths = extractPathsFromQuery(req.query, transformer);
     const markers = extractMarkersFromQuery(req.query, options, transformer);
-    // prettier-ignore
-    const overlay = await renderOverlay(
-     z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, paths, markers, req.query,
-   );
 
-    // prettier-ignore
-    return await respondImage(
-    options, item, z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, format, res, overlay, 'static',
-     );
-  } else if (staticTypeMatch.groups.minx) {
-    // Area Based Static Image
+    try {
+      const overlay = await renderOverlay(
+        z,
+        x,
+        y,
+        bearing,
+        pitch,
+        parsedWidth,
+        parsedHeight,
+        scale,
+        paths,
+        markers,
+        req.query,
+      );
+
+      return await respondImage(
+        options,
+        item,
+        z,
+        x,
+        y,
+        bearing,
+        pitch,
+        parsedWidth,
+        parsedHeight,
+        scale,
+        format,
+        res,
+        overlay,
+        'static',
+        verbose,
+      );
+    } catch (error) {
+      console.error('Error rendering overlay:', error);
+      return res.status(500).send('Error rendering map overlay');
+    }
+  }
+
+  // Area-based static image
+  else if (staticTypeMatch.groups.minx) {
     const minx = parseFloat(staticTypeMatch.groups.minx) || 0;
     const miny = parseFloat(staticTypeMatch.groups.miny) || 0;
     const maxx = parseFloat(staticTypeMatch.groups.maxx) || 0;
     const maxy = parseFloat(staticTypeMatch.groups.maxy) || 0;
+
+    // Validate bbox
+    const validation = validateStaticImageParams({ minx, miny, maxx, maxy });
+    if (!validation.valid) {
+      return res.status(400).send(validation.error);
+    }
+
     const bbox = [minx, miny, maxx, maxy];
     let center = [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2];
 
@@ -878,16 +1147,24 @@ async function handleStaticRequest(
       : item.dataProjWGStoInternalWGS;
 
     if (transformer) {
-      const minCorner = transformer(bbox.slice(0, 2));
-      const maxCorner = transformer(bbox.slice(2));
-      bbox[0] = minCorner[0];
-      bbox[1] = minCorner[1];
-      bbox[2] = maxCorner[0];
-      bbox[3] = maxCorner[1];
-      center = transformer(center);
+      try {
+        const minCorner = transformer(bbox.slice(0, 2));
+        const maxCorner = transformer(bbox.slice(2));
+        bbox[0] = minCorner[0];
+        bbox[1] = minCorner[1];
+        bbox[2] = maxCorner[0];
+        bbox[3] = maxCorner[1];
+        center = transformer(center);
+      } catch (error) {
+        console.error('Error transforming bbox:', error);
+        return res.status(400).send('Invalid bounding box for projection');
+      }
     }
 
-    const z = calcZForBBox(bbox, parsedWidth, parsedHeight, req.query);
+    const z = Math.min(
+      calcZForBBox(bbox, parsedWidth, parsedHeight, req.query),
+      CONSTANTS.MAX_ZOOM,
+    );
     const x = center[0];
     const y = center[1];
     const bearing = 0;
@@ -895,17 +1172,47 @@ async function handleStaticRequest(
 
     const paths = extractPathsFromQuery(req.query, transformer);
     const markers = extractMarkersFromQuery(req.query, options, transformer);
-    // prettier-ignore
-    const overlay = await renderOverlay(
-      z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, paths, markers, req.query,
+
+    try {
+      const overlay = await renderOverlay(
+        z,
+        x,
+        y,
+        bearing,
+        pitch,
+        parsedWidth,
+        parsedHeight,
+        scale,
+        paths,
+        markers,
+        req.query,
       );
 
-    // prettier-ignore
-    return await respondImage(
-      options, item, z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, format, res, overlay, 'static',
-     );
-  } else if (staticTypeMatch.groups.auto) {
-    // Area Static Image
+      return await respondImage(
+        options,
+        item,
+        z,
+        x,
+        y,
+        bearing,
+        pitch,
+        parsedWidth,
+        parsedHeight,
+        scale,
+        format,
+        res,
+        overlay,
+        'static',
+        verbose,
+      );
+    } catch (error) {
+      console.error('Error rendering overlay:', error);
+      return res.status(500).send('Error rendering map overlay');
+    }
+  }
+
+  // Auto-fit static image
+  else if (staticTypeMatch.groups.auto) {
     const bearing = 0;
     const pitch = 0;
 
@@ -927,7 +1234,11 @@ async function handleStaticRequest(
 
     // Check if we have at least one coordinate to calculate a bounding box
     if (coords.length < 1) {
-      return res.status(400).send('No coordinates provided');
+      return res
+        .status(400)
+        .send(
+          'No coordinates provided. Auto-fit requires at least one path or marker',
+        );
     }
 
     const bbox = [Infinity, Infinity, -Infinity, -Infinity];
@@ -947,26 +1258,77 @@ async function handleStaticRequest(
     // Calculate zoom level
     const maxZoom = parseFloat(req.query.maxzoom);
     let z = calcZForBBox(bbox, parsedWidth, parsedHeight, req.query);
+
+    if (verbose) {
+      console.log(
+        `Auto-fit calculated zoom: ${z} for bbox: [${bbox.join(', ')}]`,
+      );
+    }
+
+    // Apply maxzoom from query if provided
     if (maxZoom > 0) {
       z = Math.min(z, maxZoom);
+      if (verbose) {
+        console.log(`Applied query maxzoom: ${maxZoom}, final zoom: ${z}`);
+      }
+    }
+
+    // Always enforce hard maximum to prevent zooming beyond available tiles
+    // Most tile servers max out at zoom 22
+    const originalZ = z;
+    z = Math.min(z, CONSTANTS.MAX_ZOOM);
+
+    if (verbose && originalZ !== z) {
+      console.log(
+        `Capped zoom from ${originalZ} to ${z} (MAX_ZOOM=${CONSTANTS.MAX_ZOOM})`,
+      );
     }
 
     const x = center[0];
     const y = center[1];
 
-    // prettier-ignore
-    const overlay = await renderOverlay(
-      z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, paths, markers, req.query,
-    );
-
-    // prettier-ignore
-    return await respondImage(
-        options, item, z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, format, res, overlay, 'static',
+    try {
+      const overlay = await renderOverlay(
+        z,
+        x,
+        y,
+        bearing,
+        pitch,
+        parsedWidth,
+        parsedHeight,
+        scale,
+        paths,
+        markers,
+        req.query,
       );
+
+      return await respondImage(
+        options,
+        item,
+        z,
+        x,
+        y,
+        bearing,
+        pitch,
+        parsedWidth,
+        parsedHeight,
+        scale,
+        format,
+        res,
+        overlay,
+        'static',
+        verbose,
+      );
+    } catch (error) {
+      console.error('Error rendering overlay:', error);
+      return res.status(500).send('Error rendering map overlay');
+    }
   } else {
-    return res.sendStatus(404);
+    return res.status(404).send('Invalid static image type');
   }
 }
+
+// Initialize fonts registry
 const existingFonts = {};
 let maxScaleFactor = 2;
 
@@ -979,12 +1341,12 @@ export const serve_rendered = {
    * @returns {Promise<express.Application>} A promise that resolves to the Express app.
    */
   init: async function (options, repo, programOpts) {
-    const { verbose, tileSize: defailtTileSize = 256 } = programOpts;
+    const { verbose, tileSize: defaultTileSize = 256 } = programOpts;
     maxScaleFactor = Math.min(Math.floor(options.maxScaleFactor || 3), 9);
     const app = express().disable('x-powered-by');
 
     /**
-     * Handles requests for tile images.
+     * Handles requests for tile and static images.
      * @param {object} req - Express request object.
      * @param {object} res - Express response object.
      * @param {object} next - Express next middleware function.
@@ -1002,10 +1364,13 @@ export const serve_rendered = {
       async (req, res, next) => {
         try {
           const { p1, p2, id, p3, p4, scale, format } = req.params;
+
+          // Determine request type
           const requestType =
             (!p1 && p2 === 'static') || (p1 === 'static' && p2 === 'raw')
               ? 'static'
               : 'tile';
+
           if (verbose) {
             console.log(
               `Handling rendered %s request for: /styles/%s%s/%s/%s/%s%s.%s`,
@@ -1030,9 +1395,10 @@ export const serve_rendered = {
                 res,
                 next,
                 maxScaleFactor,
+                verbose,
               );
             }
-            return res.sendStatus(404);
+            return res.status(404).send('Static maps are disabled');
           }
 
           return handleTileRequest(
@@ -1042,10 +1408,11 @@ export const serve_rendered = {
             res,
             next,
             maxScaleFactor,
-            defailtTileSize,
+            defaultTileSize,
+            verbose,
           );
         } catch (e) {
-          console.log(e);
+          console.error('Error handling request:', e);
           return next(e);
         }
       },
