@@ -1430,8 +1430,9 @@ export const serve_rendered = {
     app.get('{/:tileSize}/:id.json', (req, res, next) => {
       const item = repo[req.params.id];
       if (!item) {
-        return res.sendStatus(404);
+        return res.status(404).send(`Style not found: ${req.params.id}`);
       }
+
       const tileSize = parseInt(req.params.tileSize, 10) || undefined;
       if (verbose) {
         console.log(
@@ -1442,8 +1443,9 @@ export const serve_rendered = {
           String(req.params.id).replace(/\n|\r/g, ''),
         );
       }
+
       const info = clone(item.tileJSON);
-      info.tileSize = tileSize != undefined ? tileSize : 256;
+      info.tileSize = tileSize !== undefined ? tileSize : 256;
       info.tiles = getTileUrls(
         req,
         info.tiles,
@@ -1459,6 +1461,7 @@ export const serve_rendered = {
     Object.assign(existingFonts, fonts);
     return app;
   },
+
   /**
    * Adds a new item to the repository.
    * @param {object} options Configuration options.
@@ -2012,16 +2015,21 @@ export const serve_rendered = {
     // eslint-disable-next-line security/detect-object-injection -- id is function parameter for removal
     const item = repo[id];
     if (item) {
-      item.map.renderers.forEach((pool) => {
-        pool.close();
-      });
-      item.map.renderersStatic.forEach((pool) => {
-        pool.close();
-      });
+      if (item.map && item.map.renderers) {
+        item.map.renderers.forEach((pool) => {
+          if (pool) pool.close();
+        });
+      }
+      if (item.map && item.map.renderersStatic) {
+        item.map.renderersStatic.forEach((pool) => {
+          if (pool) pool.close();
+        });
+      }
     }
     // eslint-disable-next-line security/detect-object-injection -- id is function parameter for removal
     delete repo[id];
   },
+
   /**
    * Removes all items from the repository.
    * @param {object} repo Repository object.
@@ -2032,37 +2040,41 @@ export const serve_rendered = {
       // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys() iteration
       const item = repo[id];
       if (item) {
-        item.map.renderers.forEach((pool) => {
-          pool.close();
-        });
-        item.map.renderersStatic.forEach((pool) => {
-          pool.close();
-        });
+        if (item.map && item.map.renderers) {
+          item.map.renderers.forEach((pool) => {
+            if (pool) pool.close();
+          });
+        }
+        if (item.map && item.map.renderersStatic) {
+          item.map.renderersStatic.forEach((pool) => {
+            if (pool) pool.close();
+          });
+        }
       }
       // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys() iteration
       delete repo[id];
     });
   },
+
   /**
-   * Get the elevation of terrain tile data by rendering it to a canvas image
+   * Get the elevation of terrain tile data by rendering it to a canvas image.
    * @param {Buffer} data The terrain tile data buffer.
-   * @param {object} param Required parameters (coordinates e.g.)
-   * @returns {Promise<object>} Promise resolving to elevation data
+   * @param {object} param Required parameters (coordinates etc.)
+   * @returns {Promise<object>} Promise resolving to elevation data.
    */
   getTerrainElevation: async function (data, param) {
     return new Promise((resolve, reject) => {
-      const image = new Image(); // Create a new Image object
+      const image = new Image();
       image.onload = () => {
         try {
           const canvas = createCanvas(param['tile_size'], param['tile_size']);
           const context = canvas.getContext('2d');
           context.drawImage(image, 0, 0);
 
-          // calculate pixel coordinate of tile,
-          // see https://developers.google.com/maps/documentation/javascript/examples/map-coordinates
+          // Calculate pixel coordinate of tile
+          // See https://developers.google.com/maps/documentation/javascript/examples/map-coordinates
           let siny = Math.sin((param['lat'] * Math.PI) / 180);
-          // Truncating to 0.9999 effectively limits latitude to 89.189. This is
-          // about a third of a tile past the edge of the world tile.
+          // Truncating to 0.9999 effectively limits latitude to 89.189
           siny = Math.min(Math.max(siny, -0.9999), 0.9999);
           const xWorld = param['tile_size'] * (0.5 + param['long'] / 360);
           const yWorld =
@@ -2078,38 +2090,45 @@ export const serve_rendered = {
             Math.floor(xWorld * scale) - xTile * param['tile_size'];
           const yPixel =
             Math.floor(yWorld * scale) - yTile * param['tile_size'];
+
           if (
             xPixel < 0 ||
             yPixel < 0 ||
             xPixel >= param['tile_size'] ||
             yPixel >= param['tile_size']
           ) {
-            return reject('Out of bounds Pixel');
+            return reject(
+              new Error(`Out of bounds pixel: ${xPixel},${yPixel}`),
+            );
           }
+
           const imgdata = context.getImageData(xPixel, yPixel, 1, 1);
           const red = imgdata.data[0];
           const green = imgdata.data[1];
           const blue = imgdata.data[2];
+
           let elevation;
           if (param['encoding'] === 'mapbox') {
             elevation = -10000 + (red * 256 * 256 + green * 256 + blue) * 0.1;
           } else if (param['encoding'] === 'terrarium') {
             elevation = red * 256 + green + blue / 256 - 32768;
           } else {
-            elevation = 'invalid encoding';
+            return reject(new Error(`Invalid encoding: ${param['encoding']}`));
           }
+
           param['elevation'] = elevation;
           param['red'] = red;
           param['green'] = green;
           param['blue'] = blue;
           resolve(param);
         } catch (error) {
-          reject(error); // Catch any errors during canvas operations
+          reject(error);
         }
       };
-      image.onerror = (err) => reject(err);
+      image.onerror = (err) =>
+        reject(new Error('Failed to load terrain image'));
 
-      // Load the image data - handle the sharp conversion outside the Promise
+      // Load the image data
       (async () => {
         try {
           if (param['format'] === 'webp') {
@@ -2119,7 +2138,7 @@ export const serve_rendered = {
             image.src = data;
           }
         } catch (err) {
-          reject(err); // Reject promise on sharp error
+          reject(err);
         }
       })();
     });
