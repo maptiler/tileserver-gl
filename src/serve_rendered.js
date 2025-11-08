@@ -96,37 +96,6 @@ const extensionToFormat = {
   '.webp': 'webp',
 };
 
-const ALLOWED_FORMATS = ['png', 'jpg', 'jpeg', 'webp'];
-
-/**
- * Sanitizes user input for safe inclusion in responses
- * @param {any} input - The input to sanitize
- * @returns {string} Sanitized string safe for inclusion in HTML/responses
- */
-function sanitizeInput(input) {
-  if (input === null || input === undefined) {
-    return '';
-  }
-  // Convert to string and remove any HTML/script tags and escape special characters
-  return String(input)
-    .replace(/[<>'"]/g, '') // Remove potential HTML/script characters
-    .replace(/[^\w\s\-.,]/g, '') // Keep only alphanumeric, spaces, and basic punctuation
-    .substring(0, 100); // Limit length to prevent abuse
-}
-
-/**
- * Sanitizes numeric input
- * @param {any} input - The input to sanitize
- * @returns {string} Sanitized numeric string
- */
-function sanitizeNumeric(input) {
-  const num = parseFloat(input);
-  if (isNaN(num)) {
-    return '(invalid)';
-  }
-  return String(num);
-}
-
 /**
  * Cache of response data by sharp output format and color.  Entry for empty
  * string is for unknown or unsupported formats.
@@ -527,7 +496,7 @@ function validateStaticImageParams(params) {
     if (Math.abs(lon) > CONSTANTS.MAX_LON) {
       return {
         valid: false,
-        error: `Longitude out of bounds: ${sanitizeNumeric(lon)}. Must be in [-${CONSTANTS.MAX_LON}, ${CONSTANTS.MAX_LON}]`,
+        error: `Longitude out of bounds: ${lon}. Must be in [-${CONSTANTS.MAX_LON}, ${CONSTANTS.MAX_LON}]`,
         values: null,
       };
     }
@@ -535,7 +504,7 @@ function validateStaticImageParams(params) {
     if (Math.abs(lat) > CONSTANTS.MAX_LAT) {
       return {
         valid: false,
-        error: `Latitude out of bounds: ${sanitizeNumeric(lat)}. Must be in [-${CONSTANTS.MAX_LAT}, ${CONSTANTS.MAX_LAT}]`,
+        error: `Latitude out of bounds: ${lat}. Must be in [-${CONSTANTS.MAX_LAT}, ${CONSTANTS.MAX_LAT}]`,
         values: null,
       };
     }
@@ -543,7 +512,7 @@ function validateStaticImageParams(params) {
     if (zoom < CONSTANTS.MIN_ZOOM) {
       return {
         valid: false,
-        error: `Zoom level too low: ${sanitizeNumeric(zoom)}. Minimum is ${CONSTANTS.MIN_ZOOM}`,
+        error: `Zoom level too low: ${zoom}. Minimum is ${CONSTANTS.MIN_ZOOM}`,
         values: null,
       };
     }
@@ -554,7 +523,7 @@ function validateStaticImageParams(params) {
     if (minx >= maxx) {
       return {
         valid: false,
-        error: `Invalid bounding box: minx (${sanitizeNumeric(minx)}) must be less than maxx (${sanitizeNumeric(maxx)})`,
+        error: `Invalid bounding box: minx (${minx}) must be less than maxx (${maxx})`,
         values: null,
       };
     }
@@ -562,7 +531,7 @@ function validateStaticImageParams(params) {
     if (miny >= maxy) {
       return {
         valid: false,
-        error: `Invalid bounding box: miny (${sanitizeNumeric(miny)}) must be less than maxy (${sanitizeNumeric(maxy)})`,
+        error: `Invalid bounding box: miny (${miny}) must be less than maxy (${maxy})`,
         values: null,
       };
     }
@@ -619,7 +588,7 @@ async function respondImage(
     return res
       .status(400)
       .send(
-        `Invalid center coordinates: lon=${sanitizeNumeric(lon)}, lat=${sanitizeNumeric(lat)}. ` +
+        `Invalid center coordinates: lon=${lon}, lat=${lat}. ` +
           `Longitude must be in [-${CONSTANTS.MAX_LON}, ${CONSTANTS.MAX_LON}], ` +
           `latitude must be in [-${CONSTANTS.MAX_LAT}, ${CONSTANTS.MAX_LAT}]`,
       );
@@ -640,17 +609,16 @@ async function respondImage(
       );
   }
 
-  if (!ALLOWED_FORMATS.includes(format)) {
+  if (format === 'png' || format === 'webp') {
+    /* format is valid */
+  } else if (format === 'jpg' || format === 'jpeg') {
+    format = 'jpeg';
+  } else {
     return res
       .status(400)
       .send(
-        `Invalid format: ${sanitizeInput(format)}. Supported formats: ${ALLOWED_FORMATS.join(', ')}`,
+        `Invalid format: ${format}. Supported formats: png, jpg, jpeg, webp`,
       );
-  }
-
-  // Normalize format
-  if (format === 'jpg') {
-    format = 'jpeg';
   }
 
   const tileMargin = Math.max(options.tileMargin || 0, 0);
@@ -824,7 +792,7 @@ async function respondImage(
 
           res.set({
             'Last-Modified': item.lastModified,
-            'Content-Type': `image/${ALLOWED_FORMATS.includes(format) ? format : 'png'}`,
+            'Content-Type': `image/${format}`,
           });
 
           const response = res.status(200).send(buffer);
@@ -925,7 +893,7 @@ async function handleTileRequest(
     return res
       .status(400)
       .send(
-        `Zoom level out of bounds: ${sanitizeNumeric(z)}. Must be in [${CONSTANTS.MIN_ZOOM}, ${CONSTANTS.MAX_ZOOM}]`,
+        `Zoom level out of bounds: ${z}. Must be in [${CONSTANTS.MIN_ZOOM}, ${CONSTANTS.MAX_ZOOM}]`,
       );
   }
 
@@ -934,7 +902,7 @@ async function handleTileRequest(
     return res
       .status(400)
       .send(
-        `X coordinate out of bounds: ${sanitizeNumeric(x)}. Must be in [0, ${maxTileCoord - 1}] for zoom ${sanitizeNumeric(z)}`,
+        `X coordinate out of bounds: ${x}. Must be in [0, ${maxTileCoord - 1}] for zoom ${z}`,
       );
   }
 
@@ -942,7 +910,7 @@ async function handleTileRequest(
     return res
       .status(400)
       .send(
-        `Y coordinate out of bounds: ${sanitizeNumeric(y)}. Must be in [0, ${maxTileCoord - 1}] for zoom ${sanitizeNumeric(z)}`,
+        `Y coordinate out of bounds: ${y}. Must be in [0, ${maxTileCoord - 1}] for zoom ${z}`,
       );
   }
 
@@ -1027,7 +995,7 @@ async function handleStaticRequest(
         return res
           .status(400)
           .send(
-            `Invalid dimensions: ${sanitizeInput(widthAndHeight)}. Width and height must be integers`,
+            `Invalid dimensions: ${widthAndHeight}. Width and height must be integers`,
           );
       }
 
@@ -1061,10 +1029,9 @@ async function handleStaticRequest(
 
   const scale = allowedScales(scaleParam, maxScaleFactor);
   if (scale == null) {
-    return res
-      .status(400)
-      .send(`Invalid scale factor: ${sanitizeInput(scaleParam)}`);
+    return res.status(400).send(`Invalid scale factor: ${scaleParam}`);
   }
+
   const isRaw = raw === 'raw';
 
   const staticTypeMatch = staticType.match(staticTypeRegex);
@@ -1470,8 +1437,10 @@ export const serve_rendered = {
       if (verbose) {
         console.log(
           `Handling rendered tilejson request for: /styles/%s%s.json`,
-          req.params.tileSize ? sanitizeInput(req.params.tileSize) + '/' : '',
-          sanitizeInput(req.params.id),
+          req.params.tileSize
+            ? String(req.params.tileSize).replace(/\n|\r/g, '') + '/'
+            : '',
+          String(req.params.id).replace(/\n|\r/g, ''),
         );
       }
 
