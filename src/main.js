@@ -12,7 +12,8 @@ import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import axios from 'axios';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import { server } from './server.js';
 import { isValidRemoteUrl } from './utils.js';
 import { openPMtiles, getPMtilesInfo } from './pmtiles_adapter.js';
@@ -349,19 +350,20 @@ fs.stat(path.resolve(opts.config), async (err, stats) => {
         console.log(`[DEMO] Downloading sample data (${filename}) from ${url}`);
 
         try {
-          const response = await axios({
-            url,
-            method: 'GET',
-            responseType: 'stream',
-          });
+          const response = await fetch(url);
 
-          response.data.pipe(writer);
-          writer.on('finish', () => startWithInputFile(filename));
-          writer.on('error', (err) =>
-            console.error(`Error writing file: ${err}`),
-          );
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          // Convert web ReadableStream to Node.js Readable stream and pipe to file
+          const nodeStream = Readable.fromWeb(response.body);
+          await pipeline(nodeStream, writer);
+
+          console.log('Download complete');
+          startWithInputFile(filename);
         } catch (error) {
-          console.error(`Error downloading file: ${error}`);
+          console.error(`Error downloading file: ${error.message || error}`);
         }
       }
     }
