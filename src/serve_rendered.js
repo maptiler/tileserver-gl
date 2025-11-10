@@ -24,7 +24,6 @@ import { SphericalMercator } from '@mapbox/sphericalmercator';
 import mlgl from '@maplibre/maplibre-gl-native';
 import polyline from '@mapbox/polyline';
 import proj4 from 'proj4';
-import axios from 'axios';
 import {
   allowedScales,
   allowedTileSizes,
@@ -533,6 +532,31 @@ async function respondImage(
   }
 
   pool.acquire(async (err, renderer) => {
+    // Check if pool.acquire failed or returned null/invalid renderer
+    if (err) {
+      console.error('Failed to acquire renderer from pool:', err);
+      return res.status(503).send('Renderer pool error');
+    }
+
+    if (!renderer) {
+      console.error(
+        'Renderer is null - likely crashed or failed to initialize',
+      );
+      return res.status(503).send('Renderer unavailable');
+    }
+
+    // Validate renderer has required methods (basic health check)
+    if (typeof renderer.render !== 'function') {
+      console.error('Renderer is invalid - missing render method');
+      // Destroy the bad renderer and remove from pool
+      try {
+        pool.destroy(renderer);
+      } catch (e) {
+        console.error('Error destroying invalid renderer:', e);
+      }
+      return res.status(503).send('Renderer invalid');
+    }
+
     // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
     let mlglZ;
     if (width === 512) {
@@ -562,111 +586,154 @@ async function respondImage(
       params.height += tileMargin * 2;
     }
 
-    renderer.render(params, (err, data) => {
-      pool.release(renderer);
-      if (err) {
-        console.error(err);
-        return res.status(500).header('Content-Type', 'text/plain').send(err);
+    // Set a timeout for the render operation to detect hung renderers
+    const renderTimeout = setTimeout(() => {
+      console.error('Renderer timeout - destroying potentially hung renderer');
+      try {
+        // Don't release back to pool, destroy it
+        pool.destroy(renderer);
+      } catch (e) {
+        console.error('Error destroying timed-out renderer:', e);
       }
-
-      const image = sharp(data, {
-        raw: {
-          premultiplied: true,
-          width: params.width * scale,
-          height: params.height * scale,
-          channels: 4,
-        },
-      });
-
-      if (z > 0 && tileMargin > 0) {
-        const y = mercator.px(params.center, z)[1];
-        const yoffset = Math.max(
-          Math.min(0, y - 128 - tileMargin),
-          y + 128 + tileMargin - Math.pow(2, z + 8),
-        );
-        image.extract({
-          left: tileMargin * scale,
-          top: (tileMargin + yoffset) * scale,
-          width: width * scale,
-          height: height * scale,
-        });
+      if (!res.headersSent) {
+        res.status(503).send('Renderer timeout');
       }
-      // HACK(Part 2) 256px tiles are a zoom level lower than maplibre-native default tiles. this hack allows tileserver-gl to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native. Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized here.
+    }, 30000); // 30 second timeout
 
-      if (z === 0 && width === 256) {
-        image.resize(width * scale, height * scale);
-      }
-      // END HACK(Part 2)
+    try {
+      renderer.render(params, (err, data) => {
+        clearTimeout(renderTimeout);
 
-      const composites = [];
-      if (overlay) {
-        composites.push({ input: overlay });
-      }
-      if (item.watermark) {
-        const canvas = renderWatermark(width, height, scale, item.watermark);
-
-        composites.push({ input: canvas.toBuffer() });
-      }
-
-      if (mode === 'static' && item.staticAttributionText) {
-        const canvas = renderAttribution(
-          width,
-          height,
-          scale,
-          item.staticAttributionText,
-        );
-
-        composites.push({ input: canvas.toBuffer() });
-      }
-
-      if (composites.length > 0) {
-        image.composite(composites);
-      }
-
-      // Legacy formatQuality is deprecated but still works
-      const formatQualities = options.formatQuality || {};
-      if (Object.keys(formatQualities).length !== 0) {
-        console.log(
-          'WARNING: The formatQuality option is deprecated and has been replaced with formatOptions. Please see the documentation. The values from formatQuality will be used if a quality setting is not provided via formatOptions.',
-        );
-      }
-      // eslint-disable-next-line security/detect-object-injection -- format is validated above
-      const formatQuality = formatQualities[format];
-
-      // eslint-disable-next-line security/detect-object-injection -- format is validated above
-      const formatOptions = (options.formatOptions || {})[format] || {};
-
-      if (format === 'png') {
-        image.png({
-          progressive: formatOptions.progressive,
-          compressionLevel: formatOptions.compressionLevel,
-          adaptiveFiltering: formatOptions.adaptiveFiltering,
-          palette: formatOptions.palette,
-          quality: formatOptions.quality,
-          effort: formatOptions.effort,
-          colors: formatOptions.colors,
-          dither: formatOptions.dither,
-        });
-      } else if (format === 'jpeg') {
-        image.jpeg({
-          quality: formatOptions.quality || formatQuality || 80,
-          progressive: formatOptions.progressive,
-        });
-      } else if (format === 'webp') {
-        image.webp({ quality: formatOptions.quality || formatQuality || 90 });
-      }
-      image.toBuffer((err, buffer, info) => {
-        if (!buffer) {
-          return res.status(404).send('Not found');
+        if (err) {
+          console.error('Render error:', err);
+          // Destroy renderer instead of releasing it back to pool since it may be corrupted
+          try {
+            pool.destroy(renderer);
+          } catch (e) {
+            console.error('Error destroying failed renderer:', e);
+          }
+          if (!res.headersSent) {
+            return res
+              .status(500)
+              .header('Content-Type', 'text/plain')
+              .send(err);
+          }
+          return;
         }
 
-        res.set({
-          'Last-Modified': item.lastModified,
-          'Content-Type': `image/${format}`,
+        // Only release if render was successful
+        pool.release(renderer);
+
+        const image = sharp(data, {
+          raw: {
+            premultiplied: true,
+            width: params.width * scale,
+            height: params.height * scale,
+            channels: 4,
+          },
         });
-        return res.status(200).send(buffer);
+
+        if (z > 0 && tileMargin > 0) {
+          const y = mercator.px(params.center, z)[1];
+          const yoffset = Math.max(
+            Math.min(0, y - 128 - tileMargin),
+            y + 128 + tileMargin - Math.pow(2, z + 8),
+          );
+          image.extract({
+            left: tileMargin * scale,
+            top: (tileMargin + yoffset) * scale,
+            width: width * scale,
+            height: height * scale,
+          });
+        }
+        // HACK(Part 2) 256px tiles are a zoom level lower than maplibre-native default tiles. this hack allows tileserver-gl to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native. Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized here.
+
+        if (z === 0 && width === 256) {
+          image.resize(width * scale, height * scale);
+        }
+        // END HACK(Part 2)
+
+        const composites = [];
+        if (overlay) {
+          composites.push({ input: overlay });
+        }
+        if (item.watermark) {
+          const canvas = renderWatermark(width, height, scale, item.watermark);
+
+          composites.push({ input: canvas.toBuffer() });
+        }
+
+        if (mode === 'static' && item.staticAttributionText) {
+          const canvas = renderAttribution(
+            width,
+            height,
+            scale,
+            item.staticAttributionText,
+          );
+
+          composites.push({ input: canvas.toBuffer() });
+        }
+
+        if (composites.length > 0) {
+          image.composite(composites);
+        }
+
+        // Legacy formatQuality is deprecated but still works
+        const formatQualities = options.formatQuality || {};
+        if (Object.keys(formatQualities).length !== 0) {
+          console.log(
+            'WARNING: The formatQuality option is deprecated and has been replaced with formatOptions. Please see the documentation. The values from formatQuality will be used if a quality setting is not provided via formatOptions.',
+          );
+        }
+        // eslint-disable-next-line security/detect-object-injection -- format is validated above
+        const formatQuality = formatQualities[format];
+
+        // eslint-disable-next-line security/detect-object-injection -- format is validated above
+        const formatOptions = (options.formatOptions || {})[format] || {};
+
+        if (format === 'png') {
+          image.png({
+            progressive: formatOptions.progressive,
+            compressionLevel: formatOptions.compressionLevel,
+            adaptiveFiltering: formatOptions.adaptiveFiltering,
+            palette: formatOptions.palette,
+            quality: formatOptions.quality,
+            effort: formatOptions.effort,
+            colors: formatOptions.colors,
+            dither: formatOptions.dither,
+          });
+        } else if (format === 'jpeg') {
+          image.jpeg({
+            quality: formatOptions.quality || formatQuality || 80,
+            progressive: formatOptions.progressive,
+          });
+        } else if (format === 'webp') {
+          image.webp({ quality: formatOptions.quality || formatQuality || 90 });
+        }
+        image.toBuffer((err, buffer, info) => {
+          if (!buffer) {
+            return res.status(404).send('Not found');
+          }
+
+          res.set({
+            'Last-Modified': item.lastModified,
+            'Content-Type': `image/${format}`,
+          });
+          return res.status(200).send(buffer);
+        });
       });
-    });
+    } catch (error) {
+      clearTimeout(renderTimeout);
+      console.error('Unexpected error during render:', error);
+      try {
+        pool.destroy(renderer);
+      } catch (e) {
+        console.error('Error destroying renderer after error:', e);
+      }
+      if (!res.headersSent) {
+        return res.status(500).send('Render failed');
+      }
+    }
   });
 }
 
@@ -1254,32 +1321,18 @@ export const serve_rendered = {
               callback(null, response);
             } else if (protocol === 'http' || protocol === 'https') {
               try {
-                const response = await axios.get(req.url, {
-                  responseType: 'arraybuffer', // Get the response as raw buffer
-                  // Axios handles gzip by default, so no need for a gzip flag
+                // Add timeout to prevent hanging on unreachable hosts
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+                const response = await fetch(req.url, {
+                  signal: controller.signal,
                 });
 
-                const responseHeaders = response.headers;
-                const responseData = response.data;
+                clearTimeout(timeoutId);
 
-                const parsedResponse = {};
-                if (responseHeaders['last-modified']) {
-                  parsedResponse.modified = new Date(
-                    responseHeaders['last-modified'],
-                  );
-                }
-                if (responseHeaders.expires) {
-                  parsedResponse.expires = new Date(responseHeaders.expires);
-                }
-                if (responseHeaders.etag) {
-                  parsedResponse.etag = responseHeaders.etag;
-                }
-
-                parsedResponse.data = responseData;
-                callback(null, parsedResponse);
-              } catch (error) {
-                if (error.response && error.response.status === 410) {
-                  // This is the 410 "Gone" error, treat as sparse
+                // Handle 410 Gone as sparse response
+                if (response.status === 410) {
                   if (verbose) {
                     console.log(
                       'fetchTile warning on %s, sparse response due to 410 Gone',
@@ -1287,22 +1340,66 @@ export const serve_rendered = {
                     );
                   }
                   callback();
-                } else {
-                  // For all other errors (e.g., network errors, 404, 500, etc.) return empty content.
-                  console.error(
-                    `Error fetching remote URL ${req.url}:`,
-                    error.message || error,
-                    error.response
-                      ? `Status: ${error.response.status}`
-                      : 'No response received',
-                  );
-
-                  const parts = url.parse(req.url);
-                  const extension = path.extname(parts.pathname).toLowerCase();
-                  // eslint-disable-next-line security/detect-object-injection -- extension is from path.extname, limited set
-                  const format = extensionToFormat[extension] || '';
-                  createEmptyResponse(format, '', callback);
+                  return;
                 }
+
+                // Check for other non-ok responses
+                if (!response.ok) {
+                  throw new Error(
+                    `HTTP ${response.status}: ${response.statusText}`,
+                  );
+                }
+
+                const responseHeaders = response.headers;
+                const responseData = await response.arrayBuffer();
+
+                const parsedResponse = {};
+                if (responseHeaders.get('last-modified')) {
+                  parsedResponse.modified = new Date(
+                    responseHeaders.get('last-modified'),
+                  );
+                }
+                if (responseHeaders.get('expires')) {
+                  parsedResponse.expires = new Date(
+                    responseHeaders.get('expires'),
+                  );
+                }
+                if (responseHeaders.get('etag')) {
+                  parsedResponse.etag = responseHeaders.get('etag');
+                }
+
+                parsedResponse.data = Buffer.from(responseData);
+                callback(null, parsedResponse);
+              } catch (error) {
+                // Log DNS failures more prominently as they often indicate config issues
+                // Native fetch wraps DNS errors in error.cause
+                if (error.cause?.code === 'ENOTFOUND') {
+                  console.error(
+                    `DNS RESOLUTION FAILED for ${req.url}. ` +
+                      `This domain may be unreachable or misconfigured in your style. ` +
+                      `Consider removing it or fixing the DNS.`,
+                  );
+                }
+
+                // Handle AbortController timeout
+                if (error.name === 'AbortError') {
+                  console.error(
+                    `FETCH TIMEOUT for ${req.url}. ` +
+                      `The request took longer than 10 seconds to complete.`,
+                  );
+                }
+
+                // For all other errors (e.g., network errors, 404, 500, etc.) return empty content.
+                console.error(
+                  `Error fetching remote URL ${req.url}:`,
+                  error.message || error,
+                );
+
+                const parts = url.parse(req.url);
+                const extension = path.extname(parts.pathname).toLowerCase();
+                // eslint-disable-next-line security/detect-object-injection -- extension is from path.extname, limited set
+                const format = extensionToFormat[extension] || '';
+                createEmptyResponse(format, '', callback);
               }
             } else if (protocol === 'file') {
               const name = decodeURI(req.url).substring(protocol.length + 3);
