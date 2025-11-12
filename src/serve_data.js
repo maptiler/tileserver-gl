@@ -121,7 +121,7 @@ export const serve_data = {
 
       if (isGzipped) {
         data = await gunzipP(data);
-        isGzipped = false;
+
       }
 
       if (tileJSONFormat === 'pbf') {
