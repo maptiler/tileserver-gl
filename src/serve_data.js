@@ -164,9 +164,7 @@ export const serve_data = {
       headers['Content-Encoding'] = 'gzip';
       res.set(headers);
 
-      if (!isGzipped) {
-        data = await gzipP(data);
-      }
+      data = await gzipP(data);
 
       return res.status(200).send(data);
     });
