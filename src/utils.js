@@ -166,7 +166,7 @@ export function getTileUrls(
       if (domain.indexOf('*') !== -1) {
         if (relativeSubdomainsUsable) {
           const newParts = hostParts.slice(1);
-          newParts.unshift(domain.replace('*', hostParts[0]));
+          newParts.unshift(domain.replace(/\*/g, hostParts[0]));
           newDomains.push(newParts.join('.'));
         }
       } else {
