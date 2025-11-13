@@ -9,6 +9,7 @@
   <link rel="stylesheet" type="text/css" href="{{public_url}}maplibre-gl-inspect.css{{&key_query}}" />
   <script src="{{public_url}}maplibre-gl.js{{&key_query}}"></script>
   <script src="{{public_url}}maplibre-gl-inspect.js{{&key_query}}"></script>
+  <script src="{{public_url}}contour-control.js{{&key_query}}"></script>
   {{^is_light}}
   <script src="{{public_url}}elevation-control.js{{&key_query}}"></script>
   {{/is_light}}
@@ -23,6 +24,7 @@
     h1 {position:absolute;top:5px;right:0;width:240px;margin:0;line-height:20px;font-size:20px;}
     #layerList {position:absolute;top:35px;right:0;bottom:0;width:240px;overflow:auto;}
     #layerList div div {width:15px;height:15px;display:inline-block;}
+    .maplibre-ctrl-contour-active button { color: #33b5e5; font-weight: bold; }
     {{^is_light}}
     .maplibre-ctrl-elevation { padding-left: 5px; padding-right: 5px; }
     {{/is_light}}
@@ -76,6 +78,8 @@
     {{/is_terrain}}
     {{#is_terrain}}
 
+    let baseUrl = window.location.origin;
+
     var style = {
       version: 8,
       sources: {
@@ -88,8 +92,13 @@
           "type": "raster-dem",
           "url": "{{public_url}}data/{{id}}.json",
           "encoding": "{{terrain_encoding}}"
+        },
+        "contour": {
+          "type": "vector",
+          "tiles": [ baseUrl + "/data/{{id}}/contour/{z}/{x}/{y}" ],
         }
       },
+      "glyphs": "/fonts/{fontstack}/{range}.pbf",
       "terrain": {
         "source": "terrain"
       },
@@ -113,6 +122,33 @@
             "hillshade-shadow-color": "hsl(39, 21%, 33%)",
             "hillshade-illumination-direction": 315,
             "hillshade-exaggeration": 0.8
+          }
+        },
+        {
+          "id": "contours",
+          "type": "line",
+          "source": "contour",
+          "source-layer": "contours",
+          "paint": {
+            "line-opacity": 1,
+            "line-width": ["match", ["get", "level"], 1, 1, 0.5]
+          }
+        },
+        {
+          "id": "contour-label",
+          "type": "symbol",
+          "source": "contour",
+          "source-layer": "contours",
+          "filter": [">", ["get", "ele"], 0 ],
+          "paint": {
+            "text-halo-color": "white",
+            "text-halo-width": 1
+          },
+          "layout": {
+            "symbol-placement": "line",
+            "text-size": 10,
+            "text-field": "{ele}",
+            "text-font": ["Noto Sans Bold"]
           }
         }
       ]
@@ -138,6 +174,14 @@
     map.addControl(
       new maplibregl.TerrainControl({
         source: "terrain",
+      })
+    );
+
+    map.addControl(
+      new MaplibreContourControl({
+        source: "contour",
+        visibility: false,
+        layers: [ "contours", "contour-label" ]
       })
     );
 

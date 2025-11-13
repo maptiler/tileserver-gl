@@ -9,6 +9,7 @@ import Pbf from 'pbf';
 import { VectorTile } from '@mapbox/vector-tile';
 import { SphericalMercator } from '@mapbox/sphericalmercator';
 
+import { LocalDemManager } from './contour.js';
 import {
   fixTileJSONCenter,
   getTileUrls,
@@ -167,6 +168,116 @@ export const serve_data = {
       data = await gzipP(data);
 
       return res.status(200).send(data);
+    });
+
+    /**
+     * Handles requests for contour data.
+     * @param {object} req - Express request object.
+     * @param {object} res - Express response object.
+     * @param {string} req.params.id - ID of the contour data.
+     * @param {string} req.params.z - Z coordinate of the tile.
+     * @param {string} req.params.x - X coordinate of the tile (either integer or float).
+     * @param {string} req.params.y - Y coordinate of the tile (either integer or float).
+     * @returns {Promise<void>}
+     */
+    app.get('/:id/contour/:z/:x/:y', async (req, res, next) => {
+      try {
+        if (verbose) {
+          console.log(
+            `Handling contour request for: /data/%s/contour/%s/%s/%s`,
+            String(req.params.id).replace(/\n|\r/g, ''),
+            String(req.params.z).replace(/\n|\r/g, ''),
+            String(req.params.x).replace(/\n|\r/g, ''),
+            String(req.params.y).replace(/\n|\r/g, ''),
+          );
+        }
+        const item = repo?.[req.params.id];
+        if (!item) return res.sendStatus(404);
+        if (!item.source) return res.status(404).send('Missing source');
+        if (!item.tileJSON) return res.status(404).send('Missing tileJSON');
+        if (!item.sourceType) return res.status(404).send('Missing sourceType');
+
+        const { source, tileJSON, sourceType } = item;
+
+        if (sourceType !== 'pmtiles' && sourceType !== 'mbtiles') {
+          return res
+            .status(400)
+            .send('Invalid sourceType. Must be pmtiles or mbtiles.');
+        }
+
+        const encoding = tileJSON?.encoding;
+        if (encoding == null) {
+          return res.status(400).send('Missing tileJSON.encoding');
+        } else if (encoding !== 'terrarium' && encoding !== 'mapbox') {
+          return res
+            .status(400)
+            .send('Invalid encoding. Must be terrarium or mapbox.');
+        }
+
+        const format = tileJSON?.format;
+        if (format == null) {
+          return res.status(400).send('Missing tileJSON.format');
+        } else if (format !== 'webp' && format !== 'png') {
+          return res.status(400).send('Invalid format. Must be webp or png.');
+        }
+
+        const maxzoom = tileJSON?.maxzoom;
+        if (maxzoom == null) {
+          return res.status(400).send('Missing tileJSON.maxzoom');
+        }
+
+        const z = parseInt(req.params.z, 10);
+        const x = parseFloat(req.params.x);
+        const y = parseFloat(req.params.y);
+
+        const demManagerInit = new LocalDemManager(
+          encoding,
+          maxzoom,
+          source,
+          sourceType,
+        );
+        const demManager = await demManagerInit.getManager();
+
+        let levels;
+        if (z <= 8) {
+          levels = 1000;
+        } else if (z <= 10) {
+          levels = 500;
+        } else if (z <= 11) {
+          levels = 250;
+        } else if (z <= 12) {
+          levels = 100;
+        } else if (z <= 13) {
+          levels = 50;
+        } else if (z <= 14) {
+          levels = 25;
+        } else if (z <= 15) {
+          levels = 20;
+        } else if (z <= 17) {
+          levels = 10;
+        } else if (z >= 18) {
+          levels = 5;
+        }
+
+        const { arrayBuffer } = await demManager.fetchContourTile(
+          z,
+          x,
+          y,
+          { levels: [levels] },
+          new AbortController(),
+        );
+        // Set the Content-Type header here
+        res.setHeader('Content-Type', 'application/x-protobuf');
+        res.setHeader('Content-Encoding', 'gzip');
+        let data = Buffer.from(arrayBuffer);
+        data = await gzipP(data);
+        res.send(data);
+      } catch (err) {
+        return res
+          .status(500)
+          .header('Content-Type', 'text/plain')
+          .send(err.message);
+      }
     });
 
     /**
