@@ -35,14 +35,26 @@ class S3Source {
     this.url = s3Url;
     this.verbose = verbose;
 
-    // Determine the final profile: Config takes precedence over URL
+    // Apply configuration precedence: Config > URL > Default
+    // Using || for strings (empty string = not set)
+    // Using ?? for booleans (false is valid value)
     const profile = s3Profile || parsed.profile;
-
-    // Determine requestPayer: Config takes precedence over URL
     this.requestPayer = configRequestPayer ?? parsed.requestPayer;
-
-    // Determine region: Config takes precedence over URL
     this.region = configRegion || parsed.region;
+
+    // Log precedence decisions for debugging
+    if (verbose >= 3) {
+      console.log(`S3 config precedence for ${s3Url}:`);
+      console.log(
+        `  Profile: ${s3Profile ? 'config' : parsed.profile ? 'url' : 'default'} = ${profile || 'none'}`,
+      );
+      console.log(
+        `  Region: ${configRegion ? 'config' : parsed.region !== (process.env.AWS_REGION || 'us-east-1') ? 'url' : 'env/default'} = ${this.region}`,
+      );
+      console.log(
+        `  RequestPayer: ${configRequestPayer !== undefined ? 'config' : parsed.requestPayer ? 'url' : 'default'} = ${this.requestPayer}`,
+      );
+    }
 
     // Create S3 client
     this.s3Client = this.createS3Client(
@@ -61,6 +73,14 @@ class S3Source {
    * @throws {Error} - Throws an error if the URL format is invalid.
    */
   parseS3Url(url, s3UrlFormat) {
+    // Validate s3UrlFormat if provided
+    if (s3UrlFormat && s3UrlFormat !== 'aws' && s3UrlFormat !== 'custom') {
+      console.warn(
+        `Invalid s3UrlFormat: "${s3UrlFormat}". Must be "aws" or "custom". Using auto-detection.`,
+      );
+      s3UrlFormat = undefined;
+    }
+
     let region = process.env.AWS_REGION || 'us-east-1';
     let profile = null;
     let requestPayer = false;
@@ -75,9 +95,7 @@ class S3Source {
       s3UrlFormat = s3UrlFormat ?? params.get('s3UrlFormat'); // Config overrides URL
 
       const payerVal = params.get('requestPayer');
-      if (payerVal !== null) {
-        requestPayer = payerVal === 'true' || payerVal === '1';
-      }
+      requestPayer = payerVal === 'true' || payerVal === '1';
     }
 
     // Helper to build result object
@@ -115,7 +133,13 @@ class S3Source {
       if (match) return buildResult(null, match[1], match[2]);
     }
 
-    throw new Error(`Invalid S3 URL format: ${url}`);
+    throw new Error(
+      `Invalid S3 URL format: ${url}\n` +
+        `Expected formats:\n` +
+        `  AWS S3: s3://bucket-name/path/to/file.pmtiles\n` +
+        `  Custom endpoint: s3://endpoint.com/bucket/path/to/file.pmtiles\n` +
+        `Use s3UrlFormat parameter to override auto-detection if needed.`,
+    );
   }
 
   /**
@@ -299,7 +323,7 @@ export function openPMtiles(
   s3Profile,
   requestPayer,
   s3Region,
-  s3UrlFormat, // Add this parameter
+  s3UrlFormat,
   verbose = 0,
 ) {
   let pmtiles = undefined;
@@ -313,7 +337,7 @@ export function openPMtiles(
       s3Profile,
       requestPayer,
       s3Region,
-      s3UrlFormat, // Add this parameter
+      s3UrlFormat,
       verbose,
     );
     pmtiles = new PMTiles(source);
