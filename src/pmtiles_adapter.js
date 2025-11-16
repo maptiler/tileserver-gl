@@ -69,14 +69,10 @@ class S3Source {
     const [cleanUrl, queryString] = url.split('?');
     if (queryString) {
       const params = new URLSearchParams(queryString);
-      // Extract URL parameters
-      const urlProfile = params.get('profile');
-      const urlRegion = params.get('region');
-      const urlS3UrlFormat = params.get('s3UrlFormat');
-
-      if (urlProfile) profile = urlProfile;
-      if (urlRegion) region = urlRegion;
-      if (urlS3UrlFormat) s3UrlFormat = urlS3UrlFormat;
+      // URL parameters override defaults
+      profile = params.get('profile') ?? profile;
+      region = params.get('region') ?? region;
+      s3UrlFormat = s3UrlFormat ?? params.get('s3UrlFormat'); // Config overrides URL
 
       const payerVal = params.get('requestPayer');
       if (payerVal !== null) {
