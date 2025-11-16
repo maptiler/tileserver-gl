@@ -61,7 +61,6 @@ class S3Source {
    * @throws {Error} - Throws an error if the URL format is invalid.
    */
   parseS3Url(url, s3UrlFormat) {
-    // Initialize with defaults/environment
     let region = process.env.AWS_REGION || 'us-east-1';
     let profile = null;
     let requestPayer = false;
@@ -70,16 +69,18 @@ class S3Source {
     const [cleanUrl, queryString] = url.split('?');
     if (queryString) {
       const params = new URLSearchParams(queryString);
-      // Config options override URL parameters
-      profile = profile ?? params.get('profile');
-      region = region ?? params.get('region');
-      s3UrlFormat = s3UrlFormat ?? params.get('s3UrlFormat');
+      // Extract URL parameters
+      const urlProfile = params.get('profile');
+      const urlRegion = params.get('region');
+      const urlS3UrlFormat = params.get('s3UrlFormat');
 
-      if (requestPayer === undefined) {
-        const payerVal = params.get('requestPayer');
-        if (payerVal !== null) {
-          requestPayer = payerVal === 'true' || payerVal === '1';
-        }
+      if (urlProfile) profile = urlProfile;
+      if (urlRegion) region = urlRegion;
+      if (urlS3UrlFormat) s3UrlFormat = urlS3UrlFormat;
+
+      const payerVal = params.get('requestPayer');
+      if (payerVal !== null) {
+        requestPayer = payerVal === 'true' || payerVal === '1';
       }
     }
 
