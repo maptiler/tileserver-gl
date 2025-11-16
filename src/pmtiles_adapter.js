@@ -17,6 +17,7 @@ class S3Source {
    * @param {string} [s3Profile] - Optional AWS credential profile name from config.
    * @param {boolean} [configRequestPayer] - Optional flag from config for requester pays buckets.
    * @param {string} [configRegion] - Optional AWS region from config.
+   * @param {string} [s3UrlFormat] - Optional S3 URL format from config: 'aws' or 'custom'.
    * @param {boolean} [verbose] - Whether to show verbose logging.
    */
   constructor(
@@ -24,9 +25,10 @@ class S3Source {
     s3Profile,
     configRequestPayer,
     configRegion,
+    s3UrlFormat,
     verbose = false,
   ) {
-    const parsed = this.parseS3Url(s3Url);
+    const parsed = this.parseS3Url(s3Url, s3UrlFormat);
     this.bucket = parsed.bucket;
     this.key = parsed.key;
     this.endpoint = parsed.endpoint;
@@ -54,57 +56,66 @@ class S3Source {
   /**
    * Parses various S3 URL formats into bucket, key, endpoint, region, and profile.
    * @param {string} url - The S3 URL to parse.
+   * @param {string} [s3UrlFormat] - Optional format override: 'aws' or 'custom'.
    * @returns {object} - An object containing bucket, key, endpoint, region, and profile.
    * @throws {Error} - Throws an error if the URL format is invalid.
    */
-  parseS3Url(url) {
+  parseS3Url(url, s3UrlFormat) {
     // Initialize with defaults/environment
     let region = process.env.AWS_REGION || 'us-east-1';
     let profile = null;
     let requestPayer = false;
 
-    const queryString = url.split('?')[1];
+    // Parse URL parameters
+    const [cleanUrl, queryString] = url.split('?');
     if (queryString) {
       const params = new URLSearchParams(queryString);
-      // Update profile if provided in url parameters
-      profile = params.get('profile') ?? profile;
-      // Update region if provided in url parameters
-      region = params.get('region') ?? region;
-      // Update requestPayer if provided in url parameters
-      const payerVal = params.get('requestPayer');
-      requestPayer = payerVal === 'true' || payerVal === '1';
+      // Config options override URL parameters
+      profile = profile ?? params.get('profile');
+      region = region ?? params.get('region');
+      s3UrlFormat = s3UrlFormat ?? params.get('s3UrlFormat');
+
+      if (requestPayer === undefined) {
+        const payerVal = params.get('requestPayer');
+        if (payerVal !== null) {
+          requestPayer = payerVal === 'true' || payerVal === '1';
+        }
+      }
     }
 
-    // Clean URL for format detection (remove trailing slashes)
-    const baseUrl = url.split('?')[0];
-    const cleanUrl = baseUrl.replace(/\/+$/, '');
+    // Helper to build result object
+    const buildResult = (endpoint, bucket, key) => ({
+      endpoint: endpoint ? `https://${endpoint}` : null,
+      bucket,
+      key,
+      region,
+      profile,
+      requestPayer,
+    });
 
-    // Format 1: s3://endpoint/bucket/key (S3-compatible storage)
-    // Example: s3://storage.example.com/mybucket/path/to/tiles.pmtile
-    const endpointMatch = cleanUrl.match(/^s3:\/\/([^/]+)\/([^/]+)\/(.+)$/);
-    if (endpointMatch) {
-      return {
-        endpoint: `https://${endpointMatch[1]}`,
-        bucket: endpointMatch[2],
-        key: endpointMatch[3],
-        region,
-        profile,
-        requestPayer,
-      };
-    }
+    // Define patterns based on format
+    const patterns = {
+      customWithDot: /^s3:\/\/([^/]*\.[^/]+)\/([^/]+)\/(.+)$/, // Auto-detect: requires dot
+      customForced: /^s3:\/\/([^/]+)\/([^/]+)\/(.+)$/, // Explicit: no dot required
+      aws: /^s3:\/\/([^/]+)\/(.+)$/,
+    };
 
-    // Format 2: s3://bucket/key (AWS S3 default)
-    // Example: s3://my-bucket/path/to/tiles.pmtiles
-    const awsMatch = cleanUrl.match(/^s3:\/\/([^/]+)\/(.+)$/);
-    if (awsMatch) {
-      return {
-        endpoint: null, // Use default AWS endpoint
-        bucket: awsMatch[1],
-        key: awsMatch[2],
-        region,
-        profile,
-        requestPayer,
-      };
+    // Match based on s3UrlFormat or auto-detect
+    let match;
+
+    if (s3UrlFormat === 'custom') {
+      match = cleanUrl.match(patterns.customForced);
+      if (match) return buildResult(match[1], match[2], match[3]);
+    } else if (s3UrlFormat === 'aws') {
+      match = cleanUrl.match(patterns.aws);
+      if (match) return buildResult(null, match[1], match[2]);
+    } else {
+      // Auto-detection: try custom (with dot) first, then AWS
+      match = cleanUrl.match(patterns.customWithDot);
+      if (match) return buildResult(match[1], match[2], match[3]);
+
+      match = cleanUrl.match(patterns.aws);
+      if (match) return buildResult(null, match[1], match[2]);
     }
 
     throw new Error(`Invalid S3 URL format: ${url}`);
@@ -282,6 +293,7 @@ async function readFileBytes(fd, buffer, offset) {
  * @param {string} [s3Profile] - Optional AWS credential profile name.
  * @param {boolean} [requestPayer] - Optional flag for requester pays buckets.
  * @param {string} [s3Region] - Optional AWS region.
+ * @param {string} [s3UrlFormat] - Optional S3 URL format: 'aws' or 'custom'.
  * @param {boolean} [verbose] - Whether to show verbose logging.
  * @returns {PMTiles} - A PMTiles instance.
  */
@@ -290,6 +302,7 @@ export function openPMtiles(
   s3Profile,
   requestPayer,
   s3Region,
+  s3UrlFormat, // Add this parameter
   verbose = 0,
 ) {
   let pmtiles = undefined;
@@ -303,6 +316,7 @@ export function openPMtiles(
       s3Profile,
       requestPayer,
       s3Region,
+      s3UrlFormat, // Add this parameter
       verbose,
     );
     pmtiles = new PMTiles(source);

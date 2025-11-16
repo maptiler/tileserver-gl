@@ -64,6 +64,9 @@ The `--file` option supports multiple source types:
   # Requester-pays bucket
   tileserver-gl --file "s3://bucket/tiles.pmtiles?requestPayer=true"
 
+  # Bucket name with dots (force AWS S3 interpretation)
+  tileserver-gl --file "s3://my.bucket.name/tiles.pmtiles?s3UrlFormat=aws"
+
   # All options combined
   tileserver-gl --file "s3://bucket/tiles.pmtiles?profile=prod&region=us-west-2&requestPayer=true"
 
@@ -81,6 +84,8 @@ You can also use `pmtiles://` or `mbtiles://` prefixes to explicitly specify the
 
 .. note::
     For S3 sources, AWS credentials must be configured via environment variables, AWS credentials file (`~/.aws/credentials` on Linux/macOS or `C:\Users\USERNAME\.aws\credentials` on Windows), or IAM roles. 
+    
+    The `s3UrlFormat` parameter can be set to `aws` or `custom` to override auto-detection when needed (e.g., for AWS bucket names containing dots).
     
     **When using Docker**, the host credentials file can be mounted to the container's user home directory:
 

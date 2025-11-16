@@ -389,6 +389,7 @@ export const serve_data = {
         params.s3Profile,
         params.requestPayer,
         params.s3Region,
+        params.s3UrlFormat,
         verbose,
       );
       sourceType = 'pmtiles';

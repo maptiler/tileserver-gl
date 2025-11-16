@@ -1594,6 +1594,7 @@ export const serve_rendered = {
         let s3Profile;
         let requestPayer;
         let s3Region;
+        let s3UrlFormat;
         const dataInfo = dataResolver(dataId);
         if (dataInfo.inputFile) {
           inputFile = dataInfo.inputFile;
@@ -1602,6 +1603,7 @@ export const serve_rendered = {
           s3Profile = dataInfo.s3Profile;
           requestPayer = dataInfo.requestPayer;
           s3Region = dataInfo.s3Region;
+          s3UrlFormat = dataInfo.s3UrlFormat;
         } else {
           console.error(`ERROR: data "${inputFile}" not found!`);
           process.exit(1);
@@ -1622,6 +1624,7 @@ export const serve_rendered = {
             s3Profile,
             requestPayer,
             s3Region,
+            s3UrlFormat,
             verbose,
           );
           // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys

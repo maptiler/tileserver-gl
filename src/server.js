@@ -290,6 +290,7 @@ async function start(opts) {
               let resolvedS3Profile;
               let resolvedRequestPayer;
               let resolvedS3Region;
+              let resolvedS3UrlFormat;
 
               for (const id of Object.keys(data)) {
                 // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys of data config
@@ -327,6 +328,11 @@ async function start(opts) {
                       resolvedS3Profile = sourceData.s3Profile;
                     }
 
+                    // Get s3UrlFormat if present
+                    if (Object.hasOwn(sourceData, 's3UrlFormat')) {
+                      resolvedS3UrlFormat = sourceData.s3UrlFormat;
+                    }
+
                     // Get requestPayer if present
                     if (Object.hasOwn(sourceData, 'requestPayer')) {
                       resolvedRequestPayer = !!sourceData.requestPayer;
@@ -354,6 +360,7 @@ async function start(opts) {
                   s3Profile: undefined,
                   requestPayer: false,
                   s3Region: undefined,
+                  s3UrlFormat: undefined,
                 };
               }
 
@@ -385,6 +392,7 @@ async function start(opts) {
                 s3Profile: resolvedS3Profile,
                 requestPayer: resolvedRequestPayer,
                 s3Region: resolvedS3Region,
+                s3UrlFormat: resolvedS3UrlFormat,
               };
             },
           ),

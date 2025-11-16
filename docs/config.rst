@@ -311,6 +311,23 @@ Here are the available options for each data source:
     If not specified, uses ``AWS_REGION`` environment variable or defaults to ``us-east-1``.
     Optional, only applicable to PMTiles sources using S3 URLs.
 
+``s3UrlFormat`` (string)
+    Specifies how to interpret the S3 URL format.
+    
+    Allowed values:
+    
+    * ``aws`` - Interpret as AWS S3 (``s3://bucket/path/file.pmtiles``)
+    * ``custom`` - Interpret as custom S3 endpoint (``s3://endpoint/bucket/path/file.pmtiles``)
+    * Not specified (default) - Auto-detect based on URL pattern
+    
+    Can be specified in the URL using ``?s3UrlFormat=aws`` or in the configuration.
+    If both are specified, the configuration value takes precedence.
+    
+    Optional, only applicable to PMTiles sources using S3 URLs.
+
+.. note::
+    By default, URLs with dots in the first segment (e.g., ``s3://storage.example.com/bucket/file.pmtiles``) are treated as custom endpoints, while URLs without dots are treated as AWS S3. Use ``s3UrlFormat: "aws"`` if your AWS bucket name contains dots.
+
 .. note::
     These configuration options will be overridden by metadata in the MBTiles or PMTiles file. if corresponding properties exist in the file's metadata, you do not need to specify them in the data configuration.
 
@@ -445,6 +462,17 @@ Precedence order (highest to lowest): Configuration property ``s3Region``, URL p
 
 Precedence order (highest to lowest): Configuration property ``requestPayer``, URL parameter ``?requestPayer=true``, Default: ``false``.
 
+*S3UrlFormat* - Specifies how to interpret S3 URLs::
+
+  # URL parameter
+  "pmtiles": "s3://my.bucket.name/tiles.pmtiles?s3UrlFormat=aws"
+  
+  # Configuration property
+  "pmtiles": "s3://my.bucket.name/tiles.pmtiles",
+  "s3UrlFormat": "aws"
+
+Precedence order (highest to lowest): Configuration property ``s3UrlFormat``, URL parameter ``?s3UrlFormat=...``, Auto-detection.
+
 **Complete Configuration Examples:**
 
 Using URL parameters::
@@ -452,6 +480,9 @@ Using URL parameters::
   "data": {
     "us-west-tiles": {
       "pmtiles": "s3://prod-bucket/tiles.pmtiles?profile=production&region=us-west-2"
+    },
+    "dotted-bucket-name": {
+      "pmtiles": "s3://my.bucket.name/tiles.pmtiles?s3UrlFormat=aws&region=us-east-1"
     },
     "eu-requester-pays": {
       "pmtiles": "s3://bucket/tiles.pmtiles?profile=prod&region=eu-central-1&requestPayer=true"
@@ -466,6 +497,11 @@ Using configuration properties (recommended)::
       "s3Profile": "production",
       "s3Region": "us-west-2"
     },
+    "dotted-bucket-name": {
+      "pmtiles": "s3://my.bucket.name/tiles.pmtiles",
+      "s3UrlFormat": "aws",
+      "s3Region": "us-east-1"
+    },
     "eu-requester-pays": {
       "pmtiles": "s3://bucket/tiles.pmtiles",
       "s3Profile": "production",
@@ -476,11 +512,15 @@ Using configuration properties (recommended)::
 
 **Using S3 in Style JSON Sources:**
 
-When referencing S3 sources from within a style JSON file, use the ``pmtiles://`` prefix with S3 URLs. You can only specify profile, region, and requestPayer using URL query parameters (configuration properties are not available in style JSON)::
+When referencing S3 sources from within a style JSON file, use the ``pmtiles://`` prefix with S3 URLs. You can specify profile, region, requestPayer, and s3UrlFormat using URL query parameters (configuration properties are not available in style JSON)::
 
   "sources": {
     "aws-tiles": {
       "url": "pmtiles://s3://my-bucket/tiles.pmtiles?profile=production",
+      "type": "vector"
+    },
+    "dotted-bucket": {
+      "url": "pmtiles://s3://my.bucket.name/tiles.pmtiles?s3UrlFormat=aws",
       "type": "vector"
     },
     "spaces-tiles": {
