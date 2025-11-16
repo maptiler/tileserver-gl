@@ -1,6 +1,6 @@
 # tileserver-gl changelog
 
-## 5.5.0-pre.3
+## 5.5.0-pre.4
 * Add S3 support for PMTiles with multiple AWS credential profiles (https://github.com/maptiler/tileserver-gl/pull/1779) by @acalcutt
 * Create .aws directory passthrough folder in Dockerfile (https://github.com/maptiler/tileserver-gl/pull/1784) by @acalcutt
 * Update eslint to v9 (https://github.com/maptiler/tileserver-gl/pull/1473) by @acalcutt
