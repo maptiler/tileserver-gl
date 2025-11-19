@@ -630,7 +630,13 @@ async function respondImage(
           } catch (e) {
             console.error('Error removing failed renderer:', e);
           }
-          return res.status(500).header('Content-Type', 'text/plain').send(err);
+          if (!res.headersSent) {
+            return res
+              .status(500)
+              .header('Content-Type', 'text/plain')
+              .send(err);
+          }
+          return;
         }
 
         // Only release if render was successful
