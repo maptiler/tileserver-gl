@@ -657,7 +657,7 @@ async function respondImage(
           });
         }
 
-        // HACK(Part 2)
+        // HACK(Part 2) 256px tiles are a zoom level lower than maplibre-native default tiles. this hack allows tileserver-gl to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native. Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized here.
         if (z === 0 && width === 256) {
           image.resize(width * scale, height * scale);
         }
