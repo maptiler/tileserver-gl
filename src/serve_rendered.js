@@ -601,14 +601,16 @@ async function respondImage(
 
     // Set a timeout for the render operation to detect hung renderers
     const renderTimeout = setTimeout(() => {
-      if (!res.headersSent) {
-        console.error('Renderer timeout - destroying hung renderer');
-        res.status(503).send('Renderer timeout');
-      }
+      console.error('Renderer timeout - destroying hung renderer');
+
       try {
         pool.removeBadObject(renderer);
       } catch (e) {
         console.error('Error removing timed-out renderer:', e);
+      }
+
+      if (!res.headersSent) {
+        res.status(503).send('Renderer timeout');
       }
     }, 30000); // 30 second timeout
 
