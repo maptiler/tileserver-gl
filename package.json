@@ -35,7 +35,7 @@
     "docker": "docker build . && docker run --rm -i -p 8080:8080 $(docker build -q .)"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.934.0",
+    "@aws-sdk/client-s3": "^3.935.0",
     "@jsse/pbfont": "^0.3.0",
     "@mapbox/mapbox-gl-rtl-text": "0.3.0",
     "@mapbox/mbtiles": "0.12.1",
