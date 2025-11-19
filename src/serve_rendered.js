@@ -531,7 +531,6 @@ async function respondImage(
     pool = item.map.renderersStatic[scale];
   }
 
-  // FIX #1 for issue #1716: Validate pool exists before using it
   if (!pool) {
     console.error(`Pool not found for scale ${scale}, mode ${mode}`);
     return res.status(500).send('Renderer pool not configured');
@@ -560,7 +559,6 @@ async function respondImage(
     // Validate renderer has required methods (basic health check)
     if (typeof renderer.render !== 'function') {
       console.error('Renderer is invalid - missing render method');
-      // FIX #2 for issue #1716: Use pool.removeBadObject() - correct API
       try {
         pool.removeBadObject(renderer);
       } catch (e) {
@@ -603,12 +601,10 @@ async function respondImage(
 
     // Set a timeout for the render operation to detect hung renderers
     const renderTimeout = setTimeout(() => {
-      // FIX #3 for issue #1716: Check res.headersSent before responding
       if (!res.headersSent) {
         console.error('Renderer timeout - destroying hung renderer');
         res.status(503).send('Renderer timeout');
       }
-      // FIX #2: Use pool.removeBadObject() to remove timed-out renderer
       try {
         pool.removeBadObject(renderer);
       } catch (e) {
@@ -620,7 +616,6 @@ async function respondImage(
       renderer.render(params, (err, data) => {
         clearTimeout(renderTimeout);
 
-        // FIX #3: Check if timeout already responded
         if (res.headersSent) {
           // Timeout already fired and sent response, don't process
           return;
@@ -628,7 +623,6 @@ async function respondImage(
 
         if (err) {
           console.error('Render error:', err);
-          // FIX #2: Use pool.removeBadObject() to remove failed renderer
           try {
             pool.removeBadObject(renderer);
           } catch (e) {
@@ -726,14 +720,12 @@ async function respondImage(
         image.toBuffer((err, buffer, info) => {
           if (err || !buffer) {
             console.error('Sharp error:', err);
-            // FIX #3: Check before sending error response
             if (!res.headersSent) {
               return res.status(500).send('Image processing failed');
             }
             return;
           }
 
-          // FIX #3: Check before sending success response
           if (!res.headersSent) {
             res.set({
               'Last-Modified': item.lastModified,
@@ -746,7 +738,6 @@ async function respondImage(
     } catch (error) {
       clearTimeout(renderTimeout);
       console.error('Unexpected error during render:', error);
-      // FIX #2: Use pool.removeBadObject() on unexpected error
       try {
         pool.removeBadObject(renderer);
       } catch (e) {
