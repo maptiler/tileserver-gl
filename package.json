@@ -87,6 +87,7 @@
     "pixelmatch": "^7.1.0",
     "prettier": "^3.7.4",
     "should": "^13.2.3",
+    "sqlite3": "^5.1.7",
     "supertest": "^7.1.4",
     "yaml-lint": "^1.7.0"
   },
