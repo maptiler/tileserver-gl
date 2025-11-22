@@ -472,6 +472,35 @@ export function isMBTilesProtocol(string) {
 }
 
 /**
+ * Converts a longitude/latitude point to tile and pixel coordinates at a given zoom level.
+ * @param {number} lon - Longitude in degrees.
+ * @param {number} lat - Latitude in degrees.
+ * @param {number} zoom - Zoom level.
+ * @param {number} tileSize - Size of the tile in pixels (e.g., 256 or 512).
+ * @returns {{tileX: number, tileY: number, pixelX: number, pixelY: number}} - Tile and pixel coordinates.
+ */
+export function lonLatToTilePixel(lon, lat, zoom, tileSize) {
+  let siny = Math.sin((lat * Math.PI) / 180);
+  // Truncating to 0.9999 effectively limits latitude to 89.189. This is
+  // about a third of a tile past the edge of the world tile.
+  siny = Math.min(Math.max(siny, -0.9999), 0.9999);
+
+  const xWorld = tileSize * (0.5 + lon / 360);
+  const yWorld =
+    tileSize * (0.5 - Math.log((1 + siny) / (1 - siny)) / (4 * Math.PI));
+
+  const scale = 1 << zoom;
+
+  const tileX = Math.floor((xWorld * scale) / tileSize);
+  const tileY = Math.floor((yWorld * scale) / tileSize);
+
+  const pixelX = Math.floor(xWorld * scale) - tileX * tileSize;
+  const pixelY = Math.floor(yWorld * scale) - tileY * tileSize;
+
+  return { tileX, tileY, pixelX, pixelY };
+}
+
+/**
  * Fetches tile data from either PMTiles or MBTiles source.
  * @param {object} source - The source object, which may contain a mbtiles object, or pmtiles object.
  * @param {string} sourceType - The source type, which should be `pmtiles` or `mbtiles`
