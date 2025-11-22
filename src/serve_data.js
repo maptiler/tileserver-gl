@@ -14,6 +14,7 @@ import {
   getTileUrls,
   isValidRemoteUrl,
   fetchTileData,
+  lonLatToTilePixel,
 } from './utils.js';
 import { getPMtilesInfo, openPMtiles } from './pmtiles_adapter.js';
 import { gunzipP, gzipP } from './promises.js';
@@ -222,8 +223,9 @@ export const serve_data = {
           return res.status(404).send(JSON.stringify(tileJSON));
         }
         const TILE_SIZE = tileJSON.tileSize || 512;
-        let bbox;
         let xy;
+        let pixel;
+        let lon, lat;
         var zoom = z;
 
         if (Number.isInteger(x) && Number.isInteger(y)) {
@@ -240,7 +242,12 @@ export const serve_data = {
             return res.status(404).send('Out of bounds');
           }
           xy = [intX, intY];
-          bbox = new SphericalMercator().bbox(intX, intY, zoom);
+          const bbox = new SphericalMercator().bbox(intX, intY, zoom);
+          // Use center of tile for lon/lat
+          lon = (bbox[0] + bbox[2]) / 2;
+          lat = (bbox[1] + bbox[3]) / 2;
+          const { pixelX, pixelY } = lonLatToTilePixel(lon, lat, zoom, TILE_SIZE);
+          pixel = [pixelX, pixelY];
         } else {
           //no zoom limit with coordinates
           if (zoom < tileJSON.minzoom) {
@@ -249,9 +256,16 @@ export const serve_data = {
           if (zoom > tileJSON.maxzoom) {
             zoom = tileJSON.maxzoom;
           }
-          bbox = [x, y, x, y];
-          const { minX, minY } = new SphericalMercator().xyz(bbox, zoom);
-          xy = [minX, minY];
+          lon = x;
+          lat = y;
+          const { tileX, tileY, pixelX, pixelY } = lonLatToTilePixel(
+            lon,
+            lat,
+            zoom,
+            TILE_SIZE,
+          );
+          xy = [tileX, tileY];
+          pixel = [pixelX, pixelY];
         }
 
         const fetchTile = await fetchTileData(
@@ -265,14 +279,16 @@ export const serve_data = {
 
         let data = fetchTile.data;
         var param = {
-          long: bbox[0].toFixed(7),
-          lat: bbox[1].toFixed(7),
+          long: lon,
+          lat: lat,
           encoding,
           format,
           tile_size: TILE_SIZE,
           z: zoom,
           x: xy[0],
           y: xy[1],
+          pixelX: pixel[0],
+          pixelY: pixel[1],
         };
 
         res
