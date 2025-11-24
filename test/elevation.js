@@ -367,5 +367,147 @@ describe('Elevation API', function () {
           .end(done);
       });
     });
+
+    describe('batch elevation requests', function () {
+      it('returns elevations for multiple points in different tiles', function (done) {
+        supertest(app)
+          .post('/data/terrain/elevation')
+          .send({
+            points: [
+              { lon: 45.5, lat: 45.5, z: 1 }, // top-right: 500m
+              { lon: -45.5, lat: 45.5, z: 1 }, // top-left: 200m
+              { lon: -45.5, lat: -45.5, z: 1 }, // bottom-left: 1000m
+              { lon: 45.5, lat: -45.5, z: 1 }, // bottom-right: 2500m
+            ],
+          })
+          .expect(200)
+          .expect('Content-Type', /application\/json/)
+          .expect(function (res) {
+            expect(res.body).to.be.an('array');
+            expect(res.body).to.have.length(4);
+            expect(res.body[0]).to.equal(500);
+            expect(res.body[1]).to.equal(200);
+            expect(res.body[2]).to.equal(1000);
+            expect(res.body[3]).to.equal(2500);
+          })
+          .end(done);
+      });
+
+      it('returns elevations for multiple points in the same tile', function (done) {
+        supertest(app)
+          .post('/data/terrain/elevation')
+          .send({
+            points: [
+              { lon: 45.5, lat: 45.5, z: 1 }, // top-right tile
+              { lon: 90, lat: 30, z: 1 }, // also top-right tile
+              { lon: 10, lat: 10, z: 1 }, // also top-right tile
+            ],
+          })
+          .expect(200)
+          .expect('Content-Type', /application\/json/)
+          .expect(function (res) {
+            expect(res.body).to.be.an('array');
+            expect(res.body).to.have.length(3);
+            // All points are in top-right tile which has 500m elevation
+            expect(res.body[0]).to.equal(500);
+            expect(res.body[1]).to.equal(500);
+            expect(res.body[2]).to.equal(500);
+          })
+          .end(done);
+      });
+
+      it('supports different zoom levels per point', function (done) {
+        supertest(app)
+          .post('/data/terrain/elevation')
+          .send({
+            points: [
+              { lon: 45.5, lat: 45.5, z: 0 }, // zoom 0: 100m (whole world)
+              { lon: 45.5, lat: 45.5, z: 1 }, // zoom 1: 500m (top-right)
+            ],
+          })
+          .expect(200)
+          .expect(function (res) {
+            expect(res.body).to.be.an('array');
+            expect(res.body).to.have.length(2);
+            expect(res.body[0]).to.equal(100);
+            expect(res.body[1]).to.equal(500);
+          })
+          .end(done);
+      });
+
+      it('clamps zoom to maxzoom', function (done) {
+        supertest(app)
+          .post('/data/terrain/elevation')
+          .send({
+            points: [{ lon: 45.5, lat: 45.5, z: 20 }], // maxzoom is 1
+          })
+          .expect(200)
+          .expect(function (res) {
+            expect(res.body).to.be.an('array');
+            expect(res.body[0]).to.equal(500);
+          })
+          .end(done);
+      });
+
+      it('clamps zoom to minzoom', function (done) {
+        supertest(app)
+          .post('/data/terrain/elevation')
+          .send({
+            points: [{ lon: 45.5, lat: 45.5, z: -5 }], // minzoom is 0
+          })
+          .expect(200)
+          .expect(function (res) {
+            expect(res.body).to.be.an('array');
+            // At zoom 0, entire world is one tile with 100m elevation
+            expect(res.body[0]).to.equal(100);
+          })
+          .end(done);
+      });
+
+      it('returns 400 for invalid point', function (done) {
+        supertest(app)
+          .post('/data/terrain/elevation')
+          .send({
+            points: [{ lon: 'invalid', lat: 45.5, z: 1 }],
+          })
+          .expect(400)
+          .end(done);
+      });
+
+      it('returns 400 for missing points array', function (done) {
+        supertest(app)
+          .post('/data/terrain/elevation')
+          .send({})
+          .expect(400)
+          .expect('Missing or empty points array')
+          .end(done);
+      });
+
+      it('returns 400 for empty points array', function (done) {
+        supertest(app)
+          .post('/data/terrain/elevation')
+          .send({ points: [] })
+          .expect(400)
+          .expect('Missing or empty points array')
+          .end(done);
+      });
+
+      it('returns 404 for non-existent data source', function (done) {
+        supertest(app)
+          .post('/data/non_existent/elevation')
+          .send({ points: [{ lon: 45.5, lat: 45.5, z: 1 }] })
+          .expect(404)
+          .end(done);
+      });
+
+      it('returns 400 for data source without encoding', function (done) {
+        supertest(app)
+          .post('/data/openmaptiles/elevation')
+          .send({ points: [{ lon: 45.5, lat: 45.5, z: 1 }] })
+          .expect(400)
+          .expect('Missing tileJSON.encoding')
+          .end(done);
+      });
+    });
   });
 });
