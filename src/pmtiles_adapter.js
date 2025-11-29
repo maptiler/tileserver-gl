@@ -308,8 +308,12 @@ async function readFileBytes(fd, buffer, offset) {
   });
 }
 
+// Cache for PMTiles objects to avoid creating multiple instances for the same URL
+const pmtilesCache = new Map();
+
 /**
  * Opens a PMTiles file from local filesystem, HTTP URL, or S3 URL.
+ * Uses caching to avoid creating multiple PMTiles instances for the same file.
  * @param {string} filePath - The path to the PMTiles file.
  * @param {string} [s3Profile] - Optional AWS credential profile name.
  * @param {boolean} [requestPayer] - Optional flag for requester pays buckets.
@@ -326,6 +330,23 @@ export function openPMtiles(
   s3UrlFormat,
   verbose = 0,
 ) {
+  // Create a cache key that includes all parameters that affect the source
+  const cacheKey = JSON.stringify({
+    filePath,
+    s3Profile,
+    requestPayer,
+    s3Region,
+    s3UrlFormat,
+  });
+
+  // Check if we already have a PMTiles object for this configuration
+  if (pmtilesCache.has(cacheKey)) {
+    if (verbose >= 2) {
+      console.log(`Using cached PMTiles instance for: ${filePath}`);
+    }
+    return pmtilesCache.get(cacheKey);
+  }
+
   let pmtiles = undefined;
 
   if (isS3Url(filePath)) {
@@ -356,6 +377,9 @@ export function openPMtiles(
     const source = new PMTilesFileSource(fd);
     pmtiles = new PMTiles(source);
   }
+
+  // Cache the PMTiles object
+  pmtilesCache.set(cacheKey, pmtiles);
 
   return pmtiles;
 }

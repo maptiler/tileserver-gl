@@ -225,13 +225,18 @@ async function start(opts) {
             if (id === styleSourceId) {
               // Style id was found in data ids, return that id
               dataItemId = id;
+              break;
             } else {
               // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys of data config
-              const fileType = Object.keys(data[id])[0];
-              // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys of data config, fileType is from Object.keys
-              if (data[id][fileType] === styleSourceId) {
-                // Style id was found in data filename, return the id that filename belong to
+              const sourceData = data[id];
+              // Check both pmtiles and mbtiles file paths
+              const pmtilesPath = sourceData.pmtiles;
+              const mbtilesPath = sourceData.mbtiles;
+              
+              if (pmtilesPath === styleSourceId || mbtilesPath === styleSourceId) {
+                // Style id was found in data filename, return the id that filename belongs to
                 dataItemId = id;
+                break;
               }
             }
           }
@@ -292,6 +297,12 @@ async function start(opts) {
               let resolvedS3Region;
               let resolvedS3UrlFormat;
 
+              // Debug logging to see what we're trying to match
+              if (opts.verbose) {
+                console.log(`[dataResolver] Looking for styleSourceId: ${styleSourceId}`);
+                console.log(`[dataResolver] Available data keys: ${Object.keys(data).join(', ')}`);
+              }
+
               for (const id of Object.keys(data)) {
                 // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys of data config
                 const sourceData = data[id];
@@ -308,11 +319,26 @@ async function start(opts) {
                 }
 
                 if (currentFileType && currentInputFileValue) {
+                  // Debug logging
+                  if (opts.verbose) {
+                    console.log(`[dataResolver] Checking id="${id}", file="${currentInputFileValue}"`);
+                  }
+
                   // Check if this source matches the styleSourceId
-                  if (
-                    styleSourceId === id ||
-                    styleSourceId === currentInputFileValue
-                  ) {
+                  // Match by ID, by file path, or by base filename
+                  const matchById = styleSourceId === id;
+                  const matchByFile = styleSourceId === currentInputFileValue;
+                  
+                  // Also try matching if styleSourceId is a URL-encoded or hashed version
+                  const matchByBasename = currentInputFileValue && 
+                    (styleSourceId.includes(currentInputFileValue) || 
+                     currentInputFileValue.includes(styleSourceId));
+
+                  if (matchById || matchByFile || matchByBasename) {
+                    if (opts.verbose) {
+                      console.log(`[dataResolver] Match found! (byId=${matchById}, byFile=${matchByFile}, byBasename=${matchByBasename})`);
+                    }
+
                     resolvedFileType = currentFileType;
                     resolvedInputFile = currentInputFileValue;
 
@@ -352,6 +378,12 @@ async function start(opts) {
               if (!resolvedInputFile || !resolvedFileType) {
                 console.warn(
                   `Data source not found for styleSourceId: ${styleSourceId}`,
+                );
+                console.warn(
+                  `Available data sources: ${Object.keys(data).map(id => {
+                    const src = data[id];
+                    return `${id} -> ${src.pmtiles || src.mbtiles || 'unknown'}`;
+                  }).join(', ')}`
                 );
                 return {
                   inputFile: undefined,
@@ -394,7 +426,7 @@ async function start(opts) {
                 s3Region: resolvedS3Region,
                 s3UrlFormat: resolvedS3UrlFormat,
               };
-            },
+            }
           ),
         );
       } else {
@@ -404,6 +436,8 @@ async function start(opts) {
     return success;
   }
 
+  // Collect style loading promises separately
+  const stylePromises = [];
   for (const id of Object.keys(config.styles || {})) {
     // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys of config.styles
     const item = config.styles[id];
@@ -411,26 +445,36 @@ async function start(opts) {
       console.log(`Missing "style" property for ${id}`);
       continue;
     }
-    startupPromises.push(addStyle(id, item, true, true));
+    stylePromises.push(addStyle(id, item, true, true));
   }
+  
+  // Wait for styles to finish loading, then load data sources
+  // This ensures data sources added by styles are included
+  startupPromises.push(
+    Promise.all(stylePromises).then(() => {
+      const dataLoadPromises = [];
+      for (const id of Object.keys(data)) {
+        // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys of data config
+        const item = data[id];
+        // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys of data config
+        const fileType = Object.keys(data[id])[0];
+        if (!fileType || !(fileType === 'pmtiles' || fileType === 'mbtiles')) {
+          console.log(
+            `Missing "pmtiles" or "mbtiles" property for ${id} data source`,
+          );
+          continue;
+        }
+        dataLoadPromises.push(serve_data.add(options, serving.data, item, id, opts));
+      }
+      return Promise.all(dataLoadPromises);
+    })
+  );
+  
   startupPromises.push(
     serve_font(options, serving.fonts, opts).then((sub) => {
       app.use('/', sub);
     }),
   );
-  for (const id of Object.keys(data)) {
-    // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys of data config
-    const item = data[id];
-    // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys of data config
-    const fileType = Object.keys(data[id])[0];
-    if (!fileType || !(fileType === 'pmtiles' || fileType === 'mbtiles')) {
-      console.log(
-        `Missing "pmtiles" or "mbtiles" property for ${id} data source`,
-      );
-      continue;
-    }
-    startupPromises.push(serve_data.add(options, serving.data, item, id, opts));
-  }
   if (options.serveAllStyles) {
     fs.readdir(options.paths.styles, { withFileTypes: true }, (err, files) => {
       if (err) {
