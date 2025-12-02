@@ -54,7 +54,7 @@
     "commander": "14.0.2",
     "copyfiles": "2.4.1",
     "cors": "2.8.5",
-    "express": "5.2.0",
+    "express": "5.2.1",
     "handlebars": "4.7.8",
     "http-shutdown": "1.2.2",
     "leaflet": "1.9.4",
