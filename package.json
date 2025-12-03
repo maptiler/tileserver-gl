@@ -85,7 +85,7 @@
     "mocha": "^11.7.5",
     "node-addon-api": "^8",
     "pixelmatch": "^7.1.0",
-    "prettier": "^3.7.3",
+    "prettier": "^3.7.4",
     "should": "^13.2.3",
     "supertest": "^7.1.4",
     "yaml-lint": "^1.7.0"
