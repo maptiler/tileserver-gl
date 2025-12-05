@@ -232,8 +232,11 @@ async function start(opts) {
               // Check both pmtiles and mbtiles file paths
               const pmtilesPath = sourceData.pmtiles;
               const mbtilesPath = sourceData.mbtiles;
-              
-              if (pmtilesPath === styleSourceId || mbtilesPath === styleSourceId) {
+
+              if (
+                pmtilesPath === styleSourceId ||
+                mbtilesPath === styleSourceId
+              ) {
                 // Style id was found in data filename, return the id that filename belongs to
                 dataItemId = id;
                 break;
@@ -298,9 +301,13 @@ async function start(opts) {
               let resolvedS3UrlFormat;
 
               // Debug logging to see what we're trying to match
-              if (opts.verbose) {
-                console.log(`[dataResolver] Looking for styleSourceId: ${styleSourceId}`);
-                console.log(`[dataResolver] Available data keys: ${Object.keys(data).join(', ')}`);
+              if (opts.verbose && opts.verbose >= 3) {
+                console.log(
+                  `[dataResolver] Looking for styleSourceId: ${styleSourceId}`,
+                );
+                console.log(
+                  `[dataResolver] Available data keys: ${Object.keys(data).join(', ')}`,
+                );
               }
 
               for (const id of Object.keys(data)) {
@@ -320,23 +327,25 @@ async function start(opts) {
 
                 if (currentFileType && currentInputFileValue) {
                   // Debug logging
-                  if (opts.verbose) {
-                    console.log(`[dataResolver] Checking id="${id}", file="${currentInputFileValue}"`);
+                  if (opts.verbose && opts.verbose >= 2) {
+                    console.log(
+                      `[dataResolver] Checking id="${id}", file="${currentInputFileValue}"`,
+                    );
                   }
 
                   // Check if this source matches the styleSourceId
                   // Match by ID, by file path, or by base filename
                   const matchById = styleSourceId === id;
                   const matchByFile = styleSourceId === currentInputFileValue;
-                  
-                  // Also try matching if styleSourceId is a URL-encoded or hashed version
-                  const matchByBasename = currentInputFileValue && 
-                    (styleSourceId.includes(currentInputFileValue) || 
-                     currentInputFileValue.includes(styleSourceId));
+                  const matchByBasename =
+                    styleSourceId.includes(currentInputFileValue) ||
+                    currentInputFileValue.includes(styleSourceId);
 
                   if (matchById || matchByFile || matchByBasename) {
-                    if (opts.verbose) {
-                      console.log(`[dataResolver] Match found! (byId=${matchById}, byFile=${matchByFile}, byBasename=${matchByBasename})`);
+                    if (opts.verbose && opts.verbose >= 2) {
+                      console.log(
+                        `[dataResolver] Match found! (byId=${matchById}, byFile=${matchByFile}, byBasename=${matchByBasename})`,
+                      );
                     }
 
                     resolvedFileType = currentFileType;
@@ -380,10 +389,12 @@ async function start(opts) {
                   `Data source not found for styleSourceId: ${styleSourceId}`,
                 );
                 console.warn(
-                  `Available data sources: ${Object.keys(data).map(id => {
-                    const src = data[id];
-                    return `${id} -> ${src.pmtiles || src.mbtiles || 'unknown'}`;
-                  }).join(', ')}`
+                  `Available data sources: ${Object.keys(data)
+                    .map((id) => {
+                      const src = data[id];
+                      return `${id} -> ${src.pmtiles || src.mbtiles || 'unknown'}`;
+                    })
+                    .join(', ')}`,
                 );
                 return {
                   inputFile: undefined,
@@ -426,7 +437,7 @@ async function start(opts) {
                 s3Region: resolvedS3Region,
                 s3UrlFormat: resolvedS3UrlFormat,
               };
-            }
+            },
           ),
         );
       } else {
@@ -447,7 +458,7 @@ async function start(opts) {
     }
     stylePromises.push(addStyle(id, item, true, true));
   }
-  
+
   // Wait for styles to finish loading, then load data sources
   // This ensures data sources added by styles are included
   startupPromises.push(
@@ -464,12 +475,14 @@ async function start(opts) {
           );
           continue;
         }
-        dataLoadPromises.push(serve_data.add(options, serving.data, item, id, opts));
+        dataLoadPromises.push(
+          serve_data.add(options, serving.data, item, id, opts),
+        );
       }
       return Promise.all(dataLoadPromises);
-    })
+    }),
   );
-  
+
   startupPromises.push(
     serve_font(options, serving.fonts, opts).then((sub) => {
       app.use('/', sub);
