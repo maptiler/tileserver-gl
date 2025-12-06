@@ -1226,7 +1226,6 @@ export const serve_rendered = {
           const src = sources[srcName] || {};
           if (src.sparse !== true) continue;
 
-
           // Check source URL
           if (src.url) {
             try {

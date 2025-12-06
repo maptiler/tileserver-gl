@@ -1,6 +1,6 @@
 {
   "name": "tileserver-gl",
-  "version": "5.5.0-pre.5",
+  "version": "5.5.0-pre.6",
   "description": "Map tile server for JSON GL styles - vector and server side generated raster tiles",
   "main": "src/main.js",
   "bin": "src/main.js",
