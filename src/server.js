@@ -327,7 +327,7 @@ async function start(opts) {
 
                 if (currentFileType && currentInputFileValue) {
                   // Debug logging
-                  if (opts.verbose && opts.verbose >= 2) {
+                  if (opts.verbose && opts.verbose >= 3) {
                     console.log(
                       `[dataResolver] Checking id="${id}", file="${currentInputFileValue}"`,
                     );
@@ -344,7 +344,7 @@ async function start(opts) {
                   if (matchById || matchByFile || matchByBasename) {
                     if (opts.verbose && opts.verbose >= 2) {
                       console.log(
-                        `[dataResolver] Match found! (byId=${matchById}, byFile=${matchByFile}, byBasename=${matchByBasename})`,
+                        `[dataResolver] Match found for styleSourceId: ${styleSourceId}. (byId=${matchById}, byFile=${matchByFile}, byBasename=${matchByBasename})`,
                       );
                     }
 
