@@ -1210,6 +1210,40 @@ export const serve_rendered = {
     const { publicUrl, verbose, fetchTimeout } = programOpts;
 
     const styleJSON = clone(style);
+
+    /**
+     * Finds a sparse source that matches the given URL.
+     * Returns true if any sparse source has a tile URL or source URL matching this origin.
+     * @param {string} reqUrl The request URL.
+     * @param {object} sources The style sources object.
+     * @returns {boolean} True if URL matches a sparse source.
+     */
+    const isSparseSourceUrl = (reqUrl, sources) => {
+      try {
+        const reqOrigin = new URL(reqUrl).origin;
+        for (const srcName of Object.keys(sources || {})) {
+          // eslint-disable-next-line security/detect-object-injection -- srcName is from Object.keys
+          const src = sources[srcName] || {};
+          if (src.sparse !== true) continue;
+
+
+          // Check source URL
+          if (src.url) {
+            try {
+              if (new URL(src.url).origin === reqOrigin) {
+                return true;
+              }
+            } catch (_err) {
+              // ignore invalid URLs
+            }
+          }
+        }
+      } catch (_err) {
+        // ignore errors during check
+      }
+      return false;
+    };
+
     /**
      * Creates a pool of renderers.
      * @param {number} ratio Pixel ratio
@@ -1341,96 +1375,35 @@ export const serve_rendered = {
 
               callback(null, response);
             } else if (protocol === 'http' || protocol === 'https') {
-              // Add timeout to prevent hanging on unreachable hosts
+              const isSparse = isSparseSourceUrl(req.url, styleJSON.sources);
               const controller = new AbortController();
               const timeoutMs = (fetchTimeout && Number(fetchTimeout)) || 15000;
               let timeoutId;
-              try {
-                timeoutId = setTimeout(() => controller.abort(), timeoutMs); // timeout configured via CLI/config
 
+              try {
+                timeoutId = setTimeout(() => controller.abort(), timeoutMs);
                 const response = await fetch(req.url, {
                   signal: controller.signal,
                 });
-
                 clearTimeout(timeoutId);
 
-                // Handle 410 Gone as sparse response
-                if (response.status === 410) {
-                  if (verbose >= 2) {
-                    console.log(
-                      'fetchTile warning on %s, sparse response due to 410 Gone',
-                      req.url,
-                    );
-                  }
-                  callback();
-                  return;
-                }
-
-                // Treat 404 as sparse when the URL maps to a source marked sparse in the style
-                if (response.status === 404) {
-                  try {
-                    const reqOrigin = new URL(req.url).origin;
-                    let matchedSparse = false;
-                    for (const srcName of Object.keys(
-                      styleJSON.sources || {},
-                    )) {
-                      // eslint-disable-next-line security/detect-object-injection -- srcName is from Object.keys of styleJSON.sources
-                      const src = styleJSON.sources[srcName] || {};
-                      // Check explicit tiles templates
-                      const tiles = Array.isArray(src.tiles) ? src.tiles : [];
-                      for (const t of tiles) {
-                        try {
-                          // create a sample URL from template to extract origin
-                          const sample = t
-                            .replace('{z}', '0')
-                            .replace('{x}', '0')
-                            .replace('{y}', '0');
-                          const sampleOrigin = new URL(sample).origin;
-                          if (
-                            sampleOrigin === reqOrigin &&
-                            src.sparse === true
-                          ) {
-                            matchedSparse = true;
-                            break;
-                          }
-                        } catch (_err) {
-                          // ignore malformed templates
-                        }
-                      }
-
-                      if (matchedSparse) break;
-
-                      // Check tilejson/url origins (for raster sources referencing a tilejson URL)
-                      if (src.url) {
-                        try {
-                          const srcOrigin = new URL(src.url).origin;
-                          if (srcOrigin === reqOrigin && src.sparse === true) {
-                            matchedSparse = true;
-                            break;
-                          }
-                        } catch (_err) {
-                          // ignore invalid URLs
-                        }
-                      }
-                    }
-
-                    if (matchedSparse) {
-                      if (verbose >= 2) {
-                        console.log(
-                          'fetchTile warning on %s, sparse response due to 404 and source.sparse=true',
-                          req.url,
-                        );
-                      }
-                      callback();
-                      return;
-                    }
-                  } catch (_) {
-                    // fallback to normal error handling below
-                  }
-                }
-
-                // Check for other non-ok responses
+                // Treat 410 Gone as sparse always, or any error if source is marked sparse
                 if (!response.ok) {
+                  const is410 = response.status === 410;
+                  if (is410 || isSparse) {
+                    if (verbose >= 2) {
+                      const reason = is410
+                        ? '410 Gone'
+                        : `HTTP ${response.status} from sparse source`;
+                      console.log(
+                        'fetchTile warning on %s, sparse response due to %s',
+                        req.url,
+                        reason,
+                      );
+                    }
+                    callback();
+                    return;
+                  }
                   throw new Error(
                     `HTTP ${response.status}: ${response.statusText}`,
                   );
@@ -1438,8 +1411,8 @@ export const serve_rendered = {
 
                 const responseHeaders = response.headers;
                 const responseData = await response.arrayBuffer();
-
                 const parsedResponse = {};
+
                 if (responseHeaders.get('last-modified')) {
                   parsedResponse.modified = new Date(
                     responseHeaders.get('last-modified'),
@@ -1457,8 +1430,20 @@ export const serve_rendered = {
                 parsedResponse.data = Buffer.from(responseData);
                 callback(null, parsedResponse);
               } catch (error) {
-                // Log DNS failures more prominently as they often indicate config issues
-                // Native fetch wraps DNS errors in error.cause
+                // Treat network errors as sparse if source is marked sparse
+                if (isSparse) {
+                  if (verbose >= 2) {
+                    console.log(
+                      'fetchTile warning on %s, sparse response from sparse source: %s',
+                      req.url,
+                      error.message || error,
+                    );
+                  }
+                  callback();
+                  return;
+                }
+
+                // Log DNS failures
                 if (error.cause?.code === 'ENOTFOUND') {
                   console.error(
                     `DNS RESOLUTION FAILED for ${req.url}. ` +
@@ -1467,7 +1452,7 @@ export const serve_rendered = {
                   );
                 }
 
-                // Handle AbortController timeout
+                // Log timeout
                 if (error.name === 'AbortError') {
                   console.error(
                     `FETCH TIMEOUT for ${req.url}. ` +
@@ -1475,7 +1460,7 @@ export const serve_rendered = {
                   );
                 }
 
-                // For all other errors (e.g., network errors, 404, 500, etc.) return empty content.
+                // Return empty response for errors
                 console.error(
                   `Error fetching remote URL ${req.url}:`,
                   error.message || error,
