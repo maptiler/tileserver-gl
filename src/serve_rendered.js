@@ -1344,7 +1344,7 @@ export const serve_rendered = {
               try {
                 // Add timeout to prevent hanging on unreachable hosts
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
                 const response = await fetch(req.url, {
                   signal: controller.signal,
@@ -1362,6 +1362,68 @@ export const serve_rendered = {
                   }
                   callback();
                   return;
+                }
+
+                // Treat 404 as sparse when the URL maps to a source marked sparse in the style
+                if (response.status === 404) {
+                  try {
+                    const reqOrigin = new URL(req.url).origin;
+                    let matchedSparse = false;
+                    for (const srcName of Object.keys(
+                      styleJSON.sources || {},
+                    )) {
+                      const src = styleJSON.sources[srcName] || {};
+                      // Check explicit tiles templates
+                      const tiles = Array.isArray(src.tiles) ? src.tiles : [];
+                      for (const t of tiles) {
+                        try {
+                          // create a sample URL from template to extract origin
+                          const sample = t
+                            .replace('{z}', '0')
+                            .replace('{x}', '0')
+                            .replace('{y}', '0');
+                          const sampleOrigin = new URL(sample).origin;
+                          if (
+                            sampleOrigin === reqOrigin &&
+                            src.sparse === true
+                          ) {
+                            matchedSparse = true;
+                            break;
+                          }
+                        } catch (e) {
+                          // ignore malformed templates
+                        }
+                      }
+
+                      if (matchedSparse) break;
+
+                      // Check tilejson/url origins (for raster sources referencing a tilejson URL)
+                      if (src.url) {
+                        try {
+                          const srcOrigin = new URL(src.url).origin;
+                          if (srcOrigin === reqOrigin && src.sparse === true) {
+                            matchedSparse = true;
+                            break;
+                          }
+                        } catch (e) {
+                          // ignore invalid URLs
+                        }
+                      }
+                    }
+
+                    if (matchedSparse) {
+                      if (verbose && verbose >= 2) {
+                        console.log(
+                          'fetchTile warning on %s, sparse response due to 404 and source.sparse=true',
+                          req.url,
+                        );
+                      }
+                      callback();
+                      return;
+                    }
+                  } catch (e) {
+                    // fallback to normal error handling below
+                  }
                 }
 
                 // Check for other non-ok responses

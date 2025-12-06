@@ -55,6 +55,17 @@ export const serve_style = {
           if (typeof source.data == 'string') {
             source.data = fixUrl(req, source.data, item.publicUrl);
           }
+          // Remove server-only custom properties (like 'sparse') before exposing to clients
+          if (
+            source &&
+            Object.prototype.hasOwnProperty.call(source, 'sparse')
+          ) {
+            try {
+              delete source.sparse;
+            } catch (e) {
+              // ignore deletion errors
+            }
+          }
         }
         if (styleJSON_.sprite) {
           if (Array.isArray(styleJSON_.sprite)) {
@@ -217,7 +228,26 @@ export const serve_style = {
     const styleFile = path.resolve(options.paths.styles, params.style);
     const styleJSON = clone(style);
 
-    const validationErrors = validateStyleMin(styleJSON);
+    // Sanitize style for validation: remove non-spec properties (e.g., 'sparse')
+    // so that validateStyleMin doesn't reject valid styles containing our custom flags.
+    const styleForValidation = clone(styleJSON);
+    if (styleForValidation.sources) {
+      for (const name of Object.keys(styleForValidation.sources)) {
+        // remove custom 'sparse' flag (and any other developer-only flags in the future)
+        if (
+          styleForValidation.sources[name] &&
+          'sparse' in styleForValidation.sources[name]
+        ) {
+          try {
+            delete styleForValidation.sources[name].sparse;
+          } catch (e) {
+            // ignore any deletion errors and continue validation
+          }
+        }
+      }
+    }
+
+    const validationErrors = validateStyleMin(styleForValidation);
     if (validationErrors.length > 0) {
       console.log(`The file "${params.style}" is not a valid style file:`);
       for (const err of validationErrors) {

@@ -206,8 +206,9 @@ async function start(opts) {
         const styleFileData = await fs.promises.readFile(styleFile);
         styleJSON = JSON.parse(styleFileData);
       }
-    } catch {
+    } catch (err) {
       console.log(`Error getting style file "${item.style}"`);
+      console.error(err && err.stack ? err.stack : err);
       return false;
     }
 
