@@ -110,7 +110,9 @@ export const serve_data = {
         y,
       );
       if (fetchTile == null) {
-        return res.status(404).send('Not found');
+        // sparse=true (default) -> 404 (allows overzoom)
+        // sparse=false -> 204 (empty tile, no overzoom)
+        return res.status(item.sparse ? 404 : 204).send();
       }
 
       let data = fetchTile.data;
@@ -260,7 +262,9 @@ export const serve_data = {
           xy[1],
         );
         if (fetchTile == null) {
-          return res.status(404).send('Not found');
+          // sparse=true (default) -> 404 (allows overzoom)
+          // sparse=false -> 204 (empty tile, no overzoom)
+          return res.status(item.sparse ? 404 : 204).send();
         }
 
         let data = fetchTile.data;
@@ -414,12 +418,20 @@ export const serve_data = {
       tileJSON = options.dataDecoratorFunc(id, 'tilejson', tileJSON);
     }
 
+    // Determine sparse: per-source overrides global, then format-based default
+    // sparse=true -> 404 (allows overzoom)
+    // sparse=false -> 204 (empty tile, no overzoom)
+    // Default: vector tiles (pbf) -> false, raster tiles -> true
+    const isVector = tileJSON.format === 'pbf';
+    const sparse = params.sparse ?? options.sparse ?? !isVector;
+
     // eslint-disable-next-line security/detect-object-injection -- id is from config file data source names
     repo[id] = {
       tileJSON,
       publicUrl,
       source,
       sourceType,
+      sparse,
     };
   },
 };

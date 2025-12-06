@@ -295,6 +295,7 @@ async function start(opts) {
               let resolvedRequestPayer;
               let resolvedS3Region;
               let resolvedS3UrlFormat;
+              let resolvedSparse;
 
               // Debug logging to see what we're trying to match
               if (opts.verbose >= 3) {
@@ -367,6 +368,10 @@ async function start(opts) {
                       resolvedS3Region = sourceData.s3Region;
                     }
 
+                    // Get sparse: per-source overrides global, default to true
+                    resolvedSparse =
+                      sourceData.sparse ?? options.sparse ?? true;
+
                     break; // Found our match, exit the outer loop
                   }
                 }
@@ -393,6 +398,7 @@ async function start(opts) {
                   requestPayer: false,
                   s3Region: undefined,
                   s3UrlFormat: undefined,
+                  sparse: true,
                 };
               }
 
@@ -424,6 +430,7 @@ async function start(opts) {
                 requestPayer: resolvedRequestPayer,
                 s3Region: resolvedS3Region,
                 s3UrlFormat: resolvedS3UrlFormat,
+                sparse: resolvedSparse,
               };
             },
           ),

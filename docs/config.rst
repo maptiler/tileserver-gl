@@ -280,6 +280,15 @@ Here are the available options for each data source:
     Allowed values: ``256``, ``512``.
     Default: ``256``.
 
+``sparse`` (boolean)
+    Controls behavior when a tile is not found in the source.
+
+    * ``true`` - Returns HTTP 404, allowing clients like MapLibre to overzoom and use parent tiles. Use this for terrain or datasets with uneven zoom coverage.
+    * ``false`` - Returns HTTP 204 (No Content), signaling an intentionally empty tile and preventing overzoom.
+
+    This can be set globally in the top-level options or per-data-source (per-source overrides global).
+    Default: Depends on tile format - ``false`` for vector tiles (pbf), ``true`` for raster tiles (png, webp, jpg, etc.).
+
 ``s3Profile`` (string)
     Specifies the AWS credential profile to use for S3 PMTiles sources. The profile must be defined in your ``~/.aws/credentials`` file.
     This is useful when you need to access multiple S3 buckets with different credentials.

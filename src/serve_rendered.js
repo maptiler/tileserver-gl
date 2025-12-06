@@ -1205,11 +1205,15 @@ export const serve_rendered = {
       renderersStatic: [],
       sources: {},
       sourceTypes: {},
+      sparseFlags: {},
     };
 
     const { publicUrl, verbose, fetchTimeout } = programOpts;
 
     const styleJSON = clone(style);
+
+    // Global sparse flag for HTTP/remote sources (from config options)
+    const globalSparse = options.sparse ?? true;
 
     /**
      * Creates a pool of renderers.
@@ -1292,8 +1296,19 @@ export const serve_rendered = {
                 if (verbose >= 2) {
                   console.log('fetchTile null on %s', req.url);
                 }
-                // Return empty callback so MapLibre can try to overzoom to parent tile
-                callback();
+                // eslint-disable-next-line security/detect-object-injection -- sourceId from internal style source names
+                const sparse = map.sparseFlags[sourceId] ?? true;
+                // sparse=true (default) -> return empty callback so MapLibre can overzoom
+                if (sparse) {
+                  callback();
+                  return;
+                }
+                // sparse=false -> 204 (empty tile, no overzoom) - create blank response
+                createEmptyResponse(
+                  sourceInfo.format,
+                  sourceInfo.color,
+                  callback,
+                );
                 return;
               }
 
@@ -1351,12 +1366,25 @@ export const serve_rendered = {
                 if (!response.ok) {
                   if (verbose >= 2) {
                     console.log(
-                      'fetchTile warning on %s, returning empty tile (HTTP %d)',
-                      req.url,
+                      'fetchTile HTTP %d on %s, %s',
                       response.status,
+                      req.url,
+                      globalSparse ? 'allowing overzoom' : 'creating empty tile',
                     );
                   }
-                  callback();
+
+                  if (globalSparse) {
+                    // sparse=true -> allow overzoom
+                    callback();
+                    return;
+                  }
+
+                  // sparse=false (default) -> create empty tile
+                  const parts = url.parse(req.url);
+                  const extension = path.extname(parts.pathname).toLowerCase();
+                  // eslint-disable-next-line security/detect-object-injection -- extension is from path.extname, limited set
+                  const format = extensionToFormat[extension] || '';
+                  createEmptyResponse(format, '', callback);
                   return;
                 }
 
@@ -1404,8 +1432,18 @@ export const serve_rendered = {
                   error.message || error,
                 );
 
-                // Return empty tile for all failures
-                callback();
+                if (globalSparse) {
+                  // sparse=true -> allow overzoom
+                  callback();
+                  return;
+                }
+
+                // sparse=false (default) -> create empty tile
+                const parts = url.parse(req.url);
+                const extension = path.extname(parts.pathname).toLowerCase();
+                // eslint-disable-next-line security/detect-object-injection -- extension is from path.extname, limited set
+                const format = extensionToFormat[extension] || '';
+                createEmptyResponse(format, '', callback);
               }
             } else if (protocol === 'file') {
               const name = decodeURI(req.url).substring(protocol.length + 3);
@@ -1665,6 +1703,12 @@ export const serve_rendered = {
               tileJSON.attribution += source.attribution;
             }
           }
+
+          // Set sparse flag: user config overrides format-based default
+          // Vector tiles (pbf) default to false (204), raster tiles default to true (404)
+          const isVector = metadata.format === 'pbf';
+          // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
+          map.sparseFlags[name] = dataInfo.sparse ?? options.sparse ?? !isVector;
         } else {
           // MBTiles does not support remote URLs
 
@@ -1712,6 +1756,12 @@ export const serve_rendered = {
               tileJSON.attribution += source.attribution;
             }
           }
+
+          // Set sparse flag: user config overrides format-based default
+          // Vector tiles (pbf) default to false (204), raster tiles default to true (404)
+          const isVector = info.format === 'pbf';
+          // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
+          map.sparseFlags[name] = dataInfo.sparse ?? options.sparse ?? !isVector;
         }
       }
     }
