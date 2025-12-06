@@ -298,7 +298,7 @@ async function start(opts) {
               let resolvedS3UrlFormat;
 
               // Debug logging to see what we're trying to match
-              if (opts.verbose && opts.verbose >= 3) {
+              if (opts.verbose >= 3) {
                 console.log(
                   `[dataResolver] Looking for styleSourceId: ${styleSourceId}`,
                 );
@@ -324,7 +324,7 @@ async function start(opts) {
 
                 if (currentFileType && currentInputFileValue) {
                   // Debug logging
-                  if (opts.verbose && opts.verbose >= 3) {
+                  if (opts.verbose >= 3) {
                     console.log(
                       `[dataResolver] Checking id="${id}", file="${currentInputFileValue}"`,
                     );
@@ -339,7 +339,7 @@ async function start(opts) {
                     currentInputFileValue.includes(styleSourceId);
 
                   if (matchById || matchByFile || matchByBasename) {
-                    if (opts.verbose && opts.verbose >= 2) {
+                    if (opts.verbose >= 2) {
                       console.log(
                         `[dataResolver] Match found for styleSourceId: ${styleSourceId}. (byId=${matchById}, byFile=${matchByFile}, byBasename=${matchByBasename})`,
                       );
@@ -661,7 +661,7 @@ async function start(opts) {
       const content = fs.readFileSync(templateFile, 'utf-8');
       const compiled = handlebars.compile(content.toString());
       app.get(urlPath, (req, res, next) => {
-        if (opts.verbose) {
+        if (opts.verbose >= 1) {
           console.log(`Serving template at path: ${urlPath}`);
         }
         let data = {};
@@ -680,8 +680,8 @@ async function start(opts) {
               : '';
             if (template === 'wmts') res.set('Content-Type', 'text/xml');
             return res.status(200).send(compiled(data));
-          } else {
-            if (opts.verbose) {
+            } else {
+            if (opts.verbose >= 1) {
               console.log(`Forwarding request for: ${urlPath} to next route`);
             }
             next('route');

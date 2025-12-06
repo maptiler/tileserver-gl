@@ -15,10 +15,10 @@ class S3Source {
    * Creates an S3Source instance.
    * @param {string} s3Url - The S3 URL in one of the supported formats.
    * @param {string} [s3Profile] - Optional AWS credential profile name from config.
-   * @param {boolean} [configRequestPayer] - Optional flag from config for requester pays buckets.
+  * @param {boolean} [configRequestPayer] - Optional flag from config for requester pays buckets.
    * @param {string} [configRegion] - Optional AWS region from config.
    * @param {string} [s3UrlFormat] - Optional S3 URL format from config: 'aws' or 'custom'.
-   * @param {boolean} [verbose] - Whether to show verbose logging.
+  * @param {number} [verbose] - Verbosity level (1-3). 1=important, 2=detailed, 3=debug/all requests.
    */
   constructor(
     s3Url,
@@ -147,7 +147,7 @@ class S3Source {
    * @param {string|null} endpoint - The custom endpoint URL, or null for default AWS S3.
    * @param {string} region - The AWS region.
    * @param {string} [profile] - Optional AWS credential profile name.
-   * @param {boolean} [verbose] - Whether to show verbose logging.
+  * @param {number} [verbose] - Verbosity level (1-3). 1=important, 2=detailed, 3=debug/all requests.
    * @returns {S3Client} - Configured S3Client instance.
    */
   createS3Client(endpoint, region, profile, verbose) {
@@ -319,7 +319,7 @@ const pmtilesCache = new Map();
  * @param {boolean} [requestPayer] - Optional flag for requester pays buckets.
  * @param {string} [s3Region] - Optional AWS region.
  * @param {string} [s3UrlFormat] - Optional S3 URL format: 'aws' or 'custom'.
- * @param {boolean} [verbose] - Whether to show verbose logging.
+ * @param {number} [verbose] - Verbosity level (1-3). 1=important, 2=detailed, 3=debug/all requests.
  * @returns {PMTiles} - A PMTiles instance.
  */
 export function openPMtiles(

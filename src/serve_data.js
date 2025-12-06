@@ -58,7 +58,7 @@ export const serve_data = {
      * @returns {Promise<void>}
      */
     app.get('/:id/:z/:x/:y.:format', async (req, res) => {
-      if (verbose) {
+      if (verbose >= 1) {
         console.log(
           `Handling tile request for: /data/%s/%s/%s/%s.%s`,
           String(req.params.id).replace(/\n|\r/g, ''),
@@ -180,7 +180,7 @@ export const serve_data = {
      */
     app.get('/:id/elevation/:z/:x/:y', async (req, res, next) => {
       try {
-        if (verbose) {
+        if (verbose >= 1) {
           console.log(
             `Handling elevation request for: /data/%s/elevation/%s/%s/%s`,
             String(req.params.id).replace(/\n|\r/g, ''),
@@ -294,7 +294,7 @@ export const serve_data = {
      * @returns {Promise<void>}
      */
     app.get('/:id.json', (req, res) => {
-      if (verbose) {
+      if (verbose >= 1) {
         console.log(
           `Handling tilejson request for: /data/%s.json`,
           String(req.params.id).replace(/\n|\r/g, ''),
@@ -331,7 +331,7 @@ export const serve_data = {
    * @param {string} id ID of the data source.
    * @param {object} programOpts - An object containing the program options
    * @param {string} programOpts.publicUrl Public URL for the data.
-   * @param {boolean} programOpts.verbose Whether verbose logging should be used.
+   * @param {number} programOpts.verbose Verbosity level (1-3). 1=important, 2=detailed, 3=debug/all requests.
    * @returns {Promise<void>}
    */
   add: async function (options, repo, params, id, programOpts) {
@@ -359,7 +359,7 @@ export const serve_data = {
       }
     }
 
-    if (verbose && verbose >= 1) {
+    if (verbose >= 1) {
       console.log(`[INFO] Loading data source '${id}' from: ${inputFile}`);
     }
 

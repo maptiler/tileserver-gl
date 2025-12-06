@@ -82,7 +82,10 @@ program
   )
   .option(
     '-V, --verbose [level]',
-    'More verbose output (can specify level 1-3, default 1)',
+    'More verbose output (level 1-3)\n' +
+      '\t-V, --verbose, -V 1, or --verbose 1: Important operations\n' +
+      '\t-V 2 or --verbose 2: Detailed operations\n' +
+      '\t-V 3 or --verbose 3: All requests and debug info',
     (value) => {
       // If no value provided, return 1 (boolean true case)
       if (value === undefined || value === true) return 1;
@@ -246,7 +249,7 @@ const startWithInputFile = async (inputFile) => {
       }
     }
 
-    if (opts.verbose) {
+    if (opts.verbose >= 1) {
       console.log(JSON.stringify(config, undefined, 2));
     } else {
       console.log('Run with --verbose to see the config file here.');
@@ -304,7 +307,7 @@ const startWithInputFile = async (inputFile) => {
       };
     }
 
-    if (opts.verbose) {
+    if (opts.verbose >= 1) {
       console.log(JSON.stringify(config, undefined, 2));
     } else {
       console.log('Run with --verbose to see the config file here.');

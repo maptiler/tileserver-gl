@@ -35,7 +35,7 @@ export const serve_style = {
      */
     app.get('/:id/style.json', (req, res, next) => {
       const { id } = req.params;
-      if (verbose) {
+      if (verbose >= 1) {
         console.log(
           'Handling style request for: /styles/%s/style.json',
           String(id).replace(/\n|\r/g, ''),
@@ -106,7 +106,7 @@ export const serve_style = {
         const sanitizedFormat = format
           ? '.' + String(format).replace(/\n|\r/g, '')
           : '';
-        if (verbose) {
+        if (verbose >= 1) {
           console.log(
             `Handling sprite request for: /styles/%s/sprite/%s%s%s`,
             sanitizedId,
@@ -119,7 +119,7 @@ export const serve_style = {
         const item = repo[id];
         const validatedFormat = allowedSpriteFormats(format);
         if (!item || !validatedFormat) {
-          if (verbose)
+          if (verbose >= 1)
             console.error(
               `Sprite item or format not found for: /styles/%s/sprite/%s%s%s`,
               sanitizedId,
@@ -134,7 +134,7 @@ export const serve_style = {
         );
         const spriteScale = allowedSpriteScales(scale);
         if (!sprite || spriteScale === null) {
-          if (verbose)
+          if (verbose >= 1)
             console.error(
               `Bad Sprite ID or Scale for: /styles/%s/sprite/%s%s%s`,
               sanitizedId,
@@ -158,7 +158,7 @@ export const serve_style = {
 
         const sanitizedSpritePath = sprite.path.replace(/^(\.\.\/)+/, '');
         const filename = `${sanitizedSpritePath}${spriteScale}.${validatedFormat}`;
-        if (verbose) console.log(`Loading sprite from: %s`, filename);
+        if (verbose >= 1) console.log(`Loading sprite from: %s`, filename);
         try {
           const data = await readFile(filename);
 
@@ -167,7 +167,7 @@ export const serve_style = {
           } else if (validatedFormat === 'png') {
             res.header('Content-type', 'image/png');
           }
-          if (verbose)
+          if (verbose >= 1)
             console.log(
               `Responding with sprite data for /styles/%s/sprite/%s%s%s`,
               sanitizedId,
@@ -178,7 +178,7 @@ export const serve_style = {
           res.set({ 'Last-Modified': item.lastModified });
           return res.send(data);
         } catch (err) {
-          if (verbose) {
+          if (verbose >= 1) {
             console.error(
               'Sprite load error: %s, Error: %s',
               filename,

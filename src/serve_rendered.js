@@ -1094,7 +1094,7 @@ export const serve_rendered = {
             (!p1 && p2 === 'static') || (p1 === 'static' && p2 === 'raw')
               ? 'static'
               : 'tile';
-          if (verbose && verbose >= 3) {
+          if (verbose >= 3) {
             console.log(
               `Handling rendered %s request for: /styles/%s%s/%s/%s/%s%s.%s`,
               requestType,
@@ -1154,7 +1154,7 @@ export const serve_rendered = {
         return res.sendStatus(404);
       }
       const tileSize = parseInt(req.params.tileSize, 10) || undefined;
-      if (verbose && verbose >= 3) {
+      if (verbose >= 3) {
         console.log(
           `Handling rendered tilejson request for: /styles/%s%s.json`,
           req.params.tileSize
@@ -1231,7 +1231,7 @@ export const serve_rendered = {
           ratio,
           request: async (req, callback) => {
             const protocol = req.url.split(':')[0];
-            if (verbose && verbose >= 3) {
+            if (verbose >= 3) {
               console.log('Handling request:', req);
             }
             if (protocol === 'sprites') {
@@ -1288,7 +1288,7 @@ export const serve_rendered = {
                 y,
               );
               if (fetchTile == null && sourceInfo.sparse == true) {
-                if (verbose && verbose >= 2) {
+                if (verbose >= 2) {
                   console.log(
                     'fetchTile warning on %s, sparse response',
                     req.url,
@@ -1297,7 +1297,7 @@ export const serve_rendered = {
                 callback();
                 return;
               } else if (fetchTile == null) {
-                if (verbose && verbose >= 2) {
+                if (verbose >= 2) {
                   console.log(
                     'fetchTile error on %s, serving empty response',
                     req.url,
@@ -1354,7 +1354,7 @@ export const serve_rendered = {
 
                 // Handle 410 Gone as sparse response
                 if (response.status === 410) {
-                  if (verbose && verbose >= 2) {
+                  if (verbose >= 2) {
                     console.log(
                       'fetchTile warning on %s, sparse response due to 410 Gone',
                       req.url,
@@ -1412,7 +1412,7 @@ export const serve_rendered = {
                     }
 
                     if (matchedSparse) {
-                      if (verbose && verbose >= 2) {
+                      if (verbose >= 2) {
                         console.log(
                           'fetchTile warning on %s, sparse response due to 404 and source.sparse=true',
                           req.url,
@@ -1559,7 +1559,7 @@ export const serve_rendered = {
 
         // Remove (flatten) 3D buildings
         if (layer.paint['fill-extrusion-height']) {
-          if (verbose && verbose >= 1) {
+          if (verbose >= 1) {
             console.warn(
               `Warning: Layer '${layerIdForWarning}' in style '${id}' has property 'fill-extrusion-height'. ` +
                 `3D extrusion may appear distorted or misleading when rendered as a static image due to camera angle limitations. ` +
@@ -1570,7 +1570,7 @@ export const serve_rendered = {
           layer.paint['fill-extrusion-height'] = 0;
         }
         if (layer.paint['fill-extrusion-base']) {
-          if (verbose && verbose >= 1) {
+          if (verbose >= 1) {
             console.warn(
               `Warning: Layer '${layerIdForWarning}' in style '${id}' has property 'fill-extrusion-base'. ` +
                 `3D extrusion may appear distorted or misleading when rendered as a static image due to camera angle limitations. ` +
@@ -1590,7 +1590,7 @@ export const serve_rendered = {
 
         for (const prop of hillshadePropertiesToRemove) {
           if (prop in layer.paint) {
-            if (verbose) {
+            if (verbose >= 1) {
               console.warn(
                 `Warning: Layer '${layerIdForWarning}' in style '${id}' has property '${prop}'. ` +
                   `This property is not supported by MapLibre Native. ` +
@@ -1605,7 +1605,7 @@ export const serve_rendered = {
 
         // --- Remove 'hillshade-shadow-color' if it is an array. It can only be a string in MapLibre Native ---
         if (Array.isArray(layer.paint['hillshade-shadow-color'])) {
-          if (verbose) {
+          if (verbose >= 1) {
             console.warn(
               `Warning: Layer '${layerIdForWarning}' in style '${id}' has property 'hillshade-shadow-color'. ` +
                 `An array value is not supported by MapLibre Native for this property (expected string/color). ` +
