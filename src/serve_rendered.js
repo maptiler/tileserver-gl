@@ -1094,7 +1094,7 @@ export const serve_rendered = {
             (!p1 && p2 === 'static') || (p1 === 'static' && p2 === 'raw')
               ? 'static'
               : 'tile';
-          if (verbose) {
+          if (verbose && verbose >= 3) {
             console.log(
               `Handling rendered %s request for: /styles/%s%s/%s/%s/%s%s.%s`,
               requestType,
@@ -1154,7 +1154,7 @@ export const serve_rendered = {
         return res.sendStatus(404);
       }
       const tileSize = parseInt(req.params.tileSize, 10) || undefined;
-      if (verbose) {
+      if (verbose && verbose >= 3) {
         console.log(
           `Handling rendered tilejson request for: /styles/%s%s.json`,
           req.params.tileSize
@@ -1288,7 +1288,7 @@ export const serve_rendered = {
                 y,
               );
               if (fetchTile == null && sourceInfo.sparse == true) {
-                if (verbose) {
+                if (verbose && verbose >= 2) {
                   console.log(
                     'fetchTile warning on %s, sparse response',
                     req.url,
@@ -1297,7 +1297,7 @@ export const serve_rendered = {
                 callback();
                 return;
               } else if (fetchTile == null) {
-                if (verbose) {
+                if (verbose && verbose >= 2) {
                   console.log(
                     'fetchTile error on %s, serving empty response',
                     req.url,
@@ -1344,7 +1344,7 @@ export const serve_rendered = {
               try {
                 // Add timeout to prevent hanging on unreachable hosts
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
                 const response = await fetch(req.url, {
                   signal: controller.signal,
@@ -1354,7 +1354,7 @@ export const serve_rendered = {
 
                 // Handle 410 Gone as sparse response
                 if (response.status === 410) {
-                  if (verbose) {
+                  if (verbose && verbose >= 2) {
                     console.log(
                       'fetchTile warning on %s, sparse response due to 410 Gone',
                       req.url,
@@ -1406,7 +1406,7 @@ export const serve_rendered = {
                 if (error.name === 'AbortError') {
                   console.error(
                     `FETCH TIMEOUT for ${req.url}. ` +
-                      `The request took longer than 10 seconds to complete.`,
+                      `The request took longer than 30 seconds to complete.`,
                   );
                 }
 
@@ -1497,7 +1497,7 @@ export const serve_rendered = {
 
         // Remove (flatten) 3D buildings
         if (layer.paint['fill-extrusion-height']) {
-          if (verbose) {
+          if (verbose && verbose >= 1) {
             console.warn(
               `Warning: Layer '${layerIdForWarning}' in style '${id}' has property 'fill-extrusion-height'. ` +
                 `3D extrusion may appear distorted or misleading when rendered as a static image due to camera angle limitations. ` +
@@ -1508,7 +1508,7 @@ export const serve_rendered = {
           layer.paint['fill-extrusion-height'] = 0;
         }
         if (layer.paint['fill-extrusion-base']) {
-          if (verbose) {
+          if (verbose && verbose >= 1) {
             console.warn(
               `Warning: Layer '${layerIdForWarning}' in style '${id}' has property 'fill-extrusion-base'. ` +
                 `3D extrusion may appear distorted or misleading when rendered as a static image due to camera angle limitations. ` +
