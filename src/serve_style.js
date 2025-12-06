@@ -55,17 +55,6 @@ export const serve_style = {
           if (typeof source.data == 'string') {
             source.data = fixUrl(req, source.data, item.publicUrl);
           }
-          // Remove server-only custom properties (like 'sparse') before exposing to clients
-          if (
-            source &&
-            Object.prototype.hasOwnProperty.call(source, 'sparse')
-          ) {
-            try {
-              delete source.sparse;
-            } catch (_err) {
-              // ignore deletion errors
-            }
-          }
         }
         if (styleJSON_.sprite) {
           if (Array.isArray(styleJSON_.sprite)) {

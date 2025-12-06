@@ -291,7 +291,6 @@ async function start(opts) {
             function dataResolver(styleSourceId) {
               let resolvedFileType;
               let resolvedInputFile;
-              let resolvedSparse = false;
               let resolvedS3Profile;
               let resolvedRequestPayer;
               let resolvedS3Region;
@@ -348,13 +347,6 @@ async function start(opts) {
                     resolvedFileType = currentFileType;
                     resolvedInputFile = currentInputFileValue;
 
-                    // Get sparse if present
-                    if (Object.hasOwn(sourceData, 'sparse')) {
-                      resolvedSparse = !!sourceData.sparse;
-                    } else {
-                      resolvedSparse = false;
-                    }
-
                     // Get s3Profile if present
                     if (Object.hasOwn(sourceData, 's3Profile')) {
                       resolvedS3Profile = sourceData.s3Profile;
@@ -397,7 +389,6 @@ async function start(opts) {
                 return {
                   inputFile: undefined,
                   fileType: undefined,
-                  sparse: false,
                   s3Profile: undefined,
                   requestPayer: false,
                   s3Region: undefined,
@@ -429,7 +420,6 @@ async function start(opts) {
               return {
                 inputFile: resolvedInputFile,
                 fileType: resolvedFileType,
-                sparse: resolvedSparse,
                 s3Profile: resolvedS3Profile,
                 requestPayer: resolvedRequestPayer,
                 s3Region: resolvedS3Region,

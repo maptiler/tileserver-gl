@@ -122,36 +122,6 @@ If you notice timeout errors with certain remote sources, you can adjust the tim
   # Reduce timeout to 5 seconds for faster failure
   tileserver-gl -c config.json --fetch-timeout 5000
 
-**Handling incomplete or unreliable sources (EXPERIMENTAL):**
-
-.. warning::
-   The ``sparse`` option is experimental and may change in future releases.
-
-If a remote source has missing tiles or is unreliable, you can mark it as "sparse" in your configuration. This tells TileServer GL to treat missing tiles gracefully and allow clients to use overzooming (loading tiles from lower zoom levels).
-
-In your configuration's ``data`` section, add ``"sparse": true``:
-::
-
-  "data": {
-    "incomplete-source": {
-      "pmtiles": "https://example.com/tiles.pmtiles",
-      "sparse": true
-    }
-  }
-
-Or in your style JSON, add the ``sparse`` property to the source:
-::
-
-  "sources": {
-    "my-source": {
-      "url": "pmtiles://https://example.com/tiles.pmtiles",
-      "type": "vector",
-      "sparse": true
-    }
-  }
-
-With ``sparse: true``, HTTP 404/410 responses are treated as valid sparse responses rather than errors, preventing renderer hangs.
-
 Reloading the configuration
 ======
 

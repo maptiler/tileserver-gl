@@ -109,10 +109,15 @@ export const serve_data = {
         x,
         y,
       );
-      if (fetchTile == null && item.tileJSON.sparse) {
-        return res.status(410).send();
-      } else if (fetchTile == null) {
-        return res.status(204).send();
+      if (!fetchTile || fetchTile.statusCode !== 200) {
+        const statusCode = fetchTile?.statusCode || 404;
+        if (statusCode === 204) {
+          return res.status(204).send();
+        }
+        if (statusCode === 500) {
+          return res.status(500).send(fetchTile.error);
+        }
+        return res.status(404).send('Not found');
       }
 
       let data = fetchTile.data;
@@ -261,7 +266,16 @@ export const serve_data = {
           xy[0],
           xy[1],
         );
-        if (fetchTile == null) return res.status(204).send();
+        if (!fetchTile || fetchTile.statusCode !== 200) {
+          const statusCode = fetchTile?.statusCode || 404;
+          if (statusCode === 204) {
+            return res.status(204).send();
+          }
+          if (statusCode === 500) {
+            return res.status(500).send(fetchTile.error);
+          }
+          return res.status(404).send('Not found');
+        }
 
         let data = fetchTile.data;
         var param = {
@@ -381,7 +395,6 @@ export const serve_data = {
     tileJSON['format'] = 'pbf';
     tileJSON['encoding'] = params['encoding'];
     tileJSON['tileSize'] = params['tileSize'];
-    tileJSON['sparse'] = params['sparse'];
 
     if (inputType === 'pmtiles') {
       source = openPMtiles(

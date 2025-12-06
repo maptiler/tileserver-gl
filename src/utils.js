@@ -472,32 +472,52 @@ export function isMBTilesProtocol(string) {
 }
 
 /**
+ * Result object for fetchTileData.
+ * @typedef {object} FetchTileResult
+ * @property {Buffer} [data] - The tile data.
+ * @property {object} [headers] - The tile headers.
+ * @property {number} [statusCode] - HTTP status code: 200 (ok), 204 (empty/no content), 404 (not found), or 500 (error).
+ * @property {string} [error] - Error message if statusCode is 500.
+ */
+
+/**
  * Fetches tile data from either PMTiles or MBTiles source.
  * @param {object} source - The source object, which may contain a mbtiles object, or pmtiles object.
  * @param {string} sourceType - The source type, which should be `pmtiles` or `mbtiles`
  * @param {number} z - The zoom level.
  * @param {number} x - The x coordinate of the tile.
  * @param {number} y - The y coordinate of the tile.
- * @returns {Promise<object | null>} - A promise that resolves to an object with data and headers or null if no data is found.
+ * @returns {Promise<FetchTileResult | null>} - A promise that resolves to an object with data, headers, and statusCode.
  */
 export async function fetchTileData(source, sourceType, z, x, y) {
   if (sourceType === 'pmtiles') {
     try {
       const tileinfo = await getPMtilesTile(source, z, x, y);
-      if (!tileinfo?.data) return null;
-      return { data: tileinfo.data, headers: tileinfo.header };
+      // PMTiles has no distinction between missing and empty tiles,
+      // so return 404 to allow MapLibre to overzoom to parent tiles
+      if (!tileinfo?.data) return { statusCode: 404 };
+      return { data: tileinfo.data, headers: tileinfo.header, statusCode: 200 };
     } catch (error) {
       console.error('Error fetching PMTiles tile:', error);
-      return null;
+      return { statusCode: 500, error: String(error) };
     }
   } else if (sourceType === 'mbtiles') {
     return new Promise((resolve) => {
       source.getTile(z, x, y, (err, tileData, tileHeader) => {
         if (err) {
+          // "Tile does not exist" means the tile is in bounds but has no data
+          // This should return 204 No Content (empty tile)
+          if (/does not exist/.test(err.message)) {
+            return resolve({ statusCode: 204 });
+          }
           console.error('Error fetching MBTiles tile:', err);
-          return resolve(null);
+          return resolve({ statusCode: 500, error: err.message });
         }
-        resolve({ data: tileData, headers: tileHeader });
+        if (tileData == null) {
+          // Tile data is null - tile not found
+          return resolve({ statusCode: 404 });
+        }
+        resolve({ data: tileData, headers: tileHeader, statusCode: 200 });
       });
     });
   }

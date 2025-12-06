@@ -249,7 +249,7 @@ The data source does not need to be specified here unless you explicitly want to
 Data Source Options
 --------------
 
-Within the top-level ``data`` object in your configuration, each defined data source (e.g., `terrain`, `sparse_vector_tiles`) can have several key properties. These properties define how *tileserver-gl* processes and serves the tiles from that source.
+Within the top-level ``data`` object in your configuration, each defined data source (e.g., `terrain`, `vector_tiles`) can have several key properties. These properties define how *tileserver-gl* processes and serves the tiles from that source.
 
 For example::
 
@@ -257,12 +257,10 @@ For example::
     "terrain": {
       "mbtiles": "terrain1.mbtiles",
       "encoding": "mapbox",
-      "tileSize": 512,
-      "sparse": true
+      "tileSize": 512
     },
-    "sparse_vector_tiles": {
-      "pmtiles": "custom_osm.pmtiles",
-      "sparse": true
+    "vector_tiles": {
+      "pmtiles": "custom_osm.pmtiles"
     },
     "production-s3-tiles": {
       "pmtiles": "s3://prod-bucket/tiles.pmtiles",
@@ -281,14 +279,6 @@ Here are the available options for each data source:
     This option is crucial if your source data uses 512x512 pixel tiles, as *tileserver-gl* typically assumes 256x256 by default.
     Allowed values: ``256``, ``512``.
     Default: ``256``.
-
-``sparse`` (boolean)
-    **EXPERIMENTAL: This feature is experimental and may change in future releases.**
-    
-    Controls the HTTP status code returned by *tileserver-gl* when a requested tile is not found in the source.
-    When ``true``, a ``410 Gone`` status is returned for missing tiles. This behaviour is beneficial for clients like MapLibre-GL-JS or MapLibre-Native, as it signals them to attempt loading tiles from lower zoom levels (overzooming) when a higher-zoom tile is explicitly missing.
-    When ``false`` (default), *tileserver-gl* returns a ``204 No Content`` for missing tiles, which typically signals the client to stop trying to load a substitute.
-    Default: ``false``.
 
 ``s3Profile`` (string)
     Specifies the AWS credential profile to use for S3 PMTiles sources. The profile must be defined in your ``~/.aws/credentials`` file.
