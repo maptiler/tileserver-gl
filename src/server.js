@@ -228,10 +228,16 @@ async function start(opts) {
               break;
             } else {
               // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys of data config
-              const fileType = Object.keys(data[id])[0];
-              // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys of data config, fileType is from Object.keys
-              if (data[id][fileType] === styleSourceId) {
-                // Style id was found in data filename, return the id that filename belong to
+              const sourceData = data[id];
+              // Check both pmtiles and mbtiles file paths
+              const pmtilesPath = sourceData.pmtiles;
+              const mbtilesPath = sourceData.mbtiles;
+
+              if (
+                pmtilesPath === styleSourceId ||
+                mbtilesPath === styleSourceId
+              ) {
+                // Style id was found in data filename, return the id that filename belongs to
                 dataItemId = id;
                 break;
               }
@@ -321,7 +327,7 @@ async function start(opts) {
 
                 if (currentFileType && currentInputFileValue) {
                   // Debug logging
-                  if (opts.verbose && opts.verbose >= 3) {
+                  if (opts.verbose && opts.verbose >= 2) {
                     console.log(
                       `[dataResolver] Checking id="${id}", file="${currentInputFileValue}"`,
                     );
@@ -338,7 +344,7 @@ async function start(opts) {
                   if (matchById || matchByFile || matchByBasename) {
                     if (opts.verbose && opts.verbose >= 2) {
                       console.log(
-                        `[dataResolver] Match found for styleSourceId: ${styleSourceId}. (byId=${matchById}, byFile=${matchByFile}, byBasename=${matchByBasename})`,
+                        `[dataResolver] Match found! (byId=${matchById}, byFile=${matchByFile}, byBasename=${matchByBasename})`,
                       );
                     }
 
