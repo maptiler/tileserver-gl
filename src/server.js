@@ -229,15 +229,11 @@ async function start(opts) {
             } else {
               // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys of data config
               const sourceData = data[id];
-              // Check both pmtiles and mbtiles file paths
-              const pmtilesPath = sourceData.pmtiles;
-              const mbtilesPath = sourceData.mbtiles;
 
               if (
-                pmtilesPath === styleSourceId ||
-                mbtilesPath === styleSourceId
+                (sourceData.pmtiles && sourceData.pmtiles === styleSourceId) ||
+                (sourceData.mbtiles && sourceData.mbtiles === styleSourceId)
               ) {
-                // Style id was found in data filename, return the id that filename belongs to
                 dataItemId = id;
                 break;
               }
@@ -391,6 +387,7 @@ async function start(opts) {
                 console.warn(
                   `Available data sources: ${Object.keys(data)
                     .map((id) => {
+                      // eslint-disable-next-line security/detect-object-injection
                       const src = data[id];
                       return `${id} -> ${src.pmtiles || src.mbtiles || 'unknown'}`;
                     })
@@ -467,14 +464,14 @@ async function start(opts) {
       for (const id of Object.keys(data)) {
         // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys of data config
         const item = data[id];
-        // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys of data config
-        const fileType = Object.keys(data[id])[0];
-        if (!fileType || !(fileType === 'pmtiles' || fileType === 'mbtiles')) {
+
+        if (!item.pmtiles && !item.mbtiles) {
           console.log(
             `Missing "pmtiles" or "mbtiles" property for ${id} data source`,
           );
           continue;
         }
+
         dataLoadPromises.push(
           serve_data.add(options, serving.data, item, id, opts),
         );
