@@ -680,7 +680,7 @@ async function start(opts) {
               : '';
             if (template === 'wmts') res.set('Content-Type', 'text/xml');
             return res.status(200).send(compiled(data));
-            } else {
+          } else {
             if (opts.verbose >= 1) {
               console.log(`Forwarding request for: ${urlPath} to next route`);
             }

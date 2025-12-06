@@ -62,7 +62,7 @@ export const serve_style = {
           ) {
             try {
               delete source.sparse;
-            } catch (e) {
+            } catch (_err) {
               // ignore deletion errors
             }
           }
@@ -233,14 +233,16 @@ export const serve_style = {
     const styleForValidation = clone(styleJSON);
     if (styleForValidation.sources) {
       for (const name of Object.keys(styleForValidation.sources)) {
-        // remove custom 'sparse' flag (and any other developer-only flags in the future)
         if (
+          // eslint-disable-next-line security/detect-object-injection -- name is from Object.keys of styleForValidation.sources
           styleForValidation.sources[name] &&
+          // eslint-disable-next-line security/detect-object-injection -- name is from Object.keys of styleForValidation.sources
           'sparse' in styleForValidation.sources[name]
         ) {
           try {
+            // eslint-disable-next-line security/detect-object-injection -- name is from Object.keys of styleForValidation.sources
             delete styleForValidation.sources[name].sparse;
-          } catch (e) {
+          } catch (_err) {
             // ignore any deletion errors and continue validation
           }
         }

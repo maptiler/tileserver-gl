@@ -95,6 +95,14 @@ program
       return isNaN(level) ? 1 : Math.min(Math.max(level, 1), 3);
     },
   )
+  .option(
+    '--fetch-timeout <ms>',
+    'External fetch timeout in milliseconds for renderer HTTP requests (default 15000)',
+    (value) => {
+      const v = parseInt(value, 10);
+      return isNaN(v) ? 15000 : v;
+    },
+  )
   .option('-s, --silent', 'Less verbose output')
   .option('-l|--log_file <file>', 'output log file (defaults to standard out)')
   .option(
@@ -122,6 +130,7 @@ const startServer = (configPath, config) => {
     silent: opts.silent,
     logFile: opts.log_file,
     logFormat: opts.log_format,
+    fetchTimeout: opts.fetchTimeout,
     publicUrl,
   });
 };

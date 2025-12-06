@@ -1207,7 +1207,7 @@ export const serve_rendered = {
       sourceTypes: {},
     };
 
-    const { publicUrl, verbose } = programOpts;
+    const { publicUrl, verbose, fetchTimeout } = programOpts;
 
     const styleJSON = clone(style);
     /**
@@ -1341,10 +1341,12 @@ export const serve_rendered = {
 
               callback(null, response);
             } else if (protocol === 'http' || protocol === 'https') {
+              // Add timeout to prevent hanging on unreachable hosts
+              const controller = new AbortController();
+              const timeoutMs = (fetchTimeout && Number(fetchTimeout)) || 15000;
+              let timeoutId;
               try {
-                // Add timeout to prevent hanging on unreachable hosts
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+                timeoutId = setTimeout(() => controller.abort(), timeoutMs); // timeout configured via CLI/config
 
                 const response = await fetch(req.url, {
                   signal: controller.signal,
@@ -1372,6 +1374,7 @@ export const serve_rendered = {
                     for (const srcName of Object.keys(
                       styleJSON.sources || {},
                     )) {
+                      // eslint-disable-next-line security/detect-object-injection -- srcName is from Object.keys of styleJSON.sources
                       const src = styleJSON.sources[srcName] || {};
                       // Check explicit tiles templates
                       const tiles = Array.isArray(src.tiles) ? src.tiles : [];
@@ -1390,7 +1393,7 @@ export const serve_rendered = {
                             matchedSparse = true;
                             break;
                           }
-                        } catch (e) {
+                        } catch (_err) {
                           // ignore malformed templates
                         }
                       }
@@ -1405,7 +1408,7 @@ export const serve_rendered = {
                             matchedSparse = true;
                             break;
                           }
-                        } catch (e) {
+                        } catch (_err) {
                           // ignore invalid URLs
                         }
                       }
@@ -1421,7 +1424,7 @@ export const serve_rendered = {
                       callback();
                       return;
                     }
-                  } catch (e) {
+                  } catch (_) {
                     // fallback to normal error handling below
                   }
                 }
@@ -1468,7 +1471,7 @@ export const serve_rendered = {
                 if (error.name === 'AbortError') {
                   console.error(
                     `FETCH TIMEOUT for ${req.url}. ` +
-                      `The request took longer than 30 seconds to complete.`,
+                      `The request took longer than ${timeoutMs} ms to complete.`,
                   );
                 }
 
