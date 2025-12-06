@@ -109,14 +109,7 @@ export const serve_data = {
         x,
         y,
       );
-      if (!fetchTile || fetchTile.statusCode !== 200) {
-        const statusCode = fetchTile?.statusCode || 404;
-        if (statusCode === 204) {
-          return res.status(204).send();
-        }
-        if (statusCode === 500) {
-          return res.status(500).send(fetchTile.error);
-        }
+      if (fetchTile == null) {
         return res.status(404).send('Not found');
       }
 
@@ -266,14 +259,7 @@ export const serve_data = {
           xy[0],
           xy[1],
         );
-        if (!fetchTile || fetchTile.statusCode !== 200) {
-          const statusCode = fetchTile?.statusCode || 404;
-          if (statusCode === 204) {
-            return res.status(204).send();
-          }
-          if (statusCode === 500) {
-            return res.status(500).send(fetchTile.error);
-          }
+        if (fetchTile == null) {
           return res.status(404).send('Not found');
         }
 

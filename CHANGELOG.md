@@ -9,7 +9,7 @@
 * Fix S3 URL parsing for nested paths in AWS buckets (https://github.com/maptiler/tileserver-gl/pull/1819) by @acalcutt
 * Fix Renderer Crashes and Memory Leak (https://github.com/maptiler/tileserver-gl/pull/1825) by @acalcutt
 * Fix loading local data sources (PMTiles/MBTiles) specified in style (https://github.com/maptiler/tileserver-gl/pull/1855) by @acalcutt
-* Remove 'sparse' option and fix 204/404 response handling for missing tiles (MBTiles returns 204 for empty tiles, PMTiles returns 404) by @acalcutt
+* Remove 'sparse' option - missing tiles now always return 404 to allow MapLibre overzoom by @acalcutt
 
 ## 5.4.0
 * Fix the issue where the tile URL cannot be correctly parsed with the HTTPS protocol when using an nginx proxy service (https://github.com/maptiler/tileserver-gl/pull/1578) by @dakanggo

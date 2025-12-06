@@ -1288,26 +1288,11 @@ export const serve_rendered = {
                 x,
                 y,
               );
-              if (!fetchTile || fetchTile.statusCode !== 200) {
+              if (fetchTile == null) {
                 if (verbose >= 2) {
-                  console.log(
-                    'fetchTile status %s on %s',
-                    fetchTile?.statusCode || 'null',
-                    req.url,
-                  );
+                  console.log('fetchTile null on %s', req.url);
                 }
-                // 204 means valid tile location but no data - create empty tile
-                // to prevent MapLibre from trying to overzoom
-                if (fetchTile?.statusCode === 204) {
-                  createEmptyResponse(
-                    sourceInfo.format,
-                    sourceInfo.color,
-                    callback,
-                  );
-                  return;
-                }
-                // Other errors (404, 500, etc.) - return empty callback
-                // so MapLibre can try to overzoom to parent tile
+                // Return empty callback so MapLibre can try to overzoom to parent tile
                 callback();
                 return;
               }
