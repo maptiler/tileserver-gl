@@ -283,6 +283,8 @@ Here are the available options for each data source:
     Default: ``256``.
 
 ``sparse`` (boolean)
+    **EXPERIMENTAL: This feature is experimental and may change in future releases.**
+    
     Controls the HTTP status code returned by *tileserver-gl* when a requested tile is not found in the source.
     When ``true``, a ``410 Gone`` status is returned for missing tiles. This behaviour is beneficial for clients like MapLibre-GL-JS or MapLibre-Native, as it signals them to attempt loading tiles from lower zoom levels (overzooming) when a higher-zoom tile is explicitly missing.
     When ``false`` (default), *tileserver-gl* returns a ``204 No Content`` for missing tiles, which typically signals the client to stop trying to load a substitute.
