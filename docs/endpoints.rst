@@ -106,7 +106,12 @@ Source data
 
     * or ``/data/{id}/elevation/{z}/{long}/{lat}`` for the coordinate
 
-    * the result will be a json object like ``{"z":7,"x":68,"y":45,"red":134,"green":66,"blue":0,"latitude":11.84069,"longitude":46.04798,"elevation":1602}``
+    * the result will be a json object like ``{"z":7,"x":68,"y":45,"long":46.04798,"lat":11.84069,"elevation":1602,"pixelX":128,"pixelY":256}``
+
+    * for batch requests, POST to ``/data/{id}/elevation`` with a JSON body:
+
+      * Request: ``{"points": [{"lon": 45.5, "lat": 45.5, "z": 1}, ...]}``
+      * Response: ``[500, 200, null, ...]`` - array of elevations (or null if no data) in the same order as input
 
     * for batch requests, POST to ``/data/{id}/elevation`` with a JSON body:
 

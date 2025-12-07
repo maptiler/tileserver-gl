@@ -82,7 +82,10 @@ program
   )
   .option(
     '-V, --verbose [level]',
-    'More verbose output (can specify level 1-3, default 1)',
+    'More verbose output (level 1-3)\n' +
+      '\t-V, --verbose, -V 1, or --verbose 1: Important operations\n' +
+      '\t-V 2 or --verbose 2: Detailed operations\n' +
+      '\t-V 3 or --verbose 3: All requests and debug info',
     (value) => {
       // If no value provided, return 1 (boolean true case)
       if (value === undefined || value === true) return 1;
@@ -90,6 +93,14 @@ program
       const level = parseInt(value, 10);
       // Validate level is between 1-3
       return isNaN(level) ? 1 : Math.min(Math.max(level, 1), 3);
+    },
+  )
+  .option(
+    '--fetch-timeout <ms>',
+    'External fetch timeout in milliseconds for renderer HTTP requests (default 15000)',
+    (value) => {
+      const v = parseInt(value, 10);
+      return isNaN(v) ? 15000 : v;
     },
   )
   .option('-s, --silent', 'Less verbose output')
@@ -119,6 +130,7 @@ const startServer = (configPath, config) => {
     silent: opts.silent,
     logFile: opts.log_file,
     logFormat: opts.log_format,
+    fetchTimeout: opts.fetchTimeout,
     publicUrl,
   });
 };
@@ -246,7 +258,7 @@ const startWithInputFile = async (inputFile) => {
       }
     }
 
-    if (opts.verbose) {
+    if (opts.verbose >= 1) {
       console.log(JSON.stringify(config, undefined, 2));
     } else {
       console.log('Run with --verbose to see the config file here.');
@@ -304,7 +316,7 @@ const startWithInputFile = async (inputFile) => {
       };
     }
 
-    if (opts.verbose) {
+    if (opts.verbose >= 1) {
       console.log(JSON.stringify(config, undefined, 2));
     } else {
       console.log('Run with --verbose to see the config file here.');

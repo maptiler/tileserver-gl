@@ -249,7 +249,7 @@ The data source does not need to be specified here unless you explicitly want to
 Data Source Options
 --------------
 
-Within the top-level ``data`` object in your configuration, each defined data source (e.g., `terrain`, `sparse_vector_tiles`) can have several key properties. These properties define how *tileserver-gl* processes and serves the tiles from that source.
+Within the top-level ``data`` object in your configuration, each defined data source (e.g., `terrain`, `vector_tiles`) can have several key properties. These properties define how *tileserver-gl* processes and serves the tiles from that source.
 
 For example::
 
@@ -257,12 +257,10 @@ For example::
     "terrain": {
       "mbtiles": "terrain1.mbtiles",
       "encoding": "mapbox",
-      "tileSize": 512,
-      "sparse": true
+      "tileSize": 512
     },
-    "sparse_vector_tiles": {
-      "pmtiles": "custom_osm.pmtiles",
-      "sparse": true
+    "vector_tiles": {
+      "pmtiles": "custom_osm.pmtiles"
     },
     "production-s3-tiles": {
       "pmtiles": "s3://prod-bucket/tiles.pmtiles",
@@ -283,10 +281,13 @@ Here are the available options for each data source:
     Default: ``256``.
 
 ``sparse`` (boolean)
-    Controls the HTTP status code returned by *tileserver-gl* when a requested tile is not found in the source.
-    When ``true``, a ``410 Gone`` status is returned for missing tiles. This behaviour is beneficial for clients like MapLibre-GL-JS or MapLibre-Native, as it signals them to attempt loading tiles from lower zoom levels (overzooming) when a higher-zoom tile is explicitly missing.
-    When ``false`` (default), *tileserver-gl* returns a ``204 No Content`` for missing tiles, which typically signals the client to stop trying to load a substitute.
-    Default: ``false``.
+    Controls behavior when a tile is not found in the source.
+
+    * ``true`` - Returns HTTP 404, allowing clients like MapLibre to overzoom and use parent tiles. Use this for terrain or datasets with uneven zoom coverage.
+    * ``false`` - Returns HTTP 204 (No Content), signaling an intentionally empty tile and preventing overzoom.
+
+    This can be set globally in the top-level options or per-data-source (per-source overrides global).
+    Default: Depends on tile format - ``false`` for vector tiles (pbf), ``true`` for raster tiles (png, webp, jpg, etc.).
 
 ``s3Profile`` (string)
     Specifies the AWS credential profile to use for S3 PMTiles sources. The profile must be defined in your ``~/.aws/credentials`` file.
@@ -310,6 +311,23 @@ Here are the available options for each data source:
     If both are specified, the configuration value takes precedence.
     If not specified, uses ``AWS_REGION`` environment variable or defaults to ``us-east-1``.
     Optional, only applicable to PMTiles sources using S3 URLs.
+
+``s3UrlFormat`` (string)
+    Specifies how to interpret the S3 URL format.
+    
+    Allowed values:
+    
+    * ``aws`` - Interpret as AWS S3 (``s3://bucket/path/file.pmtiles``)
+    * ``custom`` - Interpret as custom S3 endpoint (``s3://endpoint/bucket/path/file.pmtiles``)
+    * Not specified (default) - Auto-detect based on URL pattern
+    
+    Can be specified in the URL using ``?s3UrlFormat=aws`` or in the configuration.
+    If both are specified, the configuration value takes precedence.
+    
+    Optional, only applicable to PMTiles sources using S3 URLs.
+
+.. note::
+    By default, URLs with dots in the first segment (e.g., ``s3://storage.example.com/bucket/file.pmtiles``) are treated as custom endpoints, while URLs without dots are treated as AWS S3. Use ``s3UrlFormat: "aws"`` if your AWS bucket name contains dots.
 
 .. note::
     These configuration options will be overridden by metadata in the MBTiles or PMTiles file. if corresponding properties exist in the file's metadata, you do not need to specify them in the data configuration.
@@ -445,6 +463,17 @@ Precedence order (highest to lowest): Configuration property ``s3Region``, URL p
 
 Precedence order (highest to lowest): Configuration property ``requestPayer``, URL parameter ``?requestPayer=true``, Default: ``false``.
 
+*S3UrlFormat* - Specifies how to interpret S3 URLs::
+
+  # URL parameter
+  "pmtiles": "s3://my.bucket.name/tiles.pmtiles?s3UrlFormat=aws"
+  
+  # Configuration property
+  "pmtiles": "s3://my.bucket.name/tiles.pmtiles",
+  "s3UrlFormat": "aws"
+
+Precedence order (highest to lowest): Configuration property ``s3UrlFormat``, URL parameter ``?s3UrlFormat=...``, Auto-detection.
+
 **Complete Configuration Examples:**
 
 Using URL parameters::
@@ -452,6 +481,9 @@ Using URL parameters::
   "data": {
     "us-west-tiles": {
       "pmtiles": "s3://prod-bucket/tiles.pmtiles?profile=production&region=us-west-2"
+    },
+    "dotted-bucket-name": {
+      "pmtiles": "s3://my.bucket.name/tiles.pmtiles?s3UrlFormat=aws&region=us-east-1"
     },
     "eu-requester-pays": {
       "pmtiles": "s3://bucket/tiles.pmtiles?profile=prod&region=eu-central-1&requestPayer=true"
@@ -466,6 +498,11 @@ Using configuration properties (recommended)::
       "s3Profile": "production",
       "s3Region": "us-west-2"
     },
+    "dotted-bucket-name": {
+      "pmtiles": "s3://my.bucket.name/tiles.pmtiles",
+      "s3UrlFormat": "aws",
+      "s3Region": "us-east-1"
+    },
     "eu-requester-pays": {
       "pmtiles": "s3://bucket/tiles.pmtiles",
       "s3Profile": "production",
@@ -476,11 +513,15 @@ Using configuration properties (recommended)::
 
 **Using S3 in Style JSON Sources:**
 
-When referencing S3 sources from within a style JSON file, use the ``pmtiles://`` prefix with S3 URLs. You can only specify profile, region, and requestPayer using URL query parameters (configuration properties are not available in style JSON)::
+When referencing S3 sources from within a style JSON file, use the ``pmtiles://`` prefix with S3 URLs. You can specify profile, region, requestPayer, and s3UrlFormat using URL query parameters (configuration properties are not available in style JSON)::
 
   "sources": {
     "aws-tiles": {
       "url": "pmtiles://s3://my-bucket/tiles.pmtiles?profile=production",
+      "type": "vector"
+    },
+    "dotted-bucket": {
+      "url": "pmtiles://s3://my.bucket.name/tiles.pmtiles?s3UrlFormat=aws",
       "type": "vector"
     },
     "spaces-tiles": {

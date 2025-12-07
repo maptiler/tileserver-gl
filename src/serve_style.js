@@ -35,7 +35,7 @@ export const serve_style = {
      */
     app.get('/:id/style.json', (req, res, next) => {
       const { id } = req.params;
-      if (verbose) {
+      if (verbose >= 1) {
         console.log(
           'Handling style request for: /styles/%s/style.json',
           String(id).replace(/\n|\r/g, ''),
@@ -95,7 +95,7 @@ export const serve_style = {
         const sanitizedFormat = format
           ? '.' + String(format).replace(/\n|\r/g, '')
           : '';
-        if (verbose) {
+        if (verbose >= 1) {
           console.log(
             `Handling sprite request for: /styles/%s/sprite/%s%s%s`,
             sanitizedId,
@@ -108,7 +108,7 @@ export const serve_style = {
         const item = repo[id];
         const validatedFormat = allowedSpriteFormats(format);
         if (!item || !validatedFormat) {
-          if (verbose)
+          if (verbose >= 1)
             console.error(
               `Sprite item or format not found for: /styles/%s/sprite/%s%s%s`,
               sanitizedId,
@@ -123,7 +123,7 @@ export const serve_style = {
         );
         const spriteScale = allowedSpriteScales(scale);
         if (!sprite || spriteScale === null) {
-          if (verbose)
+          if (verbose >= 1)
             console.error(
               `Bad Sprite ID or Scale for: /styles/%s/sprite/%s%s%s`,
               sanitizedId,
@@ -147,7 +147,7 @@ export const serve_style = {
 
         const sanitizedSpritePath = sprite.path.replace(/^(\.\.\/)+/, '');
         const filename = `${sanitizedSpritePath}${spriteScale}.${validatedFormat}`;
-        if (verbose) console.log(`Loading sprite from: %s`, filename);
+        if (verbose >= 1) console.log(`Loading sprite from: %s`, filename);
         try {
           const data = await readFile(filename);
 
@@ -156,7 +156,7 @@ export const serve_style = {
           } else if (validatedFormat === 'png') {
             res.header('Content-type', 'image/png');
           }
-          if (verbose)
+          if (verbose >= 1)
             console.log(
               `Responding with sprite data for /styles/%s/sprite/%s%s%s`,
               sanitizedId,
@@ -167,7 +167,7 @@ export const serve_style = {
           res.set({ 'Last-Modified': item.lastModified });
           return res.send(data);
         } catch (err) {
-          if (verbose) {
+          if (verbose >= 1) {
             console.error(
               'Sprite load error: %s, Error: %s',
               filename,
@@ -217,7 +217,28 @@ export const serve_style = {
     const styleFile = path.resolve(options.paths.styles, params.style);
     const styleJSON = clone(style);
 
-    const validationErrors = validateStyleMin(styleJSON);
+    // Sanitize style for validation: remove non-spec properties (e.g., 'sparse')
+    // so that validateStyleMin doesn't reject valid styles containing our custom flags.
+    const styleForValidation = clone(styleJSON);
+    if (styleForValidation.sources) {
+      for (const name of Object.keys(styleForValidation.sources)) {
+        if (
+          // eslint-disable-next-line security/detect-object-injection -- name is from Object.keys of styleForValidation.sources
+          styleForValidation.sources[name] &&
+          // eslint-disable-next-line security/detect-object-injection -- name is from Object.keys of styleForValidation.sources
+          'sparse' in styleForValidation.sources[name]
+        ) {
+          try {
+            // eslint-disable-next-line security/detect-object-injection -- name is from Object.keys of styleForValidation.sources
+            delete styleForValidation.sources[name].sparse;
+          } catch (_err) {
+            // ignore any deletion errors and continue validation
+          }
+        }
+      }
+    }
+
+    const validationErrors = validateStyleMin(styleForValidation);
     if (validationErrors.length > 0) {
       console.log(`The file "${params.style}" is not a valid style file:`);
       for (const err of validationErrors) {

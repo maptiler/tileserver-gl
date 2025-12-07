@@ -59,13 +59,4 @@ COPY package.json .
 RUN npm install
 COPY / .
 
-# Create terrain mbtiles for elevation API tests and update config
-RUN node test/create_terrain_mbtiles.js test_data/terrain.mbtiles && \
-    node -e " \
-      const fs = require('fs'); \
-      const config = JSON.parse(fs.readFileSync('test_data/config.json', 'utf8')); \
-      config.data.terrain = { mbtiles: 'terrain.mbtiles' }; \
-      fs.writeFileSync('test_data/config.json', JSON.stringify(config, null, 2)); \
-    "
-
 RUN script -q -c "xvfb-run --server-args='-screen 0 1024x768x24' npm test"

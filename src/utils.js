@@ -166,7 +166,7 @@ export function getTileUrls(
       if (domain.indexOf('*') !== -1) {
         if (relativeSubdomainsUsable) {
           const newParts = hostParts.slice(1);
-          newParts.unshift(domain.replace('*', hostParts[0]));
+          newParts.unshift(domain.replace(/\*/g, hostParts[0]));
           newDomains.push(newParts.join('.'));
         }
       } else {
@@ -522,8 +522,7 @@ export async function fetchTileData(source, sourceType, z, x, y) {
   } else if (sourceType === 'mbtiles') {
     return new Promise((resolve) => {
       source.getTile(z, x, y, (err, tileData, tileHeader) => {
-        if (err) {
-          console.error('Error fetching MBTiles tile:', err);
+        if (err || tileData == null) {
           return resolve(null);
         }
         resolve({ data: tileData, headers: tileHeader });

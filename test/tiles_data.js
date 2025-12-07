@@ -23,6 +23,6 @@ describe('Vector tiles', function () {
     testTile(prefix, 0, 1, 0, 404);
     testTile(prefix, 0, 0, 1, 404);
 
-    testTile(prefix, 14, 0, 0, 204); // non existent tile
+    testTile(prefix, 14, 0, 0, 204); // non existent tile (vector tiles default to 204)
   });
 });
