@@ -1369,7 +1369,9 @@ export const serve_rendered = {
                       'fetchTile HTTP %d on %s, %s',
                       response.status,
                       req.url,
-                      globalSparse ? 'allowing overzoom' : 'creating empty tile',
+                      globalSparse
+                        ? 'allowing overzoom'
+                        : 'creating empty tile',
                     );
                   }
 
@@ -1708,7 +1710,8 @@ export const serve_rendered = {
           // Vector tiles (pbf) default to false (204), raster tiles default to true (404)
           const isVector = metadata.format === 'pbf';
           // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
-          map.sparseFlags[name] = dataInfo.sparse ?? options.sparse ?? !isVector;
+          map.sparseFlags[name] =
+            dataInfo.sparse ?? options.sparse ?? !isVector;
         } else {
           // MBTiles does not support remote URLs
 
@@ -1761,7 +1764,8 @@ export const serve_rendered = {
           // Vector tiles (pbf) default to false (204), raster tiles default to true (404)
           const isVector = info.format === 'pbf';
           // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
-          map.sparseFlags[name] = dataInfo.sparse ?? options.sparse ?? !isVector;
+          map.sparseFlags[name] =
+            dataInfo.sparse ?? options.sparse ?? !isVector;
         }
       }
     }
