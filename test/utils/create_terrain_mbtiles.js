@@ -120,5 +120,5 @@ async function createTerrainMbtiles(outputPath) {
 
 // Get output path from command line or use default
 const outputPath =
-  process.argv[2] || path.join(__dirname, '../test_data/terrain.mbtiles');
+  process.argv[2] || path.join(__dirname, '../../test_data/terrain.mbtiles');
 createTerrainMbtiles(outputPath);
