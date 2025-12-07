@@ -403,12 +403,6 @@ export const serve_data = {
           sourceInfo.tileSize,
         );
 
-        if (fetchTile == null) {
-          // sparse=true (default) -> 404 (allows overzoom)
-          // sparse=false -> 204 (empty tile, no overzoom)
-          return res.status(item.sparse ? 404 : 204).send();
-        }
-
         res.status(200).json({
           long: lon,
           lat: lat,
