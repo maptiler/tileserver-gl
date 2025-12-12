@@ -101,7 +101,7 @@
     "node": ">=18.17.0 <23"
   },
   "repository": {
-    "url": "git+https://github.com/maptiler/tileserver-gl.git",
+    "url": "https://github.com/maptiler/tileserver-gl",
     "type": "git"
   },
   "bugs": {

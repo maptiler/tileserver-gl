@@ -1,5 +1,9 @@
 name: 'Build, Test, Release'
 
+permissions:
+  id-token: write  # Required for NPM trusted publishing
+  contents: write
+
 on:
   workflow_dispatch:
     inputs:
@@ -9,12 +13,6 @@ on:
       docker_token:
         description: 'Docker Token'
         required: true
-      npm_token:
-        description: 'NPM Token'
-        required: true
-
-permissions:
-  contents: write
 
 env:
   DOCKER_IMAGE_NAME: maptiler/tileserver-gl
@@ -165,6 +163,7 @@ jobs:
           node-version-file: 'package.json'
           check-latest: true
           cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install NPM dependencies 🚀
         run: npm ci --prefer-offline --no-audit
@@ -184,10 +183,7 @@ jobs:
       # NPM Publishing
       - name: Publish to NPM
         run: |
-          npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
           npm publish --access public --tag ${{ steps.prepare_release.outputs.tag }}
-        env:
-          NPM_TOKEN: ${{ github.event.inputs.npm_token }}
 
       - name: Create Tileserver Light Directory
         run: node publish.js --no-publish
@@ -199,10 +195,7 @@ jobs:
       - name: Publish Light to NPM
         working-directory: ./light
         run: |
-          npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
           npm publish --access public --tag ${{ steps.prepare_release.outputs.tag }}
-        env:
-          NPM_TOKEN: ${{ github.event.inputs.npm_token }}
 
       # Docker Manifest Creation
       - name: Set up Docker Buildx
