@@ -14,6 +14,7 @@ import {
   getTileUrls,
   isValidRemoteUrl,
   fetchTileData,
+  lonLatToTilePixel,
 } from './utils.js';
 import { getPMtilesInfo, openPMtiles } from './pmtiles_adapter.js';
 import { gunzipP, gzipP } from './promises.js';
@@ -45,6 +46,7 @@ export const serve_data = {
   init: function (options, repo, programOpts) {
     const { verbose } = programOpts;
     const app = express().disable('x-powered-by');
+    app.use(express.json());
 
     /**
      * Handles requests for tile data, responding with the tile image.
@@ -169,6 +171,164 @@ export const serve_data = {
     });
 
     /**
+     * Validates elevation data source and returns source info or sends error response.
+     * @param {string} id - ID of the data source.
+     * @param {object} res - Express response object.
+     * @returns {object|null} Source info object or null if validation failed.
+     */
+    const validateElevationSource = (id, res) => {
+      // eslint-disable-next-line security/detect-object-injection -- id is route parameter for data source lookup
+      const item = repo?.[id];
+      if (!item) {
+        res.sendStatus(404);
+        return null;
+      }
+      if (!item.source) {
+        res.status(404).send('Missing source');
+        return null;
+      }
+      if (!item.tileJSON) {
+        res.status(404).send('Missing tileJSON');
+        return null;
+      }
+      if (!item.sourceType) {
+        res.status(404).send('Missing sourceType');
+        return null;
+      }
+      const { source, tileJSON, sourceType } = item;
+      if (sourceType !== 'pmtiles' && sourceType !== 'mbtiles') {
+        res.status(400).send('Invalid sourceType. Must be pmtiles or mbtiles.');
+        return null;
+      }
+      const encoding = tileJSON?.encoding;
+      if (encoding == null) {
+        res.status(400).send('Missing tileJSON.encoding');
+        return null;
+      }
+      if (encoding !== 'terrarium' && encoding !== 'mapbox') {
+        res.status(400).send('Invalid encoding. Must be terrarium or mapbox.');
+        return null;
+      }
+      const format = tileJSON?.format;
+      if (format == null) {
+        res.status(400).send('Missing tileJSON.format');
+        return null;
+      }
+      if (format !== 'webp' && format !== 'png') {
+        res.status(400).send('Invalid format. Must be webp or png.');
+        return null;
+      }
+      if (tileJSON.minzoom == null || tileJSON.maxzoom == null) {
+        res.status(400).send('Missing tileJSON zoom bounds');
+        return null;
+      }
+      return {
+        source,
+        sourceType,
+        encoding,
+        format,
+        tileSize: tileJSON.tileSize || 512,
+        minzoom: tileJSON.minzoom,
+        maxzoom: tileJSON.maxzoom,
+      };
+    };
+
+    /**
+     * Validates that a point has valid lon, lat, and z properties.
+     * @param {object} point - Point to validate.
+     * @param {number} index - Index of the point in the array.
+     * @returns {string|null} Error message if invalid, null if valid.
+     */
+    const validatePoint = (point, index) => {
+      if (point == null || typeof point !== 'object') {
+        return `Invalid point at index ${index}: point must be an object`;
+      }
+      if (typeof point.lon !== 'number' || !isFinite(point.lon)) {
+        return `Invalid point at index ${index}: lon must be a finite number`;
+      }
+      if (typeof point.lat !== 'number' || !isFinite(point.lat)) {
+        return `Invalid point at index ${index}: lat must be a finite number`;
+      }
+      if (typeof point.z !== 'number' || !isFinite(point.z)) {
+        return `Invalid point at index ${index}: z must be a finite number`;
+      }
+      return null;
+    };
+
+    /**
+     * Gets batch elevations for an array of points.
+     * @param {object} sourceInfo - Validated source info from validateElevationSource.
+     * @param {Array<{lon: number, lat: number, z: number}>} points - Array of validated points.
+     * @returns {Promise<Array<number|null>>} Array of elevations in same order as input.
+     */
+    const getBatchElevations = async (sourceInfo, points) => {
+      const {
+        source,
+        sourceType,
+        encoding,
+        format,
+        tileSize,
+        minzoom,
+        maxzoom,
+      } = sourceInfo;
+
+      // Group points by tile (including zoom level in the key)
+      const tileGroups = new Map();
+      for (let i = 0; i < points.length; i++) {
+        // eslint-disable-next-line security/detect-object-injection -- i is loop counter
+        const point = points[i];
+        let zoom = point.z;
+        if (zoom < minzoom) {
+          zoom = minzoom;
+        }
+        if (zoom > maxzoom) {
+          zoom = maxzoom;
+        }
+        const { tileX, tileY, pixelX, pixelY } = lonLatToTilePixel(
+          point.lon,
+          point.lat,
+          zoom,
+          tileSize,
+        );
+        const tileKey = `${zoom},${tileX},${tileY}`;
+        if (!tileGroups.has(tileKey)) {
+          tileGroups.set(tileKey, { zoom, tileX, tileY, pixels: [] });
+        }
+        tileGroups.get(tileKey).pixels.push({ pixelX, pixelY, index: i });
+      }
+
+      // Initialize results array with nulls
+      const results = new Array(points.length).fill(null);
+
+      // Process each tile and extract elevations
+      for (const [, tileData] of tileGroups) {
+        const { zoom, tileX, tileY, pixels } = tileData;
+        const fetchTile = await fetchTileData(
+          source,
+          sourceType,
+          zoom,
+          tileX,
+          tileY,
+        );
+        if (fetchTile == null) {
+          continue;
+        }
+
+        const elevations = await serve_rendered.getBatchElevationsFromTile(
+          fetchTile.data,
+          { encoding, format, tile_size: tileSize },
+          pixels,
+        );
+        for (const { index, elevation } of elevations) {
+          // eslint-disable-next-line security/detect-object-injection -- index is from internal elevation processing
+          results[index] = elevation;
+        }
+      }
+
+      return results;
+    };
+
+    /**
      * Handles requests for elevation data.
      * @param {object} req - Express request object.
      * @param {object} res - Express response object.
@@ -190,48 +350,23 @@ export const serve_data = {
           );
         }
 
-        const item = repo?.[req.params.id];
-        if (!item) return res.sendStatus(404);
-        if (!item.source) return res.status(404).send('Missing source');
-        if (!item.tileJSON) return res.status(404).send('Missing tileJSON');
-        if (!item.sourceType) return res.status(404).send('Missing sourceType');
-        const { source, tileJSON, sourceType } = item;
-        if (sourceType !== 'pmtiles' && sourceType !== 'mbtiles') {
-          return res
-            .status(400)
-            .send('Invalid sourceType. Must be pmtiles or mbtiles.');
-        }
-        const encoding = tileJSON?.encoding;
-        if (encoding == null) {
-          return res.status(400).send('Missing tileJSON.encoding');
-        } else if (encoding !== 'terrarium' && encoding !== 'mapbox') {
-          return res
-            .status(400)
-            .send('Invalid encoding. Must be terrarium or mapbox.');
-        }
-        const format = tileJSON?.format;
-        if (format == null) {
-          return res.status(400).send('Missing tileJSON.format');
-        } else if (format !== 'webp' && format !== 'png') {
-          return res.status(400).send('Invalid format. Must be webp or png.');
-        }
+        const sourceInfo = validateElevationSource(req.params.id, res);
+        if (!sourceInfo) return;
+
         const z = parseInt(req.params.z, 10);
         const x = parseFloat(req.params.x);
         const y = parseFloat(req.params.y);
-        if (tileJSON.minzoom == null || tileJSON.maxzoom == null) {
-          return res.status(404).send(JSON.stringify(tileJSON));
-        }
-        const TILE_SIZE = tileJSON.tileSize || 512;
-        let bbox;
-        let xy;
-        var zoom = z;
+
+        let lon, lat;
+        let zoom = z;
 
         if (Number.isInteger(x) && Number.isInteger(y)) {
+          // Tile coordinates mode - strict bounds checking
           const intX = parseInt(req.params.x, 10);
           const intY = parseInt(req.params.y, 10);
           if (
-            zoom < tileJSON.minzoom ||
-            zoom > tileJSON.maxzoom ||
+            zoom < sourceInfo.minzoom ||
+            zoom > sourceInfo.maxzoom ||
             intX < 0 ||
             intY < 0 ||
             intX >= Math.pow(2, zoom) ||
@@ -239,49 +374,83 @@ export const serve_data = {
           ) {
             return res.status(404).send('Out of bounds');
           }
-          xy = [intX, intY];
-          bbox = new SphericalMercator().bbox(intX, intY, zoom);
+          const bbox = new SphericalMercator().bbox(intX, intY, zoom);
+          lon = (bbox[0] + bbox[2]) / 2;
+          lat = (bbox[1] + bbox[3]) / 2;
         } else {
-          //no zoom limit with coordinates
-          if (zoom < tileJSON.minzoom) {
-            zoom = tileJSON.minzoom;
-          }
-          if (zoom > tileJSON.maxzoom) {
-            zoom = tileJSON.maxzoom;
-          }
-          bbox = [x, y, x + 0.1, y + 0.1];
-          const { minX, minY } = new SphericalMercator().xyz(bbox, zoom);
-          xy = [minX, minY];
+          // Coordinate mode
+          lon = x;
+          lat = y;
         }
 
-        const fetchTile = await fetchTileData(
-          source,
-          sourceType,
-          zoom,
-          xy[0],
-          xy[1],
+        const results = await getBatchElevations(sourceInfo, [
+          { lon, lat, z: zoom },
+        ]);
+
+        if (results[0] == null) {
+          return res.status(204).send();
+        }
+
+        // Build response matching original format
+        const clampedZoom = Math.min(
+          Math.max(zoom, sourceInfo.minzoom),
+          sourceInfo.maxzoom,
         );
-        if (fetchTile == null) {
-          // sparse=true (default) -> 404 (allows overzoom)
-          // sparse=false -> 204 (empty tile, no overzoom)
-          return res.status(item.sparse ? 404 : 204).send();
+        const { tileX, tileY, pixelX, pixelY } = lonLatToTilePixel(
+          lon,
+          lat,
+          clampedZoom,
+          sourceInfo.tileSize,
+        );
+
+        res.status(200).json({
+          long: lon,
+          lat: lat,
+          elevation: results[0],
+          z: clampedZoom,
+          x: tileX,
+          y: tileY,
+          pixelX,
+          pixelY,
+        });
+      } catch (err) {
+        return res
+          .status(500)
+          .header('Content-Type', 'text/plain')
+          .send(err.message);
+      }
+    });
+
+    /**
+     * Handles batch elevation requests.
+     * Accepts a POST request with JSON body containing:
+     * - points: Array of {lon, lat, z} coordinates with zoom level
+     * Returns an array of elevations (or null for points with no data) in the same order as input.
+     * @param {object} req - Express request object.
+     * @param {object} res - Express response object.
+     * @param {string} req.params.id - ID of the data source.
+     * @returns {Promise<void>}
+     */
+    app.post('/:id/elevation', async (req, res, next) => {
+      try {
+        const sourceInfo = validateElevationSource(req.params.id, res);
+        if (!sourceInfo) return;
+
+        const { points } = req.body;
+        if (!Array.isArray(points) || points.length === 0) {
+          return res.status(400).send('Missing or empty points array');
         }
 
-        let data = fetchTile.data;
-        var param = {
-          long: bbox[0].toFixed(7),
-          lat: bbox[1].toFixed(7),
-          encoding,
-          format,
-          tile_size: TILE_SIZE,
-          z: zoom,
-          x: xy[0],
-          y: xy[1],
-        };
+        for (let i = 0; i < points.length; i++) {
+          // eslint-disable-next-line security/detect-object-injection -- i is loop counter
+          const error = validatePoint(points[i], i);
+          if (error) {
+            return res.status(400).send(error);
+          }
+        }
 
-        res
-          .status(200)
-          .send(await serve_rendered.getTerrainElevation(data, param));
+        const results = await getBatchElevations(sourceInfo, points);
+        res.status(200).json(results);
       } catch (err) {
         return res
           .status(500)

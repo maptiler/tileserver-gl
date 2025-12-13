@@ -1832,83 +1832,66 @@ export const serve_rendered = {
       delete repo[id];
     });
   },
+
   /**
-   * Get the elevation of terrain tile data by rendering it to a canvas image
-   * @param {Buffer} data The terrain tile data buffer.
-   * @param {object} param Required parameters (coordinates e.g.)
-   * @returns {Promise<object>} Promise resolving to elevation data
+   * Gets multiple elevation values from a single decoded tile image.
+   * @param {Buffer} data - Raw tile image data
+   * @param {object} param - Parameters object containing encoding, format, and tile_size
+   * @param {Array<{pixelX: number, pixelY: number, index: number}>} pixels - Array of pixel coordinates to sample
+   * @returns {Promise<Array<{index: number, elevation: number}>>} Promise resolving to array of elevation results
    */
-  getTerrainElevation: async function (data, param) {
+  getBatchElevationsFromTile: async function (data, param, pixels) {
     return new Promise((resolve, reject) => {
-      const image = new Image(); // Create a new Image object
+      const image = new Image();
       image.onload = () => {
         try {
-          const canvas = createCanvas(param['tile_size'], param['tile_size']);
+          const canvas = createCanvas(param.tile_size, param.tile_size);
           const context = canvas.getContext('2d');
           context.drawImage(image, 0, 0);
 
-          // calculate pixel coordinate of tile,
-          // see https://developers.google.com/maps/documentation/javascript/examples/map-coordinates
-          let siny = Math.sin((param['lat'] * Math.PI) / 180);
-          // Truncating to 0.9999 effectively limits latitude to 89.189. This is
-          // about a third of a tile past the edge of the world tile.
-          siny = Math.min(Math.max(siny, -0.9999), 0.9999);
-          const xWorld = param['tile_size'] * (0.5 + param['long'] / 360);
-          const yWorld =
-            param['tile_size'] *
-            (0.5 - Math.log((1 + siny) / (1 - siny)) / (4 * Math.PI));
-
-          const scale = 1 << param['z'];
-
-          const xTile = Math.floor((xWorld * scale) / param['tile_size']);
-          const yTile = Math.floor((yWorld * scale) / param['tile_size']);
-
-          const xPixel =
-            Math.floor(xWorld * scale) - xTile * param['tile_size'];
-          const yPixel =
-            Math.floor(yWorld * scale) - yTile * param['tile_size'];
-          if (
-            xPixel < 0 ||
-            yPixel < 0 ||
-            xPixel >= param['tile_size'] ||
-            yPixel >= param['tile_size']
-          ) {
-            return reject('Out of bounds Pixel');
+          const results = [];
+          for (const pixel of pixels) {
+            const { pixelX, pixelY, index } = pixel;
+            if (
+              pixelX < 0 ||
+              pixelY < 0 ||
+              pixelX >= param.tile_size ||
+              pixelY >= param.tile_size
+            ) {
+              results.push({ index, elevation: null });
+              continue;
+            }
+            const imgdata = context.getImageData(pixelX, pixelY, 1, 1);
+            const red = imgdata.data[0];
+            const green = imgdata.data[1];
+            const blue = imgdata.data[2];
+            let elevation;
+            if (param.encoding === 'mapbox') {
+              elevation = -10000 + (red * 256 * 256 + green * 256 + blue) * 0.1;
+            } else if (param.encoding === 'terrarium') {
+              elevation = red * 256 + green + blue / 256 - 32768;
+            } else {
+              elevation = null;
+            }
+            results.push({ index, elevation });
           }
-          const imgdata = context.getImageData(xPixel, yPixel, 1, 1);
-          const red = imgdata.data[0];
-          const green = imgdata.data[1];
-          const blue = imgdata.data[2];
-          let elevation;
-          if (param['encoding'] === 'mapbox') {
-            elevation = -10000 + (red * 256 * 256 + green * 256 + blue) * 0.1;
-          } else if (param['encoding'] === 'terrarium') {
-            elevation = red * 256 + green + blue / 256 - 32768;
-          } else {
-            elevation = 'invalid encoding';
-          }
-          param['elevation'] = elevation;
-          param['red'] = red;
-          param['green'] = green;
-          param['blue'] = blue;
-          resolve(param);
+          resolve(results);
         } catch (error) {
-          reject(error); // Catch any errors during canvas operations
+          reject(error);
         }
       };
       image.onerror = (err) => reject(err);
 
-      // Load the image data - handle the sharp conversion outside the Promise
       (async () => {
         try {
-          if (param['format'] === 'webp') {
+          if (param.format === 'webp') {
             const img = await sharp(data).toFormat('png').toBuffer();
-            image.src = `data:image/png;base64,${img.toString('base64')}`; // Set data URL
+            image.src = `data:image/png;base64,${img.toString('base64')}`;
           } else {
             image.src = data;
           }
         } catch (err) {
-          reject(err); // Reject promise on sharp error
+          reject(err);
         }
       })();
     });
