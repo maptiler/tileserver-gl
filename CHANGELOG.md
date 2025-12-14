@@ -1,11 +1,21 @@
-# tileserver-gl changelog
-
 ## master
 ### ✨ Features and improvements
 - _...Add new stuff here..._
 
 ### 🐞 Bug fixes
 - _...Add new stuff here..._
+
+- Upgrade npm for trusted publishing ([#1877](https://github.com/maptiler/tileserver-gl/pull/1877)) (by [acalcutt](https://github.com/acalcutt))
+- Release v5.5.0-pre.8 ([#1875](https://github.com/maptiler/tileserver-gl/pull/1875)) (by [app/github-actions](https://github.com/app/github-actions))
+- Fix branch name in version bump ([#1874](https://github.com/maptiler/tileserver-gl/pull/1874)) (by [acalcutt](https://github.com/acalcutt))
+- Create version bump workflow ([#1873](https://github.com/maptiler/tileserver-gl/pull/1873)) (by [acalcutt](https://github.com/acalcutt))
+- Update CHANGELOG for version 5.5.0-pre.7 ([#1861](https://github.com/maptiler/tileserver-gl/pull/1861)) (by [acalcutt](https://github.com/acalcutt))
+# tileserver-gl changelog
+
+## 5.5.0-pre.9
+### ✨ Features and improvements
+
+### 🐞 Bug fixes
 
 ## 5.5.0-pre.8
 ### ✨ Features and improvements
