@@ -98,7 +98,7 @@
   ],
   "license": "BSD-2-Clause",
   "engines": {
-    "node": "20 || 22"
+    "node": "20 || 22 || 24"
   },
   "repository": {
     "url": "https://github.com/maptiler/tileserver-gl",
