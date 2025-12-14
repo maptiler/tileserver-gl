@@ -58,9 +58,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runs-on: ubuntu-22.04
+          - runs-on: ubuntu-24.04
             arch: amd64
-          - runs-on: ubuntu-22.04-arm
+          - runs-on: ubuntu-24.04-arm
             arch: arm64
 
     steps:
@@ -74,14 +74,17 @@ jobs:
           check-latest: true
           cache: 'npm'
 
+      - name: Install dependencies (Ubuntu) 🚀
+        run: >-
+          sudo apt-get update -qq && sudo apt-get install -qq libcairo2-dev libjpeg-dev libpng-dev libwebp-dev libpango1.0-dev
+          libgif-dev build-essential g++ xvfb libgles2-mesa-dev libgbm-dev
+          libxxf86vm-dev
+
       - name: Install NPM dependencies 🚀
         run: npm ci --prefer-offline --no-audit
 
-      - name: Install dependencies (Ubuntu) 🚀
-        run: >-
-          sudo apt-get update -qq && sudo apt-get install -qq libcairo2-dev libjpeg8-dev libpango1.0-dev
-          libgif-dev build-essential g++ xvfb libgles2-mesa-dev libgbm-dev
-          libxxf86vm-dev
+      - name: Rebuild canvas from source 🎨
+        run: npm rebuild canvas --build-from-source
 
       - name: Pull test data 📦
         run: >-
@@ -149,7 +152,7 @@ jobs:
   # Create manifests, publish NPM, and create GitHub release
   release:
     name: Release
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: [release-check, build_arch_images]
     if: ${{ needs.release-check.outputs.published == 'false' }}
 
