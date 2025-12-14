@@ -41,7 +41,11 @@ jobs:
             libuv1-dev \
             libjpeg-dev \
             libpng-dev \
-            libwebp-dev
+            libwebp-dev \
+            libcairo2-dev \
+            libpango1.0-dev \
+            libgif-dev \
+            build-essential
 
       - name: Setup node env 📦
         uses: actions/setup-node@v6
@@ -52,6 +56,9 @@ jobs:
 
       - name: Install NPM dependencies 🚀
         run: npm ci --prefer-offline --no-audit
+
+      - name: Rebuild canvas from source 🎨
+        run: npm rebuild canvas --build-from-source
 
       - name: Get release type
         id: prepare_release
