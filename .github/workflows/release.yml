@@ -160,13 +160,13 @@ jobs:
       - name: Setup node env 📦
         uses: actions/setup-node@v6
         with:
-          node-version-file: 'package.json'
+          node-version: '24'
           check-latest: true
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Install NPM dependencies 🚀
-        run: npm ci --prefer-offline --no-audit
+      - name: Install dependencies for prepare scripts
+        run: npm install copyfiles maplibre-gl @maplibre/maplibre-gl-inspect @mapbox/mapbox-gl-rtl-text leaflet leaflet-hash --no-save
 
       - name: Get release type
         id: prepare_release
