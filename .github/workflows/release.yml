@@ -165,6 +165,9 @@ jobs:
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
 
+      - name: Upgrade npm for trusted publishing
+        run: npm install -g npm@latest
+
       - name: Install NPM dependencies 🚀
         run: npm ci --prefer-offline --no-audit
 
