@@ -58,7 +58,7 @@ export const serve_data = {
      * @returns {Promise<void>}
      */
     app.get('/:id/:z/:x/:y.:format', async (req, res) => {
-      if (verbose) {
+      if (verbose >= 1) {
         console.log(
           `Handling tile request for: /data/%s/%s/%s/%s.%s`,
           String(req.params.id).replace(/\n|\r/g, ''),
@@ -109,10 +109,10 @@ export const serve_data = {
         x,
         y,
       );
-      if (fetchTile == null && item.tileJSON.sparse) {
-        return res.status(410).send();
-      } else if (fetchTile == null) {
-        return res.status(204).send();
+      if (fetchTile == null) {
+        // sparse=true (default) -> 404 (allows overzoom)
+        // sparse=false -> 204 (empty tile, no overzoom)
+        return res.status(item.sparse ? 404 : 204).send();
       }
 
       let data = fetchTile.data;
@@ -121,7 +121,6 @@ export const serve_data = {
 
       if (isGzipped) {
         data = await gunzipP(data);
-        isGzipped = false;
       }
 
       if (tileJSONFormat === 'pbf') {
@@ -164,9 +163,7 @@ export const serve_data = {
       headers['Content-Encoding'] = 'gzip';
       res.set(headers);
 
-      if (!isGzipped) {
-        data = await gzipP(data);
-      }
+      data = await gzipP(data);
 
       return res.status(200).send(data);
     });
@@ -183,7 +180,7 @@ export const serve_data = {
      */
     app.get('/:id/elevation/:z/:x/:y', async (req, res, next) => {
       try {
-        if (verbose) {
+        if (verbose >= 1) {
           console.log(
             `Handling elevation request for: /data/%s/elevation/%s/%s/%s`,
             String(req.params.id).replace(/\n|\r/g, ''),
@@ -264,7 +261,11 @@ export const serve_data = {
           xy[0],
           xy[1],
         );
-        if (fetchTile == null) return res.status(204).send();
+        if (fetchTile == null) {
+          // sparse=true (default) -> 404 (allows overzoom)
+          // sparse=false -> 204 (empty tile, no overzoom)
+          return res.status(item.sparse ? 404 : 204).send();
+        }
 
         let data = fetchTile.data;
         var param = {
@@ -297,7 +298,7 @@ export const serve_data = {
      * @returns {Promise<void>}
      */
     app.get('/:id.json', (req, res) => {
-      if (verbose) {
+      if (verbose >= 1) {
         console.log(
           `Handling tilejson request for: /data/%s.json`,
           String(req.params.id).replace(/\n|\r/g, ''),
@@ -334,7 +335,7 @@ export const serve_data = {
    * @param {string} id ID of the data source.
    * @param {object} programOpts - An object containing the program options
    * @param {string} programOpts.publicUrl Public URL for the data.
-   * @param {boolean} programOpts.verbose Whether verbose logging should be used.
+   * @param {number} programOpts.verbose Verbosity level (1-3). 1=important, 2=detailed, 3=debug/all requests.
    * @returns {Promise<void>}
    */
   add: async function (options, repo, params, id, programOpts) {
@@ -362,7 +363,7 @@ export const serve_data = {
       }
     }
 
-    if (verbose && verbose >= 1) {
+    if (verbose >= 1) {
       console.log(`[INFO] Loading data source '${id}' from: ${inputFile}`);
     }
 
@@ -384,7 +385,6 @@ export const serve_data = {
     tileJSON['format'] = 'pbf';
     tileJSON['encoding'] = params['encoding'];
     tileJSON['tileSize'] = params['tileSize'];
-    tileJSON['sparse'] = params['sparse'];
 
     if (inputType === 'pmtiles') {
       source = openPMtiles(
@@ -392,6 +392,7 @@ export const serve_data = {
         params.s3Profile,
         params.requestPayer,
         params.s3Region,
+        params.s3UrlFormat,
         verbose,
       );
       sourceType = 'pmtiles';
@@ -417,12 +418,20 @@ export const serve_data = {
       tileJSON = options.dataDecoratorFunc(id, 'tilejson', tileJSON);
     }
 
+    // Determine sparse: per-source overrides global, then format-based default
+    // sparse=true -> 404 (allows overzoom)
+    // sparse=false -> 204 (empty tile, no overzoom)
+    // Default: vector tiles (pbf) -> false, raster tiles -> true
+    const isVector = tileJSON.format === 'pbf';
+    const sparse = params.sparse ?? options.sparse ?? !isVector;
+
     // eslint-disable-next-line security/detect-object-injection -- id is from config file data source names
     repo[id] = {
       tileJSON,
       publicUrl,
       source,
       sourceType,
+      sparse,
     };
   },
 };

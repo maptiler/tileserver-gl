@@ -36,7 +36,7 @@ export async function serve_font(options, allowedFonts, programOpts) {
       '',
     );
 
-    if (verbose) {
+    if (verbose >= 1) {
       console.log(
         `Handling font request for: /fonts/%s/%s.pbf`,
         sFontStack,
@@ -86,7 +86,7 @@ export async function serve_font(options, allowedFonts, programOpts) {
    * @returns {void}
    */
   app.get('/fonts.json', (req, res) => {
-    if (verbose) {
+    if (verbose >= 1) {
       console.log('Handling list font request for /fonts.json');
     }
     res.header('Content-type', 'application/json');

@@ -50,7 +50,10 @@ export default [
       'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
-        { argsIgnorePattern: 'next|err|info|reject|^_' },
+        {
+          argsIgnorePattern: 'next|err|info|reject|^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
       ],
       'prettier/prettier': 'error',
       'jsdoc/require-description': 'warn',

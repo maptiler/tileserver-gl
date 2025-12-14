@@ -19,6 +19,7 @@ Getting started
     -p, --port <port>         Port [8080] (default: 8080)
     -C|--no-cors              Disable Cross-origin resource sharing headers
     -u|--public_url <url>     Enable exposing the server on subpaths, not necessarily the root of the domain
+    --fetch-timeout <ms>      Timeout in milliseconds for fetching remote tiles (default: 15000)
     -V, --verbose [level]     More verbose output (level 1-3)
                                 -V, --verbose, -V 1, or --verbose 1: Important operations
                                 -V 2 or --verbose 2: Detailed operations  
@@ -64,6 +65,9 @@ The `--file` option supports multiple source types:
   # Requester-pays bucket
   tileserver-gl --file "s3://bucket/tiles.pmtiles?requestPayer=true"
 
+  # Bucket name with dots (force AWS S3 interpretation)
+  tileserver-gl --file "s3://my.bucket.name/tiles.pmtiles?s3UrlFormat=aws"
+
   # All options combined
   tileserver-gl --file "s3://bucket/tiles.pmtiles?profile=prod&region=us-west-2&requestPayer=true"
 
@@ -82,6 +86,8 @@ You can also use `pmtiles://` or `mbtiles://` prefixes to explicitly specify the
 .. note::
     For S3 sources, AWS credentials must be configured via environment variables, AWS credentials file (`~/.aws/credentials` on Linux/macOS or `C:\Users\USERNAME\.aws\credentials` on Windows), or IAM roles. 
     
+    The `s3UrlFormat` parameter can be set to `aws` or `custom` to override auto-detection when needed (e.g., for AWS bucket names containing dots).
+    
     **When using Docker**, the host credentials file can be mounted to the container's user home directory:
 
     ::
@@ -95,6 +101,26 @@ Default preview style and configuration
 
 - If no configuration file is specified, a default preview style (compatible with openmaptiles) is used.
 - If no data file is specified (and is not found in the current working directory), a sample file is downloaded (showing the Zurich area)
+
+Remote tile fetching and timeouts
+======
+
+TileServer GL can fetch tiles from remote HTTP/HTTPS sources referenced in your style. The ``--fetch-timeout`` option controls how long the server will wait for remote tile requests before giving up.
+
+**Default behavior:**
+- Default timeout is 15 seconds (15000 milliseconds)
+- If a remote tile request exceeds this timeout, an error is logged and an empty tile is returned to the renderer
+
+**Tuning the timeout:**
+
+If you notice timeout errors with certain remote sources, you can adjust the timeout:
+::
+
+  # Increase timeout to 30 seconds for slower remote sources
+  tileserver-gl -c config.json --fetch-timeout 30000
+
+  # Reduce timeout to 5 seconds for faster failure
+  tileserver-gl -c config.json --fetch-timeout 5000
 
 Reloading the configuration
 ======

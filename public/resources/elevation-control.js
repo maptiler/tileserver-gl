@@ -37,7 +37,7 @@ class ElevationInfoControl {
             } else {
               this.controlContainer.textContent = `Elevation: ${JSON.parse(request.responseText).elevation} (${JSON.stringify(coord)})`;
             }
-          }
+          };
           request.send();
         } else {
           this.controlContainer.textContent = "Elevation: Click on Globe";
