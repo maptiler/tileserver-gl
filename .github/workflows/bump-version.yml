@@ -168,6 +168,6 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
-          commit-message: Bump js version to ${{ steps.version-details.outputs.version }}
-          branch: bump-js-version-to-${{ steps.version-details.outputs.version }}
-          title: Bump js version to ${{ steps.version-details.outputs.version }}
+          commit-message: Release v${{ steps.version-details.outputs.version }}
+          branch: release-v${{ steps.version-details.outputs.version }}
+          title: Release v${{ steps.version-details.outputs.version }}
