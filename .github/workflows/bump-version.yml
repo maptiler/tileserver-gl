@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: main
+          ref: master
       - name: Use Node.js from nvmrc
         uses: actions/setup-node@v4
         with:
@@ -135,9 +135,9 @@ jobs:
             }
           }
           
-          changelog = changelog.replace('## main', `## ${newVersion}`);
+          changelog = changelog.replace('## master', `## ${newVersion}`);
           changelog = changelog.replaceAll('- _...Add new stuff here..._\n', '');
-          let changelogHeader = `## main
+          let changelogHeader = `## master
           ### ✨ Features and improvements
           - _...Add new stuff here..._
           
