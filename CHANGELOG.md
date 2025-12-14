@@ -1,6 +1,6 @@
 # tileserver-gl changelog
 
-## main
+## master
 ### ✨ Features and improvements
 - _...Add new stuff here..._
 
