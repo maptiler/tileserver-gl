@@ -1,13 +1,13 @@
 # tileserver-gl changelog
 
-## main
+## master
 ### ✨ Features and improvements
 - _...Add new stuff here..._
 
 ### 🐞 Bug fixes
 - _...Add new stuff here..._
 
-## 5.5.0-pre.7
+## 5.5.0-pre.9
 - Add S3 support for PMTiles with multiple AWS credential profiles (https://github.com/maptiler/tileserver-gl/pull/1779) by @acalcutt
 - Create .aws directory passthrough folder in Dockerfile (https://github.com/maptiler/tileserver-gl/pull/1784) by @acalcutt
 - Update eslint to v9 (https://github.com/maptiler/tileserver-gl/pull/1473) by @acalcutt
@@ -18,6 +18,7 @@
 - Fix loading local data sources (PMTiles/MBTiles) specified in style (https://github.com/maptiler/tileserver-gl/pull/1855) by @acalcutt
 - **BREAKING**: Change 'sparse' option default based on tile format - vector tiles (pbf) default to false (204), raster tiles default to true (404 for overzoom) (https://github.com/maptiler/tileserver-gl/pull/1855) by @acalcutt
 - Revert maplibre-gl-js from 5.14.0 to 5.13.0 to fix terrain preview (https://github.com/maptiler/tileserver-gl/pull/1859)
+- Migrate NPM publishing to trusted publishing (OIDC) ([#1872](https://github.com/maptiler/tileserver-gl/pull/1872)) (by [app/copilot-swe-agent](https://github.com/app/copilot-swe-agent)
 
 ## 5.4.0
 - Fix the issue where the tile URL cannot be correctly parsed with the HTTPS protocol when using an nginx proxy service (https://github.com/maptiler/tileserver-gl/pull/1578) by @dakanggo

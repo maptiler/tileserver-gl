@@ -171,19 +171,19 @@ jobs:
       - name: Get release type
         id: prepare_release
         run: |
-          RELEASE_TYPE="$(node -e "console.log(require('semver').prerelease('${{ needs.release-check.outputs.version }}') ? 'prerelease' : 'regular')")"
-          if [[ $RELEASE_TYPE == 'regular' ]]; then
-            echo "prerelease=false" >> "$GITHUB_OUTPUT"
-            echo "tag=latest" >> "$GITHUB_OUTPUT"
-          else
+          VERSION="${{ needs.release-check.outputs.version }}"
+          if [[ "$VERSION" == *-* ]]; then
             echo "prerelease=true" >> "$GITHUB_OUTPUT"
             echo "tag=next" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
           fi
 
       # NPM Publishing
       - name: Publish to NPM
         run: |
-          npm publish --access public --tag ${{ steps.prepare_release.outputs.tag }}
+          npm publish --access public --tag ${{ steps.prepare_release.outputs.tag }} --provenance
 
       - name: Create Tileserver Light Directory
         run: node publish.js --no-publish
@@ -195,7 +195,7 @@ jobs:
       - name: Publish Light to NPM
         working-directory: ./light
         run: |
-          npm publish --access public --tag ${{ steps.prepare_release.outputs.tag }}
+          npm publish --access public --tag ${{ steps.prepare_release.outputs.tag }} --provenance
 
       # Docker Manifest Creation
       - name: Set up Docker Buildx
