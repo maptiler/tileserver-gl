@@ -166,7 +166,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: Release v${{ steps.version-details.outputs.version }}
           branch: release-v${{ steps.version-details.outputs.version }}
