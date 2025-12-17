@@ -339,7 +339,7 @@ export const serve_data = {
    * @returns {Promise<void>}
    */
   add: async function (options, repo, params, id, programOpts) {
-    const { publicUrl, verbose } = programOpts;
+    const { publicUrl, verbose, ignoreMissingFiles } = programOpts;
     let inputFile;
     let inputType;
     if (params.pmtiles) {
@@ -373,8 +373,18 @@ export const serve_data = {
 
     // Only check file stats for local files, not remote URLs
     if (!isValidRemoteUrl(inputFile)) {
-      const inputFileStats = await fsp.stat(inputFile);
-      if (!inputFileStats.isFile() || inputFileStats.size === 0) {
+      try {
+        const inputFileStats = await fsp.stat(inputFile);
+        if (!inputFileStats.isFile() || inputFileStats.size === 0) {
+          throw Error(`Not valid input file: "${inputFile}"`);
+        }
+      } catch (err) {
+        if (ignoreMissingFiles) {
+          console.log(
+            `WARN: Data source '${id}' file not found: "${inputFile}" - skipping (requests will return 404)`,
+          );
+          return; // Skip this data source
+        }
         throw Error(`Not valid input file: "${inputFile}"`);
       }
     }
@@ -386,24 +396,34 @@ export const serve_data = {
     tileJSON['encoding'] = params['encoding'];
     tileJSON['tileSize'] = params['tileSize'];
 
-    if (inputType === 'pmtiles') {
-      source = openPMtiles(
-        inputFile,
-        params.s3Profile,
-        params.requestPayer,
-        params.s3Region,
-        params.s3UrlFormat,
-        verbose,
-      );
-      sourceType = 'pmtiles';
-      const metadata = await getPMtilesInfo(source, inputFile);
-      Object.assign(tileJSON, metadata);
-    } else if (inputType === 'mbtiles') {
-      sourceType = 'mbtiles';
-      const mbw = await openMbTilesWrapper(inputFile);
-      const info = await mbw.getInfo();
-      source = mbw.getMbTiles();
-      Object.assign(tileJSON, info);
+    try {
+      if (inputType === 'pmtiles') {
+        source = openPMtiles(
+          inputFile,
+          params.s3Profile,
+          params.requestPayer,
+          params.s3Region,
+          params.s3UrlFormat,
+          verbose,
+        );
+        sourceType = 'pmtiles';
+        const metadata = await getPMtilesInfo(source, inputFile);
+        Object.assign(tileJSON, metadata);
+      } else if (inputType === 'mbtiles') {
+        sourceType = 'mbtiles';
+        const mbw = await openMbTilesWrapper(inputFile);
+        const info = await mbw.getInfo();
+        source = mbw.getMbTiles();
+        Object.assign(tileJSON, info);
+      }
+    } catch (err) {
+      if (ignoreMissingFiles) {
+        console.log(
+          `WARN: Unable to open data source '${id}' from "${inputFile}": ${err.message} - skipping (requests will return 404)`,
+        );
+        return; // Skip this data source
+      }
+      throw err;
     }
 
     delete tileJSON['filesize'];

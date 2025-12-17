@@ -109,6 +109,11 @@ program
     '-f|--log_format <format>',
     'define the log format:  https://github.com/expressjs/morgan#morganformat-options',
   )
+  .option(
+    '--ignore-missing-files',
+    'Continue startup even if configured mbtiles/pmtiles files are missing\n' +
+      '\t                  (useful for Kubernetes deployments where files may not be immediately available)',
+  )
   .version(packageJson.version, '-v, --version');
 program.parse(process.argv);
 const opts = program.opts();
@@ -132,6 +137,7 @@ const startServer = (configPath, config) => {
     logFormat: opts.log_format,
     fetchTimeout: opts.fetchTimeout,
     publicUrl,
+    ignoreMissingFiles: opts.ignoreMissingFiles,
   });
 };
 
