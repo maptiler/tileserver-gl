@@ -111,8 +111,7 @@ program
   )
   .option(
     '--ignore-missing-files',
-    'Continue startup even if configured mbtiles/pmtiles files are missing\n' +
-      '\t                  (useful for Kubernetes deployments where files may not be immediately available)',
+    'Continue startup even if configured mbtiles/pmtiles files are missing',
   )
   .version(packageJson.version, '-v, --version');
 program.parse(process.argv);
