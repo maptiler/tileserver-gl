@@ -1659,12 +1659,14 @@ export const serve_rendered = {
           try {
             const inputFileStats = await fsp.stat(inputFile);
             if (!inputFileStats.isFile() || inputFileStats.size === 0) {
-              throw Error(`Not valid PMTiles file: "${inputFile}"`);
+              throw Error(
+                `Not valid ${sourceType} file: "${inputFile}"`,
+              );
             }
           } catch (err) {
             if (ignoreMissingFiles) {
               console.log(
-                `WARN: PMTiles source '${name}' in style '${id}' not found: "${inputFile}" - skipping`,
+                `WARN: ${sourceType} source '${name}' in style '${id}' not found: "${inputFile}" - skipping`,
               );
               continue; // Skip this source
             }
