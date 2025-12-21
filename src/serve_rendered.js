@@ -1610,8 +1610,9 @@ export const serve_rendered = {
       staticAttributionText:
         params.staticAttributionText || options.staticAttributionText,
     };
-    // eslint-disable-next-line security/detect-object-injection -- id is from config file style names
-    repo[id] = repoobj;
+
+    // Track sources that failed to load
+    const skippedSources = [];
 
     for (const name of Object.keys(styleJSON.sources)) {
       let sourceType;
@@ -1668,6 +1669,7 @@ export const serve_rendered = {
               console.log(
                 `WARN: ${sourceType} source '${name}' in style '${id}' not found: "${inputFile}" - skipping`,
               );
+              skippedSources.push(name);
               continue; // Skip this source
             }
             throw err;
@@ -1731,6 +1733,7 @@ export const serve_rendered = {
               console.log(
                 `WARN: Unable to open PMTiles source '${name}' in style '${id}' from "${inputFile}": ${err.message} - skipping`,
               );
+              skippedSources.push(name);
               continue; // Skip this source
             }
             throw err;
@@ -1794,6 +1797,7 @@ export const serve_rendered = {
               console.log(
                 `WARN: Unable to open MBTiles source '${name}' in style '${id}' from "${inputFile}": ${err.message} - skipping`,
               );
+              skippedSources.push(name);
               continue; // Skip this source
             }
             throw err;
@@ -1801,6 +1805,19 @@ export const serve_rendered = {
         }
       }
     }
+
+    // Check if any sources were skipped due to missing files
+    if (skippedSources.length > 0) {
+      console.log(
+        `WARN: Style '${id}' has ${skippedSources.length} missing source(s): [${skippedSources.join(', ')}] - not adding style to repository`,
+      );
+      // Don't add this style to the repository
+      return;
+    }
+
+    // Add style to repository only if all sources loaded successfully
+    // eslint-disable-next-line security/detect-object-injection -- id is from config file style names
+    repo[id] = repoobj;
 
     // standard and @2x tiles are much more usual -> default to larger pools
     const minPoolSizes = options.minRendererPoolSizes || [8, 4, 2];
