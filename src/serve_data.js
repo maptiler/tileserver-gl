@@ -7,7 +7,6 @@ import clone from 'clone';
 import express from 'express';
 import Pbf from 'pbf';
 import { VectorTile } from '@mapbox/vector-tile';
-import { SphericalMercator } from '@mapbox/sphericalmercator';
 
 import {
   fixTileJSONCenter,
@@ -107,9 +106,7 @@ export const serve_data = {
       const fetchTile = await fetchTileData(
         item.source,
         item.sourceType,
-        z,
-        x,
-        y,
+        { x, y, z },
       );
       if (fetchTile == null) {
         // sparse=true (default) -> 404 (allows overzoom)
@@ -255,17 +252,77 @@ export const serve_data = {
     };
 
     /**
-     * Gets batch elevations for an array of points.
+     * Determines which tiles are needed for bilinear interpolation of a point.
+     * For points near tile edges, this may include adjacent tiles.
+     * @param {number} tileX - Base tile X coordinate.
+     * @param {number} tileY - Base tile Y coordinate.
+     * @param {number} zoom - Zoom level.
+     * @param {number} pixelX - Fractional pixel X coordinate within the tile.
+     * @param {number} pixelY - Fractional pixel Y coordinate within the tile.
+     * @param {number} tileSize - Size of the tile in pixels.
+     * @returns {Array<{x: number, y: number, z: number}>} Array of tile coordinates needed.
+     */
+    const getTilesForInterpolation = (
+      tileX,
+      tileY,
+      zoom,
+      pixelX,
+      pixelY,
+      tileSize,
+    ) => {
+      const numTilesX = 1 << zoom;
+      const numTilesY = 1 << zoom;
+      const tiles = [{ x: tileX, y: tileY, z: zoom }];
+
+      // Get integer pixel coordinates
+      const x0 = Math.floor(pixelX);
+      const y0 = Math.floor(pixelY);
+
+      // Check if we need the tile to the right (x+1 pixel crosses boundary)
+      const needsRightTile = x0 + 1 >= tileSize && pixelX !== x0;
+      // Check if we need the tile below (y+1 pixel crosses boundary)
+      const needsBottomTile = y0 + 1 >= tileSize && pixelY !== y0;
+
+      if (needsRightTile) {
+        const rightTileX = (tileX + 1) % numTilesX;
+        tiles.push({ x: rightTileX, y: tileY, z: zoom });
+      }
+
+      if (needsBottomTile && tileY + 1 < numTilesY) {
+        tiles.push({ x: tileX, y: tileY + 1, z: zoom });
+      }
+
+      if (needsRightTile && needsBottomTile && tileY + 1 < numTilesY) {
+        const rightTileX = (tileX + 1) % numTilesX;
+        tiles.push({ x: rightTileX, y: tileY + 1, z: zoom });
+      }
+
+      return tiles;
+    };
+
+    /**
+     * Gets batch elevations for an array of points with bilinear interpolation.
+     * Efficiently fetches all required tiles (including adjacent tiles for edge cases)
+     * before computing interpolated elevations.
      * @param {object} sourceInfo - Validated source info from validateElevationSource.
      * @param {Array<{lon: number, lat: number, z: number}>} points - Array of validated points.
      * @returns {Promise<Array<number|null>>} Array of elevations in same order as input.
      */
     const getBatchElevations = async (sourceInfo, points) => {
-      const { source, sourceType, encoding, format, tileSize, minzoom, maxzoom } =
-        sourceInfo;
+      const {
+        source,
+        sourceType,
+        encoding,
+        format,
+        tileSize,
+        minzoom,
+        maxzoom,
+      } = sourceInfo;
 
-      // Group points by tile (including zoom level in the key)
-      const tileGroups = new Map();
+      // Process all points and collect tile info
+      const pointsData = [];
+      const tilesToFetch = new Map();
+
       for (let i = 0; i < points.length; i++) {
         const point = points[i];
         let zoom = point.z;
@@ -275,68 +332,103 @@ export const serve_data = {
         if (zoom > maxzoom) {
           zoom = maxzoom;
         }
+
         const { tileX, tileY, pixelX, pixelY } = lonLatToTilePixel(
           point.lon,
           point.lat,
           zoom,
           tileSize,
         );
-        const tileKey = `${zoom},${tileX},${tileY}`;
-        if (!tileGroups.has(tileKey)) {
-          tileGroups.set(tileKey, { zoom, tileX, tileY, pixels: [] });
-        }
-        tileGroups.get(tileKey).pixels.push({ pixelX, pixelY, index: i });
-      }
 
-      // Initialize results array with nulls
-      const results = new Array(points.length).fill(null);
-
-      // Process each tile and extract elevations
-      for (const [, tileData] of tileGroups) {
-        const { zoom, tileX, tileY, pixels } = tileData;
-        const fetchTile = await fetchTileData(
-          source,
-          sourceType,
-          zoom,
+        pointsData.push({
+          index: i,
           tileX,
           tileY,
-        );
-        if (fetchTile == null) {
-          continue;
-        }
+          zoom,
+          pixelX,
+          pixelY,
+        });
 
-        const elevations = await serve_rendered.getBatchElevationsFromTile(
-          fetchTile.data,
-          { encoding, format, tile_size: tileSize },
-          pixels,
+        // Collect all unique tiles needed for interpolation
+        const tilesNeeded = getTilesForInterpolation(
+          tileX,
+          tileY,
+          zoom,
+          pixelX,
+          pixelY,
+          tileSize,
         );
-        for (const { index, elevation } of elevations) {
-          results[index] = elevation;
+
+        for (const tile of tilesNeeded) {
+          const key = `${tile.x},${tile.y},${tile.z}`;
+          if (!tilesToFetch.has(key)) {
+            tilesToFetch.set(key, tile);
+          }
         }
+      }
+
+      // Fetch all tiles in parallel
+      const tileContexts = new Map();
+      const fetchPromises = [];
+
+      for (const [key, tile] of tilesToFetch) {
+        const promise = (async () => {
+          const fetchTile = await fetchTileData(source, sourceType, tile);
+          if (fetchTile != null) {
+            try {
+              const context = await serve_rendered.loadTileImage(
+                fetchTile.data,
+                { format, tile_size: tileSize },
+              );
+              tileContexts.set(key, context);
+            } catch (err) {
+              // Failed to load tile image, leave as null
+              if (verbose >= 2) {
+                console.error(`Failed to load tile ${key}:`, err);
+              }
+            }
+          }
+        })();
+        fetchPromises.push(promise);
+      }
+
+      await Promise.all(fetchPromises);
+
+      // Compute interpolated elevations for all points
+      const elevations = serve_rendered.getInterpolatedElevations(
+        tileContexts,
+        { encoding, tile_size: tileSize },
+        pointsData,
+      );
+
+      // Initialize results array with nulls and fill in results
+      const results = new Array(points.length).fill(null);
+      for (const { index, elevation } of elevations) {
+        results[index] = elevation;
       }
 
       return results;
     };
 
     /**
-     * Handles requests for elevation data.
+     * Handles requests for elevation data at a specific coordinate.
      * @param {object} req - Express request object.
      * @param {object} res - Express response object.
      * @param {string} req.params.id - ID of the elevation data.
-     * @param {string} req.params.z - Z coordinate of the tile.
-     * @param {string} req.params.x - X coordinate of the tile (either integer or float).
-     * @param {string} req.params.y - Y coordinate of the tile (either integer or float).
+     * @param {string} req.params.z - Zoom level for the elevation lookup.
+     * @param {string} req.params.lon - Longitude coordinate.
+     * @param {string} req.params.lat - Latitude coordinate.
      * @returns {Promise<void>}
      */
-    app.get('/:id/elevation/:z/:x/:y', async (req, res, next) => {
+    app.get('/:id/elevation/:z/:lon/:lat', async (req, res, next) => {
       try {
         if (verbose >= 1) {
           console.log(
             `Handling elevation request for: /data/%s/elevation/%s/%s/%s`,
             String(req.params.id).replace(/\n|\r/g, ''),
             String(req.params.z).replace(/\n|\r/g, ''),
-            String(req.params.x).replace(/\n|\r/g, ''),
-            String(req.params.y).replace(/\n|\r/g, ''),
+            String(req.params.lon).replace(/\n|\r/g, ''),
+            String(req.params.lat).replace(/\n|\r/g, ''),
           );
         }
 
@@ -344,67 +436,20 @@ export const serve_data = {
         if (!sourceInfo) return;
 
         const z = parseInt(req.params.z, 10);
-        const x = parseFloat(req.params.x);
-        const y = parseFloat(req.params.y);
+        const lon = parseFloat(req.params.lon);
+        const lat = parseFloat(req.params.lat);
 
-        let lon, lat;
-        let zoom = z;
-
-        if (Number.isInteger(x) && Number.isInteger(y)) {
-          // Tile coordinates mode - strict bounds checking
-          const intX = parseInt(req.params.x, 10);
-          const intY = parseInt(req.params.y, 10);
-          if (
-            zoom < sourceInfo.minzoom ||
-            zoom > sourceInfo.maxzoom ||
-            intX < 0 ||
-            intY < 0 ||
-            intX >= Math.pow(2, zoom) ||
-            intY >= Math.pow(2, zoom)
-          ) {
-            return res.status(404).send('Out of bounds');
-          }
-          const bbox = new SphericalMercator().bbox(intX, intY, zoom);
-          lon = (bbox[0] + bbox[2]) / 2;
-          lat = (bbox[1] + bbox[3]) / 2;
-        } else {
-          // Coordinate mode
-          lon = x;
-          lat = y;
+        if (!isFinite(lon) || !isFinite(lat) || !isFinite(z)) {
+          return res.status(400).send('Invalid coordinates');
         }
 
-        const results = await getBatchElevations(sourceInfo, [
-          { lon, lat, z: zoom },
-        ]);
+        const results = await getBatchElevations(sourceInfo, [{ lon, lat, z }]);
 
         if (results[0] == null) {
-          // sparse=true (default) -> 404 (allows overzoom)
-          // sparse=false -> 204 (empty tile, no overzoom)
-          return res.status(item.sparse ? 404 : 204).send();
+          return res.status(404).send('No elevation data');
         }
 
-        // Build response matching original format
-        const clampedZoom = Math.min(
-          Math.max(zoom, sourceInfo.minzoom),
-          sourceInfo.maxzoom,
-        );
-        const { tileX, tileY, pixelX, pixelY } = lonLatToTilePixel(
-          lon,
-          lat,
-          clampedZoom,
-          sourceInfo.tileSize,
-        );
-
-        res.status(200).json({
-          long: lon,
-          lat: lat,
-          elevation: results[0],
-          z: clampedZoom,
-          x: tileX,
-          y: tileY,
-          pixelX,
-          pixelY,
-        });
+        res.status(200).json({ elevation: results[0] });
       } catch (err) {
         return res
           .status(500)

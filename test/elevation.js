@@ -6,101 +6,33 @@
 //         tile (1,1) = 2500m (bottom-right, lon>0 lat<0)
 
 describe('Elevation API', function () {
-  describe('non-existent data source', function () {
-    it('/data/non_existent/elevation/0/0/0 returns 404', function (done) {
+  describe('GET endpoint errors', function () {
+    it('returns 404 for non-existent data source', function (done) {
       supertest(app)
         .get('/data/non_existent/elevation/0/0/0')
         .expect(404)
         .end(done);
     });
-  });
 
-  describe('data source without encoding', function () {
-    it('/data/openmaptiles/elevation/0/0/0 returns 400 missing encoding', function (done) {
+    it('returns 400 for data source without encoding', function (done) {
       supertest(app)
         .get('/data/openmaptiles/elevation/0/0/0')
         .expect(400)
         .expect('Missing tileJSON.encoding')
         .end(done);
     });
+
+    it('returns 400 for invalid coordinates', function (done) {
+      supertest(app)
+        .get('/data/terrain/elevation/1/invalid/45')
+        .expect(400)
+        .expect('Invalid coordinates')
+        .end(done);
+    });
   });
 
   describe('terrain data source', function () {
-    describe('valid tile requests with correct elevation values', function () {
-      it('/data/terrain/elevation/0/0/0 returns elevation 100m', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/0/0/0')
-          .expect(200)
-          .expect('Content-Type', /application\/json/)
-          .expect(function (res) {
-            expect(res.body).to.be.an('object');
-            expect(res.body).to.have.property('elevation', 100);
-            expect(res.body).to.have.property('z', 0);
-            expect(res.body).to.have.property('x', 0);
-            expect(res.body).to.have.property('y', 0);
-          })
-          .end(done);
-      });
-
-      it('/data/terrain/elevation/1/0/0 returns elevation 200m (top-left)', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/1/0/0')
-          .expect(200)
-          .expect('Content-Type', /application\/json/)
-          .expect(function (res) {
-            expect(res.body).to.have.property('elevation', 200);
-            expect(res.body).to.have.property('z', 1);
-            expect(res.body).to.have.property('x', 0);
-            expect(res.body).to.have.property('y', 0);
-          })
-          .end(done);
-      });
-
-      it('/data/terrain/elevation/1/1/0 returns elevation 500m (top-right)', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/1/1/0')
-          .expect(200)
-          .expect('Content-Type', /application\/json/)
-          .expect(function (res) {
-            expect(res.body).to.have.property('elevation', 500);
-            expect(res.body).to.have.property('z', 1);
-            expect(res.body).to.have.property('x', 1);
-            expect(res.body).to.have.property('y', 0);
-          })
-          .end(done);
-      });
-
-      it('/data/terrain/elevation/1/0/1 returns elevation 1000m (bottom-left)', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/1/0/1')
-          .expect(200)
-          .expect('Content-Type', /application\/json/)
-          .expect(function (res) {
-            expect(res.body).to.have.property('elevation', 1000);
-            expect(res.body).to.have.property('z', 1);
-            expect(res.body).to.have.property('x', 0);
-            expect(res.body).to.have.property('y', 1);
-          })
-          .end(done);
-      });
-
-      it('/data/terrain/elevation/1/1/1 returns elevation 2500m (bottom-right)', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/1/1/1')
-          .expect(200)
-          .expect('Content-Type', /application\/json/)
-          .expect(function (res) {
-            expect(res.body).to.have.property('elevation', 2500);
-            expect(res.body).to.have.property('z', 1);
-            expect(res.body).to.have.property('x', 1);
-            expect(res.body).to.have.property('y', 1);
-          })
-          .end(done);
-      });
-    });
-
-    describe('coordinate-based requests with correct elevation values', function () {
-      // Note: coordinates must be non-integer to be treated as lon/lat, not tile x/y
+    describe('coordinate-based GET requests', function () {
       it('top-right quadrant (lon>0, lat>0) returns 500m', function (done) {
         supertest(app)
           .get('/data/terrain/elevation/1/45.5/45.5')
@@ -108,11 +40,6 @@ describe('Elevation API', function () {
           .expect('Content-Type', /application\/json/)
           .expect(function (res) {
             expect(res.body).to.have.property('elevation', 500);
-            expect(res.body).to.have.property('long', 45.5);
-            expect(res.body).to.have.property('lat', 45.5);
-            expect(res.body).to.have.property('z', 1);
-            expect(res.body).to.have.property('x', 1);
-            expect(res.body).to.have.property('y', 0);
           })
           .end(done);
       });
@@ -124,11 +51,6 @@ describe('Elevation API', function () {
           .expect('Content-Type', /application\/json/)
           .expect(function (res) {
             expect(res.body).to.have.property('elevation', 200);
-            expect(res.body).to.have.property('long', -45.5);
-            expect(res.body).to.have.property('lat', 45.5);
-            expect(res.body).to.have.property('z', 1);
-            expect(res.body).to.have.property('x', 0);
-            expect(res.body).to.have.property('y', 0);
           })
           .end(done);
       });
@@ -140,11 +62,6 @@ describe('Elevation API', function () {
           .expect('Content-Type', /application\/json/)
           .expect(function (res) {
             expect(res.body).to.have.property('elevation', 1000);
-            expect(res.body).to.have.property('long', -45.5);
-            expect(res.body).to.have.property('lat', -45.5);
-            expect(res.body).to.have.property('z', 1);
-            expect(res.body).to.have.property('x', 0);
-            expect(res.body).to.have.property('y', 1);
           })
           .end(done);
       });
@@ -156,214 +73,17 @@ describe('Elevation API', function () {
           .expect('Content-Type', /application\/json/)
           .expect(function (res) {
             expect(res.body).to.have.property('elevation', 2500);
-            expect(res.body).to.have.property('long', 45.5);
-            expect(res.body).to.have.property('lat', -45.5);
-            expect(res.body).to.have.property('z', 1);
-            expect(res.body).to.have.property('x', 1);
-            expect(res.body).to.have.property('y', 1);
-          })
-          .end(done);
-      });
-    });
-
-    describe('tile boundary conditions', function () {
-      // At zoom 1, tiles are divided at lon=0 and lat=0
-      // Testing coordinates very close to these boundaries
-
-      it('just east of prime meridian (lon=0.001) returns top-right tile (500m)', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/1/0.001/45')
-          .expect(200)
-          .expect(function (res) {
-            expect(res.body).to.have.property('elevation', 500);
-            expect(res.body).to.have.property('x', 1);
-            expect(res.body).to.have.property('y', 0);
           })
           .end(done);
       });
 
-      it('just west of prime meridian (lon=-0.001) returns top-left tile (200m)', function (done) {
+      it('zoom 0 returns 100m for any coordinate', function (done) {
         supertest(app)
-          .get('/data/terrain/elevation/1/-0.001/45')
+          .get('/data/terrain/elevation/0/45.5/45.5')
           .expect(200)
           .expect(function (res) {
-            expect(res.body).to.have.property('elevation', 200);
-            expect(res.body).to.have.property('x', 0);
-            expect(res.body).to.have.property('y', 0);
-          })
-          .end(done);
-      });
-
-      it('just north of equator (lat=0.001) returns top-right tile (500m)', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/1/45/0.001')
-          .expect(200)
-          .expect(function (res) {
-            expect(res.body).to.have.property('elevation', 500);
-            expect(res.body).to.have.property('x', 1);
-            expect(res.body).to.have.property('y', 0);
-          })
-          .end(done);
-      });
-
-      it('just south of equator (lat=-0.001) returns bottom-right tile (2500m)', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/1/45/-0.001')
-          .expect(200)
-          .expect(function (res) {
-            expect(res.body).to.have.property('elevation', 2500);
-            expect(res.body).to.have.property('x', 1);
-            expect(res.body).to.have.property('y', 1);
-          })
-          .end(done);
-      });
-
-      it('near corner - just NE of origin (lon=0.001, lat=0.001) returns top-right (500m)', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/1/0.001/0.001')
-          .expect(200)
-          .expect(function (res) {
-            expect(res.body).to.have.property('elevation', 500);
-            expect(res.body).to.have.property('x', 1);
-            expect(res.body).to.have.property('y', 0);
-          })
-          .end(done);
-      });
-
-      it('near corner - just NW of origin (lon=-0.001, lat=0.001) returns top-left (200m)', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/1/-0.001/0.001')
-          .expect(200)
-          .expect(function (res) {
-            expect(res.body).to.have.property('elevation', 200);
-            expect(res.body).to.have.property('x', 0);
-            expect(res.body).to.have.property('y', 0);
-          })
-          .end(done);
-      });
-
-      it('near corner - just SE of origin (lon=0.001, lat=-0.001) returns bottom-right (2500m)', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/1/0.001/-0.001')
-          .expect(200)
-          .expect(function (res) {
-            expect(res.body).to.have.property('elevation', 2500);
-            expect(res.body).to.have.property('x', 1);
-            expect(res.body).to.have.property('y', 1);
-          })
-          .end(done);
-      });
-
-      it('near corner - just SW of origin (lon=-0.001, lat=-0.001) returns bottom-left (1000m)', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/1/-0.001/-0.001')
-          .expect(200)
-          .expect(function (res) {
-            expect(res.body).to.have.property('elevation', 1000);
-            expect(res.body).to.have.property('x', 0);
-            expect(res.body).to.have.property('y', 1);
-          })
-          .end(done);
-      });
-
-      it('at origin (lon=0, lat=0) returns consistent tile', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/1/0/0')
-          .expect(200)
-          .expect(function (res) {
-            // At exactly 0,0 it should pick one of the tiles consistently
-            expect(res.body.elevation).to.be.oneOf([200, 500, 1000, 2500]);
-          })
-          .end(done);
-      });
-
-      it('near western edge (lon=-179.999) returns correct tile', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/1/-179.999/45')
-          .expect(200)
-          .expect(function (res) {
-            expect(res.body).to.have.property('elevation', 200);
-            expect(res.body).to.have.property('x', 0);
-          })
-          .end(done);
-      });
-
-      it('near eastern edge (lon=179.999) returns correct tile', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/1/179.999/45')
-          .expect(200)
-          .expect(function (res) {
-            expect(res.body).to.have.property('elevation', 500);
-            expect(res.body).to.have.property('x', 1);
-          })
-          .end(done);
-      });
-    });
-
-    describe('zoom clamping', function () {
-      it('zoom is clamped to maxzoom for coordinate requests', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/20/45.5/45.5')
-          .expect(200)
-          .expect('Content-Type', /application\/json/)
-          .expect(function (res) {
-            expect(res.body).to.have.property('z', 1);
-            expect(res.body).to.have.property('elevation', 500);
-          })
-          .end(done);
-      });
-
-      it('zoom is clamped to minzoom for coordinate requests', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/-5/45.5/45.5')
-          .expect(200)
-          .expect('Content-Type', /application\/json/)
-          .expect(function (res) {
-            expect(res.body).to.have.property('z', 0);
             expect(res.body).to.have.property('elevation', 100);
           })
-          .end(done);
-      });
-    });
-
-    describe('invalid tile requests', function () {
-      it('tile out of bounds returns 404', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/0/1/0')
-          .expect(404)
-          .expect('Out of bounds')
-          .end(done);
-      });
-
-      it('zoom below minzoom for tile request returns 404', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/-1/0/0')
-          .expect(404)
-          .expect('Out of bounds')
-          .end(done);
-      });
-
-      it('zoom above maxzoom for tile request returns 404', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/2/0/0')
-          .expect(404)
-          .expect('Out of bounds')
-          .end(done);
-      });
-
-      it('negative x coordinate returns 404', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/0/-1/0')
-          .expect(404)
-          .expect('Out of bounds')
-          .end(done);
-      });
-
-      it('negative y coordinate returns 404', function (done) {
-        supertest(app)
-          .get('/data/terrain/elevation/0/0/-1')
-          .expect(404)
-          .expect('Out of bounds')
           .end(done);
       });
     });
@@ -506,6 +226,99 @@ describe('Elevation API', function () {
           .send({ points: [{ lon: 45.5, lat: 45.5, z: 1 }] })
           .expect(400)
           .expect('Missing tileJSON.encoding')
+          .end(done);
+      });
+    });
+
+    describe('bilinear interpolation', function () {
+      // Test terrain tiles have uniform elevation per tile at zoom 1:
+      // tile (0,0) = 200m, tile (1,0) = 500m
+      // tile (0,1) = 1000m, tile (1,1) = 2500m
+      // At zoom 0, single tile with 100m
+
+      it('returns exact elevation for points well within a tile', function (done) {
+        supertest(app)
+          .post('/data/terrain/elevation')
+          .send({
+            points: [{ lon: 90, lat: 45, z: 1 }],
+          })
+          .expect(200)
+          .expect(function (res) {
+            expect(res.body).to.be.an('array');
+            expect(res.body[0]).to.equal(500);
+          })
+          .end(done);
+      });
+
+      it('interpolates between tiles for points near lon=0 boundary', function (done) {
+        supertest(app)
+          .post('/data/terrain/elevation')
+          .send({
+            points: [
+              // Point in center of tile - no interpolation needed
+              { lon: 90, lat: 45, z: 1 },
+              // Point near right edge of tile (0,0), interpolates with tile (1,0)
+              // tile (0,0) = 200m, tile (1,0) = 500m
+              { lon: -0.001, lat: 45, z: 1 },
+            ],
+          })
+          .expect(200)
+          .expect(function (res) {
+            expect(res.body).to.be.an('array');
+            expect(res.body).to.have.length(2);
+            // Center of tile should be exact
+            expect(res.body[0]).to.equal(500);
+            // Near edge: interpolated value ~499.15 (mostly tile 1,0's 500m with small influence from tile 0,0's 200m)
+            expect(res.body[1]).to.be.closeTo(499.15, 0.1);
+          })
+          .end(done);
+      });
+
+      it('efficiently batches tile fetches for multiple points in same tile', function (done) {
+        supertest(app)
+          .post('/data/terrain/elevation')
+          .send({
+            points: [
+              { lon: 45, lat: 45, z: 1 },
+              { lon: 60, lat: 50, z: 1 },
+              { lon: 90, lat: 30, z: 1 },
+              { lon: 120, lat: 60, z: 1 },
+            ],
+          })
+          .expect(200)
+          .expect(function (res) {
+            expect(res.body).to.be.an('array');
+            expect(res.body).to.have.length(4);
+            // All points in top-right tile (500m)
+            res.body.forEach((elev) => {
+              expect(elev).to.equal(500);
+            });
+          })
+          .end(done);
+      });
+
+      it('handles points at tile edges requiring adjacent tile fetch', function (done) {
+        supertest(app)
+          .post('/data/terrain/elevation')
+          .send({
+            points: [
+              // Very close to right edge of tile (0,0), needs tile (1,0)
+              // tile (0,0) = 200m, tile (1,0) = 500m
+              { lon: -0.0001, lat: 45, z: 1 },
+              // Very close to bottom edge of tile (1,0), needs tile (1,1)
+              // tile (1,0) = 500m, tile (1,1) = 2500m
+              { lon: 90, lat: 0.0001, z: 1 },
+            ],
+          })
+          .expect(200)
+          .expect(function (res) {
+            expect(res.body).to.be.an('array');
+            expect(res.body).to.have.length(2);
+            // First point: very close to boundary, ~499.91 (almost entirely 500m)
+            expect(res.body[0]).to.be.closeTo(499.91, 0.1);
+            // Second point: very close to equator boundary, ~2499.43
+            expect(res.body[1]).to.be.closeTo(2499.43, 0.1);
+          })
           .end(done);
       });
     });

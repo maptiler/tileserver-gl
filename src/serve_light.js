@@ -6,7 +6,4 @@ export const serve_rendered = {
   add: (options, repo, params, id, programOpts, dataResolver) => {},
   remove: (repo, id) => {},
   clear: (repo) => {},
-  getBatchElevationsFromTile: (data, param, pixels) => {
-    return pixels.map(({ index }) => ({ index, elevation: null }));
-  },
 };

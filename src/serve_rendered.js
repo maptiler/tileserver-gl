@@ -1288,9 +1288,7 @@ export const serve_rendered = {
               const fetchTile = await fetchTileData(
                 source,
                 sourceType,
-                z,
-                x,
-                y,
+                { x, y, z },
               );
               if (fetchTile == null) {
                 if (verbose >= 2) {
@@ -1834,13 +1832,47 @@ export const serve_rendered = {
   },
 
   /**
-   * Gets multiple elevation values from a single decoded tile image.
-   * @param {Buffer} data - Raw tile image data
-   * @param {object} param - Parameters object containing encoding, format, and tile_size
-   * @param {Array<{pixelX: number, pixelY: number, index: number}>} pixels - Array of pixel coordinates to sample
-   * @returns {Promise<Array<{index: number, elevation: number}>>} Promise resolving to array of elevation results
+   * Decodes an elevation value from RGB pixel values.
+   * @param {number} red - Red channel value (0-255).
+   * @param {number} green - Green channel value (0-255).
+   * @param {number} blue - Blue channel value (0-255).
+   * @param {string} encoding - Elevation encoding type ('mapbox' or 'terrarium').
+   * @returns {number|null} Decoded elevation value in meters, or null if encoding is invalid.
    */
-  getBatchElevationsFromTile: async function (data, param, pixels) {
+  decodeElevation: function (red, green, blue, encoding) {
+    if (encoding === 'mapbox') {
+      return -10000 + (red * 256 * 256 + green * 256 + blue) * 0.1;
+    } else if (encoding === 'terrarium') {
+      return red * 256 + green + blue / 256 - 32768;
+    }
+    return null;
+  },
+
+  /**
+   * Performs bilinear interpolation between four elevation values.
+   * @param {number} e00 - Elevation at (0,0) - top-left.
+   * @param {number} e10 - Elevation at (1,0) - top-right.
+   * @param {number} e01 - Elevation at (0,1) - bottom-left.
+   * @param {number} e11 - Elevation at (1,1) - bottom-right.
+   * @param {number} fx - Fractional x position (0-1).
+   * @param {number} fy - Fractional y position (0-1).
+   * @returns {number} Interpolated elevation value.
+   */
+  bilinearInterpolate: function (e00, e10, e01, e11, fx, fy) {
+    // Interpolate along x-axis for top and bottom rows
+    const top = e00 * (1 - fx) + e10 * fx;
+    const bottom = e01 * (1 - fx) + e11 * fx;
+    // Interpolate along y-axis
+    return top * (1 - fy) + bottom * fy;
+  },
+
+  /**
+   * Loads a tile image and returns the canvas context for pixel access.
+   * @param {Buffer} data - Raw tile image data.
+   * @param {object} param - Parameters object containing format and tile_size.
+   * @returns {Promise<CanvasRenderingContext2D>} Promise resolving to canvas context.
+   */
+  loadTileImage: async function (data, param) {
     return new Promise((resolve, reject) => {
       const image = new Image();
       image.onload = () => {
@@ -1848,34 +1880,7 @@ export const serve_rendered = {
           const canvas = createCanvas(param.tile_size, param.tile_size);
           const context = canvas.getContext('2d');
           context.drawImage(image, 0, 0);
-
-          const results = [];
-          for (const pixel of pixels) {
-            const { pixelX, pixelY, index } = pixel;
-            if (
-              pixelX < 0 ||
-              pixelY < 0 ||
-              pixelX >= param.tile_size ||
-              pixelY >= param.tile_size
-            ) {
-              results.push({ index, elevation: null });
-              continue;
-            }
-            const imgdata = context.getImageData(pixelX, pixelY, 1, 1);
-            const red = imgdata.data[0];
-            const green = imgdata.data[1];
-            const blue = imgdata.data[2];
-            let elevation;
-            if (param.encoding === 'mapbox') {
-              elevation = -10000 + (red * 256 * 256 + green * 256 + blue) * 0.1;
-            } else if (param.encoding === 'terrarium') {
-              elevation = red * 256 + green + blue / 256 - 32768;
-            } else {
-              elevation = null;
-            }
-            results.push({ index, elevation });
-          }
-          resolve(results);
+          resolve(context);
         } catch (error) {
           reject(error);
         }
@@ -1895,5 +1900,157 @@ export const serve_rendered = {
         }
       })();
     });
+  },
+
+  /**
+   * Gets an elevation value at a specific integer pixel coordinate from a canvas context.
+   * @param {CanvasRenderingContext2D} context - Canvas context with loaded tile image.
+   * @param {number} pixelX - Integer X pixel coordinate.
+   * @param {number} pixelY - Integer Y pixel coordinate.
+   * @param {number} tileSize - Size of the tile in pixels.
+   * @param {string} encoding - Elevation encoding type.
+   * @returns {number|null} Elevation value or null if out of bounds.
+   */
+  getElevationAtPixel: function (context, pixelX, pixelY, tileSize, encoding) {
+    if (pixelX < 0 || pixelY < 0 || pixelX >= tileSize || pixelY >= tileSize) {
+      return null;
+    }
+    const imgdata = context.getImageData(pixelX, pixelY, 1, 1);
+    return this.decodeElevation(
+      imgdata.data[0],
+      imgdata.data[1],
+      imgdata.data[2],
+      encoding,
+    );
+  },
+
+  /**
+   * Gets elevation values from multiple tiles with bilinear interpolation.
+   * Handles cross-tile interpolation for points near tile edges.
+   * Tile keys in tileContexts should be in format "x,y,zoom".
+   * @param {Map<string, CanvasRenderingContext2D>} tileContexts - Map of tile keys (x,y,zoom) to canvas contexts.
+   * @param {object} param - Parameters object containing encoding and tile_size.
+   * @param {Array<object>} pointsData - Array of point data with tile/pixel/zoom info.
+   * @returns {Array<{index: number, elevation: number|null}>} Array of elevation results.
+   */
+  getInterpolatedElevations: function (tileContexts, param, pointsData) {
+    const results = [];
+
+    for (const point of pointsData) {
+      const { tileX, tileY, zoom, pixelX, pixelY, index } = point;
+
+      // Compute number of tiles from zoom
+      const numTilesX = 1 << zoom;
+      const numTilesY = 1 << zoom;
+
+      // Get integer coordinates for the four surrounding pixels
+      const x0 = Math.floor(pixelX);
+      const y0 = Math.floor(pixelY);
+
+      // Get fractional parts for interpolation
+      const fx = pixelX - x0;
+      const fy = pixelY - y0;
+
+      // If at integer coordinates, no interpolation needed
+      if (fx === 0 && fy === 0) {
+        const tileKey = `${tileX},${tileY},${zoom}`;
+        const context = tileContexts.get(tileKey);
+        if (!context) {
+          results.push({ index, elevation: null });
+          continue;
+        }
+        const elevation = this.getElevationAtPixel(
+          context,
+          x0,
+          y0,
+          param.tile_size,
+          param.encoding,
+        );
+        results.push({ index, elevation });
+        continue;
+      }
+
+      // Determine which tiles contain the four corners
+      // Corner positions: (x0,y0), (x0+1,y0), (x0,y0+1), (x0+1,y0+1)
+      const corners = [
+        { px: x0, py: y0 }, // top-left
+        { px: x0 + 1, py: y0 }, // top-right
+        { px: x0, py: y0 + 1 }, // bottom-left
+        { px: x0 + 1, py: y0 + 1 }, // bottom-right
+      ];
+
+      const elevations = [];
+      let allValid = true;
+
+      for (const corner of corners) {
+        let { px, py } = corner;
+        let tx = tileX;
+        let ty = tileY;
+
+        // Handle pixel coordinates that cross tile boundaries
+        if (px >= param.tile_size) {
+          px = 0;
+          tx = (tx + 1) % numTilesX;
+        } else if (px < 0) {
+          px = param.tile_size - 1;
+          tx = (tx - 1 + numTilesX) % numTilesX;
+        }
+
+        if (py >= param.tile_size) {
+          py = 0;
+          ty = ty + 1;
+          // Check if we've gone past the bottom of the world
+          if (ty >= numTilesY) {
+            allValid = false;
+            break;
+          }
+        } else if (py < 0) {
+          py = param.tile_size - 1;
+          ty = ty - 1;
+          // Check if we've gone past the top of the world
+          if (ty < 0) {
+            allValid = false;
+            break;
+          }
+        }
+
+        const tileKey = `${tx},${ty},${zoom}`;
+        const context = tileContexts.get(tileKey);
+        if (!context) {
+          allValid = false;
+          break;
+        }
+
+        const elev = this.getElevationAtPixel(
+          context,
+          px,
+          py,
+          param.tile_size,
+          param.encoding,
+        );
+        if (elev === null) {
+          allValid = false;
+          break;
+        }
+        elevations.push(elev);
+      }
+
+      if (!allValid || elevations.length !== 4) {
+        results.push({ index, elevation: null });
+        continue;
+      }
+
+      const elevation = this.bilinearInterpolate(
+        elevations[0],
+        elevations[1],
+        elevations[2],
+        elevations[3],
+        fx,
+        fy,
+      );
+      results.push({ index, elevation });
+    }
+
+    return results;
   },
 };

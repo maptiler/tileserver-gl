@@ -473,11 +473,12 @@ export function isMBTilesProtocol(string) {
 
 /**
  * Converts a longitude/latitude point to tile and pixel coordinates at a given zoom level.
+ * Returns fractional pixel coordinates for sub-pixel precision (useful for interpolation).
  * @param {number} lon - Longitude in degrees.
  * @param {number} lat - Latitude in degrees.
  * @param {number} zoom - Zoom level.
  * @param {number} tileSize - Size of the tile in pixels (e.g., 256 or 512).
- * @returns {{tileX: number, tileY: number, pixelX: number, pixelY: number}} - Tile and pixel coordinates.
+ * @returns {{tileX: number, tileY: number, pixelX: number, pixelY: number}} - Tile coordinates (integers) and pixel coordinates (fractional).
  */
 export function lonLatToTilePixel(lon, lat, zoom, tileSize) {
   let siny = Math.sin((lat * Math.PI) / 180);
@@ -494,8 +495,9 @@ export function lonLatToTilePixel(lon, lat, zoom, tileSize) {
   const tileX = Math.floor((xWorld * scale) / tileSize);
   const tileY = Math.floor((yWorld * scale) / tileSize);
 
-  const pixelX = Math.floor(xWorld * scale) - tileX * tileSize;
-  const pixelY = Math.floor(yWorld * scale) - tileY * tileSize;
+  // Return fractional pixel coordinates for sub-pixel precision
+  const pixelX = xWorld * scale - tileX * tileSize;
+  const pixelY = yWorld * scale - tileY * tileSize;
 
   return { tileX, tileY, pixelX, pixelY };
 }
@@ -504,12 +506,14 @@ export function lonLatToTilePixel(lon, lat, zoom, tileSize) {
  * Fetches tile data from either PMTiles or MBTiles source.
  * @param {object} source - The source object, which may contain a mbtiles object, or pmtiles object.
  * @param {string} sourceType - The source type, which should be `pmtiles` or `mbtiles`
- * @param {number} z - The zoom level.
- * @param {number} x - The x coordinate of the tile.
- * @param {number} y - The y coordinate of the tile.
+ * @param {object} tile - The tile object with x, y, and z coordinates.
+ * @param {number} tile.x - The x coordinate of the tile.
+ * @param {number} tile.y - The y coordinate of the tile.
+ * @param {number} tile.z - The zoom level.
  * @returns {Promise<object | null>} - A promise that resolves to an object with data and headers or null if no data is found.
  */
-export async function fetchTileData(source, sourceType, z, x, y) {
+export async function fetchTileData(source, sourceType, tile) {
+  const { x, y, z } = tile;
   if (sourceType === 'pmtiles') {
     try {
       const tileinfo = await getPMtilesTile(source, z, x, y);

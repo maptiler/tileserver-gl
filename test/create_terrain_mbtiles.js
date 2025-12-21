@@ -43,6 +43,14 @@ function runDb(db, sql, params = []) {
 }
 
 async function createTerrainMbtiles(outputPath) {
+  // Remove existing file if it exists to avoid constraint violations
+  const fs = await import('fs/promises');
+  try {
+    await fs.unlink(outputPath);
+  } catch {
+    // File doesn't exist, that's fine
+  }
+
   const db = new sqlite3.Database(outputPath);
 
   // Create mbtiles schema
