@@ -28,7 +28,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5  # Updated to v5 for consistency
+        uses: actions/checkout@v6  # Updated to v5 for consistency
 
       - name: Get OS Architecture
         run: uname -m
