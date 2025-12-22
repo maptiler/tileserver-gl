@@ -213,7 +213,7 @@ export const serve_style = {
     reportTiles,
     reportFont,
   ) {
-    const { publicUrl } = programOpts;
+    const { publicUrl, ignoreMissingFiles } = programOpts;
     const styleFile = path.resolve(options.paths.styles, params.style);
     const styleJSON = clone(style);
 
@@ -247,6 +247,9 @@ export const serve_style = {
       return false;
     }
 
+    // Track missing sources instead of returning immediately
+    const missingSources = [];
+
     for (const name of Object.keys(styleJSON.sources)) {
       // eslint-disable-next-line security/detect-object-injection -- name is from Object.keys of style sources
       const source = styleJSON.sources[name];
@@ -270,7 +273,9 @@ export const serve_style = {
 
         const identifier = reportTiles(dataId, protocol);
         if (!identifier) {
-          return false;
+          // Track missing source instead of returning immediately
+          missingSources.push(name);
+          continue;
         }
         source.url = `local://data/${identifier}.json`;
       }
@@ -284,6 +289,20 @@ export const serve_style = {
             data.replace('file://', '').replace(options.paths.files, ''),
           );
       }
+    }
+
+    // Check if any sources are missing after processing all of them
+    if (missingSources.length > 0) {
+      if (ignoreMissingFiles) {
+        console.log(
+          `WARN: Style '${id}' references ${missingSources.length} missing data source(s): [${missingSources.join(', ')}] - not adding style`,
+        );
+      } else {
+        console.log(
+          `ERROR: Style '${id}' references missing data source(s): [${missingSources.join(', ')}]`,
+        );
+      }
+      return false;
     }
 
     for (const obj of styleJSON.layers) {
