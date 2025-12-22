@@ -433,7 +433,6 @@ async function start(opts) {
                 sparse: resolvedSparse,
               };
             },
-            serving.styles, // Pass styles repository for cleanup
           ),
         );
       } else {

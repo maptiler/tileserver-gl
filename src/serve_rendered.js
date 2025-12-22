@@ -41,7 +41,6 @@ import { renderOverlay, renderWatermark, renderAttribution } from './render.js';
 import fsp from 'node:fs/promises';
 import { existsP, gunzipP } from './promises.js';
 import { openMbTilesWrapper } from './mbtiles_wrapper.js';
-import { serve_style } from './serve_style.js';
 
 const FLOAT_PATTERN = '[+-]?(?:\\d+|\\d*\\.\\d+)';
 
@@ -1190,7 +1189,6 @@ export const serve_rendered = {
    * @param {object} programOpts - An object containing the program options
    * @param {object} style pre-fetched/read StyleJSON object.
    * @param {(dataId: string) => object} dataResolver Function to resolve data.
-   * @param {object} stylesRepo - The styles repository for cleanup if sources fail.
    * @returns {Promise<void>}
    */
   add: async function (
@@ -1201,7 +1199,6 @@ export const serve_rendered = {
     programOpts,
     style,
     dataResolver,
-    stylesRepo,
   ) {
     const map = {
       renderers: [],
@@ -1814,11 +1811,7 @@ export const serve_rendered = {
       console.log(
         `WARN: Style '${id}' has ${skippedSources.length} missing source(s): [${skippedSources.join(', ')}] - not adding style to repository`,
       );
-      // Remove from styles repository if it was already added
-      if (stylesRepo) {
-        serve_style.remove(stylesRepo, id);
-      }
-      // Don't add this style to the rendered repository
+      // Don't add this style to the repository
       return;
     }
 

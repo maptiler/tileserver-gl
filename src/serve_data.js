@@ -381,7 +381,7 @@ export const serve_data = {
       } catch (err) {
         if (ignoreMissingFiles) {
           console.log(
-            `WARN: Data source '${id}' file not found: "${inputFile}" - skipping`,
+            `WARN: Data source '${id}' file not found: "${inputFile}" - skipping (requests will return 404)`,
           );
           return; // Skip this data source
         }
