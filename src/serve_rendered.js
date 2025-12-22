@@ -1208,8 +1208,7 @@ export const serve_rendered = {
       sparseFlags: {},
     };
 
-    const { publicUrl, verbose, fetchTimeout, ignoreMissingFiles } =
-      programOpts;
+    const { publicUrl, verbose, fetchTimeout } = programOpts;
 
     const styleJSON = clone(style);
 
@@ -1611,9 +1610,6 @@ export const serve_rendered = {
         params.staticAttributionText || options.staticAttributionText,
     };
 
-    // Track sources that failed to load
-    const skippedSources = [];
-
     for (const name of Object.keys(styleJSON.sources)) {
       let sourceType;
       // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
@@ -1653,27 +1649,6 @@ export const serve_rendered = {
         } else {
           console.error(`ERROR: data "${inputFile}" not found!`);
           process.exit(1);
-        }
-
-        // PMTiles supports remote URLs (HTTP and S3), skip file check for those
-        if (!isValidRemoteUrl(inputFile)) {
-          try {
-            const inputFileStats = await fsp.stat(inputFile);
-            if (!inputFileStats.isFile() || inputFileStats.size === 0) {
-              throw Error(
-                `Not valid ${sourceType} file: "${inputFile}"`,
-              );
-            }
-          } catch (err) {
-            if (ignoreMissingFiles) {
-              console.log(
-                `WARN: ${sourceType} source '${name}' in style '${id}' not found: "${inputFile}" - skipping`,
-              );
-              skippedSources.push(name);
-              continue; // Skip this source
-            }
-            throw err;
-          }
         }
 
         if (sourceType === 'pmtiles') {
@@ -1729,22 +1704,11 @@ export const serve_rendered = {
             map.sparseFlags[name] =
               dataInfo.sparse ?? options.sparse ?? !isVector;
           } catch (err) {
-            if (ignoreMissingFiles) {
-              console.log(
-                `WARN: Unable to open PMTiles source '${name}' in style '${id}' from "${inputFile}": ${err.message} - skipping`,
-              );
-              skippedSources.push(name);
-              continue; // Skip this source
-            }
             throw err;
           }
         } else {
           // MBTiles does not support remote URLs
           try {
-            const inputFileStats = await fsp.stat(inputFile);
-            if (!inputFileStats.isFile() || inputFileStats.size === 0) {
-              throw Error(`Not valid MBTiles file: "${inputFile}"`);
-            }
             const mbw = await openMbTilesWrapper(inputFile);
             const info = await mbw.getInfo();
             // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
@@ -1793,29 +1757,12 @@ export const serve_rendered = {
             map.sparseFlags[name] =
               dataInfo.sparse ?? options.sparse ?? !isVector;
           } catch (err) {
-            if (ignoreMissingFiles) {
-              console.log(
-                `WARN: Unable to open MBTiles source '${name}' in style '${id}' from "${inputFile}": ${err.message} - skipping`,
-              );
-              skippedSources.push(name);
-              continue; // Skip this source
-            }
             throw err;
           }
         }
       }
     }
 
-    // Check if any sources were skipped due to missing files
-    if (skippedSources.length > 0) {
-      console.log(
-        `WARN: Style '${id}' has ${skippedSources.length} missing source(s): [${skippedSources.join(', ')}] - not adding style to repository`,
-      );
-      // Don't add this style to the repository
-      return;
-    }
-
-    // Add style to repository only if all sources loaded successfully
     // eslint-disable-next-line security/detect-object-injection -- id is from config file style names
     repo[id] = repoobj;
 
