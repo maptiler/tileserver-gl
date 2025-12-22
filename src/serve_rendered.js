@@ -1609,6 +1609,8 @@ export const serve_rendered = {
       staticAttributionText:
         params.staticAttributionText || options.staticAttributionText,
     };
+    // eslint-disable-next-line security/detect-object-injection -- id is from config file style names
+    repo[id] = repoobj;
 
     for (const name of Object.keys(styleJSON.sources)) {
       let sourceType;
@@ -1651,120 +1653,122 @@ export const serve_rendered = {
           process.exit(1);
         }
 
-        if (sourceType === 'pmtiles') {
-          try {
-            // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
-            map.sources[name] = openPMtiles(
-              inputFile,
-              s3Profile,
-              requestPayer,
-              s3Region,
-              s3UrlFormat,
-              verbose,
-            );
-            // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
-            map.sourceTypes[name] = 'pmtiles';
-            // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
-            const metadata = await getPMtilesInfo(map.sources[name], inputFile);
-
-            if (!repoobj.dataProjWGStoInternalWGS && metadata.proj4) {
-              // how to do this for multiple sources with different proj4 defs?
-              const to3857 = proj4('EPSG:3857');
-              const toDataProj = proj4(metadata.proj4);
-              repoobj.dataProjWGStoInternalWGS = (xy) =>
-                to3857.inverse(toDataProj.forward(xy));
-            }
-
-            const type = source.type;
-            Object.assign(source, metadata);
-            source.type = type;
-            source.tiles = [
-              // meta url which will be detected when requested
-              `pmtiles://${name}/{z}/{x}/{y}.${metadata.format || 'pbf'}`,
-            ];
-            delete source.scheme;
-
-            if (
-              !attributionOverride &&
-              source.attribution &&
-              source.attribution.length > 0
-            ) {
-              if (!tileJSON.attribution.includes(source.attribution)) {
-                if (tileJSON.attribution.length > 0) {
-                  tileJSON.attribution += ' | ';
-                }
-                tileJSON.attribution += source.attribution;
-              }
-            }
-
-            // Set sparse flag: user config overrides format-based default
-            // Vector tiles (pbf) default to false (204), raster tiles default to true (404)
-            const isVector = metadata.format === 'pbf';
-            // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
-            map.sparseFlags[name] =
-              dataInfo.sparse ?? options.sparse ?? !isVector;
-          } catch (err) {
-            throw err;
+        // PMTiles supports remote URLs (HTTP and S3), skip file check for those
+        if (!isValidRemoteUrl(inputFile)) {
+          const inputFileStats = await fsp.stat(inputFile);
+          if (!inputFileStats.isFile() || inputFileStats.size === 0) {
+            throw Error(`Not valid PMTiles file: "${inputFile}"`);
           }
+        }
+
+        if (sourceType === 'pmtiles') {
+          // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
+          map.sources[name] = openPMtiles(
+            inputFile,
+            s3Profile,
+            requestPayer,
+            s3Region,
+            s3UrlFormat,
+            verbose,
+          );
+          // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
+          map.sourceTypes[name] = 'pmtiles';
+          // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
+          const metadata = await getPMtilesInfo(map.sources[name], inputFile);
+
+          if (!repoobj.dataProjWGStoInternalWGS && metadata.proj4) {
+            // how to do this for multiple sources with different proj4 defs?
+            const to3857 = proj4('EPSG:3857');
+            const toDataProj = proj4(metadata.proj4);
+            repoobj.dataProjWGStoInternalWGS = (xy) =>
+              to3857.inverse(toDataProj.forward(xy));
+          }
+
+          const type = source.type;
+          Object.assign(source, metadata);
+          source.type = type;
+          source.tiles = [
+            // meta url which will be detected when requested
+            `pmtiles://${name}/{z}/{x}/{y}.${metadata.format || 'pbf'}`,
+          ];
+          delete source.scheme;
+
+          if (
+            !attributionOverride &&
+            source.attribution &&
+            source.attribution.length > 0
+          ) {
+            if (!tileJSON.attribution.includes(source.attribution)) {
+              if (tileJSON.attribution.length > 0) {
+                tileJSON.attribution += ' | ';
+              }
+              tileJSON.attribution += source.attribution;
+            }
+          }
+
+          // Set sparse flag: user config overrides format-based default
+          // Vector tiles (pbf) default to false (204), raster tiles default to true (404)
+          const isVector = metadata.format === 'pbf';
+          // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
+          map.sparseFlags[name] =
+            dataInfo.sparse ?? options.sparse ?? !isVector;
         } else {
           // MBTiles does not support remote URLs
-          try {
-            const mbw = await openMbTilesWrapper(inputFile);
-            const info = await mbw.getInfo();
-            // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
-            map.sources[name] = mbw.getMbTiles();
-            // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
-            map.sourceTypes[name] = 'mbtiles';
 
-            if (!repoobj.dataProjWGStoInternalWGS && info.proj4) {
-              // how to do this for multiple sources with different proj4 defs?
-              const to3857 = proj4('EPSG:3857');
-              const toDataProj = proj4(info.proj4);
-              repoobj.dataProjWGStoInternalWGS = (xy) =>
-                to3857.inverse(toDataProj.forward(xy));
-            }
-
-            const type = source.type;
-            Object.assign(source, info);
-            source.type = type;
-            source.tiles = [
-              // meta url which will be detected when requested
-              `mbtiles://${name}/{z}/{x}/{y}.${info.format || 'pbf'}`,
-            ];
-            delete source.scheme;
-
-            if (options.dataDecoratorFunc) {
-              source = options.dataDecoratorFunc(name, 'tilejson', source);
-            }
-
-            if (
-              !attributionOverride &&
-              source.attribution &&
-              source.attribution.length > 0
-            ) {
-              if (!tileJSON.attribution.includes(source.attribution)) {
-                if (tileJSON.attribution.length > 0) {
-                  tileJSON.attribution += ' | ';
-                }
-                tileJSON.attribution += source.attribution;
-              }
-            }
-
-            // Set sparse flag: user config overrides format-based default
-            // Vector tiles (pbf) default to false (204), raster tiles default to true (404)
-            const isVector = info.format === 'pbf';
-            // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
-            map.sparseFlags[name] =
-              dataInfo.sparse ?? options.sparse ?? !isVector;
-          } catch (err) {
-            throw err;
+          const inputFileStats = await fsp.stat(inputFile);
+          if (!inputFileStats.isFile() || inputFileStats.size === 0) {
+            throw Error(`Not valid MBTiles file: "${inputFile}"`);
           }
+          const mbw = await openMbTilesWrapper(inputFile);
+          const info = await mbw.getInfo();
+          // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
+          map.sources[name] = mbw.getMbTiles();
+          // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
+          map.sourceTypes[name] = 'mbtiles';
+
+          if (!repoobj.dataProjWGStoInternalWGS && info.proj4) {
+            // how to do this for multiple sources with different proj4 defs?
+            const to3857 = proj4('EPSG:3857');
+            const toDataProj = proj4(info.proj4);
+            repoobj.dataProjWGStoInternalWGS = (xy) =>
+              to3857.inverse(toDataProj.forward(xy));
+          }
+
+          const type = source.type;
+          Object.assign(source, info);
+          source.type = type;
+          source.tiles = [
+            // meta url which will be detected when requested
+            `mbtiles://${name}/{z}/{x}/{y}.${info.format || 'pbf'}`,
+          ];
+          delete source.scheme;
+
+          if (options.dataDecoratorFunc) {
+            source = options.dataDecoratorFunc(name, 'tilejson', source);
+          }
+
+          if (
+            !attributionOverride &&
+            source.attribution &&
+            source.attribution.length > 0
+          ) {
+            if (!tileJSON.attribution.includes(source.attribution)) {
+              if (tileJSON.attribution.length > 0) {
+                tileJSON.attribution += ' | ';
+              }
+              tileJSON.attribution += source.attribution;
+            }
+          }
+
+          // Set sparse flag: user config overrides format-based default
+          // Vector tiles (pbf) default to false (204), raster tiles default to true (404)
+          const isVector = info.format === 'pbf';
+          // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
+          map.sparseFlags[name] =
+            dataInfo.sparse ?? options.sparse ?? !isVector;
         }
       }
     }
-
-    // eslint-disable-next-line security/detect-object-injection -- id is from config file style names
-    repo[id] = repoobj;
 
     // standard and @2x tiles are much more usual -> default to larger pools
     const minPoolSizes = options.minRendererPoolSizes || [8, 4, 2];
