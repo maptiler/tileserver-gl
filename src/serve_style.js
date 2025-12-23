@@ -247,7 +247,7 @@ export const serve_style = {
       return false;
     }
 
-    // Track missing sources instead of returning immediately
+    // Track missing sources
     const missingSources = [];
 
     for (const name of Object.keys(styleJSON.sources)) {
@@ -273,7 +273,7 @@ export const serve_style = {
 
         const identifier = reportTiles(dataId, protocol);
         if (!identifier) {
-          // Track missing source instead of returning immediately
+          // This datasource is missing or invalid in some way
           missingSources.push(name);
           continue;
         }

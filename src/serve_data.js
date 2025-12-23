@@ -383,7 +383,7 @@ export const serve_data = {
           console.log(
             `WARN: Data source '${id}' file not found: "${inputFile}" - skipping`,
           );
-          return; // Skip this data source
+          return;
         }
         throw Error(`Not valid input file: "${inputFile}"`);
       }
@@ -421,7 +421,7 @@ export const serve_data = {
         console.log(
           `WARN: Unable to open data source '${id}' from "${inputFile}": ${err.message} - skipping (requests will return 404)`,
         );
-        return; // Skip this data source
+        return;
       }
       throw err;
     }
