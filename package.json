@@ -43,7 +43,7 @@
     "@mapbox/sphericalmercator": "2.0.2",
     "@mapbox/vector-tile": "2.0.4",
     "@maplibre/maplibre-gl-inspect": "1.8.2",
-    "@maplibre/maplibre-gl-native": "6.3.0-pre.1",
+    "@maplibre/maplibre-gl-native": "6.3.0-pre.2",
     "@maplibre/maplibre-gl-style-spec": "24.4.1",
     "@sindresorhus/fnv1a": "3.1.0",
     "advanced-pool": "0.3.3",
