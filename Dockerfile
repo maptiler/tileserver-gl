@@ -21,6 +21,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
       libpango1.0-dev \
       libjpeg-dev \
       libgif-dev \
+      libpng-dev \
       librsvg2-dev \
       gir1.2-rsvg-2.0 \
       librsvg2-2 \
@@ -30,7 +31,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
       libpixman-1-0 && \
     mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
-    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list && \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_24.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list && \
     apt-get -qq update && \
     apt-get install -y --no-install-recommends --no-install-suggests nodejs && \
     npm i -g npm@latest && \
@@ -50,6 +51,7 @@ RUN npm config set fetch-retries 5 && \
     npm config set fetch-retry-mintimeout 100000 && \
     npm config set fetch-retry-maxtimeout 600000 && \
     npm ci --omit=dev && \
+    npm rebuild canvas --build-from-source && \
     chown -R root:root /usr/src/app
 
 FROM ubuntu:jammy AS final
@@ -79,7 +81,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
       libjemalloc2 && \
     mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
-    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list && \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_24.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list && \
     apt-get -qq update && \
     apt-get install -y --no-install-recommends --no-install-suggests nodejs && \
     npm i -g npm@latest && \
