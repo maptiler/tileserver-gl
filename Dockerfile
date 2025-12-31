@@ -45,7 +45,7 @@ RUN npm config set fetch-retries 5 && \
     npm config set fetch-retry-mintimeout 100000 && \
     npm config set fetch-retry-maxtimeout 600000 && \
     npm ci --omit=dev && \
-    npm rebuild canvas --build-from-source && \
+    npm rebuild canvas -- --build-from-source && \
     chown -R root:root /usr/src/app
 
 # --- Final Stage ---
