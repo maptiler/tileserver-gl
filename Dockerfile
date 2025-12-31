@@ -35,6 +35,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+RUN mkdir -p /usr/src/app
+
 WORKDIR /usr/src/app
 
 COPY package.json package-lock.json ./
