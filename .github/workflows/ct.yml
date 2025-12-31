@@ -58,7 +58,7 @@ jobs:
         run: npm ci --prefer-offline --no-audit
 
       - name: Install canvas from source 🎨
-        run: NPM_CONFIG_BUILD_FROM_SOURCE=canvas npm install canvas --no-save
+        run: npm_config_build_from_source=canvas npm install canvas --no-save
 
       - name: Get release type
         id: prepare_release
