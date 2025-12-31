@@ -120,14 +120,11 @@ jobs:
 
       - name: Run tests inside production image 🧪
         run: |
-          docker run --rm -it \
+          docker run --rm \
             -v "${{ github.workspace }}:/data" \
             --entrypoint /bin/sh \
             ${{ env.LOCAL_BASE_IMAGE_NAME }}:${{ matrix.arch }} \
-            -c "npm run test --prefix /usr/src/app -- $@"
-
-      - name: Run tests 🧪
-        run: xvfb-run --server-args="-screen 0 1024x768x24" npm test
+            -c "xvfb-run --server-args='-screen 0 1024x768x24' npm test --prefix /usr/src/app"
 
       - name: Remove test data
         run: rm -R test_data*
