@@ -151,7 +151,7 @@ jobs:
   # Create manifests, publish NPM, and create GitHub release
   release:
     name: Release
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     needs: [release-check, build_arch_images]
     if: ${{ needs.release-check.outputs.published == 'false' }}
 
@@ -162,13 +162,13 @@ jobs:
       - name: Setup node env 📦
         uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version-file: 'package.json'
           check-latest: true
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Install dependencies for prepare scripts
-        run: npm install copyfiles maplibre-gl @maplibre/maplibre-gl-inspect @mapbox/mapbox-gl-rtl-text leaflet leaflet-hash --no-save
+      - name: Install NPM dependencies 🚀
+        run: npm ci --prefer-offline --no-audit
 
       - name: Get release type
         id: prepare_release
@@ -185,7 +185,7 @@ jobs:
       # NPM Publishing
       - name: Publish to NPM
         run: |
-          npm publish --access public --tag ${{ steps.prepare_release.outputs.tag }} --provenance
+          npm publish --access public --tag ${{ steps.prepare_release.outputs.tag }}
 
       - name: Create Tileserver Light Directory
         run: node publish.js --no-publish
@@ -197,7 +197,7 @@ jobs:
       - name: Publish Light to NPM
         working-directory: ./light
         run: |
-          npm publish --access public --tag ${{ steps.prepare_release.outputs.tag }} --provenance
+          npm publish --access public --tag ${{ steps.prepare_release.outputs.tag }}
 
       # Docker Manifest Creation
       - name: Set up Docker Buildx
