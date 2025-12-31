@@ -27,6 +27,8 @@ RUN set -ex; \
       libgif-dev \
       libpng-dev \
       librsvg2-dev \
+      librsvg2-common \
+      gir1.2-rsvg-2.0 \
       libcurl4-openssl-dev \
     apt-get -y --purge autoremove; \
     apt-get clean; \
