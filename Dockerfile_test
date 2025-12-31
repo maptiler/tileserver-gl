@@ -60,4 +60,4 @@ COPY package.json .
 RUN npm install && npm rebuild canvas --build-from-source
 COPY / .
 
-RUN xvfb-run --server-args="-screen 0 1024x768x24" npm test
+RUN script -q -c "xvfb-run --server-args='-screen 0 1024x768x24' npm test"
