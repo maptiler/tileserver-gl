@@ -21,8 +21,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
       libjpeg-dev \
       libgif-dev \
       librsvg2-dev \
-      gir1.2-rsvg-2.0 \
-      librsvg2-common \
       libcurl4-openssl-dev \
       libicu-dev && \
     mkdir -p /etc/apt/keyrings && \
@@ -69,7 +67,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
       libgif7 \
       libopengl0 \
       libcurl4 \
-      librsvg2-4 \
+      librsvg2-dev \
       libpango-1.0-0 \
       libjemalloc2 && \
     mkdir -p /etc/apt/keyrings && \

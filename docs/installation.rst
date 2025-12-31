@@ -48,7 +48,7 @@ Native dependencies
 
 Ubuntu 24.04 (x64/arm64)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-- apt install build-essential pkg-config xvfb libglfw3-dev libuv1-dev libjpeg-turbo8 libicu-dev libcairo2-dev libpango1.0-dev libpng-dev libjpeg-dev libgif-dev librsvg2-dev gir1.2-rsvg-2.0 librsvg2-4 librsvg2-common libcurl4-openssl-dev libpixman-1-dev libpixman-1-0
+- apt install build-essential pkg-config xvfb libglfw3-dev libuv1-dev libjpeg-turbo8 libicu-dev libcairo2-dev libpango1.0-dev libpng-dev libjpeg-dev libgif-dev librsvg2-dev librsvg2-dev libcurl4-openssl-dev libpixman-1-dev
 
 MacOS 15 (x64/arm64)
 ~~~~~~~~~~~~~~~~~~~~~~
