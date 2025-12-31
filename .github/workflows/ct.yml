@@ -110,24 +110,18 @@ jobs:
           echo "Built and tagged main image locally for ${{ matrix.arch }} as ${{ env.LOCAL_BASE_IMAGE_NAME }}:${{ matrix.arch }}"
           echo "Main image digest for ${{ matrix.arch }}: ${{ steps.build_main_arch.outputs.digest }}"
 
-      - name: Pull test data 📦
-        run: >-
-          wget -O test_data.zip
-          https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
-
-      - name: Prepare test data 📦
-        run: unzip -q test_data.zip -d test_data
-
-      - name: Run tests inside production image 🧪
-        run: |
-          docker run --rm \
-            -v "${{ github.workspace }}:/data" \
-            --entrypoint /bin/sh \
-            ${{ env.LOCAL_BASE_IMAGE_NAME }}:${{ matrix.arch }} \
-            -c "xvfb-run --server-args='-screen 0 1024x768x24' npm test --prefix /usr/src/app"
-
-      - name: Remove test data
-        run: rm -R test_data*
+      - name: Build and run tests using Dockerfile_test 🧪
+        id: build_test_image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile_test
+          platforms: linux/${{ matrix.arch }}
+          tags: ${{ env.LOCAL_BASE_IMAGE_NAME }}-test:${{ matrix.arch }}
+          load: false
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       # Build Light Image
       - name: Create Tileserver Light Directory
