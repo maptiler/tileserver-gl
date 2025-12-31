@@ -154,6 +154,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs: [release-check, build_arch_images]
     if: ${{ needs.release-check.outputs.published == 'false' }}
+    environment: release
 
     steps:
       - name: Checkout code
