@@ -57,8 +57,8 @@ jobs:
       - name: Install NPM dependencies 🚀
         run: npm ci --prefer-offline --no-audit
 
-      - name: Rebuild canvas from source 🎨
-        run: npm rebuild canvas --build-from-source
+      - name: Install canvas from source 🎨
+        run: npm install canvas --build-from-source --no-save
 
       - name: Get release type
         id: prepare_release
