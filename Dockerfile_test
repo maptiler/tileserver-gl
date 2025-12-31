@@ -12,6 +12,7 @@ RUN set -ex; \
     apt-get -y --no-install-recommends install \
       unzip \
       build-essential \
+      python3-setuptools \
       ca-certificates \
       curl \
       gnupg \
