@@ -66,6 +66,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
       libcairo2 \
       libjpeg-turbo8 \
       libgif7 \
+      libpng16-16t64 && \
       libopengl0 \
       libcurl4 \
       librsvg2-dev \
