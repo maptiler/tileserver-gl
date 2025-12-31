@@ -33,6 +33,8 @@ jobs:
           node-version-file: 'package.json'
           check-latest: true
           cache: 'npm'
+          auth-type: oidc
+          always-auth: true
 
       - name: Check if version is published
         id: check
@@ -166,6 +168,8 @@ jobs:
           check-latest: true
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
+          auth-type: oidc
+          always-auth: true
 
       - name: Install NPM dependencies 🚀
         run: npm ci --prefer-offline --no-audit
