@@ -82,8 +82,8 @@ jobs:
       - name: Install NPM dependencies 🚀
         run: npm ci --prefer-offline --no-audit
 
-      - name: Install canvas from source 🎨
-        run: npm_config_build_from_source=canvas npm install canvas --no-save
+      - name: Rebuild canvas from source 🎨
+        run: npm rebuild canvas --build-from-source
 
       - name: Pull test data 📦
         run: >-

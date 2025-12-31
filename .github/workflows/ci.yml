@@ -36,8 +36,8 @@ jobs:
       - name: Install dependencies 🚀
         run: npm ci --prefer-offline --no-audit --omit=optional
 
-      - name: Install canvas from source 🎨
-        run: npm_config_build_from_source=canvas npm install canvas --no-save
+      - name: Rebuild canvas from source 🎨
+        run: npm rebuild canvas --build-from-source
 
       - name: Run linter(s) 💅
         uses: wearerequired/lint-action@v2

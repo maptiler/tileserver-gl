@@ -55,7 +55,7 @@ RUN curl -L -o test_data.zip https://github.com/maptiler/tileserver-gl/releases/
 
 COPY package.json .
 # Running npm install for development (includes devDependencies for tests)
-RUN npm install && npm_config_build_from_source=canvas npm install canvas --no-save
+RUN npm install && npm rebuild canvas --build-from-source
 COPY / .
 
 # Execute tests using xvfb-run
