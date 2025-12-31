@@ -28,7 +28,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
       libicu-dev && \
     mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
-    # Targeting Node.js 24.x
     echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_24.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list && \
     apt-get update && \
     apt-get install -y --no-install-recommends --no-install-suggests nodejs && \
@@ -46,7 +45,6 @@ RUN npm config set fetch-retries 5 && \
     npm config set fetch-retry-mintimeout 100000 && \
     npm config set fetch-retry-maxtimeout 600000 && \
     npm ci --omit=dev && \
-    # Build native modules (like node-canvas) for Ubuntu 24.04
     npm rebuild canvas --build-from-source && \
     chown -R root:root /usr/src/app
 
@@ -81,8 +79,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_24.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list && \
     apt-get update && \
     apt-get install -y --no-install-recommends --no-install-suggests nodejs && \
-    # Create symlink for jemalloc using multi-arch path standard in 24.04
-    ln -sf /usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2 /usr/lib/libjemalloc.so && \
+    # Create appropriate symlinks if needed
+    ln -sf "$(find /usr/lib -name "libjemalloc.so*" | head -n 1)" /usr/lib/libjemalloc.so && \
     apt-get -y remove curl gnupg && \
     apt-get -y --purge autoremove && \
     apt-get clean && \
