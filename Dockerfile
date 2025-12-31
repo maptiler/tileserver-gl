@@ -61,7 +61,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
       xvfb \
       libglfw3 \
       libuv1 \
-      libicu74 \
+      libicu-dev \
       libcairo2 \
       libjpeg-turbo8 \
       libgif7 \
