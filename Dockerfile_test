@@ -2,7 +2,7 @@
 # Simply run "docker build -f Dockerfile_test ."
 # WARNING: sometimes it fails with a core dumped exception
 
-FROM ubuntu:jammy
+FROM ubuntu:noble
 
 ENV NODE_ENV="development"
 
@@ -19,20 +19,19 @@ RUN set -ex; \
       xvfb \
       libglfw3-dev \
       libuv1-dev \
-      libjpeg-turbo8 \
-      libicu70 \
+      libicu-dev \
       libcairo2-dev \
       libpango1.0-dev \
+      libjpeg-turbo8 \
       libjpeg-dev \
       libgif-dev \
       libpng-dev \
       librsvg2-dev \
       gir1.2-rsvg-2.0 \
-      librsvg2-2 \
+      librsvg2-4 \
       librsvg2-common \
       libcurl4-openssl-dev \
-      libpixman-1-dev \
-      libpixman-1-0; \
+      libpixman-1-dev; \
     apt-get -y --purge autoremove; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*;
@@ -53,11 +52,14 @@ RUN mkdir -p /etc/apt/keyrings; \
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
+# Downloading test data
 RUN curl -L -o test_data.zip https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip; \
     unzip -q test_data.zip -d test_data
 
 COPY package.json .
+# Running npm install for development (includes devDependencies for tests)
 RUN npm install && npm rebuild canvas --build-from-source
 COPY / .
 
+# Execute tests using xvfb-run
 RUN script -q -c "xvfb-run --server-args='-screen 0 1024x768x24' npm test"

@@ -1,4 +1,5 @@
-FROM ubuntu:jammy
+# Use Ubuntu 24.04 (Noble)
+FROM ubuntu:noble
 
 ENV NODE_ENV="devel"
 
@@ -17,25 +18,26 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
       libglfw3-dev \
       libuv1-dev \
       libjpeg-turbo8 \
-      libicu70 \
+      libjpeg-dev \
+      libicu-dev \
       libcairo2-dev \
       libpango1.0-dev \
-      libjpeg-dev \
       libgif-dev \
       libpng-dev \
       librsvg2-dev \
       gir1.2-rsvg-2.0 \
-      librsvg2-2 \
+      librsvg2-4 \
       librsvg2-common \
       libcurl4-openssl-dev \
-      libpixman-1-dev \
-      libpixman-1-0 && \
+      libpixman-1-dev && \
     mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
+    # Setup Node.js 24.x for Noble
     echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_24.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list && \
     apt-get -qq update && \
     apt-get install -y --no-install-recommends --no-install-suggests nodejs && \
     npm i -g npm@latest && \
+    # Cleanup to keep the image size down
     apt-get -y remove curl gnupg && \
     apt-get -y --purge autoremove && \
     apt-get clean && \
