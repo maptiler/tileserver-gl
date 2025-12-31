@@ -55,7 +55,6 @@ RUN curl -L -o test_data.zip https://github.com/maptiler/tileserver-gl/releases/
 
 COPY package.json .
 # Running npm install for development (includes devDependencies for tests)
-# hadolint ignore=DL3016
 RUN npm install && npm install canvas --build-from-source --no-save
 COPY / .
 
