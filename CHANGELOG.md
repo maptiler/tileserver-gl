@@ -18,7 +18,8 @@
 - Fix loading local data sources (PMTiles/MBTiles) specified in style (https://github.com/maptiler/tileserver-gl/pull/1855) by @acalcutt
 - **BREAKING**: Change 'sparse' option default based on tile format - vector tiles (pbf) default to false (204), raster tiles default to true (404 for overzoom) (https://github.com/maptiler/tileserver-gl/pull/1855) by @acalcutt
 - Migrate NPM publishing to trusted publishing (OIDC) ([#1872](https://github.com/maptiler/tileserver-gl/pull/1872)) (by [app/copilot-swe-agent](https://github.com/app/copilot-swe-agent)
-- Update Maplibre-Native to v6.3.0. Note that the linux version now requires Ubuntu 24.04 to match the maplibre-native binary. ([https://github.com/maptiler/tileserver-gl/pull/1819](https://github.com/maptiler/tileserver-gl/pull/1907) by @acalcutt
+- Update Maplibre-Native to v6.3.0. Note that the linux version now requires Ubuntu 24.04 to match the maplibre-native binary. (https://github.com/maptiler/tileserver-gl/pull/1907) by @acalcutt @dependabot
+- Fix get elevation may return data from wrong point (https://github.com/maptiler/tileserver-gl/pull/1860) by @russellporter @acalcutt
 
 ## 5.4.0
 - Fix the issue where the tile URL cannot be correctly parsed with the HTTPS protocol when using an nginx proxy service (https://github.com/maptiler/tileserver-gl/pull/1578) by @dakanggo
