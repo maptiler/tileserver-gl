@@ -184,8 +184,11 @@ jobs:
 
       # NPM Publishing
       - name: Publish to NPM
+        env:
+          NPM_CONFIG_PROVENANCE: 'true'
+          NODE_AUTH_TOKEN: ''  # Clear placeholder set by setup-node to enable OIDC
         run: |
-          npm publish --access public --tag ${{ steps.prepare_release.outputs.tag }}
+          npm publish --access public --provenance --tag ${{ steps.prepare_release.outputs.tag }}
 
       - name: Create Tileserver Light Directory
         run: node publish.js --no-publish
@@ -196,8 +199,11 @@ jobs:
 
       - name: Publish Light to NPM
         working-directory: ./light
+        env:
+          NPM_CONFIG_PROVENANCE: 'true'
+          NODE_AUTH_TOKEN: ''  # Clear placeholder set by setup-node to enable OIDC
         run: |
-          npm publish --access public --tag ${{ steps.prepare_release.outputs.tag }}
+          npm publish --access public --provenance --tag ${{ steps.prepare_release.outputs.tag }}
 
       # Docker Manifest Creation
       - name: Set up Docker Buildx
