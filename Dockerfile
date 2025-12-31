@@ -22,8 +22,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
       libjpeg-dev \
       libgif-dev \
       librsvg2-dev \
-      librsvg2-common \
-      gir1.2-rsvg-2.0 \
       libcurl4-openssl-dev \
       libicu-dev && \
     mkdir -p /etc/apt/keyrings && \
