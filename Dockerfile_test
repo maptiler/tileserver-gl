@@ -8,30 +8,29 @@ ENV NODE_ENV="development"
 
 RUN set -ex; \
     export DEBIAN_FRONTEND=noninteractive; \
-    apt-get -qq update; \
-    apt-get -y --no-install-recommends install \
-      unzip \
-      build-essential \
-      python3-setuptools \
-      ca-certificates \
-      curl \
-      gnupg \
-      pkg-config \
-      xvfb \
-      xkb-data \
-      libglfw3-dev \
-      libuv1-dev \
-      libicu-dev \
-      libcairo2-dev \
-      libpango1.0-dev \
-      libjpeg-turbo8 \
-      libjpeg-dev \
-      libgif-dev \
-      libpng-dev \
-      librsvg2-dev \
-      libcurl4-openssl-dev \
-    apt-get -y --purge autoremove; \
-    apt-get clean; \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        unzip \
+        build-essential \
+        python3-setuptools \
+        ca-certificates \
+        curl \
+        gnupg \
+        pkg-config \
+        xvfb \
+        xkb-data \
+        libglfw3-dev \
+        libuv1-dev \
+        libcairo2-dev \
+        libpango1.0-dev \
+        libpng-dev \
+        libjpeg-dev \
+        libgif-dev \
+        librsvg2-dev \
+        libcurl4-openssl-dev \
+        libicu-dev && \
+    apt-get -y --purge autoremove && \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*;
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
