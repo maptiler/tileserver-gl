@@ -72,14 +72,6 @@ class ElevationInfoControl {
           url = url.replace(new RegExp('{'+ key +'}','g'), coord[key]);
         }
 
-        // Place marker at clicked location
-        // Note: Terrain is disabled to prevent DEM errors with markers at out-of-bounds coordinates.
-        // The marker conflicts with the terrain system in MapLibre, so we keep terrain disabled.
-        const hadTerrain = this.map.getTerrain();
-        if (hadTerrain) {
-          this.map.setTerrain(null);
-        }
-        
         try {
           if (this.marker) {
             this.marker.remove();
@@ -92,7 +84,6 @@ class ElevationInfoControl {
           // If placement fails, continue without marker
           console.error("Marker placement error:", _err);
         }
-        // Terrain remains disabled to avoid repeated DEM errors from marker updates
 
         let request = new XMLHttpRequest();
         request.open("GET", url, true);
