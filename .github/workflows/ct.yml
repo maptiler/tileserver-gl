@@ -75,18 +75,18 @@ jobs:
       - name: Test NPM publish (dry-run)
         run: npm publish --dry-run --tag ${{ steps.prepare_release.outputs.tag }}
 
-      - name: Pull test data 📦
+      - name: Pull test data (runner) 📦
         run: >-
           wget -O test_data.zip
           https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
 
-      - name: Prepare test data 📦
+      - name: Prepare test data (runner) 📦
         run: unzip -q test_data.zip -d test_data
 
-      - name: Run tests 🧪
+      - name: Run tests (runner) 🧪
         run: xvfb-run --server-args="-screen 0 1024x768x24" npm test
 
-      - name: Remove test data
+      - name: Remove test data (avoid baking into image)
         run: rm -R test_data*
 
       # Docker Build Setup
@@ -101,6 +101,7 @@ jobs:
           context: .
           platforms: linux/${{ matrix.arch }}
           tags: ${{ env.LOCAL_BASE_IMAGE_NAME }}:${{ matrix.arch }}
+          load: true
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -109,6 +110,29 @@ jobs:
         run: |
           echo "Built and tagged main image locally for ${{ matrix.arch }} as ${{ env.LOCAL_BASE_IMAGE_NAME }}:${{ matrix.arch }}"
           echo "Main image digest for ${{ matrix.arch }}: ${{ steps.build_main_arch.outputs.digest }}"
+
+      - name: Pull test data 📦
+        run: >-
+          wget -O test_data.zip
+          https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
+
+      - name: Prepare test data 📦
+        run: unzip -q test_data.zip -d test_data
+
+      - name: Run tests inside production image 🧪
+        run: |
+          # mount the test data and the test-entrypoint script into the image
+          docker run --rm --name tileserver_test \
+            -p 8080:8080 \
+            -v "${{ github.workspace }}/test_data:/data/test_data:ro" \
+            -v "${{ github.workspace }}/scripts/test-entrypoint.sh:/test-entrypoint.sh:ro" \
+            ${{ env.LOCAL_BASE_IMAGE_NAME }}:${{ matrix.arch }} /test-entrypoint.sh
+
+      - name: Run tests 🧪
+        run: xvfb-run --server-args="-screen 0 1024x768x24" npm test
+
+      - name: Remove test data
+        run: rm -R test_data*
 
       # Build Light Image
       - name: Create Tileserver Light Directory
@@ -130,6 +154,7 @@ jobs:
           file: ./light/Dockerfile
           platforms: linux/${{ matrix.arch }}
           tags: ${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${{ matrix.arch }}
+          load: true
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
