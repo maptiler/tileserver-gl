@@ -29,7 +29,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
       librsvg2-4 \
       librsvg2-common \
       libcurl4-openssl-dev \
-      libpixman-1-dev && \
     mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
     # Setup Node.js 24.x for Noble

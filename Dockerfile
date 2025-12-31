@@ -24,7 +24,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
       gir1.2-rsvg-2.0 \
       librsvg2-common \
       libcurl4-openssl-dev \
-      libpixman-1-dev \
       libicu-dev && \
     mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
@@ -69,7 +68,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
       libjpeg-turbo8 \
       libgif7 \
       libopengl0 \
-      libpixman-1-0 \
       libcurl4 \
       librsvg2-4 \
       libpango-1.0-0 \

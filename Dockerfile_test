@@ -31,7 +31,6 @@ RUN set -ex; \
       librsvg2-4 \
       librsvg2-common \
       libcurl4-openssl-dev \
-      libpixman-1-dev; \
     apt-get -y --purge autoremove; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*;
