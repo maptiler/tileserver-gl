@@ -126,8 +126,8 @@ jobs:
             -p 8080:8080 \
             -v "${{ github.workspace }}/test_data:/data/test_data:ro" \
             -v "${{ github.workspace }}/scripts/test-entrypoint.sh:/test-entrypoint.sh:ro" \
-            --entrypoint /bin/sh \
-            ${{ env.LOCAL_BASE_IMAGE_NAME }}:${{ matrix.arch }} /test-entrypoint.sh
+            --entrypoint /bin/bash \
+            ${{ env.LOCAL_BASE_IMAGE_NAME }}:${{ matrix.arch }} -c "/test-entrypoint.sh"
 
       - name: Run tests 🧪
         run: xvfb-run --server-args="-screen 0 1024x768x24" npm test
