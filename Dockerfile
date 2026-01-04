@@ -14,7 +14,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
       gnupg \
       pkg-config \
       xvfb \
-      xkb-data \
       libglfw3-dev \
       libuv1-dev \
       libcairo2-dev \
@@ -65,7 +64,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
       gnupg \
       xvfb \
       libglfw3 \
-      xkb-data \
       libuv1 \
       libicu74 \
       libcairo2 \

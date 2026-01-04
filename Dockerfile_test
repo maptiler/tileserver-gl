@@ -18,12 +18,12 @@ RUN set -ex; \
         gnupg \
         pkg-config \
         xvfb \
-        xkb-data \
         libglfw3-dev \
         libuv1-dev \
         libcairo2-dev \
         libpango1.0-dev \
         libpng-dev \
+        libjpeg-turbo8 \
         libjpeg-dev \
         libgif-dev \
         librsvg2-dev \
