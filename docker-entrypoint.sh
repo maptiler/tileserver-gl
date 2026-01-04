@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 if ! which -- "${1}"; then
   # first arg is not an executable
   if [ -e /tmp/.X99-lock ]; then rm /tmp/.X99-lock -f; fi
