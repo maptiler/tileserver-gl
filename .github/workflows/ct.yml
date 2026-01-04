@@ -122,8 +122,6 @@ jobs:
 
           while [ $ELAPSED -lt $TIMEOUT ]; do
             if docker logs "$CONTAINER_ID" 2>&1 | grep -q "Startup complete"; then
-              echo "✓ Container started successfully!"
-              docker logs "$CONTAINER_ID" 2>&1 | tail -20
               SUCCESS=true
               break
             fi
@@ -131,7 +129,6 @@ jobs:
             # Check if container is still running
             if ! docker ps -q --filter "id=$CONTAINER_ID" | grep -q .; then
               echo "✗ Container exited unexpectedly"
-              docker logs "$CONTAINER_ID" 2>&1
               break
             fi
 
@@ -140,11 +137,20 @@ jobs:
             echo "Waiting for startup... ${ELAPSED}s / ${TIMEOUT}s"
           done
 
+          # Always show full container logs
+          echo ""
+          echo "========== Container Logs =========="
+          docker logs "$CONTAINER_ID" 2>&1
+          echo "===================================="
+          echo ""
+
           # Cleanup
           docker stop "$CONTAINER_ID" 2>/dev/null || true
           docker rm "$CONTAINER_ID" 2>/dev/null || true
 
-          if [ "$SUCCESS" = "false" ]; then
+          if [ "$SUCCESS" = "true" ]; then
+            echo "✓ Container started successfully!"
+          else
             echo "✗ Container did not show 'Startup complete' within ${TIMEOUT} seconds"
             exit 1
           fi
