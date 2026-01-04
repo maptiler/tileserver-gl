@@ -110,6 +110,45 @@ jobs:
           echo "Built and tagged main image locally for ${{ matrix.arch }} as ${{ env.LOCAL_BASE_IMAGE_NAME }}:${{ matrix.arch }}"
           echo "Main image digest for ${{ matrix.arch }}: ${{ steps.build_main_arch.outputs.digest }}"
 
+      - name: Test main image startup 🚀
+        run: |
+          echo "Starting container to verify startup..."
+          CONTAINER_ID=$(docker run -d --name test-startup ${{ env.LOCAL_BASE_IMAGE_NAME }}:${{ matrix.arch }})
+
+          # Wait up to 60 seconds for "Startup complete" message
+          TIMEOUT=60
+          ELAPSED=0
+          SUCCESS=false
+
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            if docker logs "$CONTAINER_ID" 2>&1 | grep -q "Startup complete"; then
+              echo "✓ Container started successfully!"
+              docker logs "$CONTAINER_ID" 2>&1 | tail -20
+              SUCCESS=true
+              break
+            fi
+
+            # Check if container is still running
+            if ! docker ps -q --filter "id=$CONTAINER_ID" | grep -q .; then
+              echo "✗ Container exited unexpectedly"
+              docker logs "$CONTAINER_ID" 2>&1
+              break
+            fi
+
+            sleep 2
+            ELAPSED=$((ELAPSED + 2))
+            echo "Waiting for startup... ${ELAPSED}s / ${TIMEOUT}s"
+          done
+
+          # Cleanup
+          docker stop "$CONTAINER_ID" 2>/dev/null || true
+          docker rm "$CONTAINER_ID" 2>/dev/null || true
+
+          if [ "$SUCCESS" = "false" ]; then
+            echo "✗ Container did not show 'Startup complete' within ${TIMEOUT} seconds"
+            exit 1
+          fi
+
       - name: Build and run tests using Dockerfile_test 🧪
         id: build_test_image
         uses: docker/build-push-action@v6
