@@ -63,6 +63,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
       curl \
       gnupg \
       xvfb \
+      x11-xkb-utils \
       libglfw3 \
       libuv1 \
       libicu74 \
