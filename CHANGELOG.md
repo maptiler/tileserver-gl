@@ -1,11 +1,17 @@
-# tileserver-gl changelog
-
 ## master
 ### ✨ Features and improvements
 - _...Add new stuff here..._
 
 ### 🐞 Bug fixes
 - _...Add new stuff here..._
+
+- Hide xkbcomp warnings ([#1920](https://github.com/maptiler/tileserver-gl/pull/1920)) (by [acalcutt](https://github.com/acalcutt))
+# tileserver-gl changelog
+
+## 5.5.0-pre.15
+### ✨ Features and improvements
+
+### 🐞 Bug fixes
 
 ## 5.5.0-pre.14
 - Add S3 support for PMTiles with multiple AWS credential profiles (https://github.com/maptiler/tileserver-gl/pull/1779) by @acalcutt
