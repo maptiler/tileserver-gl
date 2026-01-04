@@ -10,25 +10,25 @@ RUN set -ex; \
     export DEBIAN_FRONTEND=noninteractive; \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        unzip \
-        build-essential \
-        python3-setuptools \
-        ca-certificates \
-        curl \
-        gnupg \
-        pkg-config \
-        xvfb \
-        libglfw3-dev \
-        libuv1-dev \
-        libcairo2-dev \
-        libpango1.0-dev \
-        libpng-dev \
-        libjpeg-turbo8 \
-        libjpeg-dev \
-        libgif-dev \
-        librsvg2-dev \
-        libcurl4-openssl-dev \
-        libicu-dev && \
+      unzip \
+      build-essential \
+      python3-setuptools \
+      ca-certificates \
+      curl \
+      gnupg \
+      pkg-config \
+      xvfb \
+      libglfw3-dev \
+      libuv1-dev \
+      libcairo2-dev \
+      libpango1.0-dev \
+      libpng-dev \
+      libjpeg-turbo8 \
+      libjpeg-dev \
+      libgif-dev \
+      librsvg2-dev \
+      libcurl4-openssl-dev \
+      libicu-dev && \
     apt-get -y --purge autoremove && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*;
