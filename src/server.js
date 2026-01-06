@@ -286,6 +286,21 @@ async function start(opts) {
               if (isValidRemoteUrl(styleSourceId)) {
                 id =
                   fnv1a(styleSourceId) + '_' + id.replace(/^.*\/(.*)$/, '$1');
+              } else {
+                try {
+                  const stats = fs.statSync(styleSourceId);
+                  if (!stats.isFile() || stats.size === 0) {
+                    if (opts.ignoreMissingFiles) {
+                      // File doesn't exist or is empty - return undefined to skip
+                      return undefined;
+                    }
+                  }
+                } catch (err) {
+                  // File doesn't exist
+                  if (opts.ignoreMissingFiles) {
+                    return undefined;
+                  }
+                }
               }
               // eslint-disable-next-line security/detect-object-injection -- id is being checked for existence before modification
               while (data[id]) id += '_'; //if the data source id already exists, add a "_" untill it doesn't
