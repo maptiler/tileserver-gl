@@ -1,9 +1,11 @@
 {
   "name": "tileserver-gl",
-  "version": "5.5.0-pre.9",
+  "version": "5.5.0",
   "description": "Map tile server for JSON GL styles - vector and server side generated raster tiles",
   "main": "src/main.js",
-  "bin": "src/main.js",
+  "bin": {
+    "tileserver-gl": "src/main.js"
+  },
   "type": "module",
   "files": [
     "docs",
@@ -35,7 +37,7 @@
     "docker": "docker build . && docker run --rm -i -p 8080:8080 $(docker build -q .)"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.956.0",
+    "@aws-sdk/client-s3": "^3.962.0",
     "@jsse/pbfont": "^0.3.0",
     "@mapbox/mapbox-gl-rtl-text": "0.3.0",
     "@mapbox/mbtiles": "0.12.1",
@@ -43,7 +45,7 @@
     "@mapbox/sphericalmercator": "2.0.2",
     "@mapbox/vector-tile": "2.0.4",
     "@maplibre/maplibre-gl-inspect": "1.8.2",
-    "@maplibre/maplibre-gl-native": "6.2.0",
+    "@maplibre/maplibre-gl-native": "6.3.0",
     "@maplibre/maplibre-gl-style-spec": "24.4.1",
     "@sindresorhus/fnv1a": "3.1.0",
     "advanced-pool": "0.3.3",
@@ -62,7 +64,7 @@
     "maplibre-gl": "5.15.0",
     "morgan": "1.10.1",
     "pbf": "4.0.1",
-    "pmtiles": "4.3.0",
+    "pmtiles": "4.3.2",
     "proj4": "2.20.2",
     "sanitize-filename": "1.6.3",
     "semver": "^7.7.3",
@@ -70,11 +72,11 @@
     "tileserver-gl-styles": "2.0.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.2.0",
-    "@commitlint/config-conventional": "^20.2.0",
-    "@typescript-eslint/eslint-plugin": "^8.50.0",
-    "@typescript-eslint/parser": "^8.48.1",
-    "chai": "6.2.1",
+    "@commitlint/cli": "^20.3.0",
+    "@commitlint/config-conventional": "^20.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.51.0",
+    "@typescript-eslint/parser": "^8.51.0",
+    "chai": "6.2.2",
     "cross-env": "^10.1.0",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
@@ -98,10 +100,10 @@
   ],
   "license": "BSD-2-Clause",
   "engines": {
-    "node": ">=18.17.0 <23"
+    "node": "20 || 22 || 24"
   },
   "repository": {
-    "url": "https://github.com/maptiler/tileserver-gl",
+    "url": "git+https://github.com/maptiler/tileserver-gl.git",
     "type": "git"
   },
   "bugs": {
