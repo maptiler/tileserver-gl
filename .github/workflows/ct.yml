@@ -72,8 +72,8 @@ jobs:
             echo "tag=next" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Test NPM publish (dry-run)
-        run: npm publish --dry-run --tag ${{ steps.prepare_release.outputs.tag }}
+      - name: Create package tarball
+        run: npm pack
 
       - name: Pull test data (runner) 📦
         run: >-
@@ -176,8 +176,8 @@ jobs:
         run: npm ci --prefer-offline --no-audit
         working-directory: ./light
 
-      - name: Test Light NPM publish (dry-run)
-        run: npm publish --dry-run --tag next
+      - name: Create light package tarball
+        run: npm pack
         working-directory: ./light
 
       - name: Build and tag ${{ matrix.arch }} light image locally
