@@ -1,9 +1,11 @@
 {
   "name": "tileserver-gl",
-  "version": "5.5.0-pre.6",
+  "version": "5.5.0",
   "description": "Map tile server for JSON GL styles - vector and server side generated raster tiles",
   "main": "src/main.js",
-  "bin": "src/main.js",
+  "bin": {
+    "tileserver-gl": "src/main.js"
+  },
   "type": "module",
   "files": [
     "docs",
@@ -35,20 +37,20 @@
     "docker": "docker build . && docker run --rm -i -p 8080:8080 $(docker build -q .)"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.946.0",
+    "@aws-sdk/client-s3": "^3.966.0",
     "@jsse/pbfont": "^0.3.0",
     "@mapbox/mapbox-gl-rtl-text": "0.3.0",
     "@mapbox/mbtiles": "0.12.1",
     "@mapbox/polyline": "^1.2.1",
     "@mapbox/sphericalmercator": "2.0.2",
     "@mapbox/vector-tile": "2.0.4",
-    "@maplibre/maplibre-gl-inspect": "1.8.1",
-    "@acalcutt/maplibre-gl-native-test": "6.3.0-pre.19",
-    "@maplibre/maplibre-gl-style-spec": "24.3.1",
+    "@maplibre/maplibre-gl-inspect": "1.8.2",
+    "@acalcutt/maplibre-gl-native-test": "6.3.0-pre.21",
+    "@maplibre/maplibre-gl-style-spec": "24.4.1",
     "@sindresorhus/fnv1a": "3.1.0",
     "advanced-pool": "0.3.3",
     "canvas": "3.2.0",
-    "chokidar": "4.0.3",
+    "chokidar": "5.0.0",
     "clone": "2.1.2",
     "color": "5.0.3",
     "commander": "14.0.2",
@@ -59,10 +61,10 @@
     "http-shutdown": "1.2.2",
     "leaflet": "1.9.4",
     "leaflet-hash": "0.2.1",
-    "maplibre-gl": "5.14.0",
+    "maplibre-gl": "5.15.0",
     "morgan": "1.10.1",
     "pbf": "4.0.1",
-    "pmtiles": "4.3.0",
+    "pmtiles": "4.3.2",
     "proj4": "2.20.2",
     "sanitize-filename": "1.6.3",
     "semver": "^7.7.3",
@@ -70,15 +72,15 @@
     "tileserver-gl-styles": "2.0.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.2.0",
-    "@commitlint/config-conventional": "^20.2.0",
-    "@typescript-eslint/eslint-plugin": "^8.48.1",
-    "@typescript-eslint/parser": "^8.48.1",
-    "chai": "6.2.1",
+    "@commitlint/cli": "^20.3.1",
+    "@commitlint/config-conventional": "^20.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.52.0",
+    "@typescript-eslint/parser": "^8.52.0",
+    "chai": "6.2.2",
     "cross-env": "^10.1.0",
-    "eslint": "^9.39.1",
+    "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-jsdoc": "^61.4.1",
+    "eslint-plugin-jsdoc": "^61.5.0",
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-security": "^3.0.1",
     "lint-staged": "^16.2.7",
@@ -87,7 +89,7 @@
     "pixelmatch": "^7.1.0",
     "prettier": "^3.7.4",
     "should": "^13.2.3",
-    "supertest": "^7.1.4",
+    "supertest": "^7.2.2",
     "yaml-lint": "^1.7.0"
   },
   "keywords": [
@@ -98,7 +100,7 @@
   ],
   "license": "BSD-2-Clause",
   "engines": {
-    "node": "20 || 22"
+    "node": "20 || 22 || 24"
   },
   "repository": {
     "url": "git+https://github.com/maptiler/tileserver-gl.git",

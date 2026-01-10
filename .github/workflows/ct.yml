@@ -28,7 +28,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5  # Updated to v5 for consistency
+        uses: actions/checkout@v6  # Updated to v5 for consistency
 
       - name: Get OS Architecture
         run: uname -m
@@ -41,7 +41,11 @@ jobs:
             libuv1-dev \
             libjpeg-dev \
             libpng-dev \
-            libwebp-dev
+            libwebp-dev \
+            libcairo2-dev \
+            libpango1.0-dev \
+            libgif-dev \
+            build-essential
 
       - name: Setup node env 📦
         uses: actions/setup-node@v6
@@ -52,6 +56,9 @@ jobs:
 
       - name: Install NPM dependencies 🚀
         run: npm ci --prefer-offline --no-audit
+
+      - name: Rebuild canvas from source 🎨
+        run: npm rebuild canvas --build-from-source
 
       - name: Get release type
         id: prepare_release
@@ -65,28 +72,27 @@ jobs:
             echo "tag=next" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Test NPM publish (dry-run)
-        run: npm publish --dry-run --tag ${{ steps.prepare_release.outputs.tag }}
+      - name: Create package tarball
+        run: npm pack
 
-      - name: Pull test data 📦
+      - name: Pull test data (runner) 📦
         run: >-
           wget -O test_data.zip
           https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip
 
-      - name: Prepare test data 📦
+      - name: Prepare test data (runner) 📦
         run: unzip -q test_data.zip -d test_data
 
-      - name: Run tests 🧪
+      - name: Run tests (runner) 🧪
         run: xvfb-run --server-args="-screen 0 1024x768x24" npm test
 
-      - name: Remove test data
+      - name: Remove test data (avoid baking into image)
         run: rm -R test_data*
 
       # Docker Build Setup
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Build Main Image
       - name: Build and tag ${{ matrix.arch }} main image locally
         id: build_main_arch
         uses: docker/build-push-action@v6
@@ -94,6 +100,7 @@ jobs:
           context: .
           platforms: linux/${{ matrix.arch }}
           tags: ${{ env.LOCAL_BASE_IMAGE_NAME }}:${{ matrix.arch }}
+          load: true
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -103,6 +110,64 @@ jobs:
           echo "Built and tagged main image locally for ${{ matrix.arch }} as ${{ env.LOCAL_BASE_IMAGE_NAME }}:${{ matrix.arch }}"
           echo "Main image digest for ${{ matrix.arch }}: ${{ steps.build_main_arch.outputs.digest }}"
 
+      - name: Test main image startup 🚀
+        run: |
+          echo "Starting container to verify startup..."
+          CONTAINER_ID=$(docker run -d --name test-startup ${{ env.LOCAL_BASE_IMAGE_NAME }}:${{ matrix.arch }})
+
+          # Wait up to 60 seconds for "Startup complete" message
+          TIMEOUT=60
+          ELAPSED=0
+          SUCCESS=false
+
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            if docker logs "$CONTAINER_ID" 2>&1 | grep -q "Startup complete"; then
+              SUCCESS=true
+              break
+            fi
+
+            # Check if container is still running
+            if ! docker ps -q --filter "id=$CONTAINER_ID" | grep -q .; then
+              echo "✗ Container exited unexpectedly"
+              break
+            fi
+
+            sleep 2
+            ELAPSED=$((ELAPSED + 2))
+            echo "Waiting for startup... ${ELAPSED}s / ${TIMEOUT}s"
+          done
+
+          # Always show full container logs
+          echo ""
+          echo "========== Container Logs =========="
+          docker logs "$CONTAINER_ID" 2>&1
+          echo "===================================="
+          echo ""
+
+          # Cleanup
+          docker stop "$CONTAINER_ID" 2>/dev/null || true
+          docker rm "$CONTAINER_ID" 2>/dev/null || true
+
+          if [ "$SUCCESS" = "true" ]; then
+            echo "✓ Container started successfully!"
+          else
+            echo "✗ Container did not show 'Startup complete' within ${TIMEOUT} seconds"
+            exit 1
+          fi
+
+      - name: Build and run tests using Dockerfile_test 🧪
+        id: build_test_image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile_test
+          platforms: linux/${{ matrix.arch }}
+          tags: ${{ env.LOCAL_BASE_IMAGE_NAME }}-test:${{ matrix.arch }}
+          load: false
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
       # Build Light Image
       - name: Create Tileserver Light Directory
         run: node publish.js --no-publish
@@ -111,8 +176,8 @@ jobs:
         run: npm ci --prefer-offline --no-audit
         working-directory: ./light
 
-      - name: Test Light NPM publish (dry-run)
-        run: npm publish --dry-run --tag next
+      - name: Create light package tarball
+        run: npm pack
         working-directory: ./light
 
       - name: Build and tag ${{ matrix.arch }} light image locally
@@ -123,6 +188,7 @@ jobs:
           file: ./light/Dockerfile
           platforms: linux/${{ matrix.arch }}
           tags: ${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${{ matrix.arch }}
+          load: true
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -131,3 +197,48 @@ jobs:
         run: |
           echo "Built and tagged light image locally for ${{ matrix.arch }} as ${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${{ matrix.arch }}"
           echo "Light image digest for ${{ matrix.arch }}: ${{ steps.build_light_arch.outputs.digest }}"
+
+      - name: Test light image startup 🚀
+        run: |
+          echo "Starting light container to verify startup..."
+          CONTAINER_ID=$(docker run -d --name test-startup-light ${{ env.LOCAL_LIGHT_IMAGE_NAME }}:${{ matrix.arch }})
+
+          # Wait up to 60 seconds for "Startup complete" message
+          TIMEOUT=60
+          ELAPSED=0
+          SUCCESS=false
+
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            if docker logs "$CONTAINER_ID" 2>&1 | grep -q "Startup complete"; then
+              SUCCESS=true
+              break
+            fi
+
+            # Check if container is still running
+            if ! docker ps -q --filter "id=$CONTAINER_ID" | grep -q .; then
+              echo "✗ Container exited unexpectedly"
+              break
+            fi
+
+            sleep 2
+            ELAPSED=$((ELAPSED + 2))
+            echo "Waiting for startup... ${ELAPSED}s / ${TIMEOUT}s"
+          done
+
+          # Always show full container logs
+          echo ""
+          echo "========== Container Logs =========="
+          docker logs "$CONTAINER_ID" 2>&1
+          echo "===================================="
+          echo ""
+
+          # Cleanup
+          docker stop "$CONTAINER_ID" 2>/dev/null || true
+          docker rm "$CONTAINER_ID" 2>/dev/null || true
+
+          if [ "$SUCCESS" = "true" ]; then
+            echo "✓ Light container started successfully!"
+          else
+            echo "✗ Light container did not show 'Startup complete' within ${TIMEOUT} seconds"
+            exit 1
+          fi

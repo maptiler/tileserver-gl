@@ -21,11 +21,11 @@ npm is supported on the following platforms with `Native Dependencies <#id1>`_ i
 
 - Operating systems:
 
-  - Ubuntu 22.04 (x64/arm64)
-  - macOS 14 (x64/arm64)
+  - Ubuntu 24.04 (x64/arm64)
+  - macOS 15 (x64/arm64)
   - Windows (x64)
 
-- Node.js 18(>=18.17.0),20,22
+- Node.js 20,22,24
   
 Install globally from npmjs.
 ------------------------------
@@ -46,11 +46,11 @@ Install locally from source
 Native dependencies
 -------------------
 
-Ubuntu 22.04 (x64/arm64)
+Ubuntu 24.04 (x64/arm64)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-- apt install build-essential pkg-config xvfb libglfw3-dev libuv1-dev libjpeg-turbo8 libicu70 libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev gir1.2-rsvg-2.0 librsvg2-2 librsvg2-common libcurl4-openssl-dev libpixman-1-dev libpixman-1-0
+- apt install build-essential python3-setuptools pkg-config xvfb libglfw3-dev libuv1-dev libjpeg-turbo8 libicu-dev libcairo2-dev libpango1.0-dev libpng-dev libjpeg-dev libgif-dev librsvg2-dev librsvg2-dev libcurl4-openssl-dev libpixman-1-dev
 
-MacOS 14 (x64/arm64)
+MacOS 15 (x64/arm64)
 ~~~~~~~~~~~~~~~~~~~~~~
 - brew install pkg-config cairo pango libpng jpeg giflib librsvg harfbuzz
 

@@ -2,16 +2,17 @@
 # Simply run "docker build -f Dockerfile_test ."
 # WARNING: sometimes it fails with a core dumped exception
 
-FROM ubuntu:jammy
+FROM ubuntu:noble
 
 ENV NODE_ENV="development"
 
 RUN set -ex; \
     export DEBIAN_FRONTEND=noninteractive; \
-    apt-get -qq update; \
-    apt-get -y --no-install-recommends install \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
       unzip \
       build-essential \
+      python3-setuptools \
       ca-certificates \
       curl \
       gnupg \
@@ -19,28 +20,24 @@ RUN set -ex; \
       xvfb \
       libglfw3-dev \
       libuv1-dev \
-      libjpeg-turbo8 \
-      libicu70 \
       libcairo2-dev \
       libpango1.0-dev \
+      libpng-dev \
+      libjpeg-turbo8 \
       libjpeg-dev \
       libgif-dev \
       librsvg2-dev \
-      gir1.2-rsvg-2.0 \
-      librsvg2-2 \
-      librsvg2-common \
       libcurl4-openssl-dev \
-      libpixman-1-dev \
-      libpixman-1-0; \
-    apt-get -y --purge autoremove; \
-    apt-get clean; \
+      libicu-dev && \
+    apt-get -y --purge autoremove && \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*;
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 RUN mkdir -p /etc/apt/keyrings; \
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg; \
-    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list; \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_24.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list; \
     apt-get -qq update; \
     apt-get install -y nodejs; \
     npm i -g npm@latest; \
@@ -52,11 +49,14 @@ RUN mkdir -p /etc/apt/keyrings; \
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
+# Downloading test data
 RUN curl -L -o test_data.zip https://github.com/maptiler/tileserver-gl/releases/download/v1.3.0/test_data.zip; \
     unzip -q test_data.zip -d test_data
 
 COPY package.json .
-RUN npm install
+# Running npm install for development (includes devDependencies for tests)
+RUN npm install && npm rebuild canvas --build-from-source
 COPY / .
 
-RUN xvfb-run --server-args="-screen 0 1024x768x24" npm test
+# Execute tests using xvfb-run
+RUN script -q -c "xvfb-run --server-args='-screen 0 1024x768x24' npm test"
