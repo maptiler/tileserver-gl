@@ -241,7 +241,36 @@ async function start(opts) {
             }
           }
           if (dataItemId) {
-            // input files exists in the data config, return found id
+            // Data source exists in config, now validate file exists
+            // eslint-disable-next-line security/detect-object-injection -- dataItemId is validated above
+            const dataSource = data[dataItemId];
+            const fileType = dataSource.pmtiles ? 'pmtiles' : 'mbtiles';
+            const fileName = dataSource[fileType];
+
+            // Skip validation for remote URLs
+            if (fileName && !isValidRemoteUrl(fileName)) {
+              const filePath = path.resolve(options.paths[fileType], fileName);
+              try {
+                const stats = fs.statSync(filePath);
+                if (!stats.isFile() || stats.size === 0) {
+                  if (opts.ignoreMissingFiles) {
+                    // File doesn't exist or is empty - return undefined to skip
+                    return undefined;
+                  }
+                  // File missing but flag not set - let it fail later
+                  return dataItemId;
+                }
+              } catch (err) {
+                // File doesn't exist
+                if (opts.ignoreMissingFiles) {
+                  return undefined;
+                }
+                // File missing but flag not set - let it fail later
+                return dataItemId;
+              }
+            }
+
+            // File exists or is remote URL, return the id
             return dataItemId;
           } else {
             if (!allowMoreData) {
@@ -257,6 +286,21 @@ async function start(opts) {
               if (isValidRemoteUrl(styleSourceId)) {
                 id =
                   fnv1a(styleSourceId) + '_' + id.replace(/^.*\/(.*)$/, '$1');
+              } else {
+                try {
+                  const stats = fs.statSync(styleSourceId);
+                  if (!stats.isFile() || stats.size === 0) {
+                    if (opts.ignoreMissingFiles) {
+                      // File doesn't exist or is empty - return undefined to skip
+                      return undefined;
+                    }
+                  }
+                } catch (err) {
+                  // File doesn't exist
+                  if (opts.ignoreMissingFiles) {
+                    return undefined;
+                  }
+                }
               }
               // eslint-disable-next-line security/detect-object-injection -- id is being checked for existence before modification
               while (data[id]) id += '_'; //if the data source id already exists, add a "_" untill it doesn't
