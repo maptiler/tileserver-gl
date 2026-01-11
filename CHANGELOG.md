@@ -7,6 +7,17 @@
 ### 🐞 Bug fixes
 - _...Add new stuff here..._
 
+## 5.6.0-pre.0
+### ✨ Features and improvements
+
+### 🐞 Bug fixes
+
+- Improve changelog handling for missing PR entries ([#1937](https://github.com/maptiler/tileserver-gl/pull/1937)) (by [acalcutt](https://github.com/acalcutt))
+- Update bump-version.yml ([#1935](https://github.com/maptiler/tileserver-gl/pull/1935)) (by [acalcutt](https://github.com/acalcutt))
+- Enhance version bump workflow with preid support ([#1934](https://github.com/maptiler/tileserver-gl/pull/1934)) (by [acalcutt](https://github.com/acalcutt))
+- feat: Add ignore-missing-files cli option to avoid crashing at startup ([#1896](https://github.com/maptiler/tileserver-gl/pull/1896)) (by [andrewlaguna824](https://github.com/andrewlaguna824))
+- Change npm publish --dry-run to npm pack ([#1932](https://github.com/maptiler/tileserver-gl/pull/1932)) (by [acalcutt](https://github.com/acalcutt))
+
 ## 5.5.0
 - Add S3 support for PMTiles with multiple AWS credential profiles (https://github.com/maptiler/tileserver-gl/pull/1779) by @acalcutt
 - Create .aws directory passthrough folder in Dockerfile (https://github.com/maptiler/tileserver-gl/pull/1784) by @acalcutt
