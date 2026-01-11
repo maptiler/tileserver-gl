@@ -158,15 +158,17 @@ jobs:
           // Remove placeholder lines
           changelog = changelog.replaceAll('- _...Add new stuff here..._\n', '');
           
-          // Build the new master section header
-          const masterSection = `## master
-          ### ✨ Features and improvements
-          - _...Add new stuff here..._
-          
-          ### 🐞 Bug fixes
-          - _...Add new stuff here..._
-          
-          `;
+          // Build the new master section header (using array join to avoid YAML issues)
+          const masterSection = [
+            '## master',
+            '### ✨ Features and improvements',
+            '- _...Add new stuff here..._',
+            '',
+            '### 🐞 Bug fixes',
+            '- _...Add new stuff here..._',
+            '',
+            ''
+          ].join('\n');
           
           // Add any missing PR entries after the master section
           let newContent = masterSection;
