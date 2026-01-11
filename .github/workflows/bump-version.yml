@@ -170,25 +170,36 @@ jobs:
             ''
           ].join('\n');
           
-          // Add any missing PR entries after the master section
-          let newContent = masterSection;
-          if (missingEntries.length > 0) {
-            console.log(`Adding ${missingEntries.length} missing PR entries to changelog`);
-            newContent += missingEntries.join('\n') + '\n\n';
-          }
-          
           // Find where the content starts after the title header
           // Expected format: "# tileserver-gl changelog\n\n## <version>"
           const titleMatch = changelog.match(/^(# .+?\n\n)/);
+          let title = '';
+          let rest = changelog;
+          
           if (titleMatch) {
-            // Preserve the title and insert master section after it
-            const title = titleMatch[1];
-            const rest = changelog.slice(title.length);
-            changelog = title + newContent + rest;
-          } else {
-            // No title found, just prepend
-            changelog = newContent + changelog;
+            title = titleMatch[1];
+            rest = changelog.slice(title.length);
           }
+          
+          // Find the end of the new version's Bug fixes section to insert missing entries there
+          // Pattern: look for "### 🐞 Bug fixes\n" followed by content until next "## " heading
+          if (missingEntries.length > 0) {
+            console.log(`Adding ${missingEntries.length} missing PR entries to changelog`);
+            const bugFixesPattern = /^(## [^\n]+\n### ✨ Features and improvements\n*### 🐞 Bug fixes\n)/m;
+            const bugFixesMatch = rest.match(bugFixesPattern);
+            
+            if (bugFixesMatch) {
+              // Insert entries after the Bug fixes header
+              const insertPoint = bugFixesMatch.index + bugFixesMatch[1].length;
+              const entriesText = '\n' + missingEntries.join('\n') + '\n';
+              rest = rest.slice(0, insertPoint) + entriesText + rest.slice(insertPoint);
+            } else {
+              // Fallback: just add after version header if pattern not found
+              rest = rest + '\n' + missingEntries.join('\n') + '\n';
+            }
+          }
+          
+          changelog = title + masterSection + rest;
           
           fs.writeFileSync(changelogPath, changelog, 'utf8');
           console.log(`Changelog updated at ${changelogPath}`);
