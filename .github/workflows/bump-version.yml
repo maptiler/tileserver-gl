@@ -14,6 +14,11 @@ on:
           - patch
           - minor
           - major
+      preid:
+        description: Prerelease identifier (e.g., 'alpha', 'beta', 'rc'). Only used with prerelease version types.
+        required: false
+        type: string
+        default: 'pre'
 jobs:
   bump-version-pr:
     name: Bump version PR
@@ -22,14 +27,16 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
           ref: master
-      - name: Use Node.js from nvmrc
-        uses: actions/setup-node@v6
+      - name: Setup node env 📦
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v4.0.0
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: 'package.json'
+          check-latest: true
+          cache: 'npm'
       - name: Create bump script
         run: |
           cat > bump-version.mjs << 'EOF'
@@ -37,16 +44,26 @@ jobs:
           import * as fs from 'fs';
 
           const versionType = process.argv[2];
+          const preid = process.argv[3];
           const changelogPath = 'CHANGELOG.md';
 
+          let newVersion = '';
+
+          // Build npm version command
+          let versionCmd = `npm version --commit-hooks false --git-tag-version false ${versionType}`;
+          if (preid && preid.trim() !== '') {
+            versionCmd += ` --preid=${preid}`;
+            console.log(`Using preid: ${preid}`);
+          }
+
           console.log('Bumping version in root package.json');
-          execSync(`npm version --commit-hooks false --git-tag-version false ${versionType}`, {
+          execSync(versionCmd, {
             stdio: 'inherit'
           });
 
           // Get the new version
           const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-          const newVersion = packageJson.version;
+          newVersion = packageJson.version;
 
           console.log(`New version: ${newVersion}`);
 
@@ -135,23 +152,42 @@ jobs:
             }
           }
           
+          // Replace "## master" with the new version number
           changelog = changelog.replace('## master', `## ${newVersion}`);
+          
+          // Remove placeholder lines
           changelog = changelog.replaceAll('- _...Add new stuff here..._\n', '');
-          let changelogHeader = `## master
-          ### ✨ Features and improvements
-          - _...Add new stuff here..._
           
-          ### 🐞 Bug fixes
-          - _...Add new stuff here..._
+          // Build the new master section header
+          const masterSection = `## master
+### ✨ Features and improvements
+- _...Add new stuff here..._
+
+### 🐞 Bug fixes
+- _...Add new stuff here..._
+
+`;
           
-          `;
+          // Add any missing PR entries after the master section
+          let newContent = masterSection;
           if (missingEntries.length > 0) {
             console.log(`Adding ${missingEntries.length} missing PR entries to changelog`);
-            const entriesText = missingEntries.join('\n');
-            changelogHeader += entriesText + '\n'
+            newContent += missingEntries.join('\n') + '\n\n';
           }
           
-          changelog = changelogHeader + changelog;
+          // Find where the content starts after the title header
+          // Expected format: "# tileserver-gl changelog\n\n## <version>"
+          const titleMatch = changelog.match(/^(# .+?\n\n)/);
+          if (titleMatch) {
+            // Preserve the title and insert master section after it
+            const title = titleMatch[1];
+            const rest = changelog.slice(title.length);
+            changelog = title + newContent + rest;
+          } else {
+            // No title found, just prepend
+            changelog = newContent + changelog;
+          }
+          
           fs.writeFileSync(changelogPath, changelog, 'utf8');
           console.log(`Changelog updated at ${changelogPath}`);
 
@@ -161,13 +197,14 @@ jobs:
       - name: Bump version and update changelog
         id: version-details
         run: |
-          node bump-version.mjs "${{ inputs.version }}"
+          node bump-version.mjs "${{ inputs.version }}" "${{ inputs.preid }}"
           rm bump-version.mjs
         env:
           GH_TOKEN: ${{ github.token }}
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7.0.11
         with:
           commit-message: Release v${{ steps.version-details.outputs.version }}
           branch: release-v${{ steps.version-details.outputs.version }}
           title: Release v${{ steps.version-details.outputs.version }}
+  
