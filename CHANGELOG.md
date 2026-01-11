@@ -1,11 +1,18 @@
-# tileserver-gl changelog
-
 ## master
 ### ✨ Features and improvements
 - _...Add new stuff here..._
 
 ### 🐞 Bug fixes
 - _...Add new stuff here..._
+
+- feat: Add ignore-missing-files cli option to avoid crashing at startup ([#1896](https://github.com/maptiler/tileserver-gl/pull/1896)) (by [andrewlaguna824](https://github.com/andrewlaguna824))
+- Change npm publish --dry-run to npm pack ([#1932](https://github.com/maptiler/tileserver-gl/pull/1932)) (by [acalcutt](https://github.com/acalcutt))
+# tileserver-gl changelog
+
+## 5.6.0-0
+### ✨ Features and improvements
+
+### 🐞 Bug fixes
 
 ## 5.5.0
 - Add S3 support for PMTiles with multiple AWS credential profiles (https://github.com/maptiler/tileserver-gl/pull/1779) by @acalcutt
