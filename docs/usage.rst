@@ -20,6 +20,7 @@ Getting started
     -C|--no-cors              Disable Cross-origin resource sharing headers
     -u|--public_url <url>     Enable exposing the server on subpaths, not necessarily the root of the domain
     --fetch-timeout <ms>      Timeout in milliseconds for fetching remote tiles (default: 15000)
+    --ignore-missing-files    Do not exit when referenced data files or remote sources are missing at startup; log a warning and continue running (useful when styles reference optional or not-yet-available sources)
     -V, --verbose [level]     More verbose output (level 1-3)
                                 -V, --verbose, -V 1, or --verbose 1: Important operations
                                 -V 2 or --verbose 2: Detailed operations  
