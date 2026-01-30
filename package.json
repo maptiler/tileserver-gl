@@ -37,7 +37,7 @@
     "docker": "docker build . && docker run --rm -i -p 8080:8080 $(docker build -q .)"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.974.0",
+    "@aws-sdk/client-s3": "^3.978.0",
     "@jsse/pbfont": "^0.3.0",
     "@mapbox/mapbox-gl-rtl-text": "0.3.0",
     "@mapbox/mbtiles": "0.12.1",
@@ -61,7 +61,7 @@
     "http-shutdown": "1.2.2",
     "leaflet": "1.9.4",
     "leaflet-hash": "0.2.1",
-    "maplibre-gl": "5.16.0",
+    "maplibre-gl": "5.17.0",
     "morgan": "1.10.1",
     "pbf": "4.0.1",
     "pmtiles": "4.3.2",
@@ -74,13 +74,13 @@
   "devDependencies": {
     "@commitlint/cli": "^20.3.1",
     "@commitlint/config-conventional": "^20.3.1",
-    "@typescript-eslint/eslint-plugin": "^8.53.1",
+    "@typescript-eslint/eslint-plugin": "^8.54.0",
     "@typescript-eslint/parser": "^8.53.1",
     "chai": "6.2.2",
     "cross-env": "^10.1.0",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-jsdoc": "^62.3.1",
+    "eslint-plugin-jsdoc": "^62.5.0",
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-security": "^3.0.1",
     "lint-staged": "^16.2.7",
