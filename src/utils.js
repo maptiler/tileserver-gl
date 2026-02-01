@@ -217,7 +217,9 @@ export function getTileUrls(
       );
     }
   } else {
-    uris.push(`${publicUrl}${path}/${tileParams}${format}${query}`);
+    uris.push(
+      `${getPublicUrl(publicUrl, req)}${path}/${tileParams}${format}${query}`,
+    );
   }
 
   return uris;
