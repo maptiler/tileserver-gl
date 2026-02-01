@@ -9,15 +9,10 @@
 
 ## 5.6.0-pre.1
 ### ✨ Features and improvements
+- feat: Add ignore-missing-files cli option to avoid crashing at startup ([#1896](https://github.com/maptiler/tileserver-gl/pull/1896)) (by [andrewlaguna824](https://github.com/andrewlaguna824))
 
 ### 🐞 Bug fixes
-
-- Try to fix release workflow changelog ([#1979](https://github.com/maptiler/tileserver-gl/pull/1979)) (by [acalcutt](https://github.com/acalcutt))
 - fix: correctly handle public url in tileJSON response ([#1963](https://github.com/maptiler/tileserver-gl/pull/1963)) (by [andrewlaguna824](https://github.com/andrewlaguna824))
-
-## 5.6.0-pre.0
-### ✨ Features and improvements
-- feat: Add ignore-missing-files cli option to avoid crashing at startup ([#1896](https://github.com/maptiler/tileserver-gl/pull/1896)) (by [andrewlaguna824](https://github.com/andrewlaguna824))
 
 ## 5.5.0
 - Add S3 support for PMTiles with multiple AWS credential profiles (https://github.com/maptiler/tileserver-gl/pull/1779) by @acalcutt
