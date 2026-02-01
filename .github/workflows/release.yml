@@ -233,7 +233,11 @@ jobs:
       # GitHub Release
       - name: Extract changelog for version
         run: |
-          awk '/^##/ { p = 0 }; p == 1 { print }; $0 == "## ${{ needs.release-check.outputs.version }}" { p = 1 };' CHANGELOG.md > changelog_for_version.md
+          VERSION="${{ needs.release-check.outputs.version }}"
+          awk -v ver="## $VERSION" 'BEGIN{p=0} $0==ver{p=1; next} /^## / && p==1{exit} p==1{print}' CHANGELOG.md > changelog_for_version.md
+          if [ ! -s changelog_for_version.md ]; then
+            echo "No changelog found for version $VERSION" > changelog_for_version.md
+          fi
           cat changelog_for_version.md
 
       - name: Publish to GitHub Release
