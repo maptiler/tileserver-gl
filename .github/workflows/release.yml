@@ -6,13 +6,9 @@ permissions:
 
 on:
   workflow_dispatch:
-    inputs:
-      docker_user:
-        description: 'Docker Username'
-        required: true
-      docker_token:
-        description: 'Docker Token'
-        required: true
+  push:
+    branches:
+      - master
 
 env:
   DOCKER_IMAGE_NAME: maptiler/tileserver-gl
@@ -53,6 +49,7 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     needs: release-check
     if: ${{ needs.release-check.outputs.published == 'false' }}
+    environment: release
 
     strategy:
       fail-fast: false
@@ -105,8 +102,8 @@ jobs:
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
-          username: ${{ github.event.inputs.docker_user }}
-          password: ${{ github.event.inputs.docker_token }}
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Get release info
         id: release_info
@@ -207,8 +204,8 @@ jobs:
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
-          username: ${{ github.event.inputs.docker_user }}
-          password: ${{ github.event.inputs.docker_token }}
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Create and push Main Multi-Arch Manifest
         run: |
