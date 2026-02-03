@@ -7,6 +7,13 @@
 ### 🐞 Bug fixes
 - _...Add new stuff here..._
 
+## 5.6.0-pre.2
+### ✨ Features and improvements
+
+### 🐞 Bug fixes
+
+- Fix regex to allow underscore in font name ([#1986](https://github.com/maptiler/tileserver-gl/pull/1986)) (by [spatialillusions](https://github.com/spatialillusions))
+
 ## 5.6.0-pre.1
 ### ✨ Features and improvements
 - feat: Add ignore-missing-files cli option to avoid crashing at startup ([#1896](https://github.com/maptiler/tileserver-gl/pull/1896)) (by [andrewlaguna824](https://github.com/andrewlaguna824))
