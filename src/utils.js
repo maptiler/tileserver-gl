@@ -276,7 +276,7 @@ export function readFile(filename) {
 async function getFontPbf(allowedFonts, fontPath, name, range, fallbacks) {
   // eslint-disable-next-line security/detect-object-injection -- name is validated font name from sanitizedName check
   if (!allowedFonts || (allowedFonts[name] && fallbacks)) {
-    const fontMatch = name?.match(/^[\p{L}\p{N} \-.~!*'()@&=+,#$[\]]+$/u);
+    const fontMatch = name?.match(/^[\p{L}\p{N} \-_.~!*'()@&=+,#$[\]]+$/u);
     const sanitizedName = fontMatch?.[0] || 'invalid';
     if (!name || typeof name !== 'string' || name.trim() === '' || !fontMatch) {
       console.error(
