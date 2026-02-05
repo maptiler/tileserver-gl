@@ -67,7 +67,7 @@
     "pmtiles": "4.4.0",
     "proj4": "2.20.2",
     "sanitize-filename": "1.6.3",
-    "semver": "^7.7.3",
+    "semver": "^7.7.4",
     "sharp": "0.34.5",
     "tileserver-gl-styles": "2.0.0"
   },
