@@ -711,7 +711,8 @@ async function start(opts) {
           if (data) {
             data['server_version'] =
               `${packageJson.name} v${packageJson.version}`;
-            data['public_url'] = opts.publicUrl || '/';
+            let xForwardedPath = req.get('X-Forwarded-Path') ? '/' + req.get('X-Forwarded-Path') : '';
+            data['public_url'] = opts.publicUrl || xForwardedPath + '/';
             data['is_light'] = isLight;
             data['key_query_part'] = req.query.key
               ? `key=${encodeURIComponent(req.query.key)}&amp;`
@@ -900,11 +901,12 @@ async function start(opts) {
     if (opts.publicUrl) {
       baseUrl = opts.publicUrl;
     } else {
+      let xForwardedPath = req.get('X-Forwarded-Path') ? '/' + req.get('X-Forwarded-Path') : '';
       baseUrl = `${
         req.get('X-Forwarded-Protocol')
           ? req.get('X-Forwarded-Protocol')
           : req.protocol
-      }://${req.get('host')}/`;
+      }://${req.get('host')}${xForwardedPath}/`;
     }
 
     return {
