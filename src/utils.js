@@ -74,7 +74,7 @@ export function allowedSpriteScales(scale, maxScale = 3) {
  * @param {object} req - Express request object.
  * @param {string} url - The URL string to fix.
  * @param {string} publicUrl - The public URL prefix to use for replacements.
-* @param {string|string[]} allowedHosts - Allowed hosts for Host header poisoning mitigation.
+ * @param {string|string[]} allowedHosts - Allowed hosts for Host header poisoning mitigation.
  * @returns {string} - The fixed URL string.
  */
 export function fixUrl(req, url, publicUrl, allowedHosts) {
@@ -95,9 +95,9 @@ export function fixUrl(req, url, publicUrl, allowedHosts) {
 }
 
 /**
-* Removes optional :port from a host string for comparison. Handles IPv6 [addr]:port.
-* @param {string} host - The input host.
-* @returns {string} - Host string with port removed.
+ * Removes optional :port from a host string for comparison. Handles IPv6 [addr]:port.
+ * @param {string} host - The input host.
+ * @returns {string} - Host string with port removed.
  */
 function stripPort(host) {
   if (!host || typeof host !== 'string') return host;
