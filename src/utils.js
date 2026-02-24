@@ -206,14 +206,14 @@ export function getTileUrls(
   }
 
   const uris = [];
-  if (!publicUrl) {
-    let xForwardedPath = `${req.get('X-Forwarded-Path') ? '/' + req.get('X-Forwarded-Path') : ''}`;
+  if (!publicUrl || !isValidHttpUrl(publicUrl)) {
+    let xForwardedPath = publicUrl || `${req.get('X-Forwarded-Path') ? '/' + req.get('X-Forwarded-Path') : ''}`;
     let protocol = req.get('X-Forwarded-Protocol')
       ? req.get('X-Forwarded-Protocol')
       : req.protocol;
     for (const domain of domains) {
       uris.push(
-        `${protocol}://${domain}${xForwardedPath}/${path}/${tileParams}${format}${query}`,
+        `${protocol}://${domain}${xForwardedPath.replace(/\/$/, "")}/${path}/${tileParams}${format}${query}`,
       );
     }
   } else {
