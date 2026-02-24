@@ -74,6 +74,7 @@ export function allowedSpriteScales(scale, maxScale = 3) {
  * @param {object} req - Express request object.
  * @param {string} url - The URL string to fix.
  * @param {string} publicUrl - The public URL prefix to use for replacements.
+ * @param allowedHosts
  * @returns {string} - The fixed URL string.
  */
 export function fixUrl(req, url, publicUrl, allowedHosts) {
@@ -88,7 +89,9 @@ export function fixUrl(req, url, publicUrl, allowedHosts) {
   if (queryParams.length) {
     query = `?${queryParams.join('&')}`;
   }
-  return url.replace('local://', getPublicUrl(publicUrl, req, allowedHosts)) + query;
+  return (
+    url.replace('local://', getPublicUrl(publicUrl, req, allowedHosts)) + query
+  );
 }
 
 /**
@@ -191,7 +194,10 @@ export function getCandidateHost(req) {
  */
 export function getSafeProtocol(req) {
   const get = req.get && req.get.bind(req);
-  const proto = (get && (get('X-Forwarded-Protocol') || get('X-Forwarded-Proto'))) || req.protocol || 'http';
+  const proto =
+    (get && (get('X-Forwarded-Protocol') || get('X-Forwarded-Proto'))) ||
+    req.protocol ||
+    'http';
   const p = (typeof proto === 'string' ? proto : '').toLowerCase();
   return p === 'https' ? 'https' : 'http';
 }
@@ -242,7 +248,9 @@ export function getPublicUrl(publicUrl, req, allowedHosts) {
   const candidateHost = getCandidateHost(req);
   if (!isHostAllowed(candidateHost, parsed)) {
     const xForwardedPath = req.get && req.get('X-Forwarded-Path');
-    const prefix = xForwardedPath ? `/${xForwardedPath.replace(/^\/+/, '')}` : '';
+    const prefix = xForwardedPath
+      ? `/${xForwardedPath.replace(/^\/+/, '')}`
+      : '';
     return prefix ? (prefix.endsWith('/') ? prefix : `${prefix}/`) : '/';
   }
   return getUrlObject(req).toString();
