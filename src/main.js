@@ -124,7 +124,19 @@ const startServer = (configPath, config) => {
   if (publicUrl && publicUrl.lastIndexOf('/') !== publicUrl.length - 1) {
     publicUrl += '/';
   }
-  const allowedHosts = (process.env.TILESERVER_GL_ALLOWED_HOSTS ?? '*').trim();
+  // Determine allowedHosts: config > env > default '*'
+  let allowedHosts = '*';
+  if (config && config.options && typeof config.options.allowedHosts !== 'undefined') {
+    allowedHosts = String(config.options.allowedHosts).trim();
+  } else if (process.env.TILESERVER_GL_ALLOWED_HOSTS) {
+    allowedHosts = String(process.env.TILESERVER_GL_ALLOWED_HOSTS).trim();
+  }
+  // Log warning if insecure defaults
+  if ((allowedHosts === '*' || allowedHosts === '' || typeof allowedHosts === 'undefined') && !publicUrl) {
+    console.warn('[SECURITY WARNING] Host header poisoning mitigation is NOT enabled.');
+    console.warn('  Response URLs may be built from untrusted Host/X-Forwarded-* headers.');
+    console.warn('  For production, set --public_url or allowedHosts in config/options or TILESERVER_GL_ALLOWED_HOSTS env.');
+  }
   return server({
     configPath,
     config,
