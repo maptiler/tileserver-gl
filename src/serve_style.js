@@ -53,20 +53,40 @@ export const serve_style = {
           const source = styleJSON_.sources[name];
           source.url = fixUrl(req, source.url, item.publicUrl, allowedHosts);
           if (typeof source.data == 'string') {
-            source.data = fixUrl(req, source.data, item.publicUrl, allowedHosts);
+            source.data = fixUrl(
+              req,
+              source.data,
+              item.publicUrl,
+              allowedHosts,
+            );
           }
         }
         if (styleJSON_.sprite) {
           if (Array.isArray(styleJSON_.sprite)) {
             styleJSON_.sprite.forEach((spriteItem) => {
-              spriteItem.url = fixUrl(req, spriteItem.url, item.publicUrl, allowedHosts);
+              spriteItem.url = fixUrl(
+                req,
+                spriteItem.url,
+                item.publicUrl,
+                allowedHosts,
+              );
             });
           } else {
-            styleJSON_.sprite = fixUrl(req, styleJSON_.sprite, item.publicUrl, allowedHosts);
+            styleJSON_.sprite = fixUrl(
+              req,
+              styleJSON_.sprite,
+              item.publicUrl,
+              allowedHosts,
+            );
           }
         }
         if (styleJSON_.glyphs) {
-          styleJSON_.glyphs = fixUrl(req, styleJSON_.glyphs, item.publicUrl, allowedHosts);
+          styleJSON_.glyphs = fixUrl(
+            req,
+            styleJSON_.glyphs,
+            item.publicUrl,
+            allowedHosts,
+          );
         }
         return res.send(styleJSON_);
       } catch (e) {

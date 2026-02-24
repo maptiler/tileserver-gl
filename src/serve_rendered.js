@@ -1067,7 +1067,11 @@ export const serve_rendered = {
    * @returns {Promise<express.Application>} A promise that resolves to the Express app.
    */
   init: async function (options, repo, programOpts) {
-    const { verbose, tileSize: defailtTileSize = 256, allowedHosts } = programOpts;
+    const {
+      verbose,
+      tileSize: defailtTileSize = 256,
+      allowedHosts,
+    } = programOpts;
     maxScaleFactor = Math.min(Math.floor(options.maxScaleFactor || 3), 9);
     const app = express().disable('x-powered-by');
 
