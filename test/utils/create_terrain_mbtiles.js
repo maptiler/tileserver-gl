@@ -11,10 +11,6 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-/**
- *
- * @param elevation
- */
 function elevationToMapboxRGB(elevation) {
   // elevation = -10000 + (R * 65536 + G * 256 + B) * 0.1
   // (R * 65536 + G * 256 + B) = (elevation + 10000) / 0.1
@@ -25,11 +21,6 @@ function elevationToMapboxRGB(elevation) {
   return { r, g, b };
 }
 
-/**
- *
- * @param tileSize
- * @param elevation
- */
 function createTerrainTile(tileSize, elevation) {
   const canvas = createCanvas(tileSize, tileSize);
   const ctx = canvas.getContext('2d');
@@ -42,12 +33,6 @@ function createTerrainTile(tileSize, elevation) {
   return canvas.toBuffer('image/png');
 }
 
-/**
- *
- * @param db
- * @param sql
- * @param params
- */
 function runDb(db, sql, params = []) {
   return new Promise((resolve, reject) => {
     db.run(sql, params, function (err) {
@@ -57,10 +42,6 @@ function runDb(db, sql, params = []) {
   });
 }
 
-/**
- *
- * @param outputPath
- */
 async function createTerrainMbtiles(outputPath) {
   const db = new sqlite3.Database(outputPath);
 
