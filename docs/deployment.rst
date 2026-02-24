@@ -11,7 +11,12 @@ Host header poisoning (HNP) mitigation
 When tileserver-gl is run **without** ``--public_url``, it builds URLs in responses from the request's Host and X-Forwarded-* headers. If untrusted clients can influence these headers, the server may return URLs pointing to an attacker's host. For production:
 
 1. **Recommended:** Set a canonical public URL so the server never uses the request to build URLs: ``--public_url https://your-domain.com/``.
-2. **Or** set the **TILESERVER_GL_ALLOWED_HOSTS** environment variable to a comma-separated list of allowed hostnames (e.g. ``localhost,map.example.com``). If the request host is not in this list, the server returns path-only URLs (no host in response). Default is ``*`` (no restriction). See the repository's SECURITY.md for details.
+2. **Or** restrict allowed hosts using either the **allowedHosts** config option or the **TILESERVER_GL_ALLOWED_HOSTS** environment variable:
+  - In your config file, set ``allowedHosts`` under ``options`` to a comma-separated list of allowed hostnames (e.g. ``localhost,map.example.com``).
+  - Or set the environment variable **TILESERVER_GL_ALLOWED_HOSTS** to a comma-separated list.
+  - If the request host is not in this list, the server returns path-only URLs (no host in response).
+  - Default is ``*`` (no restriction). The config option takes priority if both are set.
+  - See the repository's SECURITY.md for details.
 
 Caching
 =======
