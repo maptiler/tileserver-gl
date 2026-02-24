@@ -124,6 +124,7 @@ const startServer = (configPath, config) => {
   if (publicUrl && publicUrl.lastIndexOf('/') !== publicUrl.length - 1) {
     publicUrl += '/';
   }
+  const allowedHosts = (process.env.TILESERVER_GL_ALLOWED_HOSTS ?? '*').trim();
   return server({
     configPath,
     config,
@@ -136,6 +137,7 @@ const startServer = (configPath, config) => {
     logFormat: opts.log_format,
     fetchTimeout: opts.fetchTimeout,
     publicUrl,
+    allowedHosts,
     ignoreMissingFiles: opts.ignoreMissingFiles,
   });
 };

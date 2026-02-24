@@ -23,7 +23,7 @@ export const serve_style = {
    * @returns {express.Application} The initialized Express application.
    */
   init: function (options, repo, programOpts) {
-    const { verbose } = programOpts;
+    const { verbose, allowedHosts } = programOpts;
     const app = express().disable('x-powered-by');
     /**
      * Handles requests for style.json files.
@@ -51,22 +51,22 @@ export const serve_style = {
         for (const name of Object.keys(styleJSON_.sources)) {
           // eslint-disable-next-line security/detect-object-injection -- name is from Object.keys of style sources
           const source = styleJSON_.sources[name];
-          source.url = fixUrl(req, source.url, item.publicUrl);
+          source.url = fixUrl(req, source.url, item.publicUrl, allowedHosts);
           if (typeof source.data == 'string') {
-            source.data = fixUrl(req, source.data, item.publicUrl);
+            source.data = fixUrl(req, source.data, item.publicUrl, allowedHosts);
           }
         }
         if (styleJSON_.sprite) {
           if (Array.isArray(styleJSON_.sprite)) {
             styleJSON_.sprite.forEach((spriteItem) => {
-              spriteItem.url = fixUrl(req, spriteItem.url, item.publicUrl);
+              spriteItem.url = fixUrl(req, spriteItem.url, item.publicUrl, allowedHosts);
             });
           } else {
-            styleJSON_.sprite = fixUrl(req, styleJSON_.sprite, item.publicUrl);
+            styleJSON_.sprite = fixUrl(req, styleJSON_.sprite, item.publicUrl, allowedHosts);
           }
         }
         if (styleJSON_.glyphs) {
-          styleJSON_.glyphs = fixUrl(req, styleJSON_.glyphs, item.publicUrl);
+          styleJSON_.glyphs = fixUrl(req, styleJSON_.glyphs, item.publicUrl, allowedHosts);
         }
         return res.send(styleJSON_);
       } catch (e) {
