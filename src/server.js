@@ -22,6 +22,10 @@ import {
   getPublicUrl,
   isValidHttpUrl,
   isValidRemoteUrl,
+  parseAllowedHosts,
+  isHostAllowed,
+  getCandidateHost,
+  getSafeProtocol,
 } from './utils.js';
 
 import { fileURLToPath } from 'url';
@@ -589,6 +593,7 @@ async function start(opts) {
         url: `${getPublicUrl(
           opts.publicUrl,
           req,
+          opts.allowedHosts,
         )}styles/${id}/style.json${query}`,
       });
     }
@@ -624,6 +629,7 @@ async function start(opts) {
         {
           pbf: options.pbfAlias,
         },
+        opts.allowedHosts,
       );
       arr.push(info);
     }
@@ -774,6 +780,8 @@ async function start(opts) {
           tileSize,
           style.serving_rendered.tileJSON.format,
           opts.publicUrl,
+          undefined,
+          opts.allowedHosts,
         )[0];
       }
 
@@ -806,6 +814,7 @@ async function start(opts) {
         {
           pbf: options.pbfAlias,
         },
+        opts.allowedHosts,
       )[0];
 
       data.is_vector = tileJSON.format === 'pbf';
@@ -819,6 +828,11 @@ async function start(opts) {
               req,
               tileJSON.tiles,
               `data/${id}/elevation`,
+              undefined,
+              undefined,
+              opts.publicUrl,
+              undefined,
+              opts.allowedHosts,
             )[0];
           }
           data.is_terrain = true;
@@ -900,11 +914,14 @@ async function start(opts) {
     if (opts.publicUrl) {
       baseUrl = opts.publicUrl;
     } else {
-      baseUrl = `${
-        req.get('X-Forwarded-Protocol')
-          ? req.get('X-Forwarded-Protocol')
-          : req.protocol
-      }://${req.get('host')}/`;
+      const parsedAllowed = parseAllowedHosts(opts.allowedHosts);
+      const candidateHost = getCandidateHost(req);
+      if (!isHostAllowed(candidateHost, parsedAllowed)) {
+        baseUrl = '/';
+      } else {
+        const proto = getSafeProtocol(req);
+        baseUrl = `${proto}://${candidateHost}/`;
+      }
     }
 
     return {

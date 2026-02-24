@@ -44,7 +44,7 @@ export const serve_data = {
    * @returns {express.Application} The initialized Express application.
    */
   init: function (options, repo, programOpts) {
-    const { verbose } = programOpts;
+    const { verbose, allowedHosts } = programOpts;
     const app = express().disable('x-powered-by');
     app.use(express.json());
 
@@ -490,6 +490,7 @@ export const serve_data = {
         {
           pbf: options.pbfAlias,
         },
+        allowedHosts,
       );
       return res.send(info);
     });
