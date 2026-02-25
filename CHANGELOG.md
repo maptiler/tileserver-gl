@@ -7,6 +7,13 @@
 ### 🐞 Bug fixes
 - _...Add new stuff here..._
 
+## 5.6.0-pre.3
+### ✨ Features and improvements
+
+### 🐞 Bug fixes
+
+- fix: mitigate Host header poisoning (HNP) with TILESERVER_GL_ALLOWED_… ([#2032](https://github.com/maptiler/tileserver-gl/pull/2032)) (by [LeaveerWang](https://github.com/LeaveerWang))
+
 ## 5.6.0-pre.2
 ### ✨ Features and improvements
 - feat: Add ignore-missing-files cli option to avoid crashing at startup ([#1896](https://github.com/maptiler/tileserver-gl/pull/1896)) (by [andrewlaguna824](https://github.com/andrewlaguna824))
