@@ -8,7 +8,7 @@
 //  > terminate called after throwing an instance of 'std::runtime_error'
 //  > what():  Cannot read GLX extensions.
 import { Image, createCanvas } from 'canvas';
-import '@acalcutt/maplibre-gl-native-test';
+import '@maplibre/maplibre-gl-native';
 //
 // SECTION END
 
@@ -21,7 +21,7 @@ import Color from 'color';
 import express from 'express';
 import sanitize from 'sanitize-filename';
 import { SphericalMercator } from '@mapbox/sphericalmercator';
-import mlgl from '@acalcutt/maplibre-gl-native-test';
+import mlgl from '@maplibre/maplibre-gl-native';
 import polyline from '@mapbox/polyline';
 import proj4 from 'proj4';
 import {
