@@ -1,6 +1,6 @@
 {
   "name": "tileserver-gl",
-  "version": "5.6.0-pre.2",
+  "version": "5.6.0-pre.3",
   "description": "Map tile server for JSON GL styles - vector and server side generated raster tiles",
   "main": "src/main.js",
   "bin": {
@@ -37,7 +37,7 @@
     "docker": "docker build . && docker run --rm -i -p 8080:8080 $(docker build -q .)"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.996.0",
+    "@aws-sdk/client-s3": "^3.999.0",
     "@jsse/pbfont": "^0.3.2",
     "@mapbox/mapbox-gl-rtl-text": "0.3.0",
     "@mapbox/mbtiles": "0.12.1",
@@ -46,7 +46,7 @@
     "@mapbox/vector-tile": "2.0.4",
     "@maplibre/maplibre-gl-inspect": "1.8.2",
     "@maplibre/maplibre-gl-native": "6.3.1-pre.0",
-    "@maplibre/maplibre-gl-style-spec": "24.4.1",
+    "@maplibre/maplibre-gl-style-spec": "24.5.0",
     "@sindresorhus/fnv1a": "3.1.0",
     "advanced-pool": "0.3.3",
     "canvas": "3.2.1",
@@ -61,7 +61,7 @@
     "http-shutdown": "1.2.2",
     "leaflet": "1.9.4",
     "leaflet-hash": "0.2.1",
-    "maplibre-gl": "5.18.0",
+    "maplibre-gl": "5.19.0",
     "morgan": "1.10.1",
     "pbf": "4.0.1",
     "pmtiles": "4.4.0",
@@ -80,9 +80,9 @@
     "cross-env": "^10.1.0",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-jsdoc": "^62.7.0",
+    "eslint-plugin-jsdoc": "^62.7.1",
     "eslint-plugin-prettier": "^5.5.5",
-    "eslint-plugin-security": "^3.0.1",
+    "eslint-plugin-security": "^4.0.0",
     "lint-staged": "^16.2.7",
     "mocha": "^11.7.5",
     "node-addon-api": "^8",

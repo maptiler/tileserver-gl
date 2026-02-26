@@ -74,9 +74,10 @@ export function allowedSpriteScales(scale, maxScale = 3) {
  * @param {object} req - Express request object.
  * @param {string} url - The URL string to fix.
  * @param {string} publicUrl - The public URL prefix to use for replacements.
+ * @param {string|string[]} allowedHosts - Allowed hosts for Host header poisoning mitigation.
  * @returns {string} - The fixed URL string.
  */
-export function fixUrl(req, url, publicUrl) {
+export function fixUrl(req, url, publicUrl, allowedHosts) {
   if (!url || typeof url !== 'string' || url.indexOf('local://') !== 0) {
     return url;
   }
@@ -88,7 +89,117 @@ export function fixUrl(req, url, publicUrl) {
   if (queryParams.length) {
     query = `?${queryParams.join('&')}`;
   }
-  return url.replace('local://', getPublicUrl(publicUrl, req)) + query;
+  return (
+    url.replace('local://', getPublicUrl(publicUrl, req, allowedHosts)) + query
+  );
+}
+
+/**
+ * Removes optional :port from a host string for comparison. Handles IPv6 [addr]:port.
+ * @param {string} host - The input host.
+ * @returns {string} - Host string with port removed.
+ */
+function stripPort(host) {
+  if (!host || typeof host !== 'string') return host;
+  if (host.startsWith('[')) {
+    const i = host.indexOf(']:');
+    return i > 0 ? host.slice(0, i + 1) : host;
+  }
+  const i = host.lastIndexOf(':');
+  if (i > 0 && /^\d+$/.test(host.slice(i + 1))) return host.slice(0, i);
+  return host;
+}
+
+/**
+ * Parses allowed-hosts config: "*" or comma-separated list or array. Default "*" means allow any host (no HNP mitigation).
+ * Hosts are normalized to lowercase for case-insensitive matching (hostnames are case-insensitive per RFC).
+ * @param {string|string[]|undefined} allowedHosts - Env TILESERVER_GL_ALLOWED_HOSTS or opts.allowedHosts.
+ * @returns {string|string[]} - "*" or array of allowed host strings (port stripped, lowercased).
+ */
+export function parseAllowedHosts(allowedHosts) {
+  if (allowedHosts == null || allowedHosts === '') {
+    return '*';
+  }
+  const normalize = (h) => {
+    const v = stripPort(String(h).trim());
+    return v ? v.toLowerCase() : '';
+  };
+  if (Array.isArray(allowedHosts)) {
+    return allowedHosts.map(normalize).filter(Boolean);
+  }
+  const s = typeof allowedHosts === 'string' ? allowedHosts.trim() : '';
+  if (s === '*' || s === '') {
+    return '*';
+  }
+  return s.split(',').map(normalize).filter(Boolean);
+}
+
+/**
+ * Returns true if host is allowed (allowlist is "*" or host is in the list). Port stripped, comparison case-insensitive.
+ * @param {string} host - Host to check (e.g. from request or X-Forwarded-Host).
+ * @param {string|string[]} allowedHosts - Result of parseAllowedHosts().
+ * @returns {boolean}
+ */
+export function isHostAllowed(host, allowedHosts) {
+  if (!host || typeof host !== 'string') {
+    return false;
+  }
+  const h = stripPort(host.split(',')[0].trim()).toLowerCase();
+  if (allowedHosts === '*') {
+    return true;
+  }
+  if (Array.isArray(allowedHosts)) {
+    return allowedHosts.includes(h);
+  }
+  return false;
+}
+
+/** Host header must not contain path or whitespace (sanity check for malformed headers). */
+const BAD_HOST_RE = /[\s/]/;
+
+/**
+ * Candidate host from request: X-Forwarded-Host or Host header.
+ * Returns undefined if the value looks malformed (contains / or whitespace), so it is treated as not allowed.
+ * @param {object} req - Express request.
+ * @returns {string|undefined}
+ */
+export function getCandidateHost(req) {
+  const check = (raw) => {
+    if (!raw || typeof raw !== 'string') return undefined;
+    const s = raw.split(',')[0].trim();
+    if (BAD_HOST_RE.test(s)) return undefined;
+    return s;
+  };
+  const forwarded = req.get && req.get('X-Forwarded-Host');
+  if (forwarded) {
+    const v = check(forwarded);
+    if (v !== undefined) return v;
+  }
+  const host = req.get && req.get('host');
+  if (host) {
+    const v = check(host);
+    if (v !== undefined) return v;
+  }
+  if (req.hostname) {
+    const v = check(req.hostname);
+    if (v !== undefined) return v;
+  }
+  return undefined;
+}
+
+/**
+ * Protocol for URL building: only http or https (mitigates scheme injection).
+ * @param {object} req - Express request.
+ * @returns {string} - 'http' or 'https'.
+ */
+export function getSafeProtocol(req) {
+  const get = req.get && req.get.bind(req);
+  const proto =
+    (get && (get('X-Forwarded-Protocol') || get('X-Forwarded-Proto'))) ||
+    req.protocol ||
+    'http';
+  const p = (typeof proto === 'string' ? proto : '').toLowerCase();
+  return p === 'https' ? 'https' : 'http';
 }
 
 /**
@@ -117,11 +228,15 @@ function getUrlObject(req) {
 
 /**
  * Gets the public URL, either from a provided publicUrl or generated from the request.
+ * When publicUrl is not set, uses allowedHosts (default "*") to mitigate Host header poisoning:
+ * if the request host is not in the allowlist, returns a path-only prefix (e.g. "/") so responses
+ * do not contain attacker-controlled hosts.
  * @param {string} publicUrl - The optional public URL to use.
  * @param {object} req - The Express request object.
- * @returns {string} - The final public URL string.
+ * @param {string|string[]} [allowedHosts] - "*" or list of allowed hosts (e.g. from TILESERVER_GL_ALLOWED_HOSTS).
+ * @returns {string} - The final public URL string (or path-only prefix if host not allowed).
  */
-export function getPublicUrl(publicUrl, req) {
+export function getPublicUrl(publicUrl, req, allowedHosts) {
   if (publicUrl) {
     try {
       return new URL(publicUrl).toString();
@@ -129,11 +244,21 @@ export function getPublicUrl(publicUrl, req) {
       return new URL(publicUrl, getUrlObject(req)).toString();
     }
   }
+  const parsed = parseAllowedHosts(allowedHosts);
+  const candidateHost = getCandidateHost(req);
+  if (!isHostAllowed(candidateHost, parsed)) {
+    const xForwardedPath = req.get && req.get('X-Forwarded-Path');
+    const prefix = xForwardedPath
+      ? `/${xForwardedPath.replace(/^\/+/, '')}`
+      : '';
+    return prefix ? (prefix.endsWith('/') ? prefix : `${prefix}/`) : '/';
+  }
   return getUrlObject(req).toString();
 }
 
 /**
  * Generates an array of tile URLs based on given parameters.
+ * When publicUrl is not set, uses allowedHosts to mitigate HNP: if request host is not allowed, returns path-only URLs.
  * @param {object} req - Express request object.
  * @param {string | string[]} domains - Domain(s) to use for tile URLs.
  * @param {string} path - The base path for the tiles.
@@ -141,6 +266,7 @@ export function getPublicUrl(publicUrl, req) {
  * @param {string} format - The format of the tiles (e.g., 'png', 'jpg').
  * @param {string} publicUrl - The public URL to use (if not using domains).
  * @param {object} [aliases] - Aliases for format extensions.
+ * @param {string|string[]} [allowedHosts] - "*" or list of allowed hosts for HNP mitigation.
  * @returns {string[]} An array of tile URL strings.
  */
 export function getTileUrls(
@@ -151,8 +277,14 @@ export function getTileUrls(
   format,
   publicUrl,
   aliases,
+  allowedHosts,
 ) {
   const urlObject = getUrlObject(req);
+  const parsedAllowed = parseAllowedHosts(allowedHosts);
+  const candidateHost = getCandidateHost(req);
+  const hostAllowed = isHostAllowed(candidateHost, parsedAllowed);
+  const safeProtocol = getSafeProtocol(req);
+
   if (domains) {
     if (domains.constructor === String && domains.length > 0) {
       domains = domains.split(',');
@@ -205,20 +337,22 @@ export function getTileUrls(
     format = '';
   }
 
+  const xForwardedPath = `${req.get('X-Forwarded-Path') ? '/' + req.get('X-Forwarded-Path').replace(/^\/+/, '') : ''}`;
+
   const uris = [];
   if (!publicUrl) {
-    let xForwardedPath = `${req.get('X-Forwarded-Path') ? '/' + req.get('X-Forwarded-Path') : ''}`;
-    let protocol = req.get('X-Forwarded-Protocol')
-      ? req.get('X-Forwarded-Protocol')
-      : req.protocol;
-    for (const domain of domains) {
-      uris.push(
-        `${protocol}://${domain}${xForwardedPath}/${path}/${tileParams}${format}${query}`,
-      );
+    if (!hostAllowed) {
+      uris.push(`${xForwardedPath}/${path}/${tileParams}${format}${query}`);
+    } else {
+      for (const domain of domains) {
+        uris.push(
+          `${safeProtocol}://${domain}${xForwardedPath}/${path}/${tileParams}${format}${query}`,
+        );
+      }
     }
   } else {
     uris.push(
-      `${getPublicUrl(publicUrl, req)}${path}/${tileParams}${format}${query}`,
+      `${getPublicUrl(publicUrl, req, allowedHosts)}${path}/${tileParams}${format}${query}`,
     );
   }
 
