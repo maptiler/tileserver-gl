@@ -148,7 +148,7 @@ jobs:
   # Create manifests, publish NPM, and create GitHub release
   release:
     name: Release
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: [release-check, build_arch_images]
     if: ${{ needs.release-check.outputs.published == 'false' }}
     environment: release 
