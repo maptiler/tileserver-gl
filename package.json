@@ -65,7 +65,7 @@
     "morgan": "1.10.1",
     "pbf": "4.0.1",
     "pmtiles": "4.4.0",
-    "proj4": "2.20.3",
+    "proj4": "2.20.4",
     "sanitize-filename": "1.6.3",
     "semver": "^7.7.4",
     "sharp": "0.34.5",
