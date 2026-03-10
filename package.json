@@ -83,7 +83,7 @@
     "eslint-plugin-jsdoc": "^62.7.1",
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-security": "^4.0.0",
-    "lint-staged": "^16.3.2",
+    "lint-staged": "^16.3.3",
     "mocha": "^11.7.5",
     "node-addon-api": "^8",
     "pixelmatch": "^7.1.0",
