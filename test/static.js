@@ -223,8 +223,9 @@ describe('Static endpoints', function () {
       });
 
       it('POST with long path in body succeeds (avoids URL length limit)', function (done) {
-        const manyCoords = Array.from({ length: 200 }, (_, i) =>
-          `${10 + i * 0.1},${20 + i * 0.1}`,
+        const manyCoords = Array.from(
+          { length: 200 },
+          (_, i) => `${10 + i * 0.1},${20 + i * 0.1}`,
         ).join('|');
         supertest(app)
           .post(staticAutoPath)

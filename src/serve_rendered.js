@@ -1090,6 +1090,7 @@ export const serve_rendered = {
      * @returns {Promise<void>}
      */
     ['get', 'post'].forEach((method) => {
+      // eslint-disable-next-line security/detect-object-injection
       app[method](
         `/:id{/:p1}/:p2/:p3/:p4{@:scale}{.:format}`,
         // Parse JSON bodies to allow complex geometries via POST (e.g., large polygons/paths)
@@ -1113,24 +1114,24 @@ export const serve_rendered = {
             const { p1, p2, id, p3, p4, scale, format } = req.params;
             const requestType =
               (!p1 && p2 === 'static') || (p1 === 'static' && p2 === 'raw')
-              ? 'static'
-              : 'tile';
-          if (verbose >= 3) {
-            console.log(
-              `Handling rendered %s request for: /styles/%s%s/%s/%s/%s%s.%s`,
-              requestType,
-              String(id).replace(/\n|\r/g, ''),
-              p1 ? '/' + String(p1).replace(/\n|\r/g, '') : '',
-              String(p2).replace(/\n|\r/g, ''),
-              String(p3).replace(/\n|\r/g, ''),
-              String(p4).replace(/\n|\r/g, ''),
-              scale ? '@' + String(scale).replace(/\n|\r/g, '') : '',
-              String(format).replace(/\n|\r/g, ''),
-            );
-          }
+                ? 'static'
+                : 'tile';
+            if (verbose >= 3) {
+              console.log(
+                `Handling rendered %s request for: /styles/%s%s/%s/%s/%s%s.%s`,
+                requestType,
+                String(id).replace(/\n|\r/g, ''),
+                p1 ? '/' + String(p1).replace(/\n|\r/g, '') : '',
+                String(p2).replace(/\n|\r/g, ''),
+                String(p3).replace(/\n|\r/g, ''),
+                String(p4).replace(/\n|\r/g, ''),
+                scale ? '@' + String(scale).replace(/\n|\r/g, '') : '',
+                String(format).replace(/\n|\r/g, ''),
+              );
+            }
 
             if (requestType === 'static') {
-            // Route to static if p2 is static
+              // Route to static if p2 is static
               if (options.serveStaticMaps !== false) {
                 return handleStaticRequest(
                   options,
@@ -1146,7 +1147,9 @@ export const serve_rendered = {
 
             // Allow only GET requests for standard map tiles
             if (req.method === 'POST') {
-              return res.status(405).send('Method Not Allowed for tile requests');
+              return res
+                .status(405)
+                .send('Method Not Allowed for tile requests');
             }
 
             return handleTileRequest(
@@ -1159,7 +1162,7 @@ export const serve_rendered = {
               defailtTileSize, // Note: preserving original typo from source
             );
           } catch (e) {
-          console.log(e);
+            console.log(e);
             return next(e);
           }
         },
