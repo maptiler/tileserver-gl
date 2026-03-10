@@ -207,4 +207,82 @@ describe('Static endpoints', function () {
       );
     });
   });
+
+  describe('POST static (path in body, issue #408)', function () {
+    const staticAutoPath = '/styles/' + prefix + '/static/auto/256x256.png';
+
+    describe('valid requests', function () {
+      it('POST with path in JSON body returns 200 and image/png', function (done) {
+        supertest(app)
+          .post(staticAutoPath)
+          .set('Content-Type', 'application/json')
+          .send({ path: '10,10|20,20' })
+          .expect(200)
+          .expect('Content-Type', /image\/png/)
+          .end(done);
+      });
+
+      it('POST with long path in body succeeds (avoids URL length limit)', function (done) {
+        const manyCoords = Array.from({ length: 200 }, (_, i) =>
+          `${10 + i * 0.1},${20 + i * 0.1}`,
+        ).join('|');
+        supertest(app)
+          .post(staticAutoPath)
+          .set('Content-Type', 'application/json')
+          .send({ path: manyCoords })
+          .expect(200)
+          .expect('Content-Type', /image\/png/)
+          .end(done);
+      });
+
+      it('POST with scale and path in body returns 200', function (done) {
+        supertest(app)
+          .post('/styles/' + prefix + '/static/auto/20x20@2x.png')
+          .set('Content-Type', 'application/json')
+          .send({ path: '10,10|20,20' })
+          .expect(200)
+          .expect('Content-Type', /image\/png/)
+          .end(done);
+      });
+
+      it('POST with path array in body returns 200', function (done) {
+        supertest(app)
+          .post(staticAutoPath)
+          .set('Content-Type', 'application/json')
+          .send({ path: ['10,10|20,20', '-5,-5|5,5'] })
+          .expect(200)
+          .expect('Content-Type', /image\/png/)
+          .end(done);
+      });
+    });
+
+    describe('invalid requests return 4xx', function () {
+      it('POST auto without path in body returns 400', function (done) {
+        supertest(app)
+          .post(staticAutoPath)
+          .set('Content-Type', 'application/json')
+          .send({})
+          .expect(400, done);
+      });
+
+      it('POST with invalid JSON body returns 400 or 415', function (done) {
+        supertest(app)
+          .post(staticAutoPath)
+          .set('Content-Type', 'application/json')
+          .send('not json')
+          .expect((res) => {
+            expect([400, 415]).to.include(res.status);
+          })
+          .end(done);
+      });
+    });
+
+    it('POST to tile URL returns 405 Method Not Allowed', function (done) {
+      supertest(app)
+        .post('/styles/' + prefix + '/0/0/0.png')
+        .set('Content-Type', 'application/json')
+        .send({})
+        .expect(405, done);
+    });
+  });
 });

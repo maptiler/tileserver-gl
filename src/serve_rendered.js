@@ -1089,13 +1089,30 @@ export const serve_rendered = {
      * @param {string} req.params.format - The format of the image.
      * @returns {Promise<void>}
      */
-    app.get(
-      `/:id{/:p1}/:p2/:p3/:p4{@:scale}{.:format}`,
-      async (req, res, next) => {
-        try {
-          const { p1, p2, id, p3, p4, scale, format } = req.params;
-          const requestType =
-            (!p1 && p2 === 'static') || (p1 === 'static' && p2 === 'raw')
+    ['get', 'post'].forEach((method) => {
+      app[method](
+        `/:id{/:p1}/:p2/:p3/:p4{@:scale}{.:format}`,
+        // Parse JSON bodies to allow complex geometries via POST (e.g., large polygons/paths)
+        express.json({ limit: '5mb' }),
+        // Merge POST body into query parameters for compatibility with existing static rendering logic
+        (req, res, next) => {
+          if (req.method === 'POST' && req.body) {
+            // Redefine the query property natively to forcefully merge the body payload.
+            // This is required to bypass Express 5.x read-only getter restrictions on req.query.
+            Object.defineProperty(req, 'query', {
+              value: { ...req.query, ...req.body },
+              configurable: true,
+              enumerable: true,
+              writable: true,
+            });
+          }
+          next();
+        },
+        async (req, res, next) => {
+          try {
+            const { p1, p2, id, p3, p4, scale, format } = req.params;
+            const requestType =
+              (!p1 && p2 === 'static') || (p1 === 'static' && p2 === 'raw')
               ? 'static'
               : 'tile';
           if (verbose >= 3) {
@@ -1112,36 +1129,42 @@ export const serve_rendered = {
             );
           }
 
-          if (requestType === 'static') {
+            if (requestType === 'static') {
             // Route to static if p2 is static
-            if (options.serveStaticMaps !== false) {
-              return handleStaticRequest(
-                options,
-                repo,
-                req,
-                res,
-                next,
-                maxScaleFactor,
-              );
+              if (options.serveStaticMaps !== false) {
+                return handleStaticRequest(
+                  options,
+                  repo,
+                  req,
+                  res,
+                  next,
+                  maxScaleFactor,
+                );
+              }
+              return res.sendStatus(404);
             }
-            return res.sendStatus(404);
-          }
 
-          return handleTileRequest(
-            options,
-            repo,
-            req,
-            res,
-            next,
-            maxScaleFactor,
-            defailtTileSize,
-          );
-        } catch (e) {
+            // Allow only GET requests for standard map tiles
+            if (req.method === 'POST') {
+              return res.status(405).send('Method Not Allowed for tile requests');
+            }
+
+            return handleTileRequest(
+              options,
+              repo,
+              req,
+              res,
+              next,
+              maxScaleFactor,
+              defailtTileSize, // Note: preserving original typo from source
+            );
+          } catch (e) {
           console.log(e);
-          return next(e);
-        }
-      },
-    );
+            return next(e);
+          }
+        },
+      );
+    });
 
     /**
      * Handles requests for rendered tilejson endpoint.
