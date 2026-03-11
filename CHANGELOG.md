@@ -7,6 +7,14 @@
 ### 🐞 Bug fixes
 - _...Add new stuff here..._
 
+## 5.6.0-pre.4
+### ✨ Features and improvements
+
+### 🐞 Bug fixes
+
+- Remove Hillshade and Color relief workaround since it is now supported in maplibre-native ([#2044](https://github.com/maptiler/tileserver-gl/pull/2044)) (by [acalcutt](https://github.com/acalcutt))
+- Update runner version to Ubuntu 24.04 for release ([#2043](https://github.com/maptiler/tileserver-gl/pull/2043)) (by [acalcutt](https://github.com/acalcutt))
+
 ## 5.6.0-pre.3
 ### ✨ Features and improvements
 - feat: Add ignore-missing-files cli option to avoid crashing at startup ([#1896](https://github.com/maptiler/tileserver-gl/pull/1896)) (by [andrewlaguna824](https://github.com/andrewlaguna824))
