@@ -9,11 +9,8 @@
 
 ## 5.6.0-pre.4
 ### ✨ Features and improvements
-
-### 🐞 Bug fixes
-
+- Update Maplibre-Native to v6.4.0
 - Remove Hillshade and Color relief workaround since it is now supported in maplibre-native ([#2044](https://github.com/maptiler/tileserver-gl/pull/2044)) (by [acalcutt](https://github.com/acalcutt))
-- Update runner version to Ubuntu 24.04 for release ([#2043](https://github.com/maptiler/tileserver-gl/pull/2043)) (by [acalcutt](https://github.com/acalcutt))
 
 ## 5.6.0-pre.3
 ### ✨ Features and improvements
