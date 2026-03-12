@@ -719,6 +719,7 @@ async function start(opts) {
               `${packageJson.name} v${packageJson.version}`;
             data['public_url'] = opts.publicUrl || '/';
             data['is_light'] = isLight;
+            data['leaflet_retina'] = options.leafletRetina !== false;
             data['key_query_part'] = req.query.key
               ? `key=${encodeURIComponent(req.query.key)}&amp;`
               : '';

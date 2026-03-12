@@ -126,8 +126,11 @@
             }
 
             for (tile_url in tile_urls) {
+                var leafletUrl = tile_urls[tile_url];
+                {{#leaflet_retina}}
                 // Inject {r} for Leaflet retina support without modifying TileJSON directly
-                var leafletUrl = tile_urls[tile_url].replace('{y}.', '{y}{r}.');
+                leafletUrl = leafletUrl.replace('{y}.', '{y}{r}.');
+                {{/leaflet_retina}}
                 L.tileLayer(leafletUrl, {
                     tileSize: 512,
                     zoomOffset: -1,
