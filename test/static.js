@@ -245,19 +245,17 @@ describe('Static endpoints', function () {
           .expect('Content-Type', /image\/png/)
           .end(done);
       });
+    });
 
-      it('POST with path array in body returns 200', function (done) {
+    describe('invalid requests return 4xx', function () {
+      it('POST with path array in body returns 400', function (done) {
         supertest(app)
           .post(staticAutoPath)
           .set('Content-Type', 'application/json')
           .send({ path: ['10,10|20,20', '-5,-5|5,5'] })
-          .expect(200)
-          .expect('Content-Type', /image\/png/)
-          .end(done);
+          .expect(400, done);
       });
-    });
 
-    describe('invalid requests return 4xx', function () {
       it('POST auto without path in body returns 400', function (done) {
         supertest(app)
           .post(staticAutoPath)
