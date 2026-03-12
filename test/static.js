@@ -283,5 +283,24 @@ describe('Static endpoints', function () {
         .send({})
         .expect(405, done);
     });
+
+    it('POST to tile URL with invalid JSON returns 405', function (done) {
+      supertest(app)
+        .post('/styles/' + prefix + '/0/0/0.png')
+        .set('Content-Type', 'application/json')
+        // Intentionally send invalid JSON string
+        .send('not json')
+        .expect(405, done);
+    });
+
+    it('POST to tile URL with oversized JSON body returns 405', function (done) {
+      // Construct a large JSON body to exceed typical JSON parser limits
+      const largeString = 'x'.repeat(300 * 1024); // ~300 KB
+      supertest(app)
+        .post('/styles/' + prefix + '/0/0/0.png')
+        .set('Content-Type', 'application/json')
+        .send({ data: largeString })
+        .expect(405, done);
+    });
   });
 });

@@ -1124,6 +1124,16 @@ export const serve_rendered = {
       // eslint-disable-next-line security/detect-object-injection
       app[method](
         `/:id{/:p1}/:p2/:p3/:p4{@:scale}{.:format}`,
+        // First, reject POST requests to tile endpoints before any body parsing occurs.
+        (req, res, next) => {
+          const { p1, p2 } = req.params;
+          const isStatic =
+            (!p1 && p2 === 'static') || (p1 === 'static' && p2 === 'raw');
+          if (req.method === 'POST' && !isStatic) {
+            return res.status(405).send('Method Not Allowed for tile requests');
+          }
+          next();
+        },
         // Parse JSON bodies to allow complex geometries via POST (e.g., large polygons/paths)
         express.json({ limit: '5mb' }),
         // Merge POST body into query parameters for compatibility with existing static rendering logic
@@ -1174,13 +1184,6 @@ export const serve_rendered = {
                 );
               }
               return res.sendStatus(404);
-            }
-
-            // Allow only GET requests for standard map tiles
-            if (req.method === 'POST') {
-              return res
-                .status(405)
-                .send('Method Not Allowed for tile requests');
             }
 
             return handleTileRequest(
