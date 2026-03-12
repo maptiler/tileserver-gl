@@ -115,7 +115,7 @@ jobs:
 
       # Build and Push Main Image
       - name: Build and Push Main ${{ matrix.arch }} Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
@@ -134,7 +134,7 @@ jobs:
         working-directory: ./light
 
       - name: Build and Push Light ${{ matrix.arch }} Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./light
           file: ./light/Dockerfile

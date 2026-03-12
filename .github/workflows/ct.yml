@@ -95,7 +95,7 @@ jobs:
 
       - name: Build and tag ${{ matrix.arch }} main image locally
         id: build_main_arch
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/${{ matrix.arch }}
@@ -157,7 +157,7 @@ jobs:
 
       - name: Build and run tests using Dockerfile_test 🧪
         id: build_test_image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile_test
@@ -182,7 +182,7 @@ jobs:
 
       - name: Build and tag ${{ matrix.arch }} light image locally
         id: build_light_arch
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./light
           file: ./light/Dockerfile
