@@ -126,7 +126,9 @@
             }
 
             for (tile_url in tile_urls) {
-                L.tileLayer(tile_urls[tile_url], {
+                // Inject {r} for Leaflet retina support without modifying TileJSON directly
+                var leafletUrl = tile_urls[tile_url].replace('{y}.', '{y}{r}.');
+                L.tileLayer(leafletUrl, {
                     tileSize: 512,
                     zoomOffset: -1,
                     minZoom: tile_minzoom,
@@ -134,11 +136,6 @@
                     attribution: tile_attribution
                 }).addTo(map);
             }
-        
-            map.eachLayer(function(layer) {
-              // do not add scale prefix even if retina display is detected
-              layer.scalePrefix = '.';
-            });
         };
         req.send(null);
       
