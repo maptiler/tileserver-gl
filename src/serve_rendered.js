@@ -1549,41 +1549,6 @@ export const serve_rendered = {
           }
           layer.paint['fill-extrusion-base'] = 0;
         }
-
-        // --- Remove hillshade properties incompatible with MapLibre Native ---
-        const hillshadePropertiesToRemove = [
-          'hillshade-method',
-          'hillshade-illumination-direction',
-          'hillshade-highlight-color',
-        ];
-
-        for (const prop of hillshadePropertiesToRemove) {
-          if (prop in layer.paint) {
-            if (verbose >= 1) {
-              console.warn(
-                `Warning: Layer '${layerIdForWarning}' in style '${id}' has property '${prop}'. ` +
-                  `This property is not supported by MapLibre Native. ` +
-                  `It will be removed in rendered images. ` +
-                  `Note: This property will still work with MapLibre GL JS vector maps.`,
-              );
-            }
-            // eslint-disable-next-line security/detect-object-injection -- prop is from hillshadePropertiesToRemove array, validated property names
-            delete layer.paint[prop];
-          }
-        }
-
-        // --- Remove 'hillshade-shadow-color' if it is an array. It can only be a string in MapLibre Native ---
-        if (Array.isArray(layer.paint['hillshade-shadow-color'])) {
-          if (verbose >= 1) {
-            console.warn(
-              `Warning: Layer '${layerIdForWarning}' in style '${id}' has property 'hillshade-shadow-color'. ` +
-                `An array value is not supported by MapLibre Native for this property (expected string/color). ` +
-                `It will be removed in rendered images. ` +
-                `Note: Using an array for this property will still work with MapLibre GL JS vector maps.`,
-            );
-          }
-          delete layer.paint['hillshade-shadow-color'];
-        }
       }
     }
 
