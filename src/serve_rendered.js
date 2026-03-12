@@ -147,6 +147,37 @@ function createEmptyResponse(format, color, callback) {
 }
 
 /**
+ * Merges query and body into a null-prototype object to prevent prototype pollution
+ * and property shadowing (e.g., overriding toString). Only allows primitive values.
+ * @param {object} query - Request query parameters.
+ * @param {object} body - Request body parameters.
+ * @returns {object} A null-prototype object containing merged primitive parameters.
+ */
+function getSecureMergedParams(query, body) {
+  const result = Object.create(null);
+  const forbiddenKeys = ['__proto__', 'constructor', 'prototype'];
+
+  const safeMerge = (source) => {
+    if (!source || typeof source !== 'object') return;
+
+    for (const [key, value] of Object.entries(source)) {
+      // Block "magic" keys and ensure value is a primitive (not an object/array/function)
+      const isPrimitive = value === null || typeof value !== 'object';
+
+      if (isPrimitive && !forbiddenKeys.includes(key)) {
+        // eslint-disable-next-line security/detect-object-injection -- Safe: result is a null-prototype object and keys are filtered
+        result[key] = value;
+      }
+    }
+  };
+
+  safeMerge(query);
+  safeMerge(body);
+
+  return result;
+}
+
+/**
  * Parses coordinate pair provided to pair of floats and ensures the resulting
  * pair is a longitude/latitude combination depending on lnglat query parameter.
  * @param {Array<string>} coordinates Coordinate pair.
@@ -1098,10 +1129,10 @@ export const serve_rendered = {
         // Merge POST body into query parameters for compatibility with existing static rendering logic
         (req, res, next) => {
           if (req.method === 'POST' && req.body) {
-            // Redefine the query property natively to forcefully merge the body payload.
-            // This is required to bypass Express 5.x read-only getter restrictions on req.query.
+            // Redefine the query property using the secure helper.
+            // This bypasses Express 5.x read-only restrictions and prevents prototype exploits.
             Object.defineProperty(req, 'query', {
-              value: { ...req.query, ...req.body },
+              value: getSecureMergedParams(req.query, req.body),
               configurable: true,
               enumerable: true,
               writable: true,
