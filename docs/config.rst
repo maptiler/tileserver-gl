@@ -180,7 +180,7 @@ It is recommended to also use the ``serveAllFonts`` option when using this optio
 
 If this option is enabled, the Leaflet raster map viewer will attempt to fetch high-resolution (Retina, ``@2x``) tiles for high-DPI displays.
 Disable this if you want to reduce CPU/memory load and bandwidth when users are primarily utilizing the basic raster map viewer.
-Default is ``true``.
+Default is ``false``.
 
 ``serveStaticMaps``
 ------------------------
