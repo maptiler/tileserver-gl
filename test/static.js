@@ -294,8 +294,8 @@ describe('Static endpoints', function () {
     });
 
     it('POST to tile URL with oversized JSON body returns 405', function (done) {
-      // Construct a large JSON body to exceed typical JSON parser limits
-      const largeString = 'x'.repeat(300 * 1024); // ~300 KB
+      // Construct a JSON body that exceeds the configured 5 MB JSON parser limit
+      const largeString = 'x'.repeat(6 * 1024 * 1024); // ~6 MB
       supertest(app)
         .post('/styles/' + prefix + '/0/0/0.png')
         .set('Content-Type', 'application/json')
