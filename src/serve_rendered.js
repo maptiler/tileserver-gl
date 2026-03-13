@@ -41,6 +41,7 @@ import { renderOverlay, renderWatermark, renderAttribution } from './render.js';
 import fsp from 'node:fs/promises';
 import { existsP, gunzipP } from './promises.js';
 import { openMbTilesWrapper } from './mbtiles_wrapper.js';
+import { parse as secureParse } from 'secure-json-parse';
 
 const FLOAT_PATTERN = '[+-]?(?:\\d+|\\d*\\.\\d+)';
 
@@ -147,33 +148,44 @@ function createEmptyResponse(format, color, callback) {
 }
 
 /**
- * Merges query and body into a null-prototype object to prevent prototype pollution
- * and property shadowing (e.g., overriding toString). Only allows primitive values.
- * @param {object} query - Request query parameters.
- * @param {object} body - Request body parameters.
- * @returns {object} A null-prototype object containing merged primitive parameters.
+ * Merges query and body into a null-prototype object.
+ * Accumulates multiple values for the same key into arrays for a lossless merge.
+ * @param {object} query Request query parameters.
+ * @param {object} body Request body parameters.
+ * @returns {object} The merged parameters.
  */
-function getSecureMergedParams(query, body) {
+export function getSecureMergedParams(query, body) {
   const result = Object.create(null);
-  const forbiddenKeys = ['__proto__', 'constructor', 'prototype'];
 
-  const safeMerge = (source) => {
-    if (!source || typeof source !== 'object') return;
+  const accumulate = (source) => {
+    if (!source) return;
+    if (typeof source !== 'object' || Array.isArray(source))
+      throw new Error(`Invalid data.`);
 
     for (const [key, value] of Object.entries(source)) {
-      // Block "magic" keys and ensure value is a primitive (not an object/array/function)
       const isPrimitive = value === null || typeof value !== 'object';
+      const isPrimitiveArray =
+        Array.isArray(value) &&
+        value.every((v) => v === null || typeof v !== 'object');
 
-      if (isPrimitive && !forbiddenKeys.includes(key)) {
-        // eslint-disable-next-line security/detect-object-injection -- Safe: result is a null-prototype object and keys are filtered
+      if (!isPrimitive && !isPrimitiveArray)
+        throw new Error(
+          `Invalid value type for key "${key}": nested objects are not allowed.`,
+        );
+
+      const ensureArray = (v) => (Array.isArray(v) ? v : [v]);
+      if (key in result) {
+        // eslint-disable-next-line security/detect-object-injection -- result is a null-prototype object; key is from validated source
+        result[key] = ensureArray(result[key]).concat(ensureArray(value));
+      } else {
+        // eslint-disable-next-line security/detect-object-injection -- result is a null-prototype object; key is from validated source
         result[key] = value;
       }
     }
   };
 
-  safeMerge(query);
-  safeMerge(body);
-
+  accumulate(query);
+  accumulate(body);
   return result;
 }
 
@@ -1106,102 +1118,107 @@ export const serve_rendered = {
     maxScaleFactor = Math.min(Math.floor(options.maxScaleFactor || 3), 9);
     const app = express().disable('x-powered-by');
 
-    /**
-     * Handles requests for tile images.
-     * @param {object} req - Express request object.
-     * @param {object} res - Express response object.
-     * @param {object} next - Express next middleware function.
-     * @param {string} req.params.id - The id of the style.
-     * @param {string} [req.params.p1] - The tile size or static parameter, if available.
-     * @param {string} req.params.p2 - The z, static, or raw parameter.
-     * @param {string} req.params.p3 - The x or staticType parameter.
-     * @param {string} req.params.p4 - The y or width parameter.
-     * @param {string} req.params.scale - The scale parameter.
-     * @param {string} req.params.format - The format of the image.
-     * @returns {Promise<void>}
-     */
-    ['get', 'post'].forEach((method) => {
-      // eslint-disable-next-line security/detect-object-injection
-      app[method](
-        `/:id{/:p1}/:p2/:p3/:p4{@:scale}{.:format}`,
-        // First, reject POST requests to tile endpoints before any body parsing occurs.
-        (req, res, next) => {
-          const { p1, p2 } = req.params;
-          const isStatic =
-            (!p1 && p2 === 'static') || (p1 === 'static' && p2 === 'raw');
-          if (req.method === 'POST' && !isStatic) {
-            return res.status(405).send('Method Not Allowed for tile requests');
-          }
-          next();
-        },
-        // Parse JSON bodies to allow complex geometries via POST (e.g., large polygons/paths)
-        express.json({ limit: '5mb' }),
-        // Merge POST body into query parameters for compatibility with existing static rendering logic
-        (req, res, next) => {
-          if (req.method === 'POST' && req.body) {
-            // Redefine the query property using the secure helper.
-            // This bypasses Express 5.x read-only restrictions and prevents prototype exploits.
-            Object.defineProperty(req, 'query', {
-              value: getSecureMergedParams(req.query, req.body),
-              configurable: true,
-              enumerable: true,
-              writable: true,
-            });
-          }
-          next();
-        },
-        async (req, res, next) => {
+    app.post(`/:id{/:p1}/:p2/:p3/:p4{@:scale}{.:format}`, (req, res, next) => {
+      const { p1, p2 } = req.params;
+      const requestType =
+        (!p1 && p2 === 'static') || (p1 === 'static' && p2 === 'raw')
+          ? 'static'
+          : 'tile';
+
+      if (requestType === 'tile') {
+        return res.status(405).send('Method Not Allowed');
+      }
+      next();
+    });
+    app.use(
+      express.json({
+        limit: '5mb',
+        verify: (req, res, buf) => {
           try {
-            const { p1, p2, id, p3, p4, scale, format } = req.params;
-            const requestType =
-              (!p1 && p2 === 'static') || (p1 === 'static' && p2 === 'raw')
-                ? 'static'
-                : 'tile';
-            if (verbose >= 3) {
-              console.log(
-                `Handling rendered %s request for: /styles/%s%s/%s/%s/%s%s.%s`,
-                requestType,
-                String(id).replace(/\n|\r/g, ''),
-                p1 ? '/' + String(p1).replace(/\n|\r/g, '') : '',
-                String(p2).replace(/\n|\r/g, ''),
-                String(p3).replace(/\n|\r/g, ''),
-                String(p4).replace(/\n|\r/g, ''),
-                scale ? '@' + String(scale).replace(/\n|\r/g, '') : '',
-                String(format).replace(/\n|\r/g, ''),
-              );
-            }
+            secureParse(buf.toString());
+          } catch (err) {
+            const error = new Error(
+              `Invalid JSON or forbidden key detected: ${err.message}`,
+            );
+            error.status = 400;
+            throw error;
+          }
+        },
+      }),
+    );
 
-            if (requestType === 'static') {
-              // Route to static if p2 is static
-              if (options.serveStaticMaps !== false) {
-                return handleStaticRequest(
-                  options,
-                  repo,
-                  req,
-                  res,
-                  next,
-                  maxScaleFactor,
-                );
-              }
-              return res.sendStatus(404);
-            }
+    app.use((req, res, next) => {
+      if (req.method === 'POST' && req.body) {
+        try {
+          const merged = getSecureMergedParams(req.query, req.body);
+          Object.defineProperty(req, 'query', {
+            value: merged,
+            configurable: true,
+            enumerable: true,
+            writable: true,
+          });
+        } catch (err) {
+          return res.status(400).send(err.message);
+        }
+      }
+      next();
+    });
 
-            return handleTileRequest(
+    const renderHandler = async (req, res, next) => {
+      try {
+        const { p1, p2, id, p3, p4, scale, format } = req.params;
+        const requestType =
+          (!p1 && p2 === 'static') || (p1 === 'static' && p2 === 'raw')
+            ? 'static'
+            : 'tile';
+
+        if (verbose >= 3) {
+          console.log(
+            `Handling rendered %s request for: /styles/%s%s/%s/%s/%s%s.%s`,
+            requestType,
+            String(id).replace(/\n|\r/g, ''),
+            p1 ? '/' + String(p1).replace(/\n|\r/g, '') : '',
+            String(p2).replace(/\n|\r/g, ''),
+            String(p3).replace(/\n|\r/g, ''),
+            String(p4).replace(/\n|\r/g, ''),
+            scale ? '@' + String(scale).replace(/\n|\r/g, '') : '',
+            String(format).replace(/\n|\r/g, ''),
+          );
+        }
+
+        if (requestType === 'static') {
+          if (options.serveStaticMaps !== false) {
+            return handleStaticRequest(
               options,
               repo,
               req,
               res,
               next,
               maxScaleFactor,
-              defailtTileSize, // Note: preserving original typo from source
             );
-          } catch (e) {
-            console.log(e);
-            return next(e);
           }
-        },
-      );
-    });
+          return res.sendStatus(404);
+        }
+
+        return handleTileRequest(
+          options,
+          repo,
+          req,
+          res,
+          next,
+          maxScaleFactor,
+          defailtTileSize,
+        );
+      } catch (e) {
+        console.log(e);
+        return next(e);
+      }
+    };
+
+    // Bind both GET and POST to the main handler
+    const routePattern = `/:id{/:p1}/:p2/:p3/:p4{@:scale}{.:format}`;
+    app.get(routePattern, renderHandler);
+    app.post(routePattern, renderHandler);
 
     /**
      * Handles requests for rendered tilejson endpoint.

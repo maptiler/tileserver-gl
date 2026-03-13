@@ -1,3 +1,6 @@
+import assert from 'assert';
+import { getSecureMergedParams } from '../src/serve_rendered.js';
+
 const testStatic = function (prefix, q, format, status, scale, type, query) {
   if (scale) q += '@' + scale + 'x';
   let path = '/styles/' + prefix + '/static/' + q + '.' + format;
@@ -208,9 +211,9 @@ describe('Static endpoints', function () {
     });
   });
 
-  describe('POST static (path in body, issue #408)', function () {
-    const staticAutoPath = '/styles/' + prefix + '/static/auto/256x256.png';
+  const staticAutoPath = '/styles/' + prefix + '/static/auto/256x256.png';
 
+  describe('POST static (path in body, issue #408)', function () {
     describe('valid requests', function () {
       it('POST with path in JSON body returns 200 and image/png', function (done) {
         supertest(app)
@@ -248,12 +251,14 @@ describe('Static endpoints', function () {
     });
 
     describe('invalid requests return 4xx', function () {
-      it('POST with path array in body returns 400', function (done) {
+      it('POST with path array in body returns 200', function (done) {
         supertest(app)
           .post(staticAutoPath)
           .set('Content-Type', 'application/json')
           .send({ path: ['10,10|20,20', '-5,-5|5,5'] })
-          .expect(400, done);
+          .expect(200)
+          .expect('Content-Type', /image\/png/)
+          .end(done);
       });
 
       it('POST auto without path in body returns 400', function (done) {
@@ -297,10 +302,132 @@ describe('Static endpoints', function () {
       // Construct a JSON body that exceeds the configured 5 MB JSON parser limit
       const largeString = 'x'.repeat(6 * 1024 * 1024); // ~6 MB
       supertest(app)
-        .post('/styles/' + prefix + '/0/0/0.png')
+        .post(staticAutoPath)
         .set('Content-Type', 'application/json')
         .send({ data: largeString })
-        .expect(405, done);
+        .expect(413, done);
+    });
+  });
+
+  describe('getSecureMergedParams Logic & Security', function () {
+    it('should maintain multiple values in query (Express array style)', () => {
+      const query = {
+        path: ['10,10|20,20', '10,20|20,10'],
+        marker: ['10,15', '20,15'],
+        latlng: '',
+      };
+      const result = getSecureMergedParams(query, {});
+
+      assert.deepStrictEqual(result.path, ['10,10|20,20', '10,20|20,10']);
+      assert.deepStrictEqual(result.marker, ['10,15', '20,15']);
+      assert.strictEqual(result.latlng, '');
+    });
+
+    it('should maintain multiple values in body (Express array style)', () => {
+      const body = {
+        path: ['10,20|20,10', '10,10|20,20'],
+        marker: ['20,15', '10,15'],
+        latlng: '',
+      };
+      const result = getSecureMergedParams({}, body);
+
+      assert.deepStrictEqual(result.path, ['10,20|20,10', '10,10|20,20']);
+      assert.deepStrictEqual(result.marker, ['20,15', '10,15']);
+      assert.strictEqual(result.latlng, '');
+    });
+
+    it('should merge a single value and a single value into an array', () => {
+      const query = { path: '10,10|20,20' };
+      const body = { path: '10,20|20,10' };
+      const result = getSecureMergedParams(query, body);
+
+      assert.deepStrictEqual(result.path, ['10,10|20,20', '10,20|20,10']);
+    });
+
+    it('should merge a single value and an array value', () => {
+      const query = { path: '10,10|20,20' };
+      const body = { path: ['10,20|20,10', '10,10|15,20|20,10'] };
+      const result = getSecureMergedParams(query, body);
+
+      assert.deepStrictEqual(result.path, [
+        '10,10|20,20',
+        '10,20|20,10',
+        '10,10|15,20|20,10',
+      ]);
+    });
+
+    it('should merge an array value and an array value', () => {
+      const query = { path: ['10,10|20,20', '10,20|20,10'] };
+      const body = { path: ['10,10|15,20|20,10', '5,5|10,10'] };
+      const result = getSecureMergedParams(query, body);
+
+      assert.deepStrictEqual(result.path, [
+        '10,10|20,20',
+        '10,20|20,10',
+        '10,10|15,20|20,10',
+        '5,5|10,10',
+      ]);
+    });
+
+    it('should preserve empty strings (e.g. ?foo&foo)', () => {
+      const query = { foo: '' };
+      const body = { foo: '' };
+      const result = getSecureMergedParams(query, body);
+
+      assert.deepStrictEqual(result.foo, ['', '']);
+    });
+
+    it('should throw 400 error on nested objects (Deep Object vulnerability)', () => {
+      const body = { path: { lat: 10, lon: 10 } };
+      assert.throws(
+        () => getSecureMergedParams({}, body),
+        /nested objects are not allowed/,
+      );
+    });
+
+    it('should handle "__proto__" as a regular key when value is a primitive', () => {
+      const body = JSON.parse('{"__proto__": true, "path": "10,10|20,20"}');
+      const result = getSecureMergedParams({}, body);
+
+      assert.strictEqual(result.__proto__, true);
+      assert.strictEqual(result.path, '10,10|20,20');
+      assert.strictEqual(Object.getPrototypeOf(result), null);
+    });
+
+    it('should throw 400 error on malicious nested keys (Prototype Pollution)', () => {
+      // This is the actual attack vector that MUST be blocked
+      const body = JSON.parse('{"__proto__": {"admin": true}}');
+      assert.throws(
+        () => getSecureMergedParams({}, body),
+        /nested objects are not allowed/, // Matches the actual error message in serve_rendered.js
+      );
+    });
+
+    it('POST with Prototype Pollution in JSON string returns 400', function (done) {
+      const maliciousPayload = '{"__proto__": {"admin": true}, }';
+      supertest(app)
+        .post(staticAutoPath)
+        .set('Content-Type', 'application/json')
+        .send(maliciousPayload)
+        .expect(400)
+        .expect((res) => {
+          // secure-json-parse error message usually contains these terms
+          assert.ok(
+            res.text.includes('Invalid JSON') || res.text.includes('forbidden'),
+          );
+        })
+        .end(done);
+    });
+
+    it('should throw 400 error if the input itself is an array', () => {
+      const body = ['not', 'an', 'object'];
+      assert.throws(() => getSecureMergedParams({}, body), /Invalid data/);
+    });
+
+    it('should ensure the result has no prototype', () => {
+      const result = getSecureMergedParams({ a: 1 }, { b: 2 });
+      assert.strictEqual(Object.getPrototypeOf(result), null);
+      assert.strictEqual(result.toString, undefined);
     });
   });
 });
