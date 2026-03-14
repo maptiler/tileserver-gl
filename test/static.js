@@ -369,12 +369,12 @@ describe('Static endpoints', function () {
       ]);
     });
 
-    it('should preserve empty strings (e.g. ?foo&foo)', () => {
-      const query = { foo: '' };
-      const body = { foo: '' };
+    it('should preserve empty strings (e.g. ?latlng&latlng)', () => {
+      const query = { latlng: '' };
+      const body = { latlng: '' };
       const result = getSecureMergedParams(query, body);
 
-      assert.deepStrictEqual(result.foo, ['', '']);
+      assert.deepStrictEqual(result.latlng, ['', '']);
     });
 
     it('should throw 400 error on nested objects (Deep Object vulnerability)', () => {
@@ -385,22 +385,13 @@ describe('Static endpoints', function () {
       );
     });
 
-    it('should handle "__proto__" as a regular key when value is a primitive', () => {
+    it('should ignore unallowed keys like "__proto__"', () => {
       const body = JSON.parse('{"__proto__": true, "path": "10,10|20,20"}');
       const result = getSecureMergedParams({}, body);
 
-      assert.strictEqual(result.__proto__, true);
+      assert.strictEqual(result.__proto__, undefined); // It is stripped
       assert.strictEqual(result.path, '10,10|20,20');
       assert.strictEqual(Object.getPrototypeOf(result), null);
-    });
-
-    it('should throw 400 error on malicious nested keys (Prototype Pollution)', () => {
-      // This is the actual attack vector that MUST be blocked
-      const body = JSON.parse('{"__proto__": {"admin": true}}');
-      assert.throws(
-        () => getSecureMergedParams({}, body),
-        /nested objects are not allowed/, // Matches the actual error message in serve_rendered.js
-      );
     });
 
     it('POST with Prototype Pollution in JSON string returns 400', function (done) {

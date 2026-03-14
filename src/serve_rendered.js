@@ -147,6 +147,21 @@ function createEmptyResponse(format, color, callback) {
   }
 }
 
+const ALLOW_STATIC_PARAMS = new Set([
+  'path',
+  'marker',
+  'latlng',
+  'padding',
+  'maxzoom',
+  'fill',
+  'stroke',
+  'width',
+  'linecap',
+  'linejoin',
+  'border',
+  'borderwidth',
+]);
+
 /**
  * Merges query and body into a null-prototype object.
  * Accumulates multiple values for the same key into arrays for a lossless merge.
@@ -163,6 +178,10 @@ export function getSecureMergedParams(query, body) {
       throw new Error(`Invalid data.`);
 
     for (const [key, value] of Object.entries(source)) {
+      if (!ALLOW_STATIC_PARAMS.has(key)) {
+        continue;
+      }
+
       const isPrimitive = value === null || typeof value !== 'object';
       const isPrimitiveArray =
         Array.isArray(value) &&
