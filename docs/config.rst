@@ -175,6 +175,13 @@ If this option is enabled, all the styles from the ``paths.styles`` will be serv
 The process will also watch for changes in this directory and remove/add more styles dynamically.
 It is recommended to also use the ``serveAllFonts`` option when using this option.
 
+``leafletRetina``
+------------------------
+
+If this option is enabled, the Leaflet raster map viewer will attempt to fetch high-resolution (Retina, ``@2x``) tiles for high-DPI displays.
+Disable this if you want to reduce CPU/memory load and bandwidth when users are primarily utilizing the basic raster map viewer.
+Default is ``false``.
+
 ``serveStaticMaps``
 ------------------------
 
