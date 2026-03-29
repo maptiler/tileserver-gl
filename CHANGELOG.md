@@ -2,11 +2,16 @@
 
 ## master
 ### ✨ Features and improvements
-- Add POST requests for static maps (fixes [#408](https://github.com/maptiler/tileserver-gl/issues/408)) ([#2064](https://github.com/maptiler/tileserver-gl/pull/2064)) (by [zstadler](https://github.com/zstadler))
 - _...Add new stuff here..._
 
 ### 🐞 Bug fixes
 - _...Add new stuff here..._
+
+## 5.6.0-pre.5
+### ✨ Features and improvements
+- Add POST requests for static maps (fixes [#408](https://github.com/maptiler/tileserver-gl/issues/408)) ([#2064](https://github.com/maptiler/tileserver-gl/pull/2064)) (by [zstadler](https://github.com/zstadler))
+
+### 🐞 Bug fixes
 
 ## 5.6.0-pre.4
 ### ✨ Features and improvements
