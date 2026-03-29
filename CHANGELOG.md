@@ -2,17 +2,18 @@
 
 ## master
 ### ✨ Features and improvements
-- Add POST requests for static maps (fixes [#408](https://github.com/maptiler/tileserver-gl/issues/408)) ([#2064](https://github.com/maptiler/tileserver-gl/pull/2064)) (by [zstadler](https://github.com/zstadler))
 - _...Add new stuff here..._
 
 ### 🐞 Bug fixes
 - _...Add new stuff here..._
 
-## 5.6.0-pre.4
+## 5.6.0-pre.5
 ### ✨ Features and improvements
 - Update Maplibre-Native to v6.4.0
 - Remove Hillshade and Color relief workaround since it is now supported in maplibre-native ([#2044](https://github.com/maptiler/tileserver-gl/pull/2044)) (by [acalcutt](https://github.com/acalcutt))
 - feat: Add ignore-missing-files cli option to avoid crashing at startup ([#1896](https://github.com/maptiler/tileserver-gl/pull/1896)) (by [andrewlaguna824](https://github.com/andrewlaguna824))
+- Add POST requests for static maps (fixes [#408](https://github.com/maptiler/tileserver-gl/issues/408)) ([#2064](https://github.com/maptiler/tileserver-gl/pull/2064)) (by [zstadler](https://github.com/zstadler))
+- Add Native Leaflet Retina Support for Raster Tiles ([#2074](https://github.com/maptiler/tileserver-gl/pull/2074)) (by [acalcutt](https://github.com/acalcutt))
 
 ### 🐞 Bug fixes
 - fix: correctly handle public url in tileJSON response ([#1963](https://github.com/maptiler/tileserver-gl/pull/1963)) (by [andrewlaguna824](https://github.com/andrewlaguna824))
