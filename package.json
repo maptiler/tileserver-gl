@@ -84,6 +84,7 @@
     "eslint-plugin-jsdoc": "^62.9.0",
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-security": "^4.0.0",
+    "globals": "^15.15.0",
     "lint-staged": "^16.4.0",
     "mocha": "^11.7.5",
     "node-addon-api": "^8",
