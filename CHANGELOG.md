@@ -7,7 +7,7 @@
 ### 🐞 Bug fixes
 - _...Add new stuff here..._
 
-## 5.6.0-pre.6
+## 5.6.0
 ### ✨ Features and improvements
 - Update Maplibre-Native to v6.4.1
 - Remove Hillshade and Color relief workaround since it is now supported in maplibre-native ([#2044](https://github.com/maptiler/tileserver-gl/pull/2044)) (by [acalcutt](https://github.com/acalcutt))
