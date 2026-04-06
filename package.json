@@ -65,7 +65,7 @@
     "morgan": "1.10.1",
     "pbf": "4.0.1",
     "pmtiles": "4.4.0",
-    "proj4": "2.20.6",
+    "proj4": "2.20.8",
     "sanitize-filename": "1.6.4",
     "secure-json-parse": "^4.1.0",
     "semver": "^7.7.4",
