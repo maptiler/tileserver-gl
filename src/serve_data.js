@@ -548,14 +548,14 @@ export const serve_data = {
         if (!inputFileStats.isFile() || inputFileStats.size === 0) {
           throw Error(`Not valid input file: "${inputFile}"`);
         }
-      } catch (err) {
+      } catch (_err) {
         if (ignoreMissingFiles) {
           console.log(
             `WARN: Data source '${id}' file not found: "${inputFile}" - skipping`,
           );
           return;
         }
-        throw Error(`Not valid input file: "${inputFile}"`);
+        throw Error(`Not valid input file: "${inputFile}"`, { cause: _err });
       }
     }
 

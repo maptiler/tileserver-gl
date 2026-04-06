@@ -75,15 +75,17 @@
   "devDependencies": {
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
+    "@eslint/js": "^10.0.1",
     "@typescript-eslint/eslint-plugin": "^8.58.0",
     "@typescript-eslint/parser": "^8.57.1",
     "chai": "6.2.2",
     "cross-env": "^10.1.0",
-    "eslint": "^9.39.2",
+    "eslint": "^10.2.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-jsdoc": "^62.9.0",
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-security": "^4.0.0",
+    "globals": "^15.15.0",
     "lint-staged": "^16.4.0",
     "mocha": "^11.7.5",
     "node-addon-api": "^8",
@@ -101,7 +103,7 @@
   ],
   "license": "BSD-2-Clause",
   "engines": {
-    "node": "20 || 22 || 24"
+    "node": "^20.19.0 || ^22.13.0 || 24"
   },
   "repository": {
     "url": "git+https://github.com/maptiler/tileserver-gl.git",

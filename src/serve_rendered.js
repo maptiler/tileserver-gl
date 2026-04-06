@@ -944,8 +944,8 @@ async function handleStaticRequest(
   // eslint-disable-next-line security/detect-object-injection -- id is route parameter, validated by Express
   const item = repo[id];
 
-  let parsedWidth = null;
-  let parsedHeight = null;
+  let parsedWidth;
+  let parsedHeight;
   if (widthAndHeight) {
     const sizeMatch = widthAndHeight.match(/^(\d+)x(\d+)$/);
     if (sizeMatch) {

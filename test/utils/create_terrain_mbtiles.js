@@ -12,8 +12,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- *
- * @param elevation
+ * Converts an elevation value to Mapbox RGB encoding.
+ * Uses mapbox encoding: elevation = -10000 + (R * 256 * 256 + G * 256 + B) * 0.1
+ * @param {number} elevation - The elevation value in meters.
+ * @returns {{r: number, g: number, b: number}} The RGB values representing the elevation.
  */
 function elevationToMapboxRGB(elevation) {
   // elevation = -10000 + (R * 65536 + G * 256 + B) * 0.1
@@ -26,9 +28,10 @@ function elevationToMapboxRGB(elevation) {
 }
 
 /**
- *
- * @param tileSize
- * @param elevation
+ * Creates a PNG terrain tile filled with a solid color representing the given elevation.
+ * @param {number} tileSize - The width and height of the tile in pixels.
+ * @param {number} elevation - The elevation value in meters to encode in the tile.
+ * @returns {Buffer} A PNG image buffer representing the terrain tile.
  */
 function createTerrainTile(tileSize, elevation) {
   const canvas = createCanvas(tileSize, tileSize);
@@ -43,10 +46,11 @@ function createTerrainTile(tileSize, elevation) {
 }
 
 /**
- *
- * @param db
- * @param sql
- * @param params
+ * Runs a SQL statement on a sqlite3 database, returning a promise.
+ * @param {object} db - The sqlite3 database instance.
+ * @param {string} sql - The SQL statement to execute.
+ * @param {Array} params - Parameters to bind to the SQL statement.
+ * @returns {Promise<object>} A promise that resolves with the statement context.
  */
 function runDb(db, sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -58,8 +62,9 @@ function runDb(db, sql, params = []) {
 }
 
 /**
- *
- * @param outputPath
+ * Creates a test terrain MBTiles file at the given output path.
+ * @param {string} outputPath - The file path where the MBTiles database should be created.
+ * @returns {Promise<void>} A promise that resolves when the MBTiles file has been created.
  */
 async function createTerrainMbtiles(outputPath) {
   const db = new sqlite3.Database(outputPath);

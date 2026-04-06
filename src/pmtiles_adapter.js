@@ -232,18 +232,22 @@ class S3Source {
       }
 
       if (error.name === 'NoSuchKey') {
-        throw new Error(`PMTiles file not found: ${this.bucket}/${this.key}`);
+        throw new Error(`PMTiles file not found: ${this.bucket}/${this.key}`, {
+          cause: error,
+        });
       }
 
       if (error.name === 'AccessDenied') {
         throw new Error(
           `Access denied: ${this.bucket}/${this.key}. Check credentials and bucket permissions.`,
+          { cause: error },
         );
       }
 
       if (error.name === 'NoSuchBucket') {
         throw new Error(
           `Bucket not found: ${this.bucket}. Check bucket name and endpoint.`,
+          { cause: error },
         );
       }
 
@@ -347,7 +351,7 @@ export function openPMtiles(
     return pmtilesCache.get(cacheKey);
   }
 
-  let pmtiles = undefined;
+  let pmtiles;
 
   if (isS3Url(filePath)) {
     if (verbose >= 2) {
@@ -462,7 +466,7 @@ export async function getPMtilesInfo(pmtiles, inputFile, maxRetries = 3) {
       // If not a 429 or last retry, throw immediately
       if (!error.message?.includes('429') || attempt === maxRetries - 1) {
         const errorMessage = `${error.message} for file: ${inputFile}`;
-        throw new Error(errorMessage);
+        throw new Error(errorMessage, { cause: error });
       }
     }
   }
