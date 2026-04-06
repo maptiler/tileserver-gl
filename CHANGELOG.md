@@ -9,11 +9,6 @@
 
 ## 5.6.0
 ### ✨ Features and improvements
-
-### 🐞 Bug fixes
-
-## 5.6.0-pre.6
-### ✨ Features and improvements
 - Update Maplibre-Native to v6.4.1
 - Remove Hillshade and Color relief workaround since it is now supported in maplibre-native ([#2044](https://github.com/maptiler/tileserver-gl/pull/2044)) (by [acalcutt](https://github.com/acalcutt))
 - feat: Add ignore-missing-files cli option to avoid crashing at startup ([#1896](https://github.com/maptiler/tileserver-gl/pull/1896)) (by [andrewlaguna824](https://github.com/andrewlaguna824))
