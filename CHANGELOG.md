@@ -7,6 +7,11 @@
 ### 🐞 Bug fixes
 - _...Add new stuff here..._
 
+## 5.6.0
+### ✨ Features and improvements
+
+### 🐞 Bug fixes
+
 ## 5.6.0-pre.6
 ### ✨ Features and improvements
 - Update Maplibre-Native to v6.4.1
