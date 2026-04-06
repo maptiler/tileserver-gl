@@ -138,7 +138,7 @@ export function parseAllowedHosts(allowedHosts) {
  * Returns true if host is allowed (allowlist is "*" or host is in the list). Port stripped, comparison case-insensitive.
  * @param {string} host - Host to check (e.g. from request or X-Forwarded-Host).
  * @param {string|string[]} allowedHosts - Result of parseAllowedHosts().
- * @returns {boolean}
+ * @returns {boolean} - True if the host is allowed, false otherwise.
  */
 export function isHostAllowed(host, allowedHosts) {
   if (!host || typeof host !== 'string') {
@@ -161,7 +161,7 @@ const BAD_HOST_RE = /[\s/]/;
  * Candidate host from request: X-Forwarded-Host or Host header.
  * Returns undefined if the value looks malformed (contains / or whitespace), so it is treated as not allowed.
  * @param {object} req - Express request.
- * @returns {string|undefined}
+ * @returns {string|undefined} - The candidate host string, or undefined if the value is malformed.
  */
 export function getCandidateHost(req) {
   const check = (raw) => {
@@ -475,7 +475,7 @@ async function getFontPbf(allowedFonts, fontPath, name, range, fallbacks) {
         delete fallbacks[fallbackName];
         return getFontPbf(null, fontPath, fallbackName, range, fallbacks);
       } else {
-        throw new Error('Font load error');
+        throw new Error('Font load error', { cause: err });
       }
     }
   } else {
