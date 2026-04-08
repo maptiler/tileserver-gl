@@ -1449,7 +1449,8 @@ export const serve_rendered = {
                 // eslint-disable-next-line security/detect-object-injection -- sourceId from internal style source names
                 const sparse = map.sparseFlags[sourceId] ?? true;
                 // sparse=true (default) -> return empty callback so MapLibre can overzoom
-                if (sparse) {
+                // raster-dem: 1x1 placeholder causes backfillBorder segfault (#2065)
+                if (sparse || sourceInfo.type === 'raster-dem') {
                   callback();
                   return;
                 }
