@@ -16,6 +16,7 @@ import morgan from 'morgan';
 import { serve_data } from './serve_data.js';
 import { serve_style } from './serve_style.js';
 import { serve_font } from './serve_font.js';
+import { clearPMtilesCache } from './pmtiles_adapter.js';
 import {
   allowedTileSizes,
   getTileUrls,
@@ -1050,6 +1051,8 @@ function stopGracefully(signal) {
  */
 export async function server(opts) {
   const running = await start(opts);
+  let reloading = false;
+  let pendingReload = false;
 
   running.startupPromise.catch((err) => {
     console.error(err.message);
@@ -1059,19 +1062,47 @@ export async function server(opts) {
   process.on('SIGINT', stopGracefully);
   process.on('SIGTERM', stopGracefully);
 
-  process.on('SIGHUP', (signal) => {
-    console.log(`Caught signal ${signal}, refreshing`);
-    console.log('Stopping server and reloading config');
+  const reload = async () => {
+    if (reloading) {
+      pendingReload = true;
+      console.log('Reload already in progress, queueing another refresh');
+      return;
+    }
 
-    running.server.shutdown(async () => {
-      const restarted = await start(opts);
+    reloading = true;
+
+    try {
+      await new Promise((resolve) => {
+        running.server.shutdown(() => resolve());
+      });
+      await serve_data.clear(running.serving.data);
       if (!isLight) {
-        serve_rendered.clear(running.serving.rendered);
+        await serve_rendered.clear(running.serving.rendered);
       }
+      clearPMtilesCache();
+
+      const restarted = await start(opts);
       running.server = restarted.server;
       running.app = restarted.app;
       running.startupPromise = restarted.startupPromise;
       running.serving = restarted.serving;
+      await running.startupPromise;
+    } finally {
+      reloading = false;
+      if (pendingReload) {
+        pendingReload = false;
+        await reload();
+      }
+    }
+  };
+
+  process.on('SIGHUP', (signal) => {
+    console.log(`Caught signal ${signal}, refreshing`);
+    console.log('Stopping server and reloading config');
+
+    reload().catch((err) => {
+      console.error(err.message);
+      process.exit(1);
     });
   });
   return running;

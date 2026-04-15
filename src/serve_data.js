@@ -624,4 +624,24 @@ export const serve_data = {
       sparse,
     };
   },
+  /**
+   * Removes all items from the repository and closes owned local data sources.
+   * @param {object} repo Repository object.
+   * @returns {void}
+   */
+  clear: async function (repo) {
+    await Promise.all(
+      Object.keys(repo).map(async (id) => {
+        // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys() iteration
+        const item = repo[id];
+        if (item && item.sourceType === 'mbtiles' && item.source) {
+          await new Promise((resolve) => {
+            item.source.close(() => resolve());
+          });
+        }
+        // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys() iteration
+        delete repo[id];
+      }),
+    );
+  },
 };

@@ -292,6 +292,17 @@ class PMTilesFileSource {
     );
     return { data: ab };
   }
+
+  /**
+   * Closes the underlying file descriptor for local PMTiles sources.
+   * @returns {void}
+   */
+  close() {
+    if (typeof this.fd === 'number') {
+      fs.closeSync(this.fd);
+      this.fd = null;
+    }
+  }
 }
 
 /**
@@ -314,6 +325,22 @@ async function readFileBytes(fd, buffer, offset) {
 
 // Cache for PMTiles objects to avoid creating multiple instances for the same URL
 const pmtilesCache = new Map();
+
+/**
+ * Closes a PMTiles instance if it owns a closeable local file source.
+ * @param {PMTiles} pmtiles - The PMTiles instance to close.
+ * @returns {void}
+ */
+function closePMTiles(pmtiles) {
+  if (!pmtiles) {
+    return;
+  }
+
+  const source = pmtiles.source;
+  if (source && typeof source.close === 'function') {
+    source.close();
+  }
+}
 
 /**
  * Opens a PMTiles file from local filesystem, HTTP URL, or S3 URL.
@@ -386,6 +413,17 @@ export function openPMtiles(
   pmtilesCache.set(cacheKey, pmtiles);
 
   return pmtiles;
+}
+
+/**
+ * Clears the PMTiles cache and closes any local file descriptors owned by cached sources.
+ * @returns {void}
+ */
+export function clearPMtilesCache() {
+  for (const pmtiles of pmtilesCache.values()) {
+    closePMTiles(pmtiles);
+  }
+  pmtilesCache.clear();
 }
 
 /**
