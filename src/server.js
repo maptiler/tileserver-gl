@@ -719,7 +719,11 @@ async function start(opts) {
           if (data) {
             data['server_version'] =
               `${packageJson.name} v${packageJson.version}`;
-            data['public_url'] = opts.publicUrl || '/';
+            data['public_url'] = getPublicUrl(
+              opts.publicUrl,
+              req,
+              opts.allowedHosts,
+            );
             data['is_light'] = isLight;
             data['leaflet_retina'] = options.leafletRetina === true;
             data['key_query_part'] = req.query.key
