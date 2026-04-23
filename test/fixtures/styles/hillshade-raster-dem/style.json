@@ -1,0 +1,29 @@
+{
+  "version": 8,
+  "name": "Hillshade Raster DEM Test",
+  "sources": {
+    "ocean-dem": {
+      "type": "raster-dem",
+      "url": "mbtiles://{ocean-dem}",
+      "encoding": "terrarium",
+      "tileSize": 256
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#aac6e0"
+      }
+    },
+    {
+      "id": "hillshade",
+      "type": "hillshade",
+      "source": "ocean-dem",
+      "paint": {
+        "hillshade-exaggeration": 0.5
+      }
+    }
+  ]
+}
