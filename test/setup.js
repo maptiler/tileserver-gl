@@ -56,6 +56,14 @@ before(async function () {
 
 after(function () {
   console.log('global teardown');
+  // Remove files that were generated during test setup.
+  for (const f of ['merged-config.json', 'ocean_dem.mbtiles']) {
+    try {
+      fs.unlinkSync(f);
+    } catch {
+      // ignore if already gone
+    }
+  }
   global.server.close(function () {
     console.log('Done');
   });
