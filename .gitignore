@@ -20,3 +20,5 @@ config.json
 *.mbtiles
 styles
 fonts
+# Keep committed test fixtures tracked even though *.mbtiles and styles are ignored
+!test/fixtures/**
