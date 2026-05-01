@@ -246,6 +246,8 @@ export const serve_style = {
           // eslint-disable-next-line security/detect-object-injection -- name is from Object.keys of styleForValidation.sources
           styleForValidation.sources[name] &&
           // eslint-disable-next-line security/detect-object-injection -- name is from Object.keys of styleForValidation.sources
+          typeof styleForValidation.sources[name] === 'object' &&
+          // eslint-disable-next-line security/detect-object-injection -- name is from Object.keys of styleForValidation.sources
           'sparse' in styleForValidation.sources[name]
         ) {
           try {
