@@ -299,8 +299,14 @@ class PMTilesFileSource {
    */
   close() {
     if (typeof this.fd === 'number') {
-      fs.closeSync(this.fd);
-      this.fd = null;
+      const fd = this.fd;
+      try {
+        fs.closeSync(fd);
+      } catch (err) {
+        console.warn(`Failed to close PMTiles file descriptor ${fd}:`, err);
+      } finally {
+        this.fd = null;
+      }
     }
   }
 }

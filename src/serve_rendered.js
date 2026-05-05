@@ -1878,7 +1878,11 @@ export const serve_rendered = {
           source &&
           typeof source.close === 'function'
         ) {
-          source.close(() => {});
+          source.close((err) => {
+            if (err) {
+              console.warn('Failed to close MBTiles source:', err);
+            }
+          });
         }
       });
       item.map.renderers.forEach((pool) => {
@@ -1892,9 +1896,9 @@ export const serve_rendered = {
     delete repo[id];
   },
   /**
-   * Removes all items from the repository.
+   * Removes all items from the repository and closes owned local data sources.
    * @param {object} repo Repository object.
-   * @returns {void}
+   * @returns {Promise<void>}
    */
   clear: async function (repo) {
     await Promise.all(
@@ -1913,8 +1917,14 @@ export const serve_rendered = {
                 source &&
                 typeof source.close === 'function'
               ) {
-                await new Promise((resolve) => {
-                  source.close(() => resolve());
+                await new Promise((resolve, reject) => {
+                  source.close((err) => {
+                    if (err) {
+                      reject(err);
+                      return;
+                    }
+                    resolve();
+                  });
                 });
               }
             }),

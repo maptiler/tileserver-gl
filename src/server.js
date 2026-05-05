@@ -55,6 +55,7 @@ async function start(opts) {
     data: {},
     fonts: {},
   };
+  let cleanup = async () => {};
 
   app.enable('trust proxy');
 
@@ -554,6 +555,9 @@ async function start(opts) {
       path.join(options.paths.styles, '*.json'),
       {},
     );
+    cleanup = async () => {
+      await watcher.close();
+    };
     watcher.on('all', (eventType, filename) => {
       if (filename) {
         const id = path.basename(filename, '.json');
@@ -1032,6 +1036,7 @@ async function start(opts) {
     server,
     startupPromise,
     serving,
+    cleanup,
   };
 }
 /**
@@ -1070,29 +1075,39 @@ export async function server(opts) {
     }
 
     reloading = true;
+    let reloadAgain = true;
 
     try {
-      await new Promise((resolve) => {
-        running.server.shutdown(() => resolve());
-      });
-      await serve_data.clear(running.serving.data);
-      if (!isLight) {
-        await serve_rendered.clear(running.serving.rendered);
-      }
-      clearPMtilesCache();
+      while (reloadAgain) {
+        reloadAgain = false;
+        pendingReload = false;
+        await new Promise((resolve, reject) => {
+          running.server.shutdown((err) => {
+            if (err) {
+              reject(err);
+              return;
+            }
+            resolve();
+          });
+        });
+        await running.cleanup();
+        await serve_data.clear(running.serving.data);
+        if (!isLight) {
+          await serve_rendered.clear(running.serving.rendered);
+        }
+        clearPMtilesCache();
 
-      const restarted = await start(opts);
-      running.server = restarted.server;
-      running.app = restarted.app;
-      running.startupPromise = restarted.startupPromise;
-      running.serving = restarted.serving;
-      await running.startupPromise;
+        const restarted = await start(opts);
+        running.server = restarted.server;
+        running.app = restarted.app;
+        running.startupPromise = restarted.startupPromise;
+        running.serving = restarted.serving;
+        running.cleanup = restarted.cleanup;
+        await running.startupPromise;
+        reloadAgain = pendingReload;
+      }
     } finally {
       reloading = false;
-      if (pendingReload) {
-        pendingReload = false;
-        await reload();
-      }
     }
   };
 
