@@ -896,23 +896,12 @@ async function start(opts) {
       return null;
     }
 
-    let baseUrl;
-    if (opts.publicUrl) {
-      baseUrl = opts.publicUrl;
-    } else {
-      baseUrl = `${
-        req.get('X-Forwarded-Protocol')
-          ? req.get('X-Forwarded-Protocol')
-          : req.protocol
-      }://${req.get('host')}/`;
-    }
-
     return {
       ...wmts,
       id,
       // eslint-disable-next-line security/detect-object-injection -- id is route parameter from URL
       name: (serving.styles[id] || serving.rendered[id]).name,
-      baseUrl,
+      baseUrl: getPublicUrl(opts.publicUrl, req),
     };
   });
 

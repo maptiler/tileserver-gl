@@ -53,6 +53,42 @@ describe('Styles', function () {
   });
 });
 
+describe('WMTS', function () {
+  describe('/styles/' + prefix + '/wmts.xml', function () {
+    testIs('/styles/' + prefix + '/wmts.xml', /text\/xml/);
+
+    it('contains a valid absolute baseUrl using public_url', function (done) {
+      supertest(app)
+        .get('/styles/' + prefix + '/wmts.xml')
+        .expect(function (res) {
+          // The server is started with publicUrl: '/test/' in setup.js.
+          // getPublicUrl resolves a relative publicUrl against the request host,
+          // so all URLs in the document must be absolute (not just '/test/').
+          expect(res.text).to.not.include('href="/test/');
+          expect(res.text).to.include('href="http://');
+          expect(res.text).to.include('/test/styles/' + prefix + '/wmts.xml');
+        })
+        .end(done);
+    });
+
+    it('contains valid absolute tile resource URLs using public_url', function (done) {
+      supertest(app)
+        .get('/styles/' + prefix + '/wmts.xml')
+        .expect(function (res) {
+          expect(res.text).to.not.include('template="/test/');
+          expect(res.text).to.include('template="http://');
+          expect(res.text).to.include('/test/styles/' + prefix + '/256/');
+          expect(res.text).to.include('/test/styles/' + prefix + '/512/');
+        })
+        .end(done);
+    });
+  });
+
+  describe('/styles/non_existent/wmts.xml returns 404', function () {
+    testIs('/styles/non_existent/wmts.xml', /./, 404);
+  });
+});
+
 describe('Fonts', function () {
   testIs('/fonts/Open Sans Bold/0-255.pbf', /application\/x-protobuf/);
   testIs('/fonts/Open Sans Regular/65280-65535.pbf', /application\/x-protobuf/);
