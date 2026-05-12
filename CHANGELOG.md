@@ -8,10 +8,7 @@
 - _...Add new stuff here..._
 
 ## 5.6.1-pre.0
-### ✨ Features and improvements
-
 ### 🐞 Bug fixes
-
 - fix: TypeError when style source value is a string (e.g. sprite path) ([#2179](https://github.com/maptiler/tileserver-gl/pull/2179)) (by [app/copilot-swe-agent](https://github.com/app/copilot-swe-agent))
 
 ## 5.6.0
