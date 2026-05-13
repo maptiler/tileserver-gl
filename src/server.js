@@ -22,6 +22,10 @@ import {
   getPublicUrl,
   isValidHttpUrl,
   isValidRemoteUrl,
+  parseAllowedHosts,
+  isHostAllowed,
+  getCandidateHost,
+  getSafeProtocol,
 } from './utils.js';
 
 import { fileURLToPath } from 'url';
@@ -245,10 +249,12 @@ async function start(opts) {
             // eslint-disable-next-line security/detect-object-injection -- dataItemId is validated above
             const dataSource = data[dataItemId];
             const fileType = dataSource.pmtiles ? 'pmtiles' : 'mbtiles';
+            // eslint-disable-next-line security/detect-object-injection -- fileType is either 'pmtiles' or 'mbtiles'
             const fileName = dataSource[fileType];
 
             // Skip validation for remote URLs
             if (fileName && !isValidRemoteUrl(fileName)) {
+              // eslint-disable-next-line security/detect-object-injection -- fileType is either 'pmtiles' or 'mbtiles'
               const filePath = path.resolve(options.paths[fileType], fileName);
               try {
                 const stats = fs.statSync(filePath);
@@ -260,7 +266,7 @@ async function start(opts) {
                   // File missing but flag not set - let it fail later
                   return dataItemId;
                 }
-              } catch (err) {
+              } catch (_err) {
                 // File doesn't exist
                 if (opts.ignoreMissingFiles) {
                   return undefined;
@@ -295,7 +301,7 @@ async function start(opts) {
                       return undefined;
                     }
                   }
-                } catch (err) {
+                } catch (_err) {
                   // File doesn't exist
                   if (opts.ignoreMissingFiles) {
                     return undefined;
@@ -589,6 +595,7 @@ async function start(opts) {
         url: `${getPublicUrl(
           opts.publicUrl,
           req,
+          opts.allowedHosts,
         )}styles/${id}/style.json${query}`,
       });
     }
@@ -608,7 +615,7 @@ async function start(opts) {
     for (const id of Object.keys(serving[type])) {
       // eslint-disable-next-line security/detect-object-injection -- type is 'rendered' or 'data', id is from Object.keys
       const info = clone(serving[type][id].tileJSON);
-      let path = '';
+      let path;
       if (type === 'rendered') {
         path = `styles/${id}`;
       } else {
@@ -624,6 +631,7 @@ async function start(opts) {
         {
           pbf: options.pbfAlias,
         },
+        opts.allowedHosts,
       );
       arr.push(info);
     }
@@ -705,7 +713,7 @@ async function start(opts) {
         if (opts.verbose >= 1) {
           console.log(`Serving template at path: ${urlPath}`);
         }
-        let data = {};
+        let data;
         if (dataGetter) {
           data = dataGetter(req);
           if (data) {
@@ -713,6 +721,7 @@ async function start(opts) {
               `${packageJson.name} v${packageJson.version}`;
             data['public_url'] = opts.publicUrl || '/';
             data['is_light'] = isLight;
+            data['leaflet_retina'] = options.leafletRetina === true;
             data['key_query_part'] = req.query.key
               ? `key=${encodeURIComponent(req.query.key)}&amp;`
               : '';
@@ -731,7 +740,7 @@ async function start(opts) {
       });
     } catch (err) {
       console.error(`Error reading template file: ${templateFile}`, err);
-      throw new Error(`Template not found: ${err.message}`); //throw an error so that the server doesnt start
+      throw new Error(`Template not found: ${err.message}`, { cause: err }); //throw an error so that the server doesnt start
     }
   }
 
@@ -774,6 +783,8 @@ async function start(opts) {
           tileSize,
           style.serving_rendered.tileJSON.format,
           opts.publicUrl,
+          undefined,
+          opts.allowedHosts,
         )[0];
       }
 
@@ -806,6 +817,7 @@ async function start(opts) {
         {
           pbf: options.pbfAlias,
         },
+        opts.allowedHosts,
       )[0];
 
       data.is_vector = tileJSON.format === 'pbf';
@@ -819,6 +831,11 @@ async function start(opts) {
               req,
               tileJSON.tiles,
               `data/${id}/elevation`,
+              undefined,
+              undefined,
+              opts.publicUrl,
+              undefined,
+              opts.allowedHosts,
             )[0];
           }
           data.is_terrain = true;

@@ -1,3 +1,6 @@
+import assert from 'assert';
+import { getSecureMergedParams } from '../src/serve_rendered.js';
+
 const testStatic = function (prefix, q, format, status, scale, type, query) {
   if (scale) q += '@' + scale + 'x';
   let path = '/styles/' + prefix + '/static/' + q + '.' + format;
@@ -205,6 +208,217 @@ describe('Static endpoints', function () {
         undefined,
         '?path=10,10|20,20',
       );
+    });
+  });
+
+  const staticAutoPath = '/styles/' + prefix + '/static/auto/256x256.png';
+
+  describe('POST static (path in body, issue #408)', function () {
+    describe('valid requests', function () {
+      it('POST with path in JSON body returns 200 and image/png', function (done) {
+        supertest(app)
+          .post(staticAutoPath)
+          .set('Content-Type', 'application/json')
+          .send({ path: '10,10|20,20' })
+          .expect(200)
+          .expect('Content-Type', /image\/png/)
+          .end(done);
+      });
+
+      it('POST with long path in body succeeds (avoids URL length limit)', function (done) {
+        const manyCoords = Array.from(
+          { length: 200 },
+          (_, i) => `${10 + i * 0.1},${20 + i * 0.1}`,
+        ).join('|');
+        supertest(app)
+          .post(staticAutoPath)
+          .set('Content-Type', 'application/json')
+          .send({ path: manyCoords })
+          .expect(200)
+          .expect('Content-Type', /image\/png/)
+          .end(done);
+      });
+
+      it('POST with scale and path in body returns 200', function (done) {
+        supertest(app)
+          .post('/styles/' + prefix + '/static/auto/20x20@2x.png')
+          .set('Content-Type', 'application/json')
+          .send({ path: '10,10|20,20' })
+          .expect(200)
+          .expect('Content-Type', /image\/png/)
+          .end(done);
+      });
+    });
+
+    describe('invalid requests return 4xx', function () {
+      it('POST with path array in body returns 200', function (done) {
+        supertest(app)
+          .post(staticAutoPath)
+          .set('Content-Type', 'application/json')
+          .send({ path: ['10,10|20,20', '-5,-5|5,5'] })
+          .expect(200)
+          .expect('Content-Type', /image\/png/)
+          .end(done);
+      });
+
+      it('POST auto without path in body returns 400', function (done) {
+        supertest(app)
+          .post(staticAutoPath)
+          .set('Content-Type', 'application/json')
+          .send({})
+          .expect(400, done);
+      });
+
+      it('POST with invalid JSON body returns 400 or 415', function (done) {
+        supertest(app)
+          .post(staticAutoPath)
+          .set('Content-Type', 'application/json')
+          .send('not json')
+          .expect((res) => {
+            expect([400, 415]).to.include(res.status);
+          })
+          .end(done);
+      });
+    });
+
+    it('POST to tile URL returns 405 Method Not Allowed', function (done) {
+      supertest(app)
+        .post('/styles/' + prefix + '/0/0/0.png')
+        .set('Content-Type', 'application/json')
+        .send({})
+        .expect(405, done);
+    });
+
+    it('POST to tile URL with invalid JSON returns 405', function (done) {
+      supertest(app)
+        .post('/styles/' + prefix + '/0/0/0.png')
+        .set('Content-Type', 'application/json')
+        // Intentionally send invalid JSON string
+        .send('not json')
+        .expect(405, done);
+    });
+
+    it('POST to tile URL with oversized JSON body returns 405', function (done) {
+      // Construct a JSON body that exceeds the configured 5 MB JSON parser limit
+      const largeString = 'x'.repeat(6 * 1024 * 1024); // ~6 MB
+      supertest(app)
+        .post(staticAutoPath)
+        .set('Content-Type', 'application/json')
+        .send({ data: largeString })
+        .expect(413, done);
+    });
+  });
+
+  describe('getSecureMergedParams Logic & Security', function () {
+    it('should maintain multiple values in query (Express array style)', () => {
+      const query = {
+        path: ['10,10|20,20', '10,20|20,10'],
+        marker: ['10,15', '20,15'],
+        latlng: '',
+      };
+      const result = getSecureMergedParams(query, {});
+
+      assert.deepStrictEqual(result.path, ['10,10|20,20', '10,20|20,10']);
+      assert.deepStrictEqual(result.marker, ['10,15', '20,15']);
+      assert.strictEqual(result.latlng, '');
+    });
+
+    it('should maintain multiple values in body (Express array style)', () => {
+      const body = {
+        path: ['10,20|20,10', '10,10|20,20'],
+        marker: ['20,15', '10,15'],
+        latlng: '',
+      };
+      const result = getSecureMergedParams({}, body);
+
+      assert.deepStrictEqual(result.path, ['10,20|20,10', '10,10|20,20']);
+      assert.deepStrictEqual(result.marker, ['20,15', '10,15']);
+      assert.strictEqual(result.latlng, '');
+    });
+
+    it('should merge a single value and a single value into an array', () => {
+      const query = { path: '10,10|20,20' };
+      const body = { path: '10,20|20,10' };
+      const result = getSecureMergedParams(query, body);
+
+      assert.deepStrictEqual(result.path, ['10,10|20,20', '10,20|20,10']);
+    });
+
+    it('should merge a single value and an array value', () => {
+      const query = { path: '10,10|20,20' };
+      const body = { path: ['10,20|20,10', '10,10|15,20|20,10'] };
+      const result = getSecureMergedParams(query, body);
+
+      assert.deepStrictEqual(result.path, [
+        '10,10|20,20',
+        '10,20|20,10',
+        '10,10|15,20|20,10',
+      ]);
+    });
+
+    it('should merge an array value and an array value', () => {
+      const query = { path: ['10,10|20,20', '10,20|20,10'] };
+      const body = { path: ['10,10|15,20|20,10', '5,5|10,10'] };
+      const result = getSecureMergedParams(query, body);
+
+      assert.deepStrictEqual(result.path, [
+        '10,10|20,20',
+        '10,20|20,10',
+        '10,10|15,20|20,10',
+        '5,5|10,10',
+      ]);
+    });
+
+    it('should preserve empty strings (e.g. ?latlng&latlng)', () => {
+      const query = { latlng: '' };
+      const body = { latlng: '' };
+      const result = getSecureMergedParams(query, body);
+
+      assert.deepStrictEqual(result.latlng, ['', '']);
+    });
+
+    it('should throw 400 error on nested objects (Deep Object vulnerability)', () => {
+      const body = { path: { lat: 10, lon: 10 } };
+      assert.throws(
+        () => getSecureMergedParams({}, body),
+        /nested objects are not allowed/,
+      );
+    });
+
+    it('should ignore unallowed keys like "__proto__"', () => {
+      const body = JSON.parse('{"__proto__": true, "path": "10,10|20,20"}');
+      const result = getSecureMergedParams({}, body);
+
+      assert.strictEqual(result.__proto__, undefined); // It is stripped
+      assert.strictEqual(result.path, '10,10|20,20');
+      assert.strictEqual(Object.getPrototypeOf(result), null);
+    });
+
+    it('POST with Prototype Pollution in JSON string returns 400', function (done) {
+      const maliciousPayload = '{"__proto__": {"admin": true}, }';
+      supertest(app)
+        .post(staticAutoPath)
+        .set('Content-Type', 'application/json')
+        .send(maliciousPayload)
+        .expect(400)
+        .expect((res) => {
+          // secure-json-parse error message usually contains these terms
+          assert.ok(
+            res.text.includes('Invalid JSON') || res.text.includes('forbidden'),
+          );
+        })
+        .end(done);
+    });
+
+    it('should throw 400 error if the input itself is an array', () => {
+      const body = ['not', 'an', 'object'];
+      assert.throws(() => getSecureMergedParams({}, body), /Invalid data/);
+    });
+
+    it('should ensure the result has no prototype', () => {
+      const result = getSecureMergedParams({ a: 1 }, { b: 2 });
+      assert.strictEqual(Object.getPrototypeOf(result), null);
+      assert.strictEqual(result.toString, undefined);
     });
   });
 });

@@ -31,6 +31,15 @@ Getting started
     -v, --version             output the version number
     -h, --help                display help for command
 
+Security configuration
+--------------------------------
+
+To mitigate Host header poisoning (HNP), you can restrict which hosts are allowed:
+
+- **allowedHosts config option**: Set ``allowedHosts`` under ``options`` in your config file to a comma-separated list of allowed hostnames (e.g. ``localhost,map.example.com``). This takes priority if both config and environment variable are set.
+- **TILESERVER_GL_ALLOWED_HOSTS** (default: ``*``): Comma-separated list of allowed hostnames (e.g. ``localhost,map.example.com``). If the request host is not in this list, the server returns path-only URLs instead of absolute URLs. Set to ``*`` or leave unset for original behavior (no restriction).
+
+See :ref:`security-hnp` and the repository's SECURITY.md for details.
 
 File Source Options
 ======

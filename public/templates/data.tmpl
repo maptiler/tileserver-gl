@@ -216,11 +216,6 @@
                 attribution: tile_attribution
             }).addTo(map);
         }
-
-        map.eachLayer(function(layer) {
-          // do not add scale prefix even if retina display is detected
-          layer.scalePrefix = '.';
-        });
     };
     req.send(null);
 

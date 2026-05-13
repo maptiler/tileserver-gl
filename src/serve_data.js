@@ -44,7 +44,7 @@ export const serve_data = {
    * @returns {express.Application} The initialized Express application.
    */
   init: function (options, repo, programOpts) {
-    const { verbose } = programOpts;
+    const { verbose, allowedHosts } = programOpts;
     const app = express().disable('x-powered-by');
     app.use(express.json());
 
@@ -490,6 +490,7 @@ export const serve_data = {
         {
           pbf: options.pbfAlias,
         },
+        allowedHosts,
       );
       return res.send(info);
     });
@@ -547,14 +548,14 @@ export const serve_data = {
         if (!inputFileStats.isFile() || inputFileStats.size === 0) {
           throw Error(`Not valid input file: "${inputFile}"`);
         }
-      } catch (err) {
+      } catch (_err) {
         if (ignoreMissingFiles) {
           console.log(
             `WARN: Data source '${id}' file not found: "${inputFile}" - skipping`,
           );
           return;
         }
-        throw Error(`Not valid input file: "${inputFile}"`);
+        throw Error(`Not valid input file: "${inputFile}"`, { cause: _err });
       }
     }
 

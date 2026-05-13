@@ -24,6 +24,7 @@ Example:
         "localhost:8080",
         "127.0.0.1:8080"
       ],
+      "allowedHosts": "localhost,myapp.example.com",
       "formatOptions": {
         "jpeg": {
           "quality": 80
@@ -173,6 +174,13 @@ Otherwise only the fonts referenced by available styles will be served.
 If this option is enabled, all the styles from the ``paths.styles`` will be served. (No recursion, only ``.json`` files are used.)
 The process will also watch for changes in this directory and remove/add more styles dynamically.
 It is recommended to also use the ``serveAllFonts`` option when using this option.
+
+``leafletRetina``
+------------------------
+
+If this option is enabled, the Leaflet raster map viewer will attempt to fetch high-resolution (Retina, ``@2x``) tiles for high-DPI displays.
+Disable this if you want to reduce CPU/memory load and bandwidth when users are primarily utilizing the basic raster map viewer.
+Default is ``false``.
 
 ``serveStaticMaps``
 ------------------------
@@ -558,3 +566,23 @@ It should contain the following placeholders:
 * ``{range}`` -- range of the glyphs
 
 For example ``"glyphs": "{fontstack}/{range}.pbf"`` will instruct TileServer-GL to look for the files such as ``fonts/Open Sans/0-255.pbf`` (``fonts`` come from the ``paths`` property of the ``config.json`` example above).
+
+``allowedHosts``
+----------------
+
+Mitigates Host header poisoning (HNP) by restricting which hosts may appear in absolute URLs returned by the server. If set, only the specified hosts (case-insensitive, comma-separated) are allowed; otherwise, path-only URLs are returned when the request host is not in the list. Default is ``*`` (no restriction).
+
+You can set this option in your config file:
+
+.. code-block:: json
+
+  {
+    "options": {
+      "allowedHosts": "localhost,myapp.example.com"
+      // ...other options...
+    }
+  }
+
+If unset or set to ``*``, behavior is unchanged and all hosts are accepted. For production, set ``allowedHosts`` to your known host(s) or use ``public_url`` for a fixed base URL. This option can also be set via the ``TILESERVER_GL_ALLOWED_HOSTS`` environment variable, but config file takes priority if both are set.
+
+See also: ``public_url`` option and security documentation.

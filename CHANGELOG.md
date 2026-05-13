@@ -7,9 +7,22 @@
 ### 🐞 Bug fixes
 - _...Add new stuff here..._
 
-## 5.6.0-pre.0
+## 5.6.1-pre.0
+### 🐞 Bug fixes
+- fix: TypeError when style source value is a string (e.g. sprite path) ([#2179](https://github.com/maptiler/tileserver-gl/pull/2179)) (by [app/copilot-swe-agent](https://github.com/app/copilot-swe-agent))
+
+## 5.6.0
 ### ✨ Features and improvements
+- Update Maplibre-Native to v6.4.1
+- Remove Hillshade and Color relief workaround since it is now supported in maplibre-native ([#2044](https://github.com/maptiler/tileserver-gl/pull/2044)) (by [acalcutt](https://github.com/acalcutt))
 - feat: Add ignore-missing-files cli option to avoid crashing at startup ([#1896](https://github.com/maptiler/tileserver-gl/pull/1896)) (by [andrewlaguna824](https://github.com/andrewlaguna824))
+- Add POST requests for static maps (fixes [#408](https://github.com/maptiler/tileserver-gl/issues/408)) ([#2064](https://github.com/maptiler/tileserver-gl/pull/2064)) (by [zstadler](https://github.com/zstadler))
+- Add Native Leaflet Retina Support for Raster Tiles ([#2074](https://github.com/maptiler/tileserver-gl/pull/2074)) (by [acalcutt](https://github.com/acalcutt))
+
+### 🐞 Bug fixes
+- fix: correctly handle public url in tileJSON response ([#1963](https://github.com/maptiler/tileserver-gl/pull/1963)) (by [andrewlaguna824](https://github.com/andrewlaguna824))
+- Fix regex to allow underscore in font name ([#1986](https://github.com/maptiler/tileserver-gl/pull/1986)) (by [spatialillusions](https://github.com/spatialillusions))
+- fix: mitigate Host header poisoning (HNP) with TILESERVER_GL_ALLOWED_… ([#2032](https://github.com/maptiler/tileserver-gl/pull/2032)) (by [LeaveerWang](https://github.com/LeaveerWang))
 
 ## 5.5.0
 - Add S3 support for PMTiles with multiple AWS credential profiles (https://github.com/maptiler/tileserver-gl/pull/1779) by @acalcutt

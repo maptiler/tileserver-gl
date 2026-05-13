@@ -82,6 +82,26 @@ xvfb-run --server-args="-screen 0 1024x768x24" node .
 
 You can read the full documentation of this project at https://tileserver.readthedocs.io/en/latest/.
 
+## Security: Host header poisoning (HNP) mitigation
+
+When the server is started **without** `--public_url`, URLs in responses (WMTS, TileJSON, style JSON) are built from the request’s `Host` and `X-Forwarded-*` headers. If an attacker can influence these headers, the server may return URLs pointing to an attacker-controlled host (Host header poisoning). Clients that use those URLs can then be directed to malicious servers.
+
+**Recommended for production:**
+
+1. **Set a canonical public URL** so the server never derives host from the request:
+   ```bash
+   tileserver-gl --public_url https://your-domain.com/ --file your.mbtiles
+   ```
+
+2. **Or** restrict which hosts are allowed when not using `--public_url`, via the **allowed-hosts** list (default is `*`, i.e. no restriction):
+   - Set the environment variable **`TILESERVER_GL_ALLOWED_HOSTS`** to a comma-separated list of allowed hostnames (e.g. `localhost,myapp.example.com`). If the request’s host (or `X-Forwarded-Host`) is not in this list, the server returns **path-only** URLs instead of absolute URLs, so responses cannot be poisoned with an attacker’s host.
+   - Example:
+     ```bash
+     export TILESERVER_GL_ALLOWED_HOSTS="localhost,map.example.com"
+     tileserver-gl --file your.mbtiles
+     ```
+   - If you do not set this variable (or set it to `*`), behavior is unchanged and all hosts are accepted; for public-facing deployments you should either use `--public_url` or set `TILESERVER_GL_ALLOWED_HOSTS` to your known host(s). See [SECURITY.md](SECURITY.md) for details.
+
 ## Alternative
 
 Discover MapTiler Server if you need a [map server with easy setup and user-friendly interface](https://www.maptiler.com/server/).
