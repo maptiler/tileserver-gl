@@ -16,6 +16,7 @@ import morgan from 'morgan';
 import { serve_data } from './serve_data.js';
 import { serve_style } from './serve_style.js';
 import { serve_font } from './serve_font.js';
+import { clearPMtilesCache } from './pmtiles_adapter.js';
 import {
   allowedTileSizes,
   getTileUrls,
@@ -54,6 +55,7 @@ async function start(opts) {
     data: {},
     fonts: {},
   };
+  let cleanup = async () => {};
 
   app.enable('trust proxy');
 
@@ -553,6 +555,9 @@ async function start(opts) {
       path.join(options.paths.styles, '*.json'),
       {},
     );
+    cleanup = async () => {
+      await watcher.close();
+    };
     watcher.on('all', (eventType, filename) => {
       if (filename) {
         const id = path.basename(filename, '.json');
@@ -1031,6 +1036,7 @@ async function start(opts) {
     server,
     startupPromise,
     serving,
+    cleanup,
   };
 }
 /**
@@ -1050,6 +1056,8 @@ function stopGracefully(signal) {
  */
 export async function server(opts) {
   const running = await start(opts);
+  let reloading = false;
+  let pendingReload = false;
 
   running.startupPromise.catch((err) => {
     console.error(err.message);
@@ -1059,19 +1067,57 @@ export async function server(opts) {
   process.on('SIGINT', stopGracefully);
   process.on('SIGTERM', stopGracefully);
 
+  const reload = async () => {
+    if (reloading) {
+      pendingReload = true;
+      console.log('Reload already in progress, queueing another refresh');
+      return;
+    }
+
+    reloading = true;
+    let reloadAgain = true;
+
+    try {
+      while (reloadAgain) {
+        reloadAgain = false;
+        pendingReload = false;
+        await new Promise((resolve, reject) => {
+          running.server.shutdown((err) => {
+            if (err) {
+              reject(err);
+              return;
+            }
+            resolve();
+          });
+        });
+        await running.cleanup();
+        await serve_data.clear(running.serving.data);
+        if (!isLight) {
+          await serve_rendered.clear(running.serving.rendered);
+        }
+        clearPMtilesCache();
+
+        const restarted = await start(opts);
+        running.server = restarted.server;
+        running.app = restarted.app;
+        running.startupPromise = restarted.startupPromise;
+        running.serving = restarted.serving;
+        running.cleanup = restarted.cleanup;
+        await running.startupPromise;
+        reloadAgain = pendingReload;
+      }
+    } finally {
+      reloading = false;
+    }
+  };
+
   process.on('SIGHUP', (signal) => {
     console.log(`Caught signal ${signal}, refreshing`);
     console.log('Stopping server and reloading config');
 
-    running.server.shutdown(async () => {
-      const restarted = await start(opts);
-      if (!isLight) {
-        serve_rendered.clear(running.serving.rendered);
-      }
-      running.server = restarted.server;
-      running.app = restarted.app;
-      running.startupPromise = restarted.startupPromise;
-      running.serving = restarted.serving;
+    reload().catch((err) => {
+      console.error(err.message);
+      process.exit(1);
     });
   });
   return running;

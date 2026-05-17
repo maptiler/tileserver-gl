@@ -1868,6 +1868,23 @@ export const serve_rendered = {
     // eslint-disable-next-line security/detect-object-injection -- id is function parameter for removal
     const item = repo[id];
     if (item) {
+      Object.keys(item.map.sources || {}).forEach((sourceId) => {
+        // eslint-disable-next-line security/detect-object-injection -- sourceId is from Object.keys() iteration
+        const source = item.map.sources[sourceId];
+        // eslint-disable-next-line security/detect-object-injection -- sourceId is from Object.keys() iteration
+        const sourceType = item.map.sourceTypes[sourceId];
+        if (
+          sourceType === 'mbtiles' &&
+          source &&
+          typeof source.close === 'function'
+        ) {
+          source.close((err) => {
+            if (err) {
+              console.warn('Failed to close MBTiles source:', err);
+            }
+          });
+        }
+      });
       item.map.renderers.forEach((pool) => {
         pool.close();
       });
@@ -1879,25 +1896,50 @@ export const serve_rendered = {
     delete repo[id];
   },
   /**
-   * Removes all items from the repository.
+   * Removes all items from the repository and closes owned local data sources.
    * @param {object} repo Repository object.
-   * @returns {void}
+   * @returns {Promise<void>}
    */
-  clear: function (repo) {
-    Object.keys(repo).forEach((id) => {
-      // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys() iteration
-      const item = repo[id];
-      if (item) {
-        item.map.renderers.forEach((pool) => {
-          pool.close();
-        });
-        item.map.renderersStatic.forEach((pool) => {
-          pool.close();
-        });
-      }
-      // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys() iteration
-      delete repo[id];
-    });
+  clear: async function (repo) {
+    await Promise.all(
+      Object.keys(repo).map(async (id) => {
+        // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys() iteration
+        const item = repo[id];
+        if (item) {
+          await Promise.all(
+            Object.keys(item.map.sources || {}).map(async (sourceId) => {
+              // eslint-disable-next-line security/detect-object-injection -- sourceId is from Object.keys() iteration
+              const source = item.map.sources[sourceId];
+              // eslint-disable-next-line security/detect-object-injection -- sourceId is from Object.keys() iteration
+              const sourceType = item.map.sourceTypes[sourceId];
+              if (
+                sourceType === 'mbtiles' &&
+                source &&
+                typeof source.close === 'function'
+              ) {
+                await new Promise((resolve, reject) => {
+                  source.close((err) => {
+                    if (err) {
+                      reject(err);
+                      return;
+                    }
+                    resolve();
+                  });
+                });
+              }
+            }),
+          );
+          item.map.renderers.forEach((pool) => {
+            pool.close();
+          });
+          item.map.renderersStatic.forEach((pool) => {
+            pool.close();
+          });
+        }
+        // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys() iteration
+        delete repo[id];
+      }),
+    );
   },
 
   /**

@@ -8,6 +8,7 @@ class MBTilesWrapper {
   constructor(mbtiles) {
     this._mbtiles = mbtiles;
     this._getInfoP = util.promisify(mbtiles.getInfo.bind(mbtiles));
+    this._closeP = util.promisify(mbtiles.close.bind(mbtiles));
   }
 
   /**
@@ -24,6 +25,14 @@ class MBTilesWrapper {
    */
   getInfo() {
     return this._getInfoP();
+  }
+
+  /**
+   * Closes the underlying MBTiles database handle.
+   * @returns {Promise<void>} A promise that resolves when the database is closed.
+   */
+  close() {
+    return this._closeP();
   }
 }
 
