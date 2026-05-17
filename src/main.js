@@ -113,6 +113,10 @@ program
     '--ignore-missing-files',
     'Continue startup even if configured mbtiles/pmtiles files are missing',
   )
+  .option(
+    '--metrics',
+    'Enable Prometheus metrics endpoint (env: TILESERVER_GL_METRICS)',
+  )
   .version(packageJson.version, '-v, --version');
 program.parse(process.argv);
 const opts = program.opts();
@@ -166,6 +170,8 @@ const startServer = (configPath, config) => {
     publicUrl,
     allowedHosts,
     ignoreMissingFiles: opts.ignoreMissingFiles,
+    metrics: opts.metrics || process.env.TILESERVER_GL_METRICS === 'true',
+    metricsPort: parseInt(process.env.METRICS_PORT, 10) || 9090,
   });
 };
 
