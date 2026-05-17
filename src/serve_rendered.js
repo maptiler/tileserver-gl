@@ -819,7 +819,7 @@ async function respondImage(
               const renderDurationSec = Number(process.hrtime.bigint() - renderStart) / 1e9;
               import('./metrics.js').then((m) => {
                 m.tilesServedTotal.inc({ type: 'rendered', name: id });
-                const zoomLabel = metricsZoom ? String(z) : 'all';
+                const zoomLabel = process.env.TILESERVER_GL_METRICS_ZOOM === 'true' ? String(z) : 'all';
                 m.tileRenderDuration.observe({ name: id, zoom: zoomLabel }, renderDurationSec);
               });
             }
@@ -1344,7 +1344,7 @@ export const serve_rendered = {
     };
 
     const { publicUrl, verbose, fetchTimeout } = programOpts;
-    const metricsZoom = process.env.TILESERVER_GL_METRICS_ZOOM === 'true';
+
 
     const styleJSON = clone(style);
 
