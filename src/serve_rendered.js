@@ -819,7 +819,7 @@ async function respondImage(
               const renderDurationSec = Number(process.hrtime.bigint() - renderStart) / 1e9;
               import('./metrics.js').then((m) => {
                 m.tilesServedTotal.inc({ type: 'rendered', name: id });
-                const zoomLabel = process.env.TILESERVER_GL_METRICS_ZOOM === 'true' ? String(z) : 'all';
+                const zoomLabel = metricsZoom ? String(z) : 'all';
                 m.tileRenderDuration.observe({ name: id, zoom: zoomLabel }, renderDurationSec);
               });
             }
@@ -1344,6 +1344,7 @@ export const serve_rendered = {
     };
 
     const { publicUrl, verbose, fetchTimeout } = programOpts;
+    const metricsZoom = process.env.TILESERVER_GL_METRICS_ZOOM === 'true';
 
     const styleJSON = clone(style);
 
@@ -1902,7 +1903,7 @@ export const serve_rendered = {
                 const free = pool.priv.freeObjects.length;
                 m.renderPoolSize.set({ name: id }, total);
                 m.renderPoolActive.set({ name: id }, total - free);
-                m.renderPoolWaiting.set({ name: id }, pool.priv.queue.size());
+                m.renderPoolWaiting.set({ name: id }, pool.priv?.queue?.size?.() ?? 0);
               } catch (_) { /* pool may be mid-teardown */ }
             });
           });
