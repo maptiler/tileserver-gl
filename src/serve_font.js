@@ -65,7 +65,9 @@ export async function serve_font(options, allowedFonts, programOpts) {
       res.header('Content-type', 'application/x-protobuf');
       res.header('Last-Modified', lastModified);
       if (programOpts.metrics) {
-        import('./metrics.js').then((m) => m.tilesServedTotal.inc({ type: 'font', name: sFontStack }));
+        import('./metrics.js').then((m) =>
+          m.tilesServedTotal.inc({ type: 'font', name: sFontStack }),
+        );
       }
       return res.send(concatenated);
     } catch (err) {

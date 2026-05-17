@@ -1061,12 +1061,16 @@ async function start(opts) {
       await new Promise((resolve) => {
         metricsServer = metricsApp.listen(opts.metricsPort);
         metricsServer.once('error', (err) => {
-          console.warn(`[metrics] Failed to start metrics server: ${err.message}`);
+          console.warn(
+            `[metrics] Failed to start metrics server: ${err.message}`,
+          );
           resolve(); // don't crash — metrics are non-critical
         });
         metricsServer.once('listening', resolve);
       });
-      console.log(`Prometheus metrics available at http://localhost:${opts.metricsPort}/metrics`);
+      console.log(
+        `Prometheus metrics available at http://localhost:${opts.metricsPort}/metrics`,
+      );
     } catch (err) {
       console.warn(`[metrics] Failed to initialize metrics: ${err.message}`);
     }

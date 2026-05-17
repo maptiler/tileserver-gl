@@ -89,7 +89,9 @@ export const serve_style = {
           );
         }
         if (programOpts.metrics) {
-          import('./metrics.js').then((m) => m.tilesServedTotal.inc({ type: 'style', name: id }));
+          import('./metrics.js').then((m) =>
+            m.tilesServedTotal.inc({ type: 'style', name: id }),
+          );
         }
         return res.send(styleJSON_);
       } catch (e) {

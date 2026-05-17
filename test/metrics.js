@@ -5,16 +5,20 @@ import http from 'node:http';
 
 /**
  * Helper: GET a URL, returns { statusCode, headers, body }
+ * @param {string} url URL to fetch
+ * @returns {Promise<{statusCode: number, headers: object, body: string}>} Response object
  */
 function httpGet(url) {
   return new Promise((resolve, reject) => {
-    http.get(url, (res) => {
-      let body = '';
-      res.on('data', (chunk) => (body += chunk));
-      res.on('end', () =>
-        resolve({ statusCode: res.statusCode, headers: res.headers, body }),
-      );
-    }).on('error', reject);
+    http
+      .get(url, (res) => {
+        let body = '';
+        res.on('data', (chunk) => (body += chunk));
+        res.on('end', () =>
+          resolve({ statusCode: res.statusCode, headers: res.headers, body }),
+        );
+      })
+      .on('error', reject);
   });
 }
 
@@ -44,7 +48,9 @@ describe('Prometheus metrics', function () {
   });
 
   it('GET /metrics returns 200 with text/plain content type', async function () {
-    const { statusCode, headers } = await httpGet('http://localhost:9999/metrics');
+    const { statusCode, headers } = await httpGet(
+      'http://localhost:9999/metrics',
+    );
     expect(statusCode).to.equal(200);
     expect(headers['content-type']).to.include('text/plain');
   });
@@ -60,7 +66,7 @@ describe('Prometheus metrics', function () {
     await httpGet('http://localhost:8889/test/health');
     const { body } = await httpGet('http://localhost:9999/metrics');
     const match = body.match(/tileserver_http_requests_total\{[^}]+\}\s+(\d+)/);
-    expect(match).to.not.be.null;
+    expect(match).to.not.equal(null);
     expect(parseInt(match[1], 10)).to.be.greaterThan(0);
   });
 
@@ -71,21 +77,25 @@ describe('Prometheus metrics', function () {
       publicUrl: '/test/',
       metrics: false,
       metricsPort: 9998,
-    }).then((running) => {
-      running.startupPromise.then(() => {
-        setTimeout(() => {
-          http
-            .get('http://localhost:9998/metrics', () => {
-              running.server.close();
-              done(new Error('Should not have connected'));
-            })
-            .on('error', (err) => {
-              running.server.close();
-              expect(err.code).to.equal('ECONNREFUSED');
-              done();
-            });
-        }, 200);
-      }).catch(done);
-    }).catch(done);
+    })
+      .then((running) => {
+        running.startupPromise
+          .then(() => {
+            setTimeout(() => {
+              http
+                .get('http://localhost:9998/metrics', () => {
+                  running.server.close();
+                  done(new Error('Should not have connected'));
+                })
+                .on('error', (err) => {
+                  running.server.close();
+                  expect(err.code).to.equal('ECONNREFUSED');
+                  done();
+                });
+            }, 200);
+          })
+          .catch(done);
+      })
+      .catch(done);
   });
 });

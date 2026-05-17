@@ -539,6 +539,8 @@ function calcZForBBox(bbox, w, h, query) {
  * @param {object} res Express response object.
  * @param {Buffer|null} overlay Optional overlay image.
  * @param {string} mode Rendering mode ('tile' or 'static').
+ * @param {string|null} id Style or dataset ID for metrics labeling.
+ * @param {object|null} programOpts Server options (used for metrics flag).
  * @returns {Promise<void>}
  */
 async function respondImage(
@@ -607,7 +609,9 @@ async function respondImage(
       console.error('Failed to acquire renderer from pool:', err);
       if (!res.headersSent) {
         if (programOpts && programOpts.metrics) {
-          import('./metrics.js').then((m) => m.tileErrorsTotal.inc({ type: 'rendered', name: id }));
+          import('./metrics.js').then((m) =>
+            m.tileErrorsTotal.inc({ type: 'rendered', name: id }),
+          );
         }
         return res.status(503).send('Renderer pool error');
       }
@@ -620,7 +624,9 @@ async function respondImage(
       );
       if (!res.headersSent) {
         if (programOpts && programOpts.metrics) {
-          import('./metrics.js').then((m) => m.tileErrorsTotal.inc({ type: 'rendered', name: id }));
+          import('./metrics.js').then((m) =>
+            m.tileErrorsTotal.inc({ type: 'rendered', name: id }),
+          );
         }
         return res.status(503).send('Renderer unavailable');
       }
@@ -637,7 +643,9 @@ async function respondImage(
       }
       if (!res.headersSent) {
         if (programOpts && programOpts.metrics) {
-          import('./metrics.js').then((m) => m.tileErrorsTotal.inc({ type: 'rendered', name: id }));
+          import('./metrics.js').then((m) =>
+            m.tileErrorsTotal.inc({ type: 'rendered', name: id }),
+          );
         }
         return res.status(503).send('Renderer invalid');
       }
@@ -706,7 +714,9 @@ async function respondImage(
           }
           if (!res.headersSent) {
             if (programOpts && programOpts.metrics) {
-              import('./metrics.js').then((m) => m.tileErrorsTotal.inc({ type: 'rendered', name: id }));
+              import('./metrics.js').then((m) =>
+                m.tileErrorsTotal.inc({ type: 'rendered', name: id }),
+              );
             }
             return res
               .status(500)
@@ -807,7 +817,9 @@ async function respondImage(
             console.error('Sharp error:', err);
             if (!res.headersSent) {
               if (programOpts && programOpts.metrics) {
-                import('./metrics.js').then((m) => m.tileErrorsTotal.inc({ type: 'rendered', name: id }));
+                import('./metrics.js').then((m) =>
+                  m.tileErrorsTotal.inc({ type: 'rendered', name: id }),
+                );
               }
               return res.status(500).send('Image processing failed');
             }
@@ -816,11 +828,18 @@ async function respondImage(
 
           if (!res.headersSent) {
             if (programOpts && programOpts.metrics) {
-              const renderDurationSec = Number(process.hrtime.bigint() - renderStart) / 1e9;
+              const renderDurationSec =
+                Number(process.hrtime.bigint() - renderStart) / 1e9;
               import('./metrics.js').then((m) => {
                 m.tilesServedTotal.inc({ type: 'rendered', name: id });
-                const zoomLabel = process.env.TILESERVER_GL_METRICS_ZOOM === 'true' ? String(z) : 'all';
-                m.tileRenderDuration.observe({ name: id, zoom: zoomLabel }, renderDurationSec);
+                const zoomLabel =
+                  process.env.TILESERVER_GL_METRICS_ZOOM === 'true'
+                    ? String(z)
+                    : 'all';
+                m.tileRenderDuration.observe(
+                  { name: id, zoom: zoomLabel },
+                  renderDurationSec,
+                );
               });
             }
             res.set({
@@ -841,7 +860,9 @@ async function respondImage(
       }
       if (!res.headersSent) {
         if (programOpts && programOpts.metrics) {
-          import('./metrics.js').then((m) => m.tileErrorsTotal.inc({ type: 'rendered', name: id }));
+          import('./metrics.js').then((m) =>
+            m.tileErrorsTotal.inc({ type: 'rendered', name: id }),
+          );
         }
         return res.status(500).send('Render failed');
       }
@@ -865,6 +886,7 @@ async function respondImage(
  * @param {object} next - Express next middleware function.
  * @param {number} maxScaleFactor - The maximum scale factor allowed.
  * @param {number} defailtTileSize - Default tile size.
+ * @param {object|null} programOpts Server options (used for metrics flag).
  * @returns {Promise<void>}
  */
 async function handleTileRequest(
@@ -953,6 +975,7 @@ async function handleTileRequest(
  * @param {object} res - Express response object.
  * @param {object} next - Express next middleware function.
  * @param {number} maxScaleFactor - The maximum scale factor allowed.
+ * @param {object|null} programOpts Server options (used for metrics flag).
  * @returns {Promise<void>}
  */
 async function handleStaticRequest(
@@ -1344,7 +1367,6 @@ export const serve_rendered = {
     };
 
     const { publicUrl, verbose, fetchTimeout } = programOpts;
-
 
     const styleJSON = clone(style);
 
@@ -1903,8 +1925,13 @@ export const serve_rendered = {
                 const free = pool.priv?.freeObjects?.length ?? 0;
                 m.renderPoolSize.set({ name: id }, total);
                 m.renderPoolActive.set({ name: id }, total - free);
-                m.renderPoolWaiting.set({ name: id }, pool.priv?.queue?.size?.() ?? 0);
-              } catch (_) { /* pool may be mid-teardown */ }
+                m.renderPoolWaiting.set(
+                  { name: id },
+                  pool.priv?.queue?.size?.() ?? 0,
+                );
+              } catch (_) {
+                /* pool may be mid-teardown */
+              }
             });
           });
         });

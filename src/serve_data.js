@@ -168,7 +168,9 @@ export const serve_data = {
       data = await gzipP(data);
 
       if (programOpts.metrics) {
-        import('./metrics.js').then((m) => m.tilesServedTotal.inc({ type: 'vector', name: req.params.id }));
+        import('./metrics.js').then((m) =>
+          m.tilesServedTotal.inc({ type: 'vector', name: req.params.id }),
+        );
       }
       return res.status(200).send(data);
     });
