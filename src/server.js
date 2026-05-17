@@ -1051,20 +1051,25 @@ async function start(opts) {
   // Prometheus metrics server (separate port, opt-in)
   let metricsServer = null;
   if (opts.metrics) {
-    const metricsApp = express();
-    import('./metrics.js').then((mod) => {
+    try {
+      const metricsApp = express();
+      const mod = await import('./metrics.js');
       metricsModule = mod;
       metricsApp.get('/metrics', async (_req, res) => {
         res.set('Content-Type', mod.registry.contentType);
         res.end(await mod.registry.metrics());
       });
-      metricsServer = metricsApp.listen(opts.metricsPort, () => {
-        console.log(`Prometheus metrics available at http://localhost:${opts.metricsPort}/metrics`);
+      await new Promise((resolve) => {
+        metricsServer = metricsApp.listen(opts.metricsPort, resolve);
+        metricsServer.on('error', (err) => {
+          console.warn(`[metrics] Failed to start metrics server: ${err.message}`);
+          resolve(); // don't crash — metrics are non-critical
+        });
       });
-      metricsServer.on('error', (err) => {
-        console.warn(`[metrics] Failed to start metrics server: ${err.message}`);
-      });
-    });
+      console.log(`Prometheus metrics available at http://localhost:${opts.metricsPort}/metrics`);
+    } catch (err) {
+      console.warn(`[metrics] Failed to initialize metrics: ${err.message}`);
+    }
   }
 
   return {
