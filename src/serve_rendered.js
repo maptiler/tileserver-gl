@@ -556,6 +556,8 @@ async function respondImage(
   res,
   overlay = null,
   mode = 'tile',
+  id = null,
+  programOpts = null,
 ) {
   if (
     Math.abs(lon) > 180 ||
@@ -599,10 +601,14 @@ async function respondImage(
   }
 
   pool.acquire(async (err, renderer) => {
+    const renderStart = process.hrtime.bigint();
     // Check if pool.acquire failed or returned null/invalid renderer
     if (err) {
       console.error('Failed to acquire renderer from pool:', err);
       if (!res.headersSent) {
+        if (programOpts && programOpts.metrics) {
+          import('./metrics.js').then((m) => m.tileErrorsTotal.inc({ type: 'rendered', name: id }));
+        }
         return res.status(503).send('Renderer pool error');
       }
       return;
@@ -613,6 +619,9 @@ async function respondImage(
         'Renderer is null - likely crashed or failed to initialize',
       );
       if (!res.headersSent) {
+        if (programOpts && programOpts.metrics) {
+          import('./metrics.js').then((m) => m.tileErrorsTotal.inc({ type: 'rendered', name: id }));
+        }
         return res.status(503).send('Renderer unavailable');
       }
       return;
@@ -627,6 +636,9 @@ async function respondImage(
         console.error('Error removing bad renderer:', e);
       }
       if (!res.headersSent) {
+        if (programOpts && programOpts.metrics) {
+          import('./metrics.js').then((m) => m.tileErrorsTotal.inc({ type: 'rendered', name: id }));
+        }
         return res.status(503).send('Renderer invalid');
       }
       return;
@@ -693,6 +705,9 @@ async function respondImage(
             console.error('Error removing failed renderer:', e);
           }
           if (!res.headersSent) {
+            if (programOpts && programOpts.metrics) {
+              import('./metrics.js').then((m) => m.tileErrorsTotal.inc({ type: 'rendered', name: id }));
+            }
             return res
               .status(500)
               .header('Content-Type', 'text/plain')
@@ -791,12 +806,23 @@ async function respondImage(
           if (err || !buffer) {
             console.error('Sharp error:', err);
             if (!res.headersSent) {
+              if (programOpts && programOpts.metrics) {
+                import('./metrics.js').then((m) => m.tileErrorsTotal.inc({ type: 'rendered', name: id }));
+              }
               return res.status(500).send('Image processing failed');
             }
             return;
           }
 
           if (!res.headersSent) {
+            if (programOpts && programOpts.metrics) {
+              const renderDurationSec = Number(process.hrtime.bigint() - renderStart) / 1e9;
+              import('./metrics.js').then((m) => {
+                m.tilesServedTotal.inc({ type: 'rendered', name: id });
+                const zoomLabel = process.env.TILESERVER_GL_METRICS_ZOOM === 'true' ? String(z) : 'all';
+                m.tileRenderDuration.observe({ name: id, zoom: zoomLabel }, renderDurationSec);
+              });
+            }
             res.set({
               'Last-Modified': item.lastModified,
               'Content-Type': `image/${format}`,
@@ -814,6 +840,9 @@ async function respondImage(
         console.error('Error removing renderer after error:', e);
       }
       if (!res.headersSent) {
+        if (programOpts && programOpts.metrics) {
+          import('./metrics.js').then((m) => m.tileErrorsTotal.inc({ type: 'rendered', name: id }));
+        }
         return res.status(500).send('Render failed');
       }
     }
@@ -846,6 +875,7 @@ async function handleTileRequest(
   next,
   maxScaleFactor,
   defailtTileSize,
+  programOpts = null,
 ) {
   const {
     id,
@@ -905,7 +935,7 @@ async function handleTileRequest(
 
   // prettier-ignore
   return await respondImage(
-    options, item, z, tileCenter[0], tileCenter[1], 0, 0, parsedTileSize, parsedTileSize, scale, format, res,
+    options, item, z, tileCenter[0], tileCenter[1], 0, 0, parsedTileSize, parsedTileSize, scale, format, res, null, 'tile', id, programOpts,
   );
 }
 
@@ -932,6 +962,7 @@ async function handleStaticRequest(
   res,
   next,
   maxScaleFactor,
+  programOpts = null,
 ) {
   const {
     id,
@@ -1012,7 +1043,7 @@ async function handleStaticRequest(
 
     // prettier-ignore
     return await respondImage(
-    options, item, z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, format, res, overlay, 'static',
+    options, item, z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, format, res, overlay, 'static', id, programOpts,
      );
   } else if (staticTypeMatch.groups.minx) {
     // Area Based Static Image
@@ -1052,7 +1083,7 @@ async function handleStaticRequest(
 
     // prettier-ignore
     return await respondImage(
-      options, item, z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, format, res, overlay, 'static',
+      options, item, z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, format, res, overlay, 'static', id, programOpts,
      );
   } else if (staticTypeMatch.groups.auto) {
     // Area Static Image
@@ -1111,7 +1142,7 @@ async function handleStaticRequest(
 
     // prettier-ignore
     return await respondImage(
-        options, item, z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, format, res, overlay, 'static',
+        options, item, z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, format, res, overlay, 'static', id, programOpts,
       );
   } else {
     return res.sendStatus(404);
@@ -1214,6 +1245,7 @@ export const serve_rendered = {
               res,
               next,
               maxScaleFactor,
+              programOpts,
             );
           }
           return res.sendStatus(404);
@@ -1227,6 +1259,7 @@ export const serve_rendered = {
           next,
           maxScaleFactor,
           defailtTileSize,
+          programOpts,
         );
       } catch (e) {
         console.log(e);
@@ -1857,6 +1890,25 @@ export const serve_rendered = {
         maxPoolSize,
       );
     }
+
+    if (programOpts && programOpts.metrics) {
+      map._metricsInterval = setInterval(() => {
+        import('./metrics.js').then((m) => {
+          [map.renderers, map.renderersStatic].forEach((poolArr) => {
+            poolArr.forEach((pool) => {
+              if (!pool) return;
+              try {
+                const total = pool.priv.allObjects.length;
+                const free = pool.priv.freeObjects.length;
+                m.renderPoolSize.set({ name: id }, total);
+                m.renderPoolActive.set({ name: id }, total - free);
+                m.renderPoolWaiting.set({ name: id }, pool.priv.queue.size());
+              } catch (_) { /* pool may be mid-teardown */ }
+            });
+          });
+        });
+      }, 5000);
+    }
   },
   /**
    * Removes an item from the repository.
@@ -1868,6 +1920,9 @@ export const serve_rendered = {
     // eslint-disable-next-line security/detect-object-injection -- id is function parameter for removal
     const item = repo[id];
     if (item) {
+      if (item.map._metricsInterval) {
+        clearInterval(item.map._metricsInterval);
+      }
       item.map.renderers.forEach((pool) => {
         pool.close();
       });
