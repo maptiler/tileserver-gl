@@ -35,6 +35,8 @@ const packageJson = JSON.parse(
 );
 const isLight = packageJson.name.slice(-6) === '-light';
 
+let metricsModule = null;
+
 const { serve_rendered } = await import(
   `${!isLight ? `./serve_rendered.js` : `./serve_light.js`}`
 );
@@ -56,6 +58,26 @@ async function start(opts) {
   };
 
   app.enable('trust proxy');
+
+  // Prometheus HTTP metrics middleware
+  app.use((req, res, next) => {
+    if (!metricsModule) return next();
+    const start = process.hrtime.bigint();
+    res.on('finish', () => {
+      const route = req.route?.path ?? req.path;
+      const durationSec = Number(process.hrtime.bigint() - start) / 1e9;
+      metricsModule.httpRequestsTotal.inc({
+        method: req.method,
+        route,
+        status_code: String(res.statusCode),
+      });
+      metricsModule.httpRequestDuration.observe(
+        { method: req.method, route, status_code: String(res.statusCode) },
+        durationSec,
+      );
+    });
+    next();
+  });
 
   if (process.env.NODE_ENV !== 'test') {
     const defaultLogFormat =
@@ -1026,11 +1048,31 @@ async function start(opts) {
   // add server.shutdown() to gracefully stop serving
   enableShutdown(server);
 
+  // Prometheus metrics server (separate port, opt-in)
+  let metricsServer = null;
+  if (opts.metrics) {
+    const metricsApp = express();
+    import('./metrics.js').then((mod) => {
+      metricsModule = mod;
+      metricsApp.get('/metrics', async (_req, res) => {
+        res.set('Content-Type', mod.registry.contentType);
+        res.end(await mod.registry.metrics());
+      });
+      metricsServer = metricsApp.listen(opts.metricsPort, () => {
+        console.log(`Prometheus metrics available at http://localhost:${opts.metricsPort}/metrics`);
+      });
+      metricsServer.on('error', (err) => {
+        console.warn(`[metrics] Failed to start metrics server: ${err.message}`);
+      });
+    });
+  }
+
   return {
     app,
     server,
     startupPromise,
     serving,
+    metricsServer,
   };
 }
 /**
@@ -1064,6 +1106,9 @@ export async function server(opts) {
     console.log('Stopping server and reloading config');
 
     running.server.shutdown(async () => {
+      if (running.metricsServer) {
+        running.metricsServer.close();
+      }
       const restarted = await start(opts);
       if (!isLight) {
         serve_rendered.clear(running.serving.rendered);
@@ -1072,6 +1117,7 @@ export async function server(opts) {
       running.app = restarted.app;
       running.startupPromise = restarted.startupPromise;
       running.serving = restarted.serving;
+      running.metricsServer = restarted.metricsServer;
     });
   });
   return running;
