@@ -1899,8 +1899,8 @@ export const serve_rendered = {
             poolArr.forEach((pool) => {
               if (!pool) return;
               try {
-                const total = pool.priv.allObjects.length;
-                const free = pool.priv.freeObjects.length;
+                const total = pool.priv?.allObjects?.length ?? 0;
+                const free = pool.priv?.freeObjects?.length ?? 0;
                 m.renderPoolSize.set({ name: id }, total);
                 m.renderPoolActive.set({ name: id }, total - free);
                 m.renderPoolWaiting.set({ name: id }, pool.priv?.queue?.size?.() ?? 0);

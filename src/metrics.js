@@ -1,6 +1,4 @@
 // src/metrics.js
-'use strict';
-
 import { Registry, Counter, Histogram, Gauge, collectDefaultMetrics } from 'prom-client';
 
 export const registry = new Registry();
@@ -31,7 +29,7 @@ export const tilesServedTotal = new Counter({
 
 export const tileRenderDuration = new Histogram({
   name: 'tileserver_tile_render_duration_seconds',
-  help: 'Tile render duration in seconds',
+  help: 'Tile pipeline duration in seconds (includes pool wait + render + encode)',
   labelNames: ['name', 'zoom'],
   buckets: [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5],
   registers: [registry],

@@ -34,7 +34,6 @@ describe('Prometheus metrics', function () {
     });
     tileServer = running.server;
     metricsServer = running.metricsServer;
-    await running.startupPromise;
     // give metrics server a moment if needed
     await new Promise((r) => setTimeout(r, 100));
   });
@@ -86,7 +85,7 @@ describe('Prometheus metrics', function () {
               done();
             });
         }, 200);
-      });
-    });
+      }).catch(done);
+    }).catch(done);
   });
 });

@@ -35,8 +35,6 @@ const packageJson = JSON.parse(
 );
 const isLight = packageJson.name.slice(-6) === '-light';
 
-let metricsModule = null;
-
 const { serve_rendered } = await import(
   `${!isLight ? `./serve_rendered.js` : `./serve_light.js`}`
 );
@@ -47,6 +45,7 @@ const { serve_rendered } = await import(
  * @returns {Promise<object>} - A promise that resolves to the server object.
  */
 async function start(opts) {
+  let metricsModule = null;
   console.log('Starting server');
 
   const app = express().disable('x-powered-by');
@@ -1060,11 +1059,12 @@ async function start(opts) {
         res.end(await mod.registry.metrics());
       });
       await new Promise((resolve) => {
-        metricsServer = metricsApp.listen(opts.metricsPort, resolve);
-        metricsServer.on('error', (err) => {
+        metricsServer = metricsApp.listen(opts.metricsPort);
+        metricsServer.once('error', (err) => {
           console.warn(`[metrics] Failed to start metrics server: ${err.message}`);
           resolve(); // don't crash — metrics are non-critical
         });
+        metricsServer.once('listening', resolve);
       });
       console.log(`Prometheus metrics available at http://localhost:${opts.metricsPort}/metrics`);
     } catch (err) {
