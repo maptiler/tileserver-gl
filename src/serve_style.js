@@ -88,6 +88,9 @@ export const serve_style = {
             allowedHosts,
           );
         }
+        if (programOpts.metrics) {
+          import('./metrics.js').then((m) => m.tilesServedTotal.inc({ type: 'style', name: id }));
+        }
         return res.send(styleJSON_);
       } catch (e) {
         next(e);

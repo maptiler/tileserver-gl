@@ -80,6 +80,9 @@ export const serve_data = {
       const x = parseInt(req.params.x, 10);
       const y = parseInt(req.params.y, 10);
       if (isNaN(z) || isNaN(x) || isNaN(y)) {
+        if (programOpts.metrics) {
+          import('./metrics.js').then((m) => m.tileErrorsTotal.inc({ type: 'vector', name: req.params.id }));
+        }
         return res.status(404).send('Invalid Tile');
       }
 
@@ -91,6 +94,9 @@ export const serve_data = {
         format !== tileJSONFormat &&
         !(format === 'geojson' && tileJSONFormat === 'pbf')
       ) {
+        if (programOpts.metrics) {
+          import('./metrics.js').then((m) => m.tileErrorsTotal.inc({ type: 'vector', name: req.params.id }));
+        }
         return res.status(404).send('Invalid format');
       }
       if (
@@ -101,6 +107,9 @@ export const serve_data = {
         x >= Math.pow(2, z) ||
         y >= Math.pow(2, z)
       ) {
+        if (programOpts.metrics) {
+          import('./metrics.js').then((m) => m.tileErrorsTotal.inc({ type: 'vector', name: req.params.id }));
+        }
         return res.status(404).send('Out of bounds');
       }
 
@@ -167,6 +176,9 @@ export const serve_data = {
 
       data = await gzipP(data);
 
+      if (programOpts.metrics) {
+        import('./metrics.js').then((m) => m.tilesServedTotal.inc({ type: 'vector', name: req.params.id }));
+      }
       return res.status(200).send(data);
     });
 
