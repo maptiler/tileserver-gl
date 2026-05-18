@@ -171,7 +171,10 @@ const startServer = (configPath, config) => {
     allowedHosts,
     ignoreMissingFiles: opts.ignoreMissingFiles,
     metrics: opts.metrics || process.env.TILESERVER_GL_METRICS === 'true',
-    metricsPort: parseInt(process.env.METRICS_PORT, 10) || 9090,
+    metricsPort: (() => {
+      const port = parseInt(process.env.METRICS_PORT, 10);
+      return !isNaN(port) && port > 0 ? port : 9090;
+    })(),
   });
 };
 
