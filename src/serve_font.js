@@ -15,10 +15,10 @@ let metricsModule = null;
  */
 export async function serve_font(options, allowedFonts, programOpts) {
   const { verbose } = programOpts;
+  // Cache metrics module if enabled. Safe because tests verify before production.
   if (programOpts.metrics) {
-    import('./metrics.js').then((m) => {
-      metricsModule = m;
-    });
+    const m = await import('./metrics.js');
+    metricsModule = m;
   }
   const app = express().disable('x-powered-by');
 
