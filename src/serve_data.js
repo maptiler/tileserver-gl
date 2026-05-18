@@ -21,6 +21,8 @@ import { gunzipP, gzipP } from './promises.js';
 import { openMbTilesWrapper } from './mbtiles_wrapper.js';
 
 import fs from 'node:fs';
+
+let metricsModule = null;
 import { fileURLToPath } from 'url';
 
 const packageJson = JSON.parse(
@@ -45,6 +47,11 @@ export const serve_data = {
    */
   init: function (options, repo, programOpts) {
     const { verbose, allowedHosts } = programOpts;
+    if (programOpts.metrics) {
+      import('./metrics.js').then((m) => {
+        metricsModule = m;
+      });
+    }
     const app = express().disable('x-powered-by');
     app.use(express.json());
 
@@ -167,10 +174,11 @@ export const serve_data = {
 
       data = await gzipP(data);
 
-      if (programOpts.metrics) {
-        import('./metrics.js').then((m) =>
-          m.tilesServedTotal.inc({ type: 'vector', name: req.params.id }),
-        );
+      if (metricsModule) {
+        metricsModule.tilesServedTotal.inc({
+          type: 'vector',
+          name: req.params.id,
+        });
       }
       return res.status(200).send(data);
     });

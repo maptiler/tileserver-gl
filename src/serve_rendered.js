@@ -540,7 +540,6 @@ function calcZForBBox(bbox, w, h, query) {
  * @param {Buffer|null} overlay Optional overlay image.
  * @param {string} mode Rendering mode ('tile' or 'static').
  * @param {string|null} id Style or dataset ID for metrics labeling.
- * @param {object|null} programOpts Server options (used for metrics flag).
  * @returns {Promise<void>}
  */
 async function respondImage(
@@ -559,7 +558,6 @@ async function respondImage(
   overlay = null,
   mode = 'tile',
   id = null,
-  programOpts = null,
 ) {
   if (
     Math.abs(lon) > 180 ||
@@ -608,10 +606,8 @@ async function respondImage(
     if (err) {
       console.error('Failed to acquire renderer from pool:', err);
       if (!res.headersSent) {
-        if (programOpts && programOpts.metrics) {
-          import('./metrics.js').then((m) =>
-            m.tileErrorsTotal.inc({ type: 'rendered', name: id }),
-          );
+        if (metricsModule) {
+          metricsModule.tileErrorsTotal.inc({ type: 'rendered', name: id });
         }
         return res.status(503).send('Renderer pool error');
       }
@@ -623,10 +619,8 @@ async function respondImage(
         'Renderer is null - likely crashed or failed to initialize',
       );
       if (!res.headersSent) {
-        if (programOpts && programOpts.metrics) {
-          import('./metrics.js').then((m) =>
-            m.tileErrorsTotal.inc({ type: 'rendered', name: id }),
-          );
+        if (metricsModule) {
+          metricsModule.tileErrorsTotal.inc({ type: 'rendered', name: id });
         }
         return res.status(503).send('Renderer unavailable');
       }
@@ -642,10 +636,8 @@ async function respondImage(
         console.error('Error removing bad renderer:', e);
       }
       if (!res.headersSent) {
-        if (programOpts && programOpts.metrics) {
-          import('./metrics.js').then((m) =>
-            m.tileErrorsTotal.inc({ type: 'rendered', name: id }),
-          );
+        if (metricsModule) {
+          metricsModule.tileErrorsTotal.inc({ type: 'rendered', name: id });
         }
         return res.status(503).send('Renderer invalid');
       }
@@ -713,10 +705,8 @@ async function respondImage(
             console.error('Error removing failed renderer:', e);
           }
           if (!res.headersSent) {
-            if (programOpts && programOpts.metrics) {
-              import('./metrics.js').then((m) =>
-                m.tileErrorsTotal.inc({ type: 'rendered', name: id }),
-              );
+            if (metricsModule) {
+              metricsModule.tileErrorsTotal.inc({ type: 'rendered', name: id });
             }
             return res
               .status(500)
@@ -816,10 +806,11 @@ async function respondImage(
           if (err || !buffer) {
             console.error('Sharp error:', err);
             if (!res.headersSent) {
-              if (programOpts && programOpts.metrics) {
-                import('./metrics.js').then((m) =>
-                  m.tileErrorsTotal.inc({ type: 'rendered', name: id }),
-                );
+              if (metricsModule) {
+                metricsModule.tileErrorsTotal.inc({
+                  type: 'rendered',
+                  name: id,
+                });
               }
               return res.status(500).send('Image processing failed');
             }
@@ -827,20 +818,21 @@ async function respondImage(
           }
 
           if (!res.headersSent) {
-            if (programOpts && programOpts.metrics) {
+            if (metricsModule) {
               const renderDurationSec =
                 Number(process.hrtime.bigint() - renderStart) / 1e9;
-              import('./metrics.js').then((m) => {
-                m.tilesServedTotal.inc({ type: 'rendered', name: id });
-                const zoomLabel =
-                  process.env.TILESERVER_GL_METRICS_ZOOM === 'true'
-                    ? String(z)
-                    : 'all';
-                m.tileRenderDuration.observe(
-                  { name: id, zoom: zoomLabel },
-                  renderDurationSec,
-                );
+              metricsModule.tilesServedTotal.inc({
+                type: 'rendered',
+                name: id,
               });
+              const zoomLabel =
+                process.env.TILESERVER_GL_METRICS_ZOOM === 'true'
+                  ? String(z)
+                  : 'all';
+              metricsModule.tileRenderDuration.observe(
+                { name: id, zoom: zoomLabel },
+                renderDurationSec,
+              );
             }
             res.set({
               'Last-Modified': item.lastModified,
@@ -859,10 +851,8 @@ async function respondImage(
         console.error('Error removing renderer after error:', e);
       }
       if (!res.headersSent) {
-        if (programOpts && programOpts.metrics) {
-          import('./metrics.js').then((m) =>
-            m.tileErrorsTotal.inc({ type: 'rendered', name: id }),
-          );
+        if (metricsModule) {
+          metricsModule.tileErrorsTotal.inc({ type: 'rendered', name: id });
         }
         return res.status(500).send('Render failed');
       }
@@ -1173,6 +1163,7 @@ async function handleStaticRequest(
 }
 const existingFonts = {};
 let maxScaleFactor = 2;
+let metricsModule = null;
 
 export const serve_rendered = {
   /**
@@ -1367,6 +1358,12 @@ export const serve_rendered = {
     };
 
     const { publicUrl, verbose, fetchTimeout } = programOpts;
+
+    // Cache metrics module if enabled (avoids per-request dynamic imports)
+    if (programOpts.metrics) {
+      const m = await import('./metrics.js');
+      metricsModule = m;
+    }
 
     const styleJSON = clone(style);
 
@@ -1914,25 +1911,23 @@ export const serve_rendered = {
       );
     }
 
-    if (programOpts && programOpts.metrics) {
+    if (metricsModule) {
       map._metricsInterval = setInterval(() => {
-        import('./metrics.js').then((m) => {
-          [map.renderers, map.renderersStatic].forEach((poolArr) => {
-            poolArr.forEach((pool) => {
-              if (!pool) return;
-              try {
-                const total = pool.priv?.allObjects?.length ?? 0;
-                const free = pool.priv?.freeObjects?.length ?? 0;
-                m.renderPoolSize.set({ name: id }, total);
-                m.renderPoolActive.set({ name: id }, total - free);
-                m.renderPoolWaiting.set(
-                  { name: id },
-                  pool.priv?.queue?.size?.() ?? 0,
-                );
-              } catch (_) {
-                /* pool may be mid-teardown */
-              }
-            });
+        [map.renderers, map.renderersStatic].forEach((poolArr) => {
+          poolArr.forEach((pool) => {
+            if (!pool) return;
+            try {
+              const total = pool.priv?.allObjects?.length ?? 0;
+              const free = pool.priv?.freeObjects?.length ?? 0;
+              metricsModule.renderPoolSize.set({ name: id }, total);
+              metricsModule.renderPoolActive.set({ name: id }, total - free);
+              metricsModule.renderPoolWaiting.set(
+                { name: id },
+                pool.priv?.queue?.size?.() ?? 0,
+              );
+            } catch (_) {
+              /* pool may be mid-teardown */
+            }
           });
         });
       }, 5000);

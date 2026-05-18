@@ -14,6 +14,8 @@ import {
   isValidHttpUrl,
 } from './utils.js';
 
+let metricsModule = null;
+
 export const serve_style = {
   /**
    * Initializes the serve_style module.
@@ -24,6 +26,11 @@ export const serve_style = {
    */
   init: function (options, repo, programOpts) {
     const { verbose, allowedHosts } = programOpts;
+    if (programOpts.metrics) {
+      import('./metrics.js').then((m) => {
+        metricsModule = m;
+      });
+    }
     const app = express().disable('x-powered-by');
     /**
      * Handles requests for style.json files.
@@ -88,10 +95,8 @@ export const serve_style = {
             allowedHosts,
           );
         }
-        if (programOpts.metrics) {
-          import('./metrics.js').then((m) =>
-            m.tilesServedTotal.inc({ type: 'style', name: id }),
-          );
+        if (metricsModule) {
+          metricsModule.tilesServedTotal.inc({ type: 'style', name: id });
         }
         return res.send(styleJSON_);
       } catch (e) {
