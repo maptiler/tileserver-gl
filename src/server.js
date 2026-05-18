@@ -534,6 +534,10 @@ async function start(opts) {
       continue;
     }
     stylePromises.push(addStyle(id, item, true, true));
+    // Pre-initialize error counter for this style so metric appears in output
+    if (metricsModule) {
+      metricsModule.tileErrorsTotal.inc({ type: 'rendered', name: id }, 0);
+    }
   }
 
   // Wait for styles to finish loading, then load data sources
