@@ -18,9 +18,13 @@ let metricsModule = null;
 
 // Cache metrics module if enabled. Safe because tests verify before production.
 if (process.env.TILESERVER_GL_METRICS === 'true') {
-  import('./metrics.js').then((m) => {
-    metricsModule = m;
-  });
+  import('./metrics.js')
+    .then((m) => {
+      metricsModule = m;
+    })
+    .catch((err) => {
+      console.error('Failed to import metrics module:', err);
+    });
 }
 
 export const serve_style = {
