@@ -1359,7 +1359,8 @@ export const serve_rendered = {
 
     const { publicUrl, verbose, fetchTimeout } = programOpts;
 
-    // Cache metrics module if enabled (avoids per-request dynamic imports)
+    // Cache metrics module if enabled (avoids per-request dynamic imports).
+    // Safe because tests verify module exists before any style registration.
     if (programOpts.metrics) {
       const m = await import('./metrics.js');
       metricsModule = m;
