@@ -1068,7 +1068,7 @@ async function start(opts) {
         res.end(await metricsModule.registry.metrics());
       });
       await new Promise((resolve) => {
-        metricsServer = metricsApp.listen(opts.metricsPort);
+        metricsServer = metricsApp.listen(opts.metricsPort, '127.0.0.1');
         metricsServer.once('error', (err) => {
           console.warn(
             `[metrics] Failed to start metrics server: ${err.message}`,
