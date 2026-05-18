@@ -23,18 +23,6 @@ import { openMbTilesWrapper } from './mbtiles_wrapper.js';
 import fs from 'node:fs';
 
 let metricsModule = null;
-
-// Cache metrics module if enabled. Safe because tests verify before production.
-if (process.env.TILESERVER_GL_METRICS === 'true') {
-  import('./metrics.js')
-    .then((m) => {
-      metricsModule = m;
-    })
-    .catch((err) => {
-      console.error('Failed to import metrics module:', err);
-    });
-}
-
 import { fileURLToPath } from 'url';
 
 const packageJson = JSON.parse(
@@ -59,6 +47,16 @@ export const serve_data = {
    */
   init: function (options, repo, programOpts) {
     const { verbose, allowedHosts } = programOpts;
+    // Cache metrics module if enabled. Safe because tests verify before production.
+    if (programOpts.metrics) {
+      import('./metrics.js')
+        .then((m) => {
+          metricsModule = m;
+        })
+        .catch((err) => {
+          console.error('Failed to import metrics module:', err);
+        });
+    }
     const app = express().disable('x-powered-by');
     app.use(express.json());
 
