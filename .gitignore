@@ -20,3 +20,4 @@ config.json
 *.mbtiles
 styles
 fonts
+.worktrees
