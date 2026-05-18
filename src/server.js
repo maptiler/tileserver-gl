@@ -58,25 +58,36 @@ async function start(opts) {
 
   app.enable('trust proxy');
 
-  // Prometheus HTTP metrics middleware
-  app.use((req, res, next) => {
-    if (!metricsModule) return next();
-    const start = process.hrtime.bigint();
-    res.on('finish', () => {
-      const route = req.route?.path ?? req.path;
-      const durationSec = Number(process.hrtime.bigint() - start) / 1e9;
-      metricsModule.httpRequestsTotal.inc({
-        method: req.method,
-        route,
-        status_code: String(res.statusCode),
+  // Import metrics module early if enabled, so middleware doesn't miss requests
+  if (opts.metrics) {
+    try {
+      const m = await import('./metrics.js');
+      metricsModule = m;
+    } catch (err) {
+      console.warn(`[metrics] Failed to import metrics module: ${err.message}`);
+    }
+  }
+
+  // Prometheus HTTP metrics middleware (only register if metrics enabled)
+  if (opts.metrics) {
+    app.use((req, res, next) => {
+      const start = process.hrtime.bigint();
+      res.on('finish', () => {
+        const route = req.route?.path ?? req.path;
+        const durationSec = Number(process.hrtime.bigint() - start) / 1e9;
+        metricsModule.httpRequestsTotal.inc({
+          method: req.method,
+          route,
+          status_code: String(res.statusCode),
+        });
+        metricsModule.httpRequestDuration.observe(
+          { method: req.method, route, status_code: String(res.statusCode) },
+          durationSec,
+        );
       });
-      metricsModule.httpRequestDuration.observe(
-        { method: req.method, route, status_code: String(res.statusCode) },
-        durationSec,
-      );
+      next();
     });
-    next();
-  });
+  }
 
   if (process.env.NODE_ENV !== 'test') {
     const defaultLogFormat =
@@ -1049,14 +1060,12 @@ async function start(opts) {
 
   // Prometheus metrics server (separate port, opt-in)
   let metricsServer = null;
-  if (opts.metrics) {
+  if (opts.metrics && metricsModule) {
     try {
       const metricsApp = express();
-      const mod = await import('./metrics.js');
-      metricsModule = mod;
       metricsApp.get('/metrics', async (_req, res) => {
-        res.set('Content-Type', mod.registry.contentType);
-        res.end(await mod.registry.metrics());
+        res.set('Content-Type', metricsModule.registry.contentType);
+        res.end(await metricsModule.registry.metrics());
       });
       await new Promise((resolve) => {
         metricsServer = metricsApp.listen(opts.metricsPort);
@@ -1116,7 +1125,7 @@ export async function server(opts) {
 
     running.server.shutdown(async () => {
       if (running.metricsServer) {
-        running.metricsServer.close();
+        await new Promise((resolve) => running.metricsServer.close(resolve));
       }
       const restarted = await start(opts);
       if (!isLight) {
