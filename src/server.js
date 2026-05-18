@@ -73,7 +73,7 @@ async function start(opts) {
     app.use((req, res, next) => {
       const start = process.hrtime.bigint();
       res.on('finish', () => {
-        const route = req.route?.path ?? req.path;
+        const route = req.route?.path ?? '<unknown>';
         const durationSec = Number(process.hrtime.bigint() - start) / 1e9;
         metricsModule.httpRequestsTotal.inc({
           method: req.method,
