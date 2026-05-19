@@ -558,6 +558,7 @@ async function respondImage(
   overlay = null,
   mode = 'tile',
   id = null,
+  programOpts = null,
 ) {
   if (
     Math.abs(lon) > 180 ||
@@ -1918,13 +1919,16 @@ export const serve_rendered = {
           poolArr.forEach((pool) => {
             if (!pool) return;
             try {
-              const total = pool.priv?.allObjects?.length ?? 0;
-              const free = pool.priv?.freeObjects?.length ?? 0;
+              const total = pool.size ?? 0;
+              const available = pool.available ?? 0;
               metricsModule.renderPoolSize.set({ name: id }, total);
-              metricsModule.renderPoolActive.set({ name: id }, total - free);
+              metricsModule.renderPoolActive.set(
+                { name: id },
+                total - available,
+              );
               metricsModule.renderPoolWaiting.set(
                 { name: id },
-                pool.priv?.queue?.size?.() ?? 0,
+                pool.pending ?? 0,
               );
             } catch (_) {
               /* pool may be mid-teardown */
