@@ -558,7 +558,6 @@ async function respondImage(
   overlay = null,
   mode = 'tile',
   id = null,
-  programOpts = null,
 ) {
   if (
     Math.abs(lon) > 180 ||
@@ -948,7 +947,7 @@ async function handleTileRequest(
 
   // prettier-ignore
   return await respondImage(
-    options, item, z, tileCenter[0], tileCenter[1], 0, 0, parsedTileSize, parsedTileSize, scale, format, res, null, 'tile', id, programOpts,
+    options, item, z, tileCenter[0], tileCenter[1], 0, 0, parsedTileSize, parsedTileSize, scale, format, res, null, 'tile', id,
   );
 }
 
@@ -1057,7 +1056,7 @@ async function handleStaticRequest(
 
     // prettier-ignore
     return await respondImage(
-    options, item, z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, format, res, overlay, 'static', id, programOpts,
+    options, item, z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, format, res, overlay, 'static', id,
      );
   } else if (staticTypeMatch.groups.minx) {
     // Area Based Static Image
@@ -1097,7 +1096,7 @@ async function handleStaticRequest(
 
     // prettier-ignore
     return await respondImage(
-      options, item, z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, format, res, overlay, 'static', id, programOpts,
+      options, item, z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, format, res, overlay, 'static', id,
      );
   } else if (staticTypeMatch.groups.auto) {
     // Area Static Image
@@ -1156,7 +1155,7 @@ async function handleStaticRequest(
 
     // prettier-ignore
     return await respondImage(
-        options, item, z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, format, res, overlay, 'static', id, programOpts,
+        options, item, z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, format, res, overlay, 'static', id,
       );
   } else {
     return res.sendStatus(404);
