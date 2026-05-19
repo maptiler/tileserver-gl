@@ -5,15 +5,13 @@ import { server } from '../src/server.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * Returns listeners added after a previous snapshot.
+ * Returns listeners added after a previous listener count.
  * @param {string} eventName Process event name.
- * @param {Array<(...args: unknown[]) => void>} previousListeners Previously registered listeners.
+ * @param {number} previousListenerCount Previously registered listener count.
  * @returns {Array<(...args: unknown[]) => void>} Newly registered listeners.
  */
-function getAddedListeners(eventName, previousListeners) {
-  return process
-    .listeners(eventName)
-    .filter((listener) => !previousListeners.includes(listener));
+function getAddedListeners(eventName, previousListenerCount) {
+  return process.listeners(eventName).slice(previousListenerCount);
 }
 
 /**
@@ -39,9 +37,18 @@ async function waitFor(condition, timeoutMs = 5000) {
 describe('SIGHUP reload', function () {
   it('runs runtime cleanup before replacing the server generation', async function () {
     const previousListeners = [
-      { eventName: 'SIGHUP', listeners: process.listeners('SIGHUP') },
-      { eventName: 'SIGINT', listeners: process.listeners('SIGINT') },
-      { eventName: 'SIGTERM', listeners: process.listeners('SIGTERM') },
+      {
+        eventName: 'SIGHUP',
+        listenerCount: process.listeners('SIGHUP').length,
+      },
+      {
+        eventName: 'SIGINT',
+        listenerCount: process.listeners('SIGINT').length,
+      },
+      {
+        eventName: 'SIGTERM',
+        listenerCount: process.listeners('SIGTERM').length,
+      },
     ];
     let running;
 
@@ -55,7 +62,7 @@ describe('SIGHUP reload', function () {
 
       const reloadListeners = getAddedListeners(
         'SIGHUP',
-        previousListeners[0].listeners,
+        previousListeners[0].listenerCount,
       );
       expect(reloadListeners).to.have.lengthOf(1);
 
@@ -81,8 +88,8 @@ describe('SIGHUP reload', function () {
         }
       }
 
-      for (const { eventName, listeners } of previousListeners) {
-        for (const listener of getAddedListeners(eventName, listeners)) {
+      for (const { eventName, listenerCount } of previousListeners) {
+        for (const listener of getAddedListeners(eventName, listenerCount)) {
           process.removeListener(eventName, listener);
         }
       }

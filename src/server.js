@@ -1050,6 +1050,17 @@ function stopGracefully(signal) {
 }
 
 /**
+ * Registers a process signal handler once.
+ * @param {string} signal Name of the process signal.
+ * @returns {void}
+ */
+function registerSignalHandler(signal) {
+  if (!process.listeners(signal).includes(stopGracefully)) {
+    process.on(signal, stopGracefully);
+  }
+}
+
+/**
  * Starts and manages the server
  * @param {object} opts - Configuration options for the server.
  * @returns {Promise<object>} - A promise that resolves to the running server
@@ -1064,8 +1075,8 @@ export async function server(opts) {
     process.exit(1);
   });
 
-  process.on('SIGINT', stopGracefully);
-  process.on('SIGTERM', stopGracefully);
+  registerSignalHandler('SIGINT');
+  registerSignalHandler('SIGTERM');
 
   const reload = async () => {
     if (reloading) {

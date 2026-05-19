@@ -1905,7 +1905,11 @@ export const serve_rendered = {
       Object.keys(repo).map(async (id) => {
         // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys() iteration
         const item = repo[id];
-        if (item) {
+        try {
+          if (!item) {
+            return;
+          }
+
           await Promise.all(
             Object.keys(item.map.sources || {}).map(async (sourceId) => {
               // eslint-disable-next-line security/detect-object-injection -- sourceId is from Object.keys() iteration
@@ -1917,11 +1921,13 @@ export const serve_rendered = {
                 source &&
                 typeof source.close === 'function'
               ) {
-                await new Promise((resolve, reject) => {
+                await new Promise((resolve) => {
                   source.close((err) => {
                     if (err) {
-                      reject(err);
-                      return;
+                      console.warn(
+                        `Failed to close MBTiles source "${sourceId}" while clearing rendered repo entry "${id}":`,
+                        err,
+                      );
                     }
                     resolve();
                   });
@@ -1935,9 +1941,12 @@ export const serve_rendered = {
           item.map.renderersStatic.forEach((pool) => {
             pool.close();
           });
+        } catch (err) {
+          console.warn(`Failed to clear rendered repo entry "${id}":`, err);
+        } finally {
+          // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys() iteration
+          delete repo[id];
         }
-        // eslint-disable-next-line security/detect-object-injection -- id is from Object.keys() iteration
-        delete repo[id];
       }),
     );
   },
