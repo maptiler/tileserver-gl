@@ -1,5 +1,6 @@
 'use strict';
 
+import { expect } from 'chai';
 import { server } from '../src/server.js';
 import http from 'node:http';
 

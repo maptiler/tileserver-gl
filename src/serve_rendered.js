@@ -876,7 +876,7 @@ async function respondImage(
  * @param {object} next - Express next middleware function.
  * @param {number} maxScaleFactor - The maximum scale factor allowed.
  * @param {number} defailtTileSize - Default tile size.
- * @param {object|null} programOpts Server options (used for metrics flag).
+ * @param {object|null} _programOpts - Reserved; metrics accessed via closure.
  * @returns {Promise<void>}
  */
 async function handleTileRequest(
@@ -887,7 +887,7 @@ async function handleTileRequest(
   next,
   maxScaleFactor,
   defailtTileSize,
-  programOpts = null,
+  _programOpts = null,
 ) {
   const {
     id,
@@ -965,7 +965,7 @@ async function handleTileRequest(
  * @param {object} res - Express response object.
  * @param {object} next - Express next middleware function.
  * @param {number} maxScaleFactor - The maximum scale factor allowed.
- * @param {object|null} programOpts Server options (used for metrics flag).
+ * @param {object|null} _programOpts - Reserved; metrics accessed via closure.
  * @returns {Promise<void>}
  */
 async function handleStaticRequest(
@@ -975,7 +975,7 @@ async function handleStaticRequest(
   res,
   next,
   maxScaleFactor,
-  programOpts = null,
+  _programOpts = null,
 ) {
   const {
     id,
