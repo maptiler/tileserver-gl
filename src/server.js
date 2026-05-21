@@ -918,7 +918,7 @@ async function start(opts) {
       id,
       // eslint-disable-next-line security/detect-object-injection -- id is route parameter from URL
       name: (serving.styles[id] || serving.rendered[id]).name,
-      baseUrl: getPublicUrl(opts.publicUrl, req),
+      baseUrl: getPublicUrl(opts.publicUrl, req, opts.allowedHosts),
     };
   });
 
