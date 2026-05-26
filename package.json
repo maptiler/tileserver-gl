@@ -78,7 +78,7 @@
     "@commitlint/config-conventional": "^21.0.1",
     "@eslint/js": "^10.0.1",
     "@typescript-eslint/eslint-plugin": "^8.59.4",
-    "@typescript-eslint/parser": "^8.59.3",
+    "@typescript-eslint/parser": "^8.60.0",
     "chai": "6.2.2",
     "cross-env": "^10.1.0",
     "eslint": "^10.4.0",
