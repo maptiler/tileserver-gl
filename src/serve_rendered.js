@@ -539,6 +539,7 @@ function calcZForBBox(bbox, w, h, query) {
  * @param {object} res Express response object.
  * @param {Buffer|null} overlay Optional overlay image.
  * @param {string} mode Rendering mode ('tile' or 'static').
+ * @param {string|null} id Style or dataset ID for metrics labeling.
  * @returns {Promise<void>}
  */
 async function respondImage(
@@ -556,6 +557,7 @@ async function respondImage(
   res,
   overlay = null,
   mode = 'tile',
+  id = null,
 ) {
   if (
     Math.abs(lon) > 180 ||
@@ -599,10 +601,14 @@ async function respondImage(
   }
 
   pool.acquire(async (err, renderer) => {
+    const renderStart = process.hrtime.bigint();
     // Check if pool.acquire failed or returned null/invalid renderer
     if (err) {
       console.error('Failed to acquire renderer from pool:', err);
       if (!res.headersSent) {
+        if (metricsModule) {
+          metricsModule.tileErrorsTotal.inc({ type: 'rendered', name: id });
+        }
         return res.status(503).send('Renderer pool error');
       }
       return;
@@ -613,6 +619,9 @@ async function respondImage(
         'Renderer is null - likely crashed or failed to initialize',
       );
       if (!res.headersSent) {
+        if (metricsModule) {
+          metricsModule.tileErrorsTotal.inc({ type: 'rendered', name: id });
+        }
         return res.status(503).send('Renderer unavailable');
       }
       return;
@@ -627,6 +636,9 @@ async function respondImage(
         console.error('Error removing bad renderer:', e);
       }
       if (!res.headersSent) {
+        if (metricsModule) {
+          metricsModule.tileErrorsTotal.inc({ type: 'rendered', name: id });
+        }
         return res.status(503).send('Renderer invalid');
       }
       return;
@@ -693,6 +705,9 @@ async function respondImage(
             console.error('Error removing failed renderer:', e);
           }
           if (!res.headersSent) {
+            if (metricsModule) {
+              metricsModule.tileErrorsTotal.inc({ type: 'rendered', name: id });
+            }
             return res
               .status(500)
               .header('Content-Type', 'text/plain')
@@ -791,12 +806,34 @@ async function respondImage(
           if (err || !buffer) {
             console.error('Sharp error:', err);
             if (!res.headersSent) {
+              if (metricsModule) {
+                metricsModule.tileErrorsTotal.inc({
+                  type: 'rendered',
+                  name: id,
+                });
+              }
               return res.status(500).send('Image processing failed');
             }
             return;
           }
 
           if (!res.headersSent) {
+            if (metricsModule) {
+              const renderDurationSec =
+                Number(process.hrtime.bigint() - renderStart) / 1e9;
+              metricsModule.tilesServedTotal.inc({
+                type: 'rendered',
+                name: id,
+              });
+              const zoomLabel =
+                process.env.TILESERVER_GL_METRICS_ZOOM === 'true'
+                  ? String(z)
+                  : 'all';
+              metricsModule.tileRenderDuration.observe(
+                { name: id, zoom: zoomLabel },
+                renderDurationSec,
+              );
+            }
             res.set({
               'Last-Modified': item.lastModified,
               'Content-Type': `image/${format}`,
@@ -814,6 +851,9 @@ async function respondImage(
         console.error('Error removing renderer after error:', e);
       }
       if (!res.headersSent) {
+        if (metricsModule) {
+          metricsModule.tileErrorsTotal.inc({ type: 'rendered', name: id });
+        }
         return res.status(500).send('Render failed');
       }
     }
@@ -905,7 +945,7 @@ async function handleTileRequest(
 
   // prettier-ignore
   return await respondImage(
-    options, item, z, tileCenter[0], tileCenter[1], 0, 0, parsedTileSize, parsedTileSize, scale, format, res,
+    options, item, z, tileCenter[0], tileCenter[1], 0, 0, parsedTileSize, parsedTileSize, scale, format, res, null, 'tile', id,
   );
 }
 
@@ -1012,7 +1052,7 @@ async function handleStaticRequest(
 
     // prettier-ignore
     return await respondImage(
-    options, item, z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, format, res, overlay, 'static',
+    options, item, z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, format, res, overlay, 'static', id,
      );
   } else if (staticTypeMatch.groups.minx) {
     // Area Based Static Image
@@ -1052,7 +1092,7 @@ async function handleStaticRequest(
 
     // prettier-ignore
     return await respondImage(
-      options, item, z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, format, res, overlay, 'static',
+      options, item, z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, format, res, overlay, 'static', id,
      );
   } else if (staticTypeMatch.groups.auto) {
     // Area Static Image
@@ -1111,7 +1151,7 @@ async function handleStaticRequest(
 
     // prettier-ignore
     return await respondImage(
-        options, item, z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, format, res, overlay, 'static',
+        options, item, z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, format, res, overlay, 'static', id,
       );
   } else {
     return res.sendStatus(404);
@@ -1119,6 +1159,7 @@ async function handleStaticRequest(
 }
 const existingFonts = {};
 let maxScaleFactor = 2;
+let metricsModule = null;
 
 export const serve_rendered = {
   /**
@@ -1311,6 +1352,13 @@ export const serve_rendered = {
     };
 
     const { publicUrl, verbose, fetchTimeout } = programOpts;
+
+    // Cache metrics module if enabled (avoids per-request dynamic imports).
+    // Guard prevents re-importing per style added. Safe because tests verify before production.
+    if (programOpts.metrics && !metricsModule) {
+      const m = await import('./metrics.js');
+      metricsModule = m;
+    }
 
     const styleJSON = clone(style);
 
@@ -1857,6 +1905,31 @@ export const serve_rendered = {
         maxPoolSize,
       );
     }
+
+    if (metricsModule) {
+      map._metricsInterval = setInterval(() => {
+        [map.renderers, map.renderersStatic].forEach((poolArr) => {
+          poolArr.forEach((pool) => {
+            if (!pool) return;
+            try {
+              const total = pool.size ?? 0;
+              const available = pool.available ?? 0;
+              metricsModule.renderPoolSize.set({ name: id }, total);
+              metricsModule.renderPoolActive.set(
+                { name: id },
+                total - available,
+              );
+              metricsModule.renderPoolWaiting.set(
+                { name: id },
+                pool.pending ?? 0,
+              );
+            } catch (_) {
+              /* pool may be mid-teardown */
+            }
+          });
+        });
+      }, 5000);
+    }
   },
   /**
    * Removes an item from the repository.
@@ -1868,6 +1941,9 @@ export const serve_rendered = {
     // eslint-disable-next-line security/detect-object-injection -- id is function parameter for removal
     const item = repo[id];
     if (item) {
+      if (item.map._metricsInterval) {
+        clearInterval(item.map._metricsInterval);
+      }
       Object.keys(item.map.sources || {}).forEach((sourceId) => {
         // eslint-disable-next-line security/detect-object-injection -- sourceId is from Object.keys() iteration
         const source = item.map.sources[sourceId];

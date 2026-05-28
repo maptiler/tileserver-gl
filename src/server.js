@@ -46,6 +46,7 @@ const { serve_rendered } = await import(
  * @returns {Promise<object>} - A promise that resolves to the server object.
  */
 async function start(opts) {
+  let metricsModule = null;
   console.log('Starting server');
 
   const app = express().disable('x-powered-by');
@@ -58,6 +59,37 @@ async function start(opts) {
   let cleanup = async () => {};
 
   app.enable('trust proxy');
+
+  // Import metrics module early if enabled, so middleware doesn't miss requests
+  if (opts.metrics) {
+    try {
+      const m = await import('./metrics.js');
+      metricsModule = m;
+    } catch (err) {
+      console.warn(`[metrics] Failed to import metrics module: ${err.message}`);
+    }
+  }
+
+  // Prometheus HTTP metrics middleware (only register if metrics enabled)
+  if (opts.metrics) {
+    app.use((req, res, next) => {
+      const start = process.hrtime.bigint();
+      res.on('finish', () => {
+        const route = req.route?.path ?? '<unknown>';
+        const durationSec = Number(process.hrtime.bigint() - start) / 1e9;
+        metricsModule.httpRequestsTotal.inc({
+          method: req.method,
+          route,
+          status_code: String(res.statusCode),
+        });
+        metricsModule.httpRequestDuration.observe(
+          { method: req.method, route, status_code: String(res.statusCode) },
+          durationSec,
+        );
+      });
+      next();
+    });
+  }
 
   if (process.env.NODE_ENV !== 'test') {
     const defaultLogFormat =
@@ -504,6 +536,10 @@ async function start(opts) {
       continue;
     }
     stylePromises.push(addStyle(id, item, true, true));
+    // Pre-initialize error counter for this style so metric appears in output
+    if (metricsModule) {
+      metricsModule.tileErrorsTotal.inc({ type: 'rendered', name: id }, 0);
+    }
   }
 
   // Wait for styles to finish loading, then load data sources
@@ -918,26 +954,12 @@ async function start(opts) {
       return null;
     }
 
-    let baseUrl;
-    if (opts.publicUrl) {
-      baseUrl = opts.publicUrl;
-    } else {
-      const parsedAllowed = parseAllowedHosts(opts.allowedHosts);
-      const candidateHost = getCandidateHost(req);
-      if (!isHostAllowed(candidateHost, parsedAllowed)) {
-        baseUrl = '/';
-      } else {
-        const proto = getSafeProtocol(req);
-        baseUrl = `${proto}://${candidateHost}/`;
-      }
-    }
-
     return {
       ...wmts,
       id,
       // eslint-disable-next-line security/detect-object-injection -- id is route parameter from URL
       name: (serving.styles[id] || serving.rendered[id]).name,
-      baseUrl,
+      baseUrl: getPublicUrl(opts.publicUrl, req, opts.allowedHosts),
     };
   });
 
@@ -1031,12 +1053,40 @@ async function start(opts) {
   // add server.shutdown() to gracefully stop serving
   enableShutdown(server);
 
+  // Prometheus metrics server (separate port, opt-in)
+  let metricsServer = null;
+  if (opts.metrics && metricsModule) {
+    try {
+      const metricsApp = express();
+      metricsApp.get('/metrics', async (_req, res) => {
+        res.set('Content-Type', metricsModule.registry.contentType);
+        res.end(await metricsModule.registry.metrics());
+      });
+      await new Promise((resolve) => {
+        metricsServer = metricsApp.listen(opts.metricsPort, '127.0.0.1');
+        metricsServer.once('error', (err) => {
+          console.warn(
+            `[metrics] Failed to start metrics server: ${err.message}`,
+          );
+          resolve(); // don't crash — metrics are non-critical
+        });
+        metricsServer.once('listening', resolve);
+      });
+      console.log(
+        `Prometheus metrics available at http://localhost:${opts.metricsPort}/metrics`,
+      );
+    } catch (err) {
+      console.warn(`[metrics] Failed to initialize metrics: ${err.message}`);
+    }
+  }
+
   return {
     app,
     server,
     startupPromise,
     serving,
     cleanup,
+    metricsServer,
   };
 }
 /**
@@ -1101,6 +1151,9 @@ export async function server(opts) {
             resolve();
           });
         });
+        if (running.metricsServer) {
+          await new Promise((resolve) => running.metricsServer.close(resolve));
+        }
         await running.cleanup();
         await serve_data.clear(running.serving.data);
         if (!isLight) {
@@ -1114,6 +1167,7 @@ export async function server(opts) {
         running.startupPromise = restarted.startupPromise;
         running.serving = restarted.serving;
         running.cleanup = restarted.cleanup;
+        running.metricsServer = restarted.metricsServer;
         await running.startupPromise;
         reloadAgain = pendingReload;
       }

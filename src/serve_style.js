@@ -14,6 +14,8 @@ import {
   isValidHttpUrl,
 } from './utils.js';
 
+let metricsModule = null;
+
 export const serve_style = {
   /**
    * Initializes the serve_style module.
@@ -24,6 +26,16 @@ export const serve_style = {
    */
   init: function (options, repo, programOpts) {
     const { verbose, allowedHosts } = programOpts;
+    // Cache metrics module if enabled. Safe because tests verify before production.
+    if (programOpts.metrics) {
+      import('./metrics.js')
+        .then((m) => {
+          metricsModule = m;
+        })
+        .catch((err) => {
+          console.error('Failed to import metrics module:', err);
+        });
+    }
     const app = express().disable('x-powered-by');
     /**
      * Handles requests for style.json files.
@@ -87,6 +99,9 @@ export const serve_style = {
             item.publicUrl,
             allowedHosts,
           );
+        }
+        if (metricsModule) {
+          metricsModule.tilesServedTotal.inc({ type: 'style', name: id });
         }
         return res.send(styleJSON_);
       } catch (e) {

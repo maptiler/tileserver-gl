@@ -4,6 +4,8 @@ import express from 'express';
 
 import { getFontsPbf, listFonts } from './utils.js';
 
+let metricsModule = null;
+
 /**
  * Initializes and returns an Express app that serves font files.
  * @param {object} options - Configuration options for the server.
@@ -13,6 +15,11 @@ import { getFontsPbf, listFonts } from './utils.js';
  */
 export async function serve_font(options, allowedFonts, programOpts) {
   const { verbose } = programOpts;
+  // Cache metrics module if enabled. Safe because tests verify before production.
+  if (programOpts.metrics) {
+    const m = await import('./metrics.js');
+    metricsModule = m;
+  }
   const app = express().disable('x-powered-by');
 
   const lastModified = new Date().toUTCString();
@@ -64,6 +71,9 @@ export async function serve_font(options, allowedFonts, programOpts) {
       );
       res.header('Content-type', 'application/x-protobuf');
       res.header('Last-Modified', lastModified);
+      if (metricsModule) {
+        metricsModule.tilesServedTotal.inc({ type: 'font', name: sFontStack });
+      }
       return res.send(concatenated);
     } catch (err) {
       console.error(
