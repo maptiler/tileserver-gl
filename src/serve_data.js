@@ -5,7 +5,7 @@ import path from 'path';
 
 import clone from 'clone';
 import express from 'express';
-import Pbf from 'pbf';
+import { PbfReader as Pbf } from 'pbf';
 import { VectorTile } from '@mapbox/vector-tile';
 import { SphericalMercator } from '@mapbox/sphericalmercator';
 
