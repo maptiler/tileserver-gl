@@ -9,16 +9,12 @@
 
 ## 5.7.0-pre.0
 ### ✨ Features and improvements
-
-### 🐞 Bug fixes
-
-- fix: clean stale tile-source state on SIGHUP reload ([#2158](https://github.com/maptiler/tileserver-gl/pull/2158)) (by [bvitlas](https://github.com/bvitlas))
-- fix: correctly handle public_url in wmts endpoint ([#2205](https://github.com/maptiler/tileserver-gl/pull/2205)) (by [andrewlaguna824](https://github.com/andrewlaguna824))
 - feat: add opt-in Prometheus metrics endpoint ([#2211](https://github.com/maptiler/tileserver-gl/pull/2211)) (by [navidnabavi](https://github.com/navidnabavi))
 
-## 5.6.1-pre.0
 ### 🐞 Bug fixes
 - fix: TypeError when style source value is a string (e.g. sprite path) ([#2179](https://github.com/maptiler/tileserver-gl/pull/2179)) (by [app/copilot-swe-agent](https://github.com/app/copilot-swe-agent))
+- fix: clean stale tile-source state on SIGHUP reload ([#2158](https://github.com/maptiler/tileserver-gl/pull/2158)) (by [bvitlas](https://github.com/bvitlas))
+- fix: correctly handle public_url in wmts endpoint ([#2205](https://github.com/maptiler/tileserver-gl/pull/2205)) (by [andrewlaguna824](https://github.com/andrewlaguna824))
 
 ## 5.6.0
 ### ✨ Features and improvements
