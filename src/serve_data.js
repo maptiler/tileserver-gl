@@ -5,7 +5,7 @@ import path from 'path';
 
 import clone from 'clone';
 import express from 'express';
-import Pbf from 'pbf';
+import { PbfReader } from 'pbf';
 import { VectorTile } from '@mapbox/vector-tile';
 import { SphericalMercator } from '@mapbox/sphericalmercator';
 
@@ -154,7 +154,7 @@ export const serve_data = {
         headers['Content-Type'] = 'application/x-protobuf';
       } else if (format === 'geojson') {
         headers['Content-Type'] = 'application/json';
-        const tile = new VectorTile(new Pbf(data));
+        const tile = new VectorTile(new PbfReader(data));
         const geojson = {
           type: 'FeatureCollection',
           features: [],
