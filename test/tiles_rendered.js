@@ -82,7 +82,9 @@ describe('Raster tiles', function () {
         .expect(200)
         .expect(function (res) {
           expect(res.headers['last-modified']).to.be.a('string');
-          expect(new Date(res.headers['last-modified']).getTime()).to.not.be.NaN;
+          expect(
+            Number.isNaN(new Date(res.headers['last-modified']).getTime()),
+          ).to.equal(false);
         })
         .end(done);
     });

@@ -98,9 +98,7 @@ describe('Fonts', function () {
 
     describe('invalid requests return 400', function () {
       it('returns 400 for fully nonexistent font', function (done) {
-        supertest(app)
-          .get('/fonts/Nonsense/0-255.pbf')
-          .expect(400, done);
+        supertest(app).get('/fonts/Nonsense/0-255.pbf').expect(400, done);
       });
 
       it('returns 400 when all fonts in stack are nonexistent', function (done) {

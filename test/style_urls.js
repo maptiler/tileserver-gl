@@ -87,17 +87,20 @@ describe('styles.json listing', function () {
 });
 
 describe('Rendered TileJSON', function () {
-  it('/styles/' + prefix + '.json has tileSize 256 by default', function (done) {
-    supertest(app)
-      .get('/styles/' + prefix + '.json')
-      .expect(200)
-      .expect(function (res) {
-        expect(res.body.tileSize).to.equal(256);
-        expect(res.body.tiles).to.be.a('array');
-        expect(res.body.tiles[0]).to.match(/^http/);
-      })
-      .end(done);
-  });
+  it(
+    '/styles/' + prefix + '.json has tileSize 256 by default',
+    function (done) {
+      supertest(app)
+        .get('/styles/' + prefix + '.json')
+        .expect(200)
+        .expect(function (res) {
+          expect(res.body.tileSize).to.equal(256);
+          expect(res.body.tiles).to.be.a('array');
+          expect(res.body.tiles[0]).to.match(/^http/);
+        })
+        .end(done);
+    },
+  );
 
   it('/styles/512/' + prefix + '.json has tileSize 512', function (done) {
     supertest(app)
@@ -134,7 +137,6 @@ describe('Listing endpoints content', function () {
       supertest(app)
         .get('/data.json')
         .expect(function (res) {
-          const names = res.body.map((d) => d.name || d.id);
           expect(res.body.length).to.be.greaterThan(0);
         })
         .end(done);

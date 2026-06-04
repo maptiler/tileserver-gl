@@ -30,28 +30,34 @@ describe('Vector tiles', function () {
   });
 
   describe('GeoJSON format', function () {
-    it('/data/' + prefix + '/14/8581/5738.geojson returns 200 with GeoJSON', function (done) {
-      supertest(app)
-        .get('/data/' + prefix + '/14/8581/5738.geojson')
-        .expect(200)
-        .expect('Content-Type', /application\/json/)
-        .expect(function (res) {
-          expect(res.body.type).to.equal('FeatureCollection');
-          expect(res.body.features).to.be.a('array');
-        })
-        .end(done);
-    });
+    it(
+      '/data/' + prefix + '/14/8581/5738.geojson returns 200 with GeoJSON',
+      function (done) {
+        supertest(app)
+          .get('/data/' + prefix + '/14/8581/5738.geojson')
+          .expect(200)
+          .expect('Content-Type', /application\/json/)
+          .expect(function (res) {
+            expect(res.body.type).to.equal('FeatureCollection');
+            expect(res.body.features).to.be.a('array');
+          })
+          .end(done);
+      },
+    );
 
-    it('/data/' + prefix + '/0/0/0.geojson returns 200 with GeoJSON', function (done) {
-      supertest(app)
-        .get('/data/' + prefix + '/0/0/0.geojson')
-        .expect(200)
-        .expect('Content-Type', /application\/json/)
-        .expect(function (res) {
-          expect(res.body.type).to.equal('FeatureCollection');
-        })
-        .end(done);
-    });
+    it(
+      '/data/' + prefix + '/0/0/0.geojson returns 200 with GeoJSON',
+      function (done) {
+        supertest(app)
+          .get('/data/' + prefix + '/0/0/0.geojson')
+          .expect(200)
+          .expect('Content-Type', /application\/json/)
+          .expect(function (res) {
+            expect(res.body.type).to.equal('FeatureCollection');
+          })
+          .end(done);
+      },
+    );
 
     it('returns 404 for invalid format on vector source', function (done) {
       supertest(app)
