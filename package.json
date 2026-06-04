@@ -62,7 +62,7 @@
     "leaflet": "1.9.4",
     "leaflet-hash": "0.2.1",
     "maplibre-gl": "5.24.0",
-    "morgan": "1.10.1",
+    "morgan": "1.11.0",
     "pbf": "5.1.0",
     "pmtiles": "4.4.1",
     "proj4": "2.20.8",
