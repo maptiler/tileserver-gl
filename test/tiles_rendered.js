@@ -72,4 +72,54 @@ describe('Raster tiles', function () {
 
     testTile(prefix, 300, 0, 0, 0, 'png', 400);
   });
+
+  describe('HTTP caching', function () {
+    const tilePath = '/styles/' + prefix + '/256/0/0/0.png';
+
+    it('sets Last-Modified header on 200 response', function (done) {
+      supertest(app)
+        .get(tilePath)
+        .expect(200)
+        .expect(function (res) {
+          expect(res.headers['last-modified']).to.be.a('string');
+          expect(new Date(res.headers['last-modified']).getTime()).to.not.be.NaN;
+        })
+        .end(done);
+    });
+
+    it('returns 304 when If-Modified-Since matches Last-Modified', function (done) {
+      supertest(app)
+        .get(tilePath)
+        .end(function (err, res) {
+          if (err) return done(err);
+          const lastModified = res.headers['last-modified'];
+          supertest(app)
+            .get(tilePath)
+            .set('If-Modified-Since', lastModified)
+            .expect(304, done);
+        });
+    });
+
+    it('returns 200 when Cache-Control: no-cache overrides If-Modified-Since', function (done) {
+      supertest(app)
+        .get(tilePath)
+        .end(function (err, res) {
+          if (err) return done(err);
+          const lastModified = res.headers['last-modified'];
+          supertest(app)
+            .get(tilePath)
+            .set('If-Modified-Since', lastModified)
+            .set('Cache-Control', 'no-cache')
+            .expect(200, done);
+        });
+    });
+
+    it('returns 200 when If-Modified-Since is older than Last-Modified', function (done) {
+      const oldDate = new Date(0).toUTCString();
+      supertest(app)
+        .get(tilePath)
+        .set('If-Modified-Since', oldDate)
+        .expect(200, done);
+    });
+  });
 });
