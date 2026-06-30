@@ -124,6 +124,32 @@ async function start(opts) {
   }
 
   const options = config.options || {};
+  // Determine allowedHosts: config > env > default '*'
+  let allowedHosts = '*';
+  if (typeof options.allowedHosts !== 'undefined') {
+    allowedHosts = String(options.allowedHosts).trim();
+  } else if (process.env.TILESERVER_GL_ALLOWED_HOSTS) {
+    allowedHosts = String(process.env.TILESERVER_GL_ALLOWED_HOSTS).trim();
+  }
+  opts.allowedHosts = allowedHosts;
+  // Log warning if insecure defaults
+  if (
+    (opts.allowedHosts === '*' ||
+      opts.allowedHosts === '' ||
+      typeof opts.allowedHosts === 'undefined') &&
+    !opts.publicUrl
+  ) {
+    console.warn(
+      '[SECURITY WARNING] Host header poisoning mitigation is NOT enabled.',
+    );
+    console.warn(
+      '  Response URLs may be built from untrusted Host/X-Forwarded-* headers.',
+    );
+    console.warn(
+      '  For production, set --public_url or allowedHosts in config/options or TILESERVER_GL_ALLOWED_HOSTS env.',
+    );
+  }
+
   const paths = options.paths || {};
   options.paths = paths;
   paths.root = path.resolve(
