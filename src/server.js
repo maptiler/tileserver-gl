@@ -126,10 +126,14 @@ async function start(opts) {
   const options = config.options || {};
   // Determine allowedHosts: config > env > default '*'
   let allowedHosts = '*';
-  if (typeof options.allowedHosts !== 'undefined') {
-    allowedHosts = String(options.allowedHosts).trim();
-  } else if (process.env.TILESERVER_GL_ALLOWED_HOSTS) {
-    allowedHosts = String(process.env.TILESERVER_GL_ALLOWED_HOSTS).trim();
+  if (options.allowedHosts != null) {
+    allowedHosts = options.allowedHosts;
+  } else if (process.env.TILESERVER_GL_ALLOWED_HOSTS != null) {
+    allowedHosts = process.env.TILESERVER_GL_ALLOWED_HOSTS;
+  }
+  if (typeof allowedHosts === 'string') {
+    allowedHosts = allowedHosts.trim();
+    if (allowedHosts === '') allowedHosts = '*';
   }
   opts.allowedHosts = allowedHosts;
   // Log warning if insecure defaults
