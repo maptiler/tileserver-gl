@@ -80,7 +80,7 @@ jobs:
         run: npm ci --prefer-offline --no-audit
 
       - name: Rebuild canvas from source 🎨
-        run: npm rebuild canvas --build-from-source
+        run: npm_config_build_from_source=true npm rebuild canvas
 
       - name: Pull test data 📦
         run: >-

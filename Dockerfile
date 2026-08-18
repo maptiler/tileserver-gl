@@ -46,7 +46,7 @@ RUN npm config set fetch-retries 5 && \
     npm config set fetch-retry-maxtimeout 600000 && \
     npm ci --omit=dev && \
     # Build canvas from source for the Noble architecture
-    npm rebuild canvas --build-from-source && \
+    npm_config_build_from_source=true npm rebuild canvas && \
     chown -R root:root /usr/src/app
 
 # --- Final Stage ---
