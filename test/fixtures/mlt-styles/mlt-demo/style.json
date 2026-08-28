@@ -1,0 +1,28 @@
+{
+  "version": 8,
+  "name": "mlt-demo",
+  "sources": {
+    "demotiles": { "type": "vector", "url": "mbtiles://{test_mlt}" }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": { "background-color": "#D8F2FF" }
+    },
+    {
+      "id": "countries-fill",
+      "type": "fill",
+      "source": "demotiles",
+      "source-layer": "countries",
+      "paint": { "fill-color": "#c8e6a0", "fill-outline-color": "#4a6741" }
+    },
+    {
+      "id": "geolines",
+      "type": "line",
+      "source": "demotiles",
+      "source-layer": "geolines",
+      "paint": { "line-color": "#888888" }
+    }
+  ]
+}

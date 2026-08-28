@@ -18,6 +18,9 @@ light
 plugins
 config.json
 *.mbtiles
+# ...except the committed MLT test fixture, which cannot be generated:
+# no JavaScript MLT encoder is published.
+!test/fixtures/mlt/*.mbtiles
 styles
 fonts
 .worktrees

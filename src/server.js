@@ -27,6 +27,7 @@ import {
   isHostAllowed,
   getCandidateHost,
   getSafeProtocol,
+  isVectorFormat,
 } from './utils.js';
 
 import { fileURLToPath } from 'url';
@@ -861,7 +862,7 @@ async function start(opts) {
         opts.allowedHosts,
       )[0];
 
-      data.is_vector = tileJSON.format === 'pbf';
+      data.is_vector = isVectorFormat(tileJSON.format);
       if (!data.is_vector) {
         if (
           tileJSON.encoding === 'terrarium' ||
@@ -984,10 +985,11 @@ async function start(opts) {
     return {
       ...data,
       id,
-      use_maplibre: data.tileJSON.format === 'pbf' || is_terrain,
+      use_maplibre: isVectorFormat(data.tileJSON.format) || is_terrain,
       is_terrain: is_terrain,
       is_terrainrgb: data.tileJSON.encoding === 'mapbox',
       terrain_encoding: data.tileJSON.encoding,
+      is_mlt: data.tileJSON.format === 'mlt',
       is_light: isLight,
     };
   });

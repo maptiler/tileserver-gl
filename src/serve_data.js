@@ -15,6 +15,8 @@ import {
   isValidRemoteUrl,
   fetchTileData,
   lonLatToTilePixel,
+  isVectorFormat,
+  MLT_CONTENT_TYPE,
 } from './utils.js';
 import { getPMtilesInfo, openPMtiles } from './pmtiles_adapter.js';
 import { gunzipP, gzipP } from './promises.js';
@@ -101,9 +103,14 @@ export const serve_data = {
       }
       if (
         format !== tileJSONFormat &&
-        !(format === 'geojson' && tileJSONFormat === 'pbf')
+        !(format === 'geojson' && isVectorFormat(tileJSONFormat))
       ) {
         return res.status(404).send('Invalid format');
+      }
+      if (format === 'geojson' && tileJSONFormat === 'mlt') {
+        return res
+          .status(400)
+          .send('GeoJSON conversion is not supported for MLT tiles');
       }
       if (
         z < item.tileJSON.minzoom ||
@@ -152,6 +159,8 @@ export const serve_data = {
 
       if (format === 'pbf') {
         headers['Content-Type'] = 'application/x-protobuf';
+      } else if (format === 'mlt') {
+        headers['Content-Type'] = MLT_CONTENT_TYPE;
       } else if (format === 'geojson') {
         headers['Content-Type'] = 'application/json';
         const tile = new VectorTile(new PbfReader(data));
@@ -626,11 +635,18 @@ export const serve_data = {
       tileJSON = options.dataDecoratorFunc(id, 'tilejson', tileJSON);
     }
 
+    // Vector sources carry the style-spec tile encoding, derived from the format so
+    // existing configs need no new key. Raster-dem sources use `encoding` for the
+    // terrain encoding instead, hence the format check.
+    if (tileJSON.format === 'mlt' && tileJSON.encoding == null) {
+      tileJSON['encoding'] = 'mlt';
+    }
+
     // Determine sparse: per-source overrides global, then format-based default
     // sparse=true -> 404 (allows overzoom)
     // sparse=false -> 204 (empty tile, no overzoom)
-    // Default: vector tiles (pbf) -> false, raster tiles -> true
-    const isVector = tileJSON.format === 'pbf';
+    // Default: vector tiles (pbf, mlt) -> false, raster tiles -> true
+    const isVector = isVectorFormat(tileJSON.format);
     const sparse = params.sparse ?? options.sparse ?? !isVector;
 
     // eslint-disable-next-line security/detect-object-injection -- id is from config file data source names

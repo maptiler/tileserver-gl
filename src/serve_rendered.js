@@ -35,6 +35,7 @@ import {
   fixTileJSONCenter,
   fetchTileData,
   readFile,
+  isVectorFormat,
 } from './utils.js';
 import { openPMtiles, getPMtilesInfo } from './pmtiles_adapter.js';
 import { renderOverlay, renderWatermark, renderAttribution } from './render.js';
@@ -92,13 +93,13 @@ const cachedEmptyResponses = {
 
 /**
  * Create an appropriate mlgl response for http errors.
- * @param {string} format The format (a sharp format or 'pbf').
+ * @param {string} format The format (a sharp format, or 'pbf'/'mlt').
  * @param {string} color The background color (or empty string for transparent).
  * @param {(err: Error|null, data: object|null) => void} callback The mlgl callback.
  * @returns {void}
  */
 function createEmptyResponse(format, color, callback) {
-  if (!format || format === 'pbf') {
+  if (!format || isVectorFormat(format)) {
     callback(null, { data: cachedEmptyResponses[''] });
     return;
   }
@@ -1470,7 +1471,7 @@ export const serve_rendered = {
                 response.modified = new Date(headers['Last-Modified']);
               }
 
-              if (format === 'pbf') {
+              if (isVectorFormat(format)) {
                 let isGzipped =
                   response.data
                     .slice(0, 2)
@@ -1478,7 +1479,7 @@ export const serve_rendered = {
                 if (isGzipped) {
                   response.data = await gunzipP(response.data);
                 }
-                if (options.dataDecoratorFunc) {
+                if (format === 'pbf' && options.dataDecoratorFunc) {
                   response.data = options.dataDecoratorFunc(
                     sourceId,
                     'data',
@@ -1808,6 +1809,12 @@ export const serve_rendered = {
           ];
           delete source.scheme;
 
+          // maplibre-native reads the vector tile encoding off the style source, never
+          // from the tilejson, so derive it here rather than making styles declare it
+          if (metadata.format === 'mlt') {
+            source.encoding = 'mlt';
+          }
+
           if (
             !attributionOverride &&
             source.attribution &&
@@ -1822,8 +1829,8 @@ export const serve_rendered = {
           }
 
           // Set sparse flag: user config overrides format-based default
-          // Vector tiles (pbf) default to false (204), raster tiles default to true (404)
-          const isVector = metadata.format === 'pbf';
+          // Vector tiles (pbf, mlt) default to false (204), raster tiles default to true (404)
+          const isVector = isVectorFormat(metadata.format);
           // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
           map.sparseFlags[name] =
             dataInfo.sparse ?? options.sparse ?? !isVector;
@@ -1858,6 +1865,11 @@ export const serve_rendered = {
           ];
           delete source.scheme;
 
+          // see the pmtiles branch above
+          if (info.format === 'mlt') {
+            source.encoding = 'mlt';
+          }
+
           if (options.dataDecoratorFunc) {
             source = options.dataDecoratorFunc(name, 'tilejson', source);
           }
@@ -1876,8 +1888,8 @@ export const serve_rendered = {
           }
 
           // Set sparse flag: user config overrides format-based default
-          // Vector tiles (pbf) default to false (204), raster tiles default to true (404)
-          const isVector = info.format === 'pbf';
+          // Vector tiles (pbf, mlt) default to false (204), raster tiles default to true (404)
+          const isVector = isVectorFormat(info.format);
           // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
           map.sparseFlags[name] =
             dataInfo.sparse ?? options.sparse ?? !isVector;
