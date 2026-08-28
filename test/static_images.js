@@ -40,6 +40,11 @@ const tests = [
     url: '/styles/test-style/static/8.5375,47.379,11/200x150@2x.png',
   },
   {
+    name: 'static-512px-path-alignment-2x',
+    // Test overlay alignment on 512px high-DPI static maps
+    url: '/styles/test-style/static/8.5375,47.379,12/512x512@2x.png?stroke=red&width=5&path=8.53,47.37|8.54,47.38',
+  },
+  {
     name: 'path-auto',
     // Test path rendering with simple coordinates and auto-centering
     url: '/styles/test-style/static/auto/400x300.png?fill=%23ff000080&path=8.53180,47.38713|8.53841,47.38248|8.53320,47.37457',
