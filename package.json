@@ -113,5 +113,10 @@
   "bugs": {
     "url": "https://github.com/maptiler/tileserver-gl/issues"
   },
-  "homepage": "https://github.com/maptiler/tileserver-gl#readme"
+  "homepage": "https://github.com/maptiler/tileserver-gl#readme",
+  "allowScripts": {
+    "canvas": true,
+    "sqlite3": true,
+    "@maplibre/maplibre-gl-native": true
+  }
 }
