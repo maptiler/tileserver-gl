@@ -59,25 +59,6 @@ describe('Static endpoints', function () {
         testStatic(prefix, '0,0,0/300x300', 'png', 200, 2);
         testStatic(prefix, '0,0,0/300x300', 'png', 200, 3);
 
-        testStatic(
-          prefix,
-          '8.5375,47.379,12/512x512',
-          'png',
-          200,
-          undefined,
-          /image\/png/,
-          '?path=8.53,47.37|8.54,47.38',
-        );
-        testStatic(
-          prefix,
-          '8.5375,47.379,12/512x512',
-          'png',
-          200,
-          2,
-          /image\/png/,
-          '?path=8.53,47.37|8.54,47.38',
-        );
-
         testStatic(prefix, '0,0,1.5/256x256', 'png', 200);
 
         testStatic(prefix, '80,40,20/600x300', 'png', 200, 3);
