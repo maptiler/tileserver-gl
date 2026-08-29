@@ -20,6 +20,8 @@ import {
 } from './utils.js';
 import { getPMtilesInfo, openPMtiles } from './pmtiles_adapter.js';
 import { gunzipP, gzipP } from './promises.js';
+import { mltTileToGeoJSON } from './mlt_geojson.js';
+import { mltTileToMvt } from './mlt_mvt.js';
 import { openMbTilesWrapper } from './mbtiles_wrapper.js';
 
 import fs from 'node:fs';
@@ -101,16 +103,14 @@ export const serve_data = {
       if (format === options.pbfAlias) {
         format = 'pbf';
       }
-      if (
-        format !== tileJSONFormat &&
-        !(format === 'geojson' && isVectorFormat(tileJSONFormat))
-      ) {
+      // An MLT source also answers to .pbf and .geojson, transcoding on the way
+      // out, so clients that cannot read MLT are still served. There is no
+      // route the other way: no JavaScript MLT encoder is published.
+      const transcodable =
+        (format === 'geojson' && isVectorFormat(tileJSONFormat)) ||
+        (format === 'pbf' && tileJSONFormat === 'mlt');
+      if (format !== tileJSONFormat && !transcodable) {
         return res.status(404).send('Invalid format');
-      }
-      if (format === 'geojson' && tileJSONFormat === 'mlt') {
-        return res
-          .status(400)
-          .send('GeoJSON conversion is not supported for MLT tiles');
       }
       if (
         z < item.tileJSON.minzoom ||
@@ -159,23 +159,31 @@ export const serve_data = {
 
       if (format === 'pbf') {
         headers['Content-Type'] = 'application/x-protobuf';
+        if (tileJSONFormat === 'mlt') {
+          data = mltTileToMvt(data);
+        }
       } else if (format === 'mlt') {
         headers['Content-Type'] = MLT_CONTENT_TYPE;
       } else if (format === 'geojson') {
         headers['Content-Type'] = 'application/json';
-        const tile = new VectorTile(new PbfReader(data));
-        const geojson = {
-          type: 'FeatureCollection',
-          features: [],
-        };
-        for (const layerName in tile.layers) {
-          // eslint-disable-next-line security/detect-object-injection -- layerName from VectorTile library internal data structure
-          const layer = tile.layers[layerName];
-          for (let i = 0; i < layer.length; i++) {
-            const feature = layer.feature(i);
-            const featureGeoJSON = feature.toGeoJSON(x, y, z);
-            featureGeoJSON.properties.layer = layerName;
-            geojson.features.push(featureGeoJSON);
+        let geojson;
+        if (tileJSONFormat === 'mlt') {
+          geojson = mltTileToGeoJSON(data, z, x, y);
+        } else {
+          const tile = new VectorTile(new PbfReader(data));
+          geojson = {
+            type: 'FeatureCollection',
+            features: [],
+          };
+          for (const layerName in tile.layers) {
+            // eslint-disable-next-line security/detect-object-injection -- layerName from VectorTile library internal data structure
+            const layer = tile.layers[layerName];
+            for (let i = 0; i < layer.length; i++) {
+              const feature = layer.feature(i);
+              const featureGeoJSON = feature.toGeoJSON(x, y, z);
+              featureGeoJSON.properties.layer = layerName;
+              geojson.features.push(featureGeoJSON);
+            }
           }
         }
         data = JSON.stringify(geojson);

@@ -1,8 +1,7 @@
 # MLT (MapLibre Tile) support — design notes
 
-Status: core plumbing implemented on `feat/mlt-tiles`. GeoJSON inspection over MLT is
-deliberately not implemented (returns 400); automated tests are blocked on a fixture, see
-[Testing](#testing).
+Status: implemented on `feat/mlt-tiles` -- serving, rendering, and conversion to MVT
+and GeoJSON, covered by 18 tests.
 
 ## Summary
 
@@ -10,14 +9,14 @@ We do **not** need to write an MLT decoder. Both renderers tileserver-gl uses al
 decode MLT; what is missing is plumbing — format detection, routing, MIME types, and
 propagating `encoding: "mlt"` onto the vector sources we hand to the renderers.
 
-tileserver-gl decodes tile bytes itself in exactly **one** place — the
-`/data/{id}/{z}/{x}/{y}.geojson` inspection endpoint at `src/serve_data.js:157`, the only
-`@mapbox/vector-tile` call site in the codebase. That endpoint, and nothing else, is why
-we would pull in `@maplibre/mlt`. Everything else is a pass-through of raw bytes.
+tileserver-gl decodes tile bytes itself only where it converts them: the
+`.geojson` and `.pbf` routes on an MLT source. Serving `.mlt`, rendering styles
+over it, and the data preview are all pass-throughs of raw bytes, and needed no
+new dependency.
 
 Notably the browser viewer needs nothing: `public/resources/maplibre-gl.js` is copied
 from `node_modules` at prepare time and already contains the MLT decoder, and
-`@maplibre/maplibre-gl-inspect` parses no tiles of its own — it goes through maplibre-gl.
+`@maplibre/maplibre-gl-inspect` parses no tiles of its own -- it goes through maplibre-gl.
 
 ## What already works (verified against the pinned deps)
 
@@ -80,28 +79,19 @@ which `serve_data`, `serve_rendered` and `main.js` all read MBTiles metadata.
 PMTiles was unaffected either way: `getPMtilesInfo` overwrites `format` from the header's
 tile type, and Planetiler writes `TileType.MLT` (6) there, which `getPmtilesTileType` now maps.
 
-### Wire-version caveat — unverified
+### Wire versions
 
-Whether maplibre-native 6.4.1 decodes what Planetiler 0.10.2 emits is **not established
-here**. MLT has versioned wire formats (`WireVersion::V01`, plus an unstable V2), and the
-June 2026 upstream fixtures are already rejected by both native 6.4.1 and
-`@maplibre/mlt@1.2.0`, so the format has moved recently. Confirming this needs a tile from a
-current generator — `demotiles.maplibre.org/tiles-mlt/plain/{z}/{x}/{y}.mlt` is a live MLT
-dataset that would settle it.
+Settled: maplibre-native 6.4.1 decodes and renders current-format MLT, verified against
+tiles from demotiles. tileserver-gl only moves opaque bytes, so it supports whatever the
+renderers do; the same holds for the converters, which read the tile rather than assuming
+a version.
 
-## Do we need `@maplibre/mlt` at all?
+## Decoding in-process
 
-Only for the GeoJSON inspection endpoint. Serving `.mlt` tiles, rendering styles over MLT
-sources, the data preview, and the TileJSON all work without it — the renderers decode,
-we just move bytes. So this splits cleanly in two:
+Needed only where tileserver-gl converts: `.geojson` and `.pbf` on an MLT source.
+Core serving and rendering carry no dependency, which is why they landed first.
 
-* **Core MLT support** — no new runtime dependency.
-* **GeoJSON inspection over MLT** — needs a decoder, and hits the packaging problem below.
-
-Core support can land first and independently. Inspection needs the decoder, which has a
-packaging problem — solvable on our side, no upstream change required.
-
-### The problem: `@maplibre/mlt` is not loadable from plain Node
+### `@maplibre/mlt` is not loadable from plain Node
 
 `@maplibre/mlt@1.2.0` ships `dist/*.js` written in ESM syntax, with **no `"type": "module"`**
 in its package.json and **extensionless relative specifiers**:
@@ -121,7 +111,7 @@ Error [ERR_MODULE_NOT_FOUND]: Cannot find module .../dist/mltDecoder
 It only works behind a bundler today, which is how maplibre-gl consumes it (rollup, from
 `src/source/vector_tile_mlt.ts`).
 
-### Workaround: rewrite the specifiers at `prepare` time
+### Solution: rewrite the specifiers at `prepare` time
 
 No upstream change and no new dependency. The repo already generates vendored assets from
 `node_modules` in `prepare` — `public/resources/maplibre-gl.js` and friends are produced by
@@ -221,52 +211,77 @@ The raster-dem meaning of `encoding` is untouched: `serve_data.add` still copies
 `params['encoding']` for any source, and the terrain checks compare against
 `'terrarium'`/`'mapbox'`, so an `mlt` value cannot be mistaken for terrain.
 
+### Conversion routes
+
+An MLT source also answers to `.pbf` and `.geojson`, transcoding on the way out, so
+clients that cannot read MLT are still served. Both reuse one decode; only the output
+differs. There is deliberately no route the other way -- see below.
+
+`src/mlt_geojson.js` mirrors `VectorTileFeature.toGeoJSON` so output matches the MVT
+endpoint. MLT hands back geometry in tile-local coordinates as depth-2 arrays of
+`{x, y}` -- the same shape `loadGeometry()` returns -- so the projection carries over
+unchanged, and `classifyRings` is imported from `@mapbox/vector-tile` rather than
+reimplemented, since polygon rings arrive flat and winding order decides the holes.
+
+`src/mlt_mvt.js` presents each `FeatureTable` as a vector-tile layer for `vt-pbf`. The
+geometry needs no conversion at all, only a type map. Two lossy edges, both inherent to
+MVT: nested properties (MLT's `STRUCT` and `MAP` columns) become JSON strings, which
+`vt-pbf` does itself, and ids past `Number.MAX_SAFE_INTEGER` are dropped rather than
+silently rounded, since `writeVarint` cannot take a BigInt.
+
+Ids also need care in the GeoJSON path: `FeatureTable` leaves large ids as BigInt, which
+`JSON.stringify` throws on, so they are serialized as strings.
+
 ### Not done
 
-* `mltAlias` mirroring `pbfAlias` — no evidence anyone needs it yet.
-* GeoJSON inspection over MLT (below).
-
-### GeoJSON inspection endpoint
-
-`/data/{id}/{z}/{x}/{y}.geojson` currently builds GeoJSON via `@mapbox/vector-tile`. For MLT:
-
-```js
-const tables = decodeTile(new Uint8Array(data));   // FeatureTable[]
-for (const ft of tables) {
-  for (const f of ft.getFeatures()) { /* f.id, f.geometry, f.properties, ft.extent */ }
-}
-```
-
-`FeatureTable` exposes `name`, `numFeatures`, `extent`, `getFeatures()`. Unlike
-`@mapbox/vector-tile` there is no `toGeoJSON(x, y, z)` — geometry comes back in tile-local
-coordinates, so we do the tile→WGS84 transform ourselves against `ft.extent`.
+* `mltAlias` mirroring `pbfAlias` -- no evidence anyone needs it yet.
+* MVT to MLT. No JavaScript MLT encoder is published: `@maplibre/mlt` is decode-only,
+  `encodeTile` is not re-exported from `ts/src/index.ts`, and `mlt-wasm` exposes
+  `decode_tile` only. It is also the less useful direction -- MLT's value is precomputed
+  compact storage, so encoding per request spends CPU to produce what a generator should
+  have produced once.
 
 ## Verified manually
 
-With `omt-basic-mlt.mbtiles` wired into `test_data/config.json` as `omt_mlt`, plus a
-`test-style-mlt` style reusing `osm-bright/style.json` with `mapping: { openmaptiles:
-omt_mlt }`:
+Beyond the test suite, two things were checked by hand because they are easy to get
+subtly wrong and easy for a test to rubber-stamp.
+
+**The projection**, against ground truth rather than against itself:
 
 ```
-200  /data/omt_mlt.json          format:"mlt", encoding:"mlt", tiles .../{z}/{x}/{y}.mlt
-200  /data/omt_mlt/0/0/0.mlt     87,905 bytes, application/vnd.maplibre-vector-tile
-200  /data/omt_mlt/4/8/5.mlt     404,579 bytes
-404  /data/omt_mlt/0/0/0.pbf     Invalid format
-400  /data/omt_mlt/0/0/0.geojson GeoJSON conversion is not supported for MLT tiles
-200  /data/openmaptiles/0/0/0.geojson   188,144 bytes  (no regression)
-200  /data/openmaptiles/0/0/0.pbf        43,479 bytes  (no regression)
-200  /styles/test-style-mlt/256/0/0/0.png
+Aruba      -69.96, 12.55   (actual -69.97, 12.52)
+Brazil     -53.09, -10.75  (actual -53.1, -10.8)
 ```
 
-Repeated against a copy of the same archive with its metadata `format` rewritten to
-Planetiler's `application/vnd.maplibre-vector-tile`: identical results — TileJSON reports
-`format:"mlt"` / `encoding:"mlt"`, the `.mlt` route serves, and the style renders.
+and across all four z1 quadrants, since z0 has x=y=0 and hides the offset terms:
 
-The rendered request logs `mlgl: MLT parse failed: Unexpected end of buffer`, which is the
-point: maplibre-native took the **MLT** decode path, so `encoding: 'mlt'` reached the
-source. It then failed on the stale fixture (see below) and rendered background only.
+```
+z1/0/0 NW  lon [-180.0, 3.5]   lat [-3.5, 85.3]
+z1/1/0 NE  lon [-3.5, 180.0]   lat [-3.5, 81.9]
+z1/0/1 SW  lon [-180.0, 3.5]   lat [-85.1, 3.5]
+z1/1/1 SE  lon [-3.5, 180.0]   lat [-85.3, 3.5]
+```
 
-The existing suite still passes in full (188 passing).
+Overshoot past each quadrant edge is the tile buffer, as in MVT. All 3,325 polygon rings
+in the z0 tile close.
+
+**The two conversion paths agree.** MLT to GeoJSON, and MLT to MVT to GeoJSON, compared
+feature-by-feature across five tiles:
+
+```
+z0/0/0  features=495  differing=0
+z1/0/0  features=163  differing=0
+z1/1/0  features=283  differing=0
+z1/0/1  features=54   differing=0
+z1/1/1  features=100  differing=0
+```
+
+Identical geometry, coordinates and properties throughout. Size on the z0 tile: 81 KB of
+MLT becomes 102 KB of MVT.
+
+A first pass at that comparison reported one mismatch per tile and it was the harness,
+not the code: features were keyed by their properties, and two centroids share an empty
+`NAME`, so the map collapsed them. Comparing positionally showed zero differences.
 
 ## Testing
 
@@ -299,23 +314,24 @@ through the packer and `fetchTileData`.
 
 ### Tests
 
-`test/mlt.js` — 11 tests, no network. It boots its own server against
-`test/fixtures/mlt-config.json` (the pattern `test/reload.js` uses) so it does not depend on
-the config inside `test_data.zip`, and packs the fixture in a `before` hook.
+`test/mlt.js` -- 18 tests, no network. It boots its own server against
+`test/fixtures/mlt-config.json` (the pattern `test/reload.js` uses) so it does not depend
+on the config inside `test_data.zip`.
 
-* TileJSON reports `format: "mlt"`, `encoding: "mlt"` and the `.mlt` URL template
-* Planetiler's `application/vnd.maplibre-vector-tile` spelling normalizes to `mlt`, for both
-  the TileJSON and the tile route
-* `.mlt` serves with the MLT content type, at z0 and all four z1 tiles
-* `.pbf` against an MLT source and `.mlt` against a PBF source both 404
-* beyond maxzoom 404s
-* `.geojson` against MLT returns 400 with a reason; against PBF it still works
-* a style over the MLT source renders
+* TileJSON reports `format`, `encoding` and the `.mlt` URL template, for mbtiles, for
+  pmtiles (where the format comes from the header tile type), and for Planetiler's
+  media-type spelling
+* `.mlt` serves with the MLT content type from mbtiles and pmtiles, at z0 and all four
+  z1 tiles; beyond maxzoom 404s
+* `.pbf` on an MLT source decodes as a real MVT with the right layers and extent, and
+  matches the `.geojson` output feature-by-feature
+* `.mlt` on an MVT source still 404s -- there is no encoder for the reverse
+* `.geojson` returns a FeatureCollection, puts Aruba where Aruba is, honours a non-zero
+  tile offset, and closes every polygon ring
+* a style over the MLT source renders actual geometry, not a flat background
 
-The render test asserts the PNG's channels vary rather than matching a reference image: a
-failed MLT decode still returns a valid PNG of the flat background, so uniform channels mean
-the geometry never arrived. Confirmed the assertion fails on a solid-colour image, so it is
-a real guard and not a tautology.
+The projection tests are deliberate about one trap: z0 has x=y=0, so the tile-offset
+terms cancel and a bug there stays hidden. One test uses z1/1/1 for that reason.
 
 ## MLT over HTTP(S)
 
@@ -344,67 +360,10 @@ Note gzip handling differs by path. `fetch` transparently decompresses a respons
 serving raw gzip bytes *without* that header would fail. That is pre-existing behaviour
 shared with `.pbf`, not something MLT introduces.
 
-## Proposed: conversion routes
-
-Idea: serve an MLT source as MVT (and possibly the reverse), alongside GeoJSON. The two
-directions are not equally feasible.
-
-### MLT → MVT — feasible, and the URL already exists
-
-`/data/{id}/{z}/{x}/{y}.pbf` against an MLT source currently 404s with `Invalid format`.
-Making that transcode instead fits the existing extension-based idiom (`.pbf`, `.geojson`)
-with no new route shape. Martin does the same thing via `Accept` header negotiation; the
-extension form suits this codebase better.
-
-Needs `@maplibre/mlt` to decode plus an MVT serializer — `vt-pbf` (3.1.3) is the standard
-one. Its `fromVectorTileJs` wants `{ layers: { name: { length, extent, feature(i) } } }`
-where each feature exposes `loadGeometry()`, `type`, `id`, `properties`, so a `FeatureTable`
-shim gets us there. Prefer that over routing through GeoJSON, which would round-trip
-coordinates through lat/lon and lose precision.
-
-Two caveats worth deciding up front:
-
-* **Lossy.** MLT has `STRUCT` (30) and `MAP` (31) column types for nested properties, and
-  64-bit ids. MVT properties are flat scalars. Nested properties have to be flattened or
-  dropped — that is a real fidelity decision, not an implementation detail.
-* **Cost.** This is a decode plus re-encode on every tile request, and tileserver-gl has no
-  tile cache to amortise it. Fine for compatibility with legacy clients; not something to
-  leave on by default without measuring.
-
-### MVT → MLT — blocked upstream
-
-No published JavaScript MLT encoder exists:
-
-* `@maplibre/mlt` is decode-only. `encodeTile` exists at
-  `maplibre-tile-spec/ts/src/encoding/mltEncoder.ts` but is **not** re-exported from
-  `ts/src/index.ts`, so it is not part of the package API.
-* `mlt-wasm` exposes `decode_tile` only — no encode entry point at all. (`@maplibre/mlt-wasm`
-  on npm is at 0.1.0 against a 0.1.20 crate, so it also looks stale.)
-
-Ways forward, none of them small:
-
-1. Upstream PR exporting `encodeTile` from `ts/src/index.ts` — by far the cheapest, and it
-   stacks naturally on the packaging PR.
-2. Shell out to the Rust `mlt` CLI. Fine for offline conversion, wrong for a request path.
-3. Wait for `mlt-wasm` to gain encoding.
-
-Note the demand here is also weaker: MLT's benefit is precomputed compact storage, so
-encoding MVT→MLT per request spends CPU to produce something that should have been
-generated once by Planetiler or `mlt convert`. Worth confirming there is a real use case
-before building it.
-
-### Suggested order
-
-1. Unblock the fixture (a current-format tile).
-2. MLT → GeoJSON, which establishes the decode + coordinate-transform code.
-3. MLT → MVT, reusing that decode path with `vt-pbf`.
-4. MVT → MLT only if upstream exports the encoder and a use case exists.
-
 ## Open questions
 
-1. Confirm the split above — core MLT support with no new dependency, GeoJSON inspection
-   as a follow-up?
-2. Specifier rewrite or esbuild bundle for the `prepare`-time workaround?
-3. Skip response gzip for `.mlt`?
-4. Does `tileserver-gl-styles` need MLT variants, or do we rely on `encoding` being derived
-   so the stock styles work over MLT data unchanged?
+1. Skip response gzip for `.mlt`? MLT compresses internally, so this mostly burns CPU --
+   worth a measurement rather than a guess.
+2. Is transcoding worth caching? `.pbf` and `.geojson` decode on every request and there
+   is no tile cache to amortise it. Fine for compatibility, not for serving at volume.
+3. Fix `@maplibre/mlt` packaging upstream, so `scripts/vendor-mlt.mjs` can be deleted?

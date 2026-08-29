@@ -6,6 +6,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sqlite3 from 'sqlite3';
 import sharp from 'sharp';
+import { VectorTile } from '@mapbox/vector-tile';
+import { PbfReader } from 'pbf';
 import supertest from 'supertest';
 import { server } from '../src/server.js';
 
@@ -138,10 +140,6 @@ describe('MLT tiles', function () {
       expect(res.body.length).to.be.above(0);
     });
 
-    it('rejects .pbf against an mlt source', async function () {
-      await app.get('/data/test_mlt/0/0/0.pbf').expect(404);
-    });
-
     it('rejects .mlt against a pbf source', async function () {
       await app.get('/data/openmaptiles/0/0/0.mlt').expect(404);
     });
@@ -151,10 +149,120 @@ describe('MLT tiles', function () {
     });
   });
 
+  describe('mvt transcoding', function () {
+    it('serves an mlt source as .pbf', async function () {
+      const res = await app
+        .get('/data/test_mlt/0/0/0.pbf')
+        .buffer(true)
+        .parse(binaryParser)
+        .expect(200)
+        .expect('Content-Type', /application\/x-protobuf/);
+
+      const tile = new VectorTile(new PbfReader(res.body));
+      expect(Object.keys(tile.layers).sort()).to.deep.equal([
+        'centroids',
+        'countries',
+        'geolines',
+      ]);
+      expect(tile.layers.countries.extent).to.equal(4096);
+      expect(tile.layers.countries.length).to.be.above(0);
+    });
+
+    it('produces the same features as converting straight to geojson', async function () {
+      const [pbf, geojson] = await Promise.all([
+        app
+          .get('/data/test_mlt/1/1/0.pbf')
+          .buffer(true)
+          .parse(binaryParser)
+          .expect(200),
+        app.get('/data/test_mlt/1/1/0.geojson').expect(200),
+      ]);
+
+      const tile = new VectorTile(new PbfReader(pbf.body));
+      const roundTripped = [];
+      for (const name of Object.keys(tile.layers)) {
+        // eslint-disable-next-line security/detect-object-injection -- name is from Object.keys of the decoded tile
+        const layer = tile.layers[name];
+        for (let i = 0; i < layer.length; i++) {
+          const feature = layer.feature(i).toGeoJSON(1, 0, 1);
+          feature.properties.layer = name;
+          roundTripped.push(feature);
+        }
+      }
+
+      // Same order both ways: layers, then features within each layer.
+      expect(roundTripped.length).to.equal(geojson.body.features.length);
+      /* eslint-disable security/detect-object-injection -- i is a loop counter */
+      for (let i = 0; i < roundTripped.length; i++) {
+        expect(roundTripped[i].geometry).to.deep.equal(
+          geojson.body.features[i].geometry,
+        );
+        expect(roundTripped[i].properties).to.deep.equal(
+          geojson.body.features[i].properties,
+        );
+      }
+      /* eslint-enable security/detect-object-injection */
+    });
+
+    it('does not transcode the other way: .mlt from a pbf source', async function () {
+      // There is no published JavaScript MLT encoder.
+      await app.get('/data/openmaptiles/0/0/0.mlt').expect(404);
+    });
+  });
+
   describe('geojson conversion', function () {
-    it('is refused for mlt sources, with a reason', async function () {
-      const res = await app.get('/data/test_mlt/0/0/0.geojson').expect(400);
-      expect(res.text).to.match(/not supported for MLT/i);
+    it('converts an mlt tile to a FeatureCollection', async function () {
+      const res = await app
+        .get('/data/test_mlt/0/0/0.geojson')
+        .expect(200)
+        .expect('Content-Type', /application\/json/);
+      expect(res.body.type).to.equal('FeatureCollection');
+      expect(res.body.features.length).to.be.above(0);
+      expect(res.body.features[0].properties.layer).to.be.a('string');
+    });
+
+    it('projects tile coordinates to the right place on earth', async function () {
+      const res = await app.get('/data/test_mlt/0/0/0.geojson').expect(200);
+      const aruba = res.body.features.find(
+        (f) =>
+          f.properties.layer === 'centroids' && f.properties.NAME === 'Aruba',
+      );
+      expect(aruba, 'Aruba centroid missing').to.not.equal(undefined);
+      const [lon, lat] = aruba.geometry.coordinates;
+      expect(lon).to.be.closeTo(-69.97, 0.5);
+      expect(lat).to.be.closeTo(12.52, 0.5);
+    });
+
+    it('honours the tile offset, not just the z0 tile', async function () {
+      // z0 has x=y=0, so the offset terms cancel and a bug there stays hidden.
+      const res = await app.get('/data/test_mlt/1/1/1.geojson').expect(200);
+      const lons = [];
+      const walk = (a) =>
+        Array.isArray(a[0]) ? a.forEach(walk) : lons.push(a[0]);
+      for (const f of res.body.features) walk(f.geometry.coordinates);
+      // The south-east tile covers the eastern hemisphere, give or take the buffer.
+      expect(Math.min(...lons)).to.be.above(-10);
+      expect(Math.max(...lons)).to.be.closeTo(180, 1);
+    });
+
+    it('closes every polygon ring', async function () {
+      const res = await app.get('/data/test_mlt/0/0/0.geojson').expect(200);
+      let rings = 0;
+      for (const f of res.body.features) {
+        const polygons =
+          f.geometry.type === 'Polygon'
+            ? [f.geometry.coordinates]
+            : f.geometry.type === 'MultiPolygon'
+              ? f.geometry.coordinates
+              : [];
+        for (const polygon of polygons) {
+          for (const ring of polygon) {
+            rings++;
+            expect(ring[0]).to.deep.equal(ring[ring.length - 1]);
+          }
+        }
+      }
+      expect(rings).to.be.above(0);
     });
 
     it('still works for pbf sources', async function () {
