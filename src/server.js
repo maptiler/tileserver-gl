@@ -23,10 +23,6 @@ import {
   getPublicUrl,
   isValidHttpUrl,
   isValidRemoteUrl,
-  parseAllowedHosts,
-  isHostAllowed,
-  getCandidateHost,
-  getSafeProtocol,
 } from './utils.js';
 
 import { fileURLToPath } from 'url';
