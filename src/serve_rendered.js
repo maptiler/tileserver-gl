@@ -35,6 +35,7 @@ import {
   fixTileJSONCenter,
   fetchTileData,
   readFile,
+  resolveSparse,
 } from './utils.js';
 import { openPMtiles, getPMtilesInfo } from './pmtiles_adapter.js';
 import { renderOverlay, renderWatermark, renderAttribution } from './render.js';
@@ -1357,9 +1358,6 @@ export const serve_rendered = {
 
     const styleJSON = clone(style);
 
-    // Global sparse flag for HTTP/remote sources (from config options)
-    const globalSparse = options.sparse ?? true;
-
     /**
      * Creates a pool of renderers.
      * @param {number} ratio Pixel ratio
@@ -1442,8 +1440,13 @@ export const serve_rendered = {
                   console.log('fetchTile null on %s', req.url);
                 }
                 // eslint-disable-next-line security/detect-object-injection -- sourceId from internal style source names
-                const sparse = map.sparseFlags[sourceId] ?? true;
-                // sparse=true (default) -> return empty callback so MapLibre can overzoom
+                const sourceSparse = map.sparseFlags[sourceId];
+                const sparse = resolveSparse(
+                  sourceSparse,
+                  options.sparse,
+                  format === 'pbf',
+                );
+                // sparse=true -> return empty callback so MapLibre can overzoom
                 if (sparse) {
                   callback();
                   return;
@@ -1491,6 +1494,18 @@ export const serve_rendered = {
               const timeoutMs = (fetchTimeout && Number(fetchTimeout)) || 15000;
               let timeoutId;
 
+              const extension = path
+                .extname(url.parse(req.url).pathname)
+                .toLowerCase();
+              // eslint-disable-next-line security/detect-object-injection -- extension is from path.extname, limited set
+              const format = extensionToFormat[extension] || '';
+              // A raw remote URL has no per-source config of its own.
+              const sparse = resolveSparse(
+                undefined,
+                options.sparse,
+                extension === '.pbf',
+              );
+
               try {
                 timeoutId = setTimeout(() => controller.abort(), timeoutMs);
                 const response = await fetch(req.url, {
@@ -1500,10 +1515,6 @@ export const serve_rendered = {
 
                 // HTTP 204 No Content means "empty tile" - generate a blank tile
                 if (response.status === 204) {
-                  const parts = url.parse(req.url);
-                  const extension = path.extname(parts.pathname).toLowerCase();
-                  // eslint-disable-next-line security/detect-object-injection -- extension is from path.extname, limited set
-                  const format = extensionToFormat[extension] || '';
                   createEmptyResponse(format, '', callback);
                   return;
                 }
@@ -1514,23 +1525,17 @@ export const serve_rendered = {
                       'fetchTile HTTP %d on %s, %s',
                       response.status,
                       req.url,
-                      globalSparse
-                        ? 'allowing overzoom'
-                        : 'creating empty tile',
+                      sparse ? 'allowing overzoom' : 'creating empty tile',
                     );
                   }
 
-                  if (globalSparse) {
+                  if (sparse) {
                     // sparse=true -> allow overzoom
                     callback();
                     return;
                   }
 
-                  // sparse=false (default) -> create empty tile
-                  const parts = url.parse(req.url);
-                  const extension = path.extname(parts.pathname).toLowerCase();
-                  // eslint-disable-next-line security/detect-object-injection -- extension is from path.extname, limited set
-                  const format = extensionToFormat[extension] || '';
+                  // sparse=false -> create empty tile
                   createEmptyResponse(format, '', callback);
                   return;
                 }
@@ -1579,17 +1584,13 @@ export const serve_rendered = {
                   error.message || error,
                 );
 
-                if (globalSparse) {
+                if (sparse) {
                   // sparse=true -> allow overzoom
                   callback();
                   return;
                 }
 
-                // sparse=false (default) -> create empty tile
-                const parts = url.parse(req.url);
-                const extension = path.extname(parts.pathname).toLowerCase();
-                // eslint-disable-next-line security/detect-object-injection -- extension is from path.extname, limited set
-                const format = extensionToFormat[extension] || '';
+                // sparse=false -> create empty tile
                 createEmptyResponse(format, '', callback);
               }
             } else if (protocol === 'file') {
@@ -1816,12 +1817,12 @@ export const serve_rendered = {
             }
           }
 
-          // Set sparse flag: user config overrides format-based default
-          // Vector tiles (pbf) default to false (204), raster tiles default to true (404)
-          const isVector = metadata.format === 'pbf';
           // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
-          map.sparseFlags[name] =
-            dataInfo.sparse ?? options.sparse ?? !isVector;
+          map.sparseFlags[name] = resolveSparse(
+            dataInfo.sparse,
+            options.sparse,
+            metadata.format === 'pbf',
+          );
         } else {
           // MBTiles does not support remote URLs
 
@@ -1870,12 +1871,12 @@ export const serve_rendered = {
             }
           }
 
-          // Set sparse flag: user config overrides format-based default
-          // Vector tiles (pbf) default to false (204), raster tiles default to true (404)
-          const isVector = info.format === 'pbf';
           // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
-          map.sparseFlags[name] =
-            dataInfo.sparse ?? options.sparse ?? !isVector;
+          map.sparseFlags[name] = resolveSparse(
+            dataInfo.sparse,
+            options.sparse,
+            info.format === 'pbf',
+          );
         }
       }
     }
