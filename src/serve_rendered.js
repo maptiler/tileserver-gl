@@ -1519,7 +1519,7 @@ export const serve_rendered = {
                     response.data = await gunzipP(response.data);
                   }
                   if (options.dataDecoratorFunc) {
-                    response.data = options.dataDecoratorFunc(
+                    response.data = await options.dataDecoratorFunc(
                       sourceId,
                       'data',
                       response.data,
@@ -1861,7 +1861,7 @@ export const serve_rendered = {
           delete source.sparse;
 
           if (options.dataDecoratorFunc) {
-            source = options.dataDecoratorFunc(name, 'tilejson', source);
+            source = await options.dataDecoratorFunc(name, 'tilejson', source);
             // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
             styleJSON.sources[name] = source;
           }
@@ -1923,7 +1923,7 @@ export const serve_rendered = {
           delete source.sparse;
 
           if (options.dataDecoratorFunc) {
-            source = options.dataDecoratorFunc(name, 'tilejson', source);
+            source = await options.dataDecoratorFunc(name, 'tilejson', source);
             // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
             styleJSON.sources[name] = source;
           }

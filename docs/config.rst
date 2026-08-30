@@ -221,7 +221,7 @@ Path (relative to ``root``) to a JavaScript module whose default export is calle
 
 The module must be an ES module with a default export. The function is called as ``decorate(id, type, data, z, x, y)`` and **must return the value**, modified or not - returning nothing discards the data.
 
-The function is called synchronously: its return value is used directly and is never awaited, so it cannot do asynchronous work. Returning a promise replaces the tile data with the promise object.
+The function may be ``async``, or return a promise. The return value is awaited, so the decorator can do asynchronous work such as a lookup or a fetch. It is awaited on every call, including once per tile for ``'data'``, so keep it fast or cache inside the module.
 
 ``id``
   The data source id from the config, or the source name from the style.
