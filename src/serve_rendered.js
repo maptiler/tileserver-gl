@@ -35,6 +35,7 @@ import {
   fixTileJSONCenter,
   fetchTileData,
   readFile,
+  parseOptionalBoolean,
   resolveSparse,
 } from './utils.js';
 import { openPMtiles, getPMtilesInfo } from './pmtiles_adapter.js';
@@ -1441,11 +1442,12 @@ export const serve_rendered = {
                 }
                 // eslint-disable-next-line security/detect-object-injection -- sourceId from internal style source names
                 const sourceSparse = map.sparseFlags[sourceId];
-                const sparse = resolveSparse(
-                  sourceSparse,
-                  options.sparse,
-                  format === 'pbf',
-                );
+                // Metadata was already folded into sparseFlags at load time.
+                const sparse = resolveSparse({
+                  perSource: sourceSparse,
+                  globalOption: options.sparse,
+                  isVector: format === 'pbf',
+                });
                 // sparse=true -> return empty callback so MapLibre can overzoom
                 if (sparse) {
                   callback();
@@ -1499,12 +1501,11 @@ export const serve_rendered = {
                 .toLowerCase();
               // eslint-disable-next-line security/detect-object-injection -- extension is from path.extname, limited set
               const format = extensionToFormat[extension] || '';
-              // A raw remote URL has no per-source config of its own.
-              const sparse = resolveSparse(
-                undefined,
-                options.sparse,
-                extension === '.pbf',
-              );
+              // A raw remote URL has neither per-source config nor metadata.
+              const sparse = resolveSparse({
+                globalOption: options.sparse,
+                isVector: extension === '.pbf',
+              });
 
               try {
                 timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -1803,6 +1804,11 @@ export const serve_rendered = {
             `pmtiles://${name}/{z}/{x}/{y}.${metadata.format || 'pbf'}`,
           ];
           delete source.scheme;
+          // Object.assign copied the archive metadata onto the style source, so
+          // `sparse` is sitting there unparsed - "false" as a string is truthy.
+          // sparseFlags below is the value the request handler reads, so drop
+          // the duplicate here, before the data decorator sees it.
+          delete source.sparse;
 
           if (options.dataDecoratorFunc) {
             source = options.dataDecoratorFunc(name, 'tilejson', source);
@@ -1824,11 +1830,12 @@ export const serve_rendered = {
           }
 
           // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
-          map.sparseFlags[name] = resolveSparse(
-            dataInfo.sparse,
-            options.sparse,
-            metadata.format === 'pbf',
-          );
+          map.sparseFlags[name] = resolveSparse({
+            perSource: dataInfo.sparse,
+            globalOption: options.sparse,
+            metadata: parseOptionalBoolean(metadata.sparse),
+            isVector: metadata.format === 'pbf',
+          });
         } else {
           // MBTiles does not support remote URLs
 
@@ -1859,6 +1866,11 @@ export const serve_rendered = {
             `mbtiles://${name}/{z}/{x}/{y}.${info.format || 'pbf'}`,
           ];
           delete source.scheme;
+          // Object.assign copied the archive metadata onto the style source, so
+          // `sparse` is sitting there unparsed - "false" as a string is truthy.
+          // sparseFlags below is the value the request handler reads, so drop
+          // the duplicate here, before the data decorator sees it.
+          delete source.sparse;
 
           if (options.dataDecoratorFunc) {
             source = options.dataDecoratorFunc(name, 'tilejson', source);
@@ -1880,11 +1892,12 @@ export const serve_rendered = {
           }
 
           // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
-          map.sparseFlags[name] = resolveSparse(
-            dataInfo.sparse,
-            options.sparse,
-            info.format === 'pbf',
-          );
+          map.sparseFlags[name] = resolveSparse({
+            perSource: dataInfo.sparse,
+            globalOption: options.sparse,
+            metadata: parseOptionalBoolean(info.sparse),
+            isVector: info.format === 'pbf',
+          });
         }
       }
     }
