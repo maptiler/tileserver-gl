@@ -66,6 +66,23 @@ describe('data decorator', function () {
     expect(tilejsonCall.format).to.equal('pbf');
   });
 
+  it('uses what the decorator returned, not the object it was handed', function (done) {
+    // The fixture returns a new object rather than mutating in place. Recording
+    // that the decorator ran is not enough - its return value has to be the one
+    // that reaches the response.
+    supertest(running.app)
+      .get('/data/openmaptiles.json')
+      .expect(200)
+      .expect((res) => {
+        expect(
+          res.body.decorated,
+          'decorator return value was dropped',
+        ).to.equal(true);
+        expect(res.body.format, 'TileJSON lost its own fields').to.equal('pbf');
+      })
+      .end(done);
+  });
+
   it('is applied to the local sources a style pulls in', function () {
     // serve_rendered decorates each local source of a style. That call carries
     // the source object, whose tiles url is the internal mbtiles:// form - the
@@ -80,5 +97,60 @@ describe('data decorator', function () {
       undefined,
     );
     expect(styleSourceCall.id).to.equal('openmaptiles');
+  });
+});
+
+describe('async data decorator', function () {
+  let running;
+  let listenerBaseline;
+
+  before(async function () {
+    listenerBaseline = SIGNALS.map((eventName) => ({
+      eventName,
+      count: process.listeners(eventName).length,
+    }));
+    running = await server({
+      config: {
+        options: {
+          paths: { fonts: 'fonts', styles: 'styles' },
+          dataDecorator: '../test/fixtures/data-decorator-async.js',
+        },
+        data: { openmaptiles: { mbtiles: 'zurich_switzerland.mbtiles' } },
+      },
+      port: 0,
+      publicUrl: '/test/',
+    });
+    await running.startupPromise;
+  });
+
+  after(async function () {
+    await running.cleanup();
+    if (running.server.listening) {
+      await new Promise((resolve) => running.server.close(resolve));
+    }
+    for (const { eventName, count } of listenerBaseline) {
+      for (const listener of process.listeners(eventName).slice(count)) {
+        process.removeListener(eventName, listener);
+      }
+    }
+  });
+
+  // Without an await at the call site the decorator's promise is assigned
+  // straight to the TileJSON, which then serves as {tiles: [...]} with every
+  // other field gone - a 200 carrying silently emptied data.
+  it('awaits a decorator that returns a promise', function (done) {
+    supertest(running.app)
+      .get('/data/openmaptiles.json')
+      .expect(200)
+      .expect((res) => {
+        expect(
+          res.body.decoratedAsync,
+          'async decorator was not awaited',
+        ).to.equal(true);
+        expect(res.body.format, 'TileJSON was replaced by a promise').to.equal(
+          'pbf',
+        );
+      })
+      .end(done);
   });
 });

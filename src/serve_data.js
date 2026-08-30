@@ -141,7 +141,7 @@ export const serve_data = {
 
       if (tileJSONFormat === 'pbf') {
         if (options.dataDecoratorFunc) {
-          data = options.dataDecoratorFunc(
+          data = await options.dataDecoratorFunc(
             req.params.id,
             'data',
             data,
@@ -632,7 +632,7 @@ export const serve_data = {
     fixTileJSONCenter(tileJSON);
 
     if (options.dataDecoratorFunc) {
-      tileJSON = options.dataDecoratorFunc(id, 'tilejson', tileJSON);
+      tileJSON = await options.dataDecoratorFunc(id, 'tilejson', tileJSON);
     }
 
     // sparse=true -> 404 (allows overzoom), sparse=false -> 204 (empty tile)
