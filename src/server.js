@@ -452,9 +452,10 @@ async function start(opts) {
                       resolvedS3Region = sourceData.s3Region;
                     }
 
-                    // Get sparse: per-source overrides global, default to true
-                    resolvedSparse =
-                      sourceData.sparse ?? options.sparse ?? true;
+                    // Get sparse: per-source overrides global. Left undefined
+                    // when neither is set, so the consumer applies the
+                    // format-based default (raster sparse, vector not).
+                    resolvedSparse = sourceData.sparse ?? options.sparse;
 
                     break; // Found our match, exit the outer loop
                   }
@@ -482,7 +483,7 @@ async function start(opts) {
                   requestPayer: false,
                   s3Region: undefined,
                   s3UrlFormat: undefined,
-                  sparse: true,
+                  sparse: undefined,
                 };
               }
 

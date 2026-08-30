@@ -1357,9 +1357,6 @@ export const serve_rendered = {
 
     const styleJSON = clone(style);
 
-    // Global sparse flag for HTTP/remote sources (from config options)
-    const globalSparse = options.sparse ?? true;
-
     /**
      * Creates a pool of renderers.
      * @param {number} ratio Pixel ratio
@@ -1442,8 +1439,10 @@ export const serve_rendered = {
                   console.log('fetchTile null on %s', req.url);
                 }
                 // eslint-disable-next-line security/detect-object-injection -- sourceId from internal style source names
-                const sparse = map.sparseFlags[sourceId] ?? true;
-                // sparse=true (default) -> return empty callback so MapLibre can overzoom
+                const sourceSparse = map.sparseFlags[sourceId];
+                const sparse =
+                  sourceSparse ?? options.sparse ?? format !== 'pbf';
+                // sparse=true -> return empty callback so MapLibre can overzoom
                 if (sparse) {
                   callback();
                   return;
@@ -1491,6 +1490,15 @@ export const serve_rendered = {
               const timeoutMs = (fetchTimeout && Number(fetchTimeout)) || 15000;
               let timeoutId;
 
+              const extension = path
+                .extname(url.parse(req.url).pathname)
+                .toLowerCase();
+              // eslint-disable-next-line security/detect-object-injection -- extension is from path.extname, limited set
+              const format = extensionToFormat[extension] || '';
+              // Raster tiles are sparse by default so MapLibre can overzoom;
+              // vector tiles are not. Config overrides either way.
+              const sparse = options.sparse ?? extension !== '.pbf';
+
               try {
                 timeoutId = setTimeout(() => controller.abort(), timeoutMs);
                 const response = await fetch(req.url, {
@@ -1500,10 +1508,6 @@ export const serve_rendered = {
 
                 // HTTP 204 No Content means "empty tile" - generate a blank tile
                 if (response.status === 204) {
-                  const parts = url.parse(req.url);
-                  const extension = path.extname(parts.pathname).toLowerCase();
-                  // eslint-disable-next-line security/detect-object-injection -- extension is from path.extname, limited set
-                  const format = extensionToFormat[extension] || '';
                   createEmptyResponse(format, '', callback);
                   return;
                 }
@@ -1514,23 +1518,17 @@ export const serve_rendered = {
                       'fetchTile HTTP %d on %s, %s',
                       response.status,
                       req.url,
-                      globalSparse
-                        ? 'allowing overzoom'
-                        : 'creating empty tile',
+                      sparse ? 'allowing overzoom' : 'creating empty tile',
                     );
                   }
 
-                  if (globalSparse) {
+                  if (sparse) {
                     // sparse=true -> allow overzoom
                     callback();
                     return;
                   }
 
-                  // sparse=false (default) -> create empty tile
-                  const parts = url.parse(req.url);
-                  const extension = path.extname(parts.pathname).toLowerCase();
-                  // eslint-disable-next-line security/detect-object-injection -- extension is from path.extname, limited set
-                  const format = extensionToFormat[extension] || '';
+                  // sparse=false -> create empty tile
                   createEmptyResponse(format, '', callback);
                   return;
                 }
@@ -1579,17 +1577,13 @@ export const serve_rendered = {
                   error.message || error,
                 );
 
-                if (globalSparse) {
+                if (sparse) {
                   // sparse=true -> allow overzoom
                   callback();
                   return;
                 }
 
-                // sparse=false (default) -> create empty tile
-                const parts = url.parse(req.url);
-                const extension = path.extname(parts.pathname).toLowerCase();
-                // eslint-disable-next-line security/detect-object-injection -- extension is from path.extname, limited set
-                const format = extensionToFormat[extension] || '';
+                // sparse=false -> create empty tile
                 createEmptyResponse(format, '', callback);
               }
             } else if (protocol === 'file') {
