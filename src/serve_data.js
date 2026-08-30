@@ -17,6 +17,8 @@ import {
   lonLatToTilePixel,
   isVectorFormat,
   MLT_CONTENT_TYPE,
+  parseOptionalBoolean,
+  resolveSparse,
 } from './utils.js';
 import { getPMtilesInfo, openPMtiles } from './pmtiles_adapter.js';
 import { gunzipP, gzipP } from './promises.js';
@@ -146,7 +148,7 @@ export const serve_data = {
 
       if (tileJSONFormat === 'pbf') {
         if (options.dataDecoratorFunc) {
-          data = options.dataDecoratorFunc(
+          data = await options.dataDecoratorFunc(
             req.params.id,
             'data',
             data,
@@ -636,11 +638,18 @@ export const serve_data = {
     delete tileJSON['scheme'];
     tileJSON['tilejson'] = '3.0.0';
 
+    // MBTiles metadata is a table of strings, so a `sparse` row arrives as
+    // "false" - truthy at face value. Take it as a boolean here and drop the
+    // raw key, so nothing downstream (the data decorator, the served TileJSON)
+    // ever sees the unparsed form. The resolved value is put back below.
+    const metadataSparse = parseOptionalBoolean(tileJSON.sparse);
+    delete tileJSON['sparse'];
+
     Object.assign(tileJSON, params.tilejson || {});
     fixTileJSONCenter(tileJSON);
 
     if (options.dataDecoratorFunc) {
-      tileJSON = options.dataDecoratorFunc(id, 'tilejson', tileJSON);
+      tileJSON = await options.dataDecoratorFunc(id, 'tilejson', tileJSON);
     }
 
     // Vector sources carry the style-spec tile encoding, derived from the format so
@@ -650,12 +659,16 @@ export const serve_data = {
       tileJSON['encoding'] = 'mlt';
     }
 
-    // Determine sparse: per-source overrides global, then format-based default
-    // sparse=true -> 404 (allows overzoom)
-    // sparse=false -> 204 (empty tile, no overzoom)
-    // Default: vector tiles (pbf, mlt) -> false, raster tiles -> true
-    const isVector = isVectorFormat(tileJSON.format);
-    const sparse = params.sparse ?? options.sparse ?? !isVector;
+    // sparse=true -> 404 (allows overzoom), sparse=false -> 204 (empty tile).
+    // MLT is a vector format too, so it takes the vector default like pbf.
+    const sparse = resolveSparse({
+      perSource: params.sparse,
+      globalOption: options.sparse,
+      metadata: metadataSparse,
+      isVector: isVectorFormat(tileJSON.format),
+    });
+    // Advertise what the server will actually do, not what the archive claimed.
+    tileJSON.sparse = sparse;
 
     // eslint-disable-next-line security/detect-object-injection -- id is from config file data source names
     repo[id] = {

@@ -40,6 +40,11 @@ const tests = [
     url: '/styles/test-style/static/8.5375,47.379,11/200x150@2x.png',
   },
   {
+    name: 'static-512px-path-alignment-2x',
+    // Test a real route overlay on an auto-fitted 512px high-DPI static map
+    url: '/styles/test-style/static/auto/512x512@2x.png?stroke=red&width=5&padding=0.1&path=8.53324,47.36674|8.53310,47.36661|8.53352,47.36603|8.53530,47.36666|8.53456,47.36770|8.53398,47.36926|8.53367,47.36963|8.53608,47.37132|8.53502,47.37209|8.53459,47.37256|8.53685,47.37315|8.53712,47.37375|8.53835,47.37392|8.53881,47.37450|8.54169,47.37443|8.54198,47.37582|8.54174,47.37669|8.54189,47.37759|8.54171,47.37841|8.54277,47.37867|8.54302,47.37893|8.54265,47.37987|8.54290,47.38031|8.54195,47.38155|8.54149,47.38272|8.54174,47.38329',
+  },
+  {
     name: 'path-auto',
     // Test path rendering with simple coordinates and auto-centering
     url: '/styles/test-style/static/auto/400x300.png?fill=%23ff000080&path=8.53180,47.38713|8.53841,47.38248|8.53320,47.37457',

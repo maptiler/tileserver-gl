@@ -2,6 +2,7 @@
 
 'use strict';
 import os from 'os';
+import { inspect } from 'node:util';
 
 const envSize = parseInt(process.env.UV_THREADPOOL_SIZE, 10);
 process.env.UV_THREADPOOL_SIZE = Math.ceil(
@@ -25,18 +26,63 @@ import { openMbTilesWrapper } from './mbtiles_wrapper.js';
 // Global Error Handlers - Prevent server crashes from unhandled errors
 // ============================================================================
 
+// Keeping the process alive hides the failure unless the log says what broke,
+// so report the stack, any cause chain, and how often this has happened. A
+// repeating count is the signal that something is looping, not misfiring once.
+const survivedErrorCounts = new Map();
+const SURVIVED_ERROR_KEYS_MAX = 500;
+
+/**
+ * Renders a thrown value as text, following up to `depth` levels of `cause`.
+ * @param {unknown} err - The thrown value or rejection reason.
+ * @param {number} [depth] - Remaining cause levels to follow.
+ * @returns {string} A printable description of the error.
+ */
+function describeError(err, depth = 3) {
+  if (!(err instanceof Error)) {
+    return `Non-Error value: ${inspect(err, { depth: 3 })}`;
+  }
+  let text = err.stack || `${err.name}: ${err.message}`;
+  if (err.cause !== undefined && depth > 0) {
+    text += `\nCaused by: ${describeError(err.cause, depth - 1)}`;
+  }
+  return text;
+}
+
+/**
+ * Reports an error the process deliberately survived.
+ * @param {string} kind - The handler that fired.
+ * @param {unknown} err - The thrown value or rejection reason.
+ * @returns {void}
+ */
+function reportSurvivedError(kind, err) {
+  const detail = describeError(err);
+  const key = `${kind} :: ${err instanceof Error ? err.message : detail}`;
+
+  let occurrence = '';
+  if (survivedErrorCounts.has(key)) {
+    const count = survivedErrorCounts.get(key) + 1;
+    survivedErrorCounts.set(key, count);
+    occurrence = ` (occurrence ${count})`;
+  } else if (survivedErrorCounts.size < SURVIVED_ERROR_KEYS_MAX) {
+    // Bounded: distinct messages can carry tile coordinates or URLs, and an
+    // unbounded tally of them would be a leak of its own.
+    survivedErrorCounts.set(key, 1);
+    occurrence = ' (occurrence 1)';
+  }
+
+  console.error(`[${kind}] server continuing after error${occurrence}:`);
+  console.error(detail);
+}
+
 // Prevent unhandled promise rejections from crashing the server
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Promise Rejection at:', promise);
-  console.error('Reason:', reason);
-  // Don't exit - keep server running
+process.on('unhandledRejection', (reason) => {
+  reportSurvivedError('unhandledRejection', reason);
 });
 
 // Prevent uncaught exceptions from crashing the server
 process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
-  console.error('Stack:', error.stack);
-  // Don't exit - keep server running
+  reportSurvivedError('uncaughtException', error);
 });
 
 // ============================================================================

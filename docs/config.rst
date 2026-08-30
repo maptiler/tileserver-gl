@@ -214,6 +214,41 @@ Allows the rendering of inline marker icons or base64 urls.
 For security reasons only allow this if you can control the origins from where the markers are fetched!
 Not used by default.
 
+``dataDecorator``
+-----------------
+
+Path (relative to ``root``) to a JavaScript module whose default export is called to modify tile data and TileJSON on the fly. Not used by default.
+
+The module must be an ES module with a default export. The function is called as ``decorate(id, type, data, z, x, y)`` and **must return the value**, modified or not - returning nothing discards the data.
+
+The function may be ``async``, or return a promise. The return value is awaited, so the decorator can do asynchronous work such as a lookup or a fetch. It is awaited on every call, including once per tile for ``'data'``, so keep it fast or cache inside the module.
+
+``id``
+  The data source id from the config, or the source name from the style.
+
+``type``
+  Either ``'tilejson'`` or ``'data'``.
+
+``data``
+  For ``'tilejson'``, the TileJSON object served at ``/data/{id}.json``, or a style's local source object. For ``'data'``, a ``Buffer`` of vector tile bytes, already un-gzipped.
+
+``z``, ``x``, ``y``
+  Tile coordinates. Only passed for ``'data'``.
+
+``'data'`` is called for vector (pbf) sources only, both for ``/data/{id}/{z}/{x}/{y}.pbf`` and for the tiles fed to the raster renderer. Raster tiles are never passed through it.
+
+.. code-block:: js
+
+  // decorator.js
+  export default function (id, type, data, z, x, y) {
+    if (type === 'tilejson') {
+      data.attribution = 'Example attribution';
+    }
+    return data;
+  }
+
+Errors loading the module are logged and the server starts without a decorator, so check the startup output if it does not appear to run.
+
 
 ``styles``
 ==========
@@ -294,8 +329,14 @@ Here are the available options for each data source:
     * ``true`` - Returns HTTP 404, allowing clients like MapLibre to overzoom and use parent tiles. Use this for terrain or datasets with uneven zoom coverage.
     * ``false`` - Returns HTTP 204 (No Content), signaling an intentionally empty tile and preventing overzoom.
 
-    This can be set globally in the top-level options or per-data-source (per-source overrides global).
-    Default: Depends on tile format - ``false`` for vector tiles (pbf), ``true`` for raster tiles (png, webp, jpg, etc.).
+    Resolved from the first of these that is set, highest priority first:
+
+    1. ``sparse`` on the data source in this config file
+    2. ``sparse`` in the top-level ``options``
+    3. ``sparse`` in the archive's own metadata (the MBTiles ``metadata`` table, or the PMTiles metadata JSON)
+    4. The tile format - ``false`` for vector tiles (pbf), ``true`` for raster tiles (png, webp, jpg, etc.)
+
+    Config outranks archive metadata, so a source that declares the wrong value for your deployment can be corrected without rewriting the file. MBTiles metadata values are text; ``"true"``/``"false"`` and ``"1"``/``"0"`` are both understood, and anything else is ignored rather than guessed at.
 
 ``s3Profile`` (string)
     Specifies the AWS credential profile to use for S3 PMTiles sources. The profile must be defined in your ``~/.aws/credentials`` file.

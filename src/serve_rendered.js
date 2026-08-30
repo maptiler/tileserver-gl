@@ -36,9 +36,12 @@ import {
   fetchTileData,
   readFile,
   isVectorFormat,
+  parseOptionalBoolean,
+  resolveSparse,
 } from './utils.js';
 import { openPMtiles, getPMtilesInfo } from './pmtiles_adapter.js';
 import { renderOverlay, renderWatermark, renderAttribution } from './render.js';
+import { getMapLibreRenderZoom } from './render_mode.js';
 import fsp from 'node:fs/promises';
 import { existsP, gunzipP } from './promises.js';
 import { openMbTilesWrapper } from './mbtiles_wrapper.js';
@@ -66,6 +69,12 @@ const PATH_PATTERN =
   /^((fill|stroke|width|border|borderwidth):[^|]+\|)*(enc:.+|-?\d+(\.\d*)?,-?\d+(\.\d*)?(\|-?\d+(\.\d*)?,-?\d+(\.\d*)?)+)/;
 
 const mercator = new SphericalMercator();
+
+// Consecutive failed renders per renderer. A single render error is usually a
+// style or tile problem, but a renderer that keeps failing is itself broken and
+// has to be replaced.
+const rendererFailures = new WeakMap();
+const MAX_CONSECUTIVE_RENDER_FAILURES = 3;
 
 mlgl.on('message', (e) => {
   if (e.severity === 'WARNING' || e.severity === 'ERROR') {
@@ -615,10 +624,39 @@ async function respondImage(
       return;
     }
 
+    // Hand the renderer back to the pool exactly once. A renderer that is
+    // neither released nor removed stays in the pool's busy list forever, so the
+    // pool shrinks and a replacement mlgl.Map is built to take its place.
+    let returned = false;
+    const releaseRenderer = () => {
+      if (returned) {
+        return;
+      }
+      returned = true;
+      try {
+        pool.release(renderer);
+      } catch (e) {
+        console.error('Error releasing renderer:', e);
+      }
+    };
+    const discardRenderer = (reason) => {
+      if (returned) {
+        return;
+      }
+      returned = true;
+      console.error(`Discarding renderer: ${reason}`);
+      try {
+        pool.removeBadObject(renderer);
+      } catch (e) {
+        console.error('Error removing bad renderer:', e);
+      }
+    };
+
     if (!renderer) {
       console.error(
         'Renderer is null - likely crashed or failed to initialize',
       );
+      discardRenderer('renderer is null');
       if (!res.headersSent) {
         if (metricsModule) {
           metricsModule.tileErrorsTotal.inc({ type: 'rendered', name: id });
@@ -630,12 +668,7 @@ async function respondImage(
 
     // Validate renderer has required methods (basic health check)
     if (typeof renderer.render !== 'function') {
-      console.error('Renderer is invalid - missing render method');
-      try {
-        pool.removeBadObject(renderer);
-      } catch (e) {
-        console.error('Error removing bad renderer:', e);
-      }
+      discardRenderer('missing render method');
       if (!res.headersSent) {
         if (metricsModule) {
           metricsModule.tileErrorsTotal.inc({ type: 'rendered', name: id });
@@ -645,13 +678,7 @@ async function respondImage(
       return;
     }
 
-    // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
-    let mlglZ;
-    if (width === 512) {
-      mlglZ = Math.max(0, z);
-    } else {
-      mlglZ = Math.max(0, z - 1);
-    }
+    const mlglZ = getMapLibreRenderZoom(z, width, mode);
 
     const params = {
       zoom: mlglZ,
@@ -676,13 +703,7 @@ async function respondImage(
 
     // Set a timeout for the render operation to detect hung renderers
     const renderTimeout = setTimeout(() => {
-      console.error('Renderer timeout - destroying hung renderer');
-
-      try {
-        pool.removeBadObject(renderer);
-      } catch (e) {
-        console.error('Error removing timed-out renderer:', e);
-      }
+      discardRenderer('render timed out - renderer is hung');
 
       if (!res.headersSent) {
         res.status(503).send('Renderer timeout');
@@ -694,16 +715,23 @@ async function respondImage(
         clearTimeout(renderTimeout);
 
         if (res.headersSent) {
-          // Timeout already fired and sent response, don't process
+          // The timeout already fired and answered the request. It discarded
+          // the renderer, so this is a no-op unless some other path responded.
+          releaseRenderer();
           return;
         }
 
         if (err) {
+          // Keep a renderer that hit a one-off error: discarding on every
+          // failure churns mlgl.Map instances for what is usually a style or
+          // tile problem. Replace it only once it fails repeatedly.
           console.error('Render error:', err);
-          try {
-            pool.removeBadObject(renderer);
-          } catch (e) {
-            console.error('Error removing failed renderer:', e);
+          const failures = (rendererFailures.get(renderer) || 0) + 1;
+          rendererFailures.set(renderer, failures);
+          if (failures >= MAX_CONSECUTIVE_RENDER_FAILURES) {
+            discardRenderer(`${failures} consecutive render failures`);
+          } else {
+            releaseRenderer();
           }
           if (!res.headersSent) {
             if (metricsModule) {
@@ -717,8 +745,8 @@ async function respondImage(
           return;
         }
 
-        // Only release if render was successful
-        pool.release(renderer);
+        rendererFailures.delete(renderer);
+        releaseRenderer();
 
         const image = sharp(data, {
           raw: {
@@ -846,11 +874,7 @@ async function respondImage(
     } catch (error) {
       clearTimeout(renderTimeout);
       console.error('Unexpected error during render:', error);
-      try {
-        pool.removeBadObject(renderer);
-      } catch (e) {
-        console.error('Error removing renderer after error:', e);
-      }
+      discardRenderer('render call threw');
       if (!res.headersSent) {
         if (metricsModule) {
           metricsModule.tileErrorsTotal.inc({ type: 'rendered', name: id });
@@ -1363,9 +1387,6 @@ export const serve_rendered = {
 
     const styleJSON = clone(style);
 
-    // Global sparse flag for HTTP/remote sources (from config options)
-    const globalSparse = options.sparse ?? true;
-
     /**
      * Creates a pool of renderers.
      * @param {number} ratio Pixel ratio
@@ -1386,241 +1407,267 @@ export const serve_rendered = {
           mode,
           ratio,
           request: async (req, callback) => {
-            const protocol = req.url.split(':')[0];
-            if (verbose >= 3) {
-              console.log('Handling request:', req);
-            }
-            if (protocol === 'sprites') {
-              // eslint-disable-next-line security/detect-object-injection -- protocol is 'sprites', validated above
-              const dir = options.paths[protocol];
-              const file = decodeURIComponent(req.url).substring(
-                protocol.length + 3,
-              );
-              readFile(path.join(dir, file))
-                .then((data) => {
-                  callback(null, { data: data });
-                })
-                .catch((err) => {
-                  callback(err, null);
-                });
-            } else if (protocol === 'fonts') {
-              const parts = req.url.split('/');
-              const fontstack = decodeURIComponent(parts[2]);
-              const range = parts[3].split('.')[0];
-
-              try {
-                const concatenated = await getFontsPbf(
-                  null,
-                  // eslint-disable-next-line security/detect-object-injection -- protocol is 'fonts', validated above
-                  options.paths[protocol],
-                  fontstack,
-                  range,
-                  existingFonts,
-                );
-                callback(null, { data: concatenated });
-              } catch (err) {
-                callback(err, { data: null });
-              }
-            } else if (protocol === 'mbtiles' || protocol === 'pmtiles') {
-              const parts = req.url.split('/');
-              const sourceId = parts[2];
-              // eslint-disable-next-line security/detect-object-injection -- sourceId from internal style source names
-              const source = map.sources[sourceId];
-              // eslint-disable-next-line security/detect-object-injection -- sourceId from internal style source names
-              const sourceType = map.sourceTypes[sourceId];
-              // eslint-disable-next-line security/detect-object-injection -- sourceId from internal style source names
-              const sourceInfo = styleJSON.sources[sourceId];
-
-              const z = parts[3] | 0;
-              const x = parts[4] | 0;
-              const y = parts[5].split('.')[0] | 0;
-              const format = parts[5].split('.')[1];
-
-              const fetchTile = await fetchTileData(
-                source,
-                sourceType,
-                z,
-                x,
-                y,
-              );
-              if (fetchTile == null) {
-                if (verbose >= 2) {
-                  console.log('fetchTile null on %s', req.url);
-                }
-                // eslint-disable-next-line security/detect-object-injection -- sourceId from internal style source names
-                const sparse = map.sparseFlags[sourceId] ?? true;
-                // sparse=true (default) -> return empty callback so MapLibre can overzoom
-                if (sparse) {
-                  callback();
-                  return;
-                }
-                // sparse=false -> 204 (empty tile, no overzoom) - create blank response
-                createEmptyResponse(
-                  sourceInfo.format,
-                  sourceInfo.color,
-                  callback,
-                );
+            // MapLibre Native waits indefinitely for a resource whose callback
+            // never fires, wedging the renderer at 0% CPU until the render timeout
+            // recycles it. Guarantee exactly one call on every path, including throws.
+            let settled = false;
+            const respond = (err, response) => {
+              if (settled) {
                 return;
               }
+              settled = true;
+              callback(err, response);
+            };
 
-              const response = {};
-              response.data = fetchTile.data;
-              let headers = fetchTile.headers;
-
-              if (headers['Last-Modified']) {
-                response.modified = new Date(headers['Last-Modified']);
+            try {
+              const protocol = req.url.split(':')[0];
+              if (verbose >= 3) {
+                console.log('Handling request:', req);
               }
+              if (protocol === 'sprites') {
+                // eslint-disable-next-line security/detect-object-injection -- protocol is 'sprites', validated above
+                const dir = options.paths[protocol];
+                const file = decodeURIComponent(req.url).substring(
+                  protocol.length + 3,
+                );
+                readFile(path.join(dir, file))
+                  .then((data) => {
+                    respond(null, { data: data });
+                  })
+                  .catch((err) => {
+                    respond(err, null);
+                  });
+              } else if (protocol === 'fonts') {
+                const parts = req.url.split('/');
+                const fontstack = decodeURIComponent(parts[2]);
+                const range = parts[3].split('.')[0];
 
-              if (isVectorFormat(format)) {
-                let isGzipped =
-                  response.data
-                    .slice(0, 2)
-                    .indexOf(Buffer.from([0x1f, 0x8b])) === 0;
-                if (isGzipped) {
-                  response.data = await gunzipP(response.data);
-                }
-                if (format === 'pbf' && options.dataDecoratorFunc) {
-                  response.data = options.dataDecoratorFunc(
-                    sourceId,
-                    'data',
-                    response.data,
-                    z,
-                    x,
-                    y,
+                try {
+                  const concatenated = await getFontsPbf(
+                    null,
+                    // eslint-disable-next-line security/detect-object-injection -- protocol is 'fonts', validated above
+                    options.paths[protocol],
+                    fontstack,
+                    range,
+                    existingFonts,
                   );
+                  respond(null, { data: concatenated });
+                } catch (err) {
+                  respond(err, { data: null });
                 }
-              }
+              } else if (protocol === 'mbtiles' || protocol === 'pmtiles') {
+                const parts = req.url.split('/');
+                const sourceId = parts[2];
+                // eslint-disable-next-line security/detect-object-injection -- sourceId from internal style source names
+                const source = map.sources[sourceId];
+                // eslint-disable-next-line security/detect-object-injection -- sourceId from internal style source names
+                const sourceType = map.sourceTypes[sourceId];
+                // eslint-disable-next-line security/detect-object-injection -- sourceId from internal style source names
+                const sourceInfo = styleJSON.sources[sourceId];
 
-              callback(null, response);
-            } else if (protocol === 'http' || protocol === 'https') {
-              const controller = new AbortController();
-              const timeoutMs = (fetchTimeout && Number(fetchTimeout)) || 15000;
-              let timeoutId;
+                const z = parts[3] | 0;
+                const x = parts[4] | 0;
+                const y = parts[5].split('.')[0] | 0;
+                const format = parts[5].split('.')[1];
 
-              try {
-                timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-                const response = await fetch(req.url, {
-                  signal: controller.signal,
-                });
-                clearTimeout(timeoutId);
-
-                // HTTP 204 No Content means "empty tile" - generate a blank tile
-                if (response.status === 204) {
-                  const parts = url.parse(req.url);
-                  const extension = path.extname(parts.pathname).toLowerCase();
-                  // eslint-disable-next-line security/detect-object-injection -- extension is from path.extname, limited set
-                  const format = extensionToFormat[extension] || '';
-                  createEmptyResponse(format, '', callback);
+                const fetchTile = await fetchTileData(
+                  source,
+                  sourceType,
+                  z,
+                  x,
+                  y,
+                );
+                if (fetchTile == null) {
+                  if (verbose >= 2) {
+                    console.log('fetchTile null on %s', req.url);
+                  }
+                  // eslint-disable-next-line security/detect-object-injection -- sourceId from internal style source names
+                  const sourceSparse = map.sparseFlags[sourceId];
+                  // Metadata was already folded into sparseFlags at load time.
+                  const sparse = resolveSparse({
+                    perSource: sourceSparse,
+                    globalOption: options.sparse,
+                    isVector: format === 'pbf',
+                  });
+                  // sparse=true -> return empty callback so MapLibre can overzoom
+                  if (sparse) {
+                    respond();
+                    return;
+                  }
+                  // sparse=false -> 204 (empty tile, no overzoom) - create blank response
+                  createEmptyResponse(
+                    sourceInfo.format,
+                    sourceInfo.color,
+                    respond,
+                  );
                   return;
                 }
 
-                if (!response.ok) {
-                  if (verbose >= 2) {
-                    console.log(
-                      'fetchTile HTTP %d on %s, %s',
-                      response.status,
-                      req.url,
-                      globalSparse
-                        ? 'allowing overzoom'
-                        : 'creating empty tile',
+                const response = {};
+                response.data = fetchTile.data;
+                let headers = fetchTile.headers;
+
+                if (headers['Last-Modified']) {
+                  response.modified = new Date(headers['Last-Modified']);
+                }
+
+                if (isVectorFormat(format)) {
+                  let isGzipped =
+                    response.data
+                      .slice(0, 2)
+                      .indexOf(Buffer.from([0x1f, 0x8b])) === 0;
+                  if (isGzipped) {
+                    response.data = await gunzipP(response.data);
+                  }
+                  if (format === 'pbf' && options.dataDecoratorFunc) {
+                    response.data = await options.dataDecoratorFunc(
+                      sourceId,
+                      'data',
+                      response.data,
+                      z,
+                      x,
+                      y,
                     );
                   }
+                }
 
-                  if (globalSparse) {
-                    // sparse=true -> allow overzoom
-                    callback();
+                respond(null, response);
+              } else if (protocol === 'http' || protocol === 'https') {
+                const controller = new AbortController();
+                const timeoutMs =
+                  (fetchTimeout && Number(fetchTimeout)) || 15000;
+                let timeoutId;
+
+                const extension = path
+                  .extname(url.parse(req.url).pathname)
+                  .toLowerCase();
+                // eslint-disable-next-line security/detect-object-injection -- extension is from path.extname, limited set
+                const format = extensionToFormat[extension] || '';
+                // A raw remote URL has neither per-source config nor metadata.
+                const sparse = resolveSparse({
+                  globalOption: options.sparse,
+                  isVector: extension === '.pbf',
+                });
+
+                try {
+                  timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+                  const response = await fetch(req.url, {
+                    signal: controller.signal,
+                  });
+                  clearTimeout(timeoutId);
+
+                  // HTTP 204 No Content means "empty tile" - generate a blank tile
+                  if (response.status === 204) {
+                    createEmptyResponse(format, '', respond);
                     return;
                   }
 
-                  // sparse=false (default) -> create empty tile
-                  const parts = url.parse(req.url);
-                  const extension = path.extname(parts.pathname).toLowerCase();
-                  // eslint-disable-next-line security/detect-object-injection -- extension is from path.extname, limited set
-                  const format = extensionToFormat[extension] || '';
-                  createEmptyResponse(format, '', callback);
-                  return;
-                }
+                  if (!response.ok) {
+                    if (verbose >= 2) {
+                      console.log(
+                        'fetchTile HTTP %d on %s, %s',
+                        response.status,
+                        req.url,
+                        sparse ? 'allowing overzoom' : 'creating empty tile',
+                      );
+                    }
 
-                const responseHeaders = response.headers;
-                const responseData = await response.arrayBuffer();
-                const parsedResponse = {};
+                    if (sparse) {
+                      // sparse=true -> allow overzoom
+                      respond();
+                      return;
+                    }
 
-                if (responseHeaders.get('last-modified')) {
-                  parsedResponse.modified = new Date(
-                    responseHeaders.get('last-modified'),
-                  );
-                }
-                if (responseHeaders.get('expires')) {
-                  parsedResponse.expires = new Date(
-                    responseHeaders.get('expires'),
-                  );
-                }
-                if (responseHeaders.get('etag')) {
-                  parsedResponse.etag = responseHeaders.get('etag');
-                }
+                    // sparse=false -> create empty tile
+                    createEmptyResponse(format, '', respond);
+                    return;
+                  }
 
-                parsedResponse.data = Buffer.from(responseData);
-                callback(null, parsedResponse);
-              } catch (error) {
-                // Log DNS failures
-                if (error.cause?.code === 'ENOTFOUND') {
+                  const responseHeaders = response.headers;
+                  const responseData = await response.arrayBuffer();
+                  const parsedResponse = {};
+
+                  if (responseHeaders.get('last-modified')) {
+                    parsedResponse.modified = new Date(
+                      responseHeaders.get('last-modified'),
+                    );
+                  }
+                  if (responseHeaders.get('expires')) {
+                    parsedResponse.expires = new Date(
+                      responseHeaders.get('expires'),
+                    );
+                  }
+                  if (responseHeaders.get('etag')) {
+                    parsedResponse.etag = responseHeaders.get('etag');
+                  }
+
+                  parsedResponse.data = Buffer.from(responseData);
+                  respond(null, parsedResponse);
+                } catch (error) {
+                  // Log DNS failures
+                  if (error.cause?.code === 'ENOTFOUND') {
+                    console.error(
+                      `DNS RESOLUTION FAILED for ${req.url}. ` +
+                        `This domain may be unreachable or misconfigured in your style. ` +
+                        `Consider removing it or fixing the DNS.`,
+                    );
+                  }
+
+                  // Log timeout
+                  if (error.name === 'AbortError') {
+                    console.error(
+                      `FETCH TIMEOUT for ${req.url}. ` +
+                        `The request took longer than ${timeoutMs} ms to complete.`,
+                    );
+                  }
+
+                  // Log all other errors
                   console.error(
-                    `DNS RESOLUTION FAILED for ${req.url}. ` +
-                      `This domain may be unreachable or misconfigured in your style. ` +
-                      `Consider removing it or fixing the DNS.`,
+                    `Error fetching remote URL ${req.url}:`,
+                    error.message || error,
                   );
+
+                  if (sparse) {
+                    // sparse=true -> allow overzoom
+                    respond();
+                    return;
+                  }
+
+                  // sparse=false -> create empty tile
+                  createEmptyResponse(format, '', respond);
                 }
+              } else if (protocol === 'file') {
+                const name = decodeURI(req.url).substring(protocol.length + 3);
+                const file = path.join(options.paths['files'], name);
+                if (await existsP(file)) {
+                  const inputFileStats = await fsp.stat(file);
+                  if (!inputFileStats.isFile() || inputFileStats.size === 0) {
+                    throw Error(
+                      `File is not valid: "${req.url}" - resolved to "${file}"`,
+                    );
+                  }
 
-                // Log timeout
-                if (error.name === 'AbortError') {
-                  console.error(
-                    `FETCH TIMEOUT for ${req.url}. ` +
-                      `The request took longer than ${timeoutMs} ms to complete.`,
-                  );
-                }
-
-                // Log all other errors
-                console.error(
-                  `Error fetching remote URL ${req.url}:`,
-                  error.message || error,
-                );
-
-                if (globalSparse) {
-                  // sparse=true -> allow overzoom
-                  callback();
-                  return;
-                }
-
-                // sparse=false (default) -> create empty tile
-                const parts = url.parse(req.url);
-                const extension = path.extname(parts.pathname).toLowerCase();
-                // eslint-disable-next-line security/detect-object-injection -- extension is from path.extname, limited set
-                const format = extensionToFormat[extension] || '';
-                createEmptyResponse(format, '', callback);
-              }
-            } else if (protocol === 'file') {
-              const name = decodeURI(req.url).substring(protocol.length + 3);
-              const file = path.join(options.paths['files'], name);
-              if (await existsP(file)) {
-                const inputFileStats = await fsp.stat(file);
-                if (!inputFileStats.isFile() || inputFileStats.size === 0) {
+                  readFile(file)
+                    .then((data) => {
+                      respond(null, { data: data });
+                    })
+                    .catch((err) => {
+                      respond(err, null);
+                    });
+                } else {
                   throw Error(
-                    `File is not valid: "${req.url}" - resolved to "${file}"`,
+                    `File does not exist: "${req.url}" - resolved to "${file}"`,
                   );
                 }
-
-                readFile(file)
-                  .then((data) => {
-                    callback(null, { data: data });
-                  })
-                  .catch((err) => {
-                    callback(err, null);
-                  });
               } else {
-                throw Error(
-                  `File does not exist: "${req.url}" - resolved to "${file}"`,
-                );
+                throw Error(`Unsupported protocol in request: "${req.url}"`);
               }
+            } catch (err) {
+              console.error(
+                `Error handling renderer request for ${req.url}:`,
+                err,
+              );
+              respond(err, null);
             }
           },
         });
@@ -1815,6 +1862,18 @@ export const serve_rendered = {
             source.encoding = 'mlt';
           }
 
+          // Object.assign copied the archive metadata onto the style source, so
+          // `sparse` is sitting there unparsed - "false" as a string is truthy.
+          // sparseFlags below is the value the request handler reads, so drop
+          // the duplicate here, before the data decorator sees it.
+          delete source.sparse;
+
+          if (options.dataDecoratorFunc) {
+            source = await options.dataDecoratorFunc(name, 'tilejson', source);
+            // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
+            styleJSON.sources[name] = source;
+          }
+
           if (
             !attributionOverride &&
             source.attribution &&
@@ -1828,12 +1887,13 @@ export const serve_rendered = {
             }
           }
 
-          // Set sparse flag: user config overrides format-based default
-          // Vector tiles (pbf, mlt) default to false (204), raster tiles default to true (404)
-          const isVector = isVectorFormat(metadata.format);
           // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
-          map.sparseFlags[name] =
-            dataInfo.sparse ?? options.sparse ?? !isVector;
+          map.sparseFlags[name] = resolveSparse({
+            perSource: dataInfo.sparse,
+            globalOption: options.sparse,
+            metadata: parseOptionalBoolean(metadata.sparse),
+            isVector: isVectorFormat(metadata.format),
+          });
         } else {
           // MBTiles does not support remote URLs
 
@@ -1870,8 +1930,16 @@ export const serve_rendered = {
             source.encoding = 'mlt';
           }
 
+          // Object.assign copied the archive metadata onto the style source, so
+          // `sparse` is sitting there unparsed - "false" as a string is truthy.
+          // sparseFlags below is the value the request handler reads, so drop
+          // the duplicate here, before the data decorator sees it.
+          delete source.sparse;
+
           if (options.dataDecoratorFunc) {
-            source = options.dataDecoratorFunc(name, 'tilejson', source);
+            source = await options.dataDecoratorFunc(name, 'tilejson', source);
+            // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
+            styleJSON.sources[name] = source;
           }
 
           if (
@@ -1887,12 +1955,13 @@ export const serve_rendered = {
             }
           }
 
-          // Set sparse flag: user config overrides format-based default
-          // Vector tiles (pbf, mlt) default to false (204), raster tiles default to true (404)
-          const isVector = isVectorFormat(info.format);
           // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
-          map.sparseFlags[name] =
-            dataInfo.sparse ?? options.sparse ?? !isVector;
+          map.sparseFlags[name] = resolveSparse({
+            perSource: dataInfo.sparse,
+            globalOption: options.sparse,
+            metadata: parseOptionalBoolean(info.sparse),
+            isVector: isVectorFormat(info.format),
+          });
         }
       }
     }
