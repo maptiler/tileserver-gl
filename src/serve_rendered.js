@@ -35,6 +35,7 @@ import {
   fixTileJSONCenter,
   fetchTileData,
   readFile,
+  resolveSparse,
 } from './utils.js';
 import { openPMtiles, getPMtilesInfo } from './pmtiles_adapter.js';
 import { renderOverlay, renderWatermark, renderAttribution } from './render.js';
@@ -1440,8 +1441,11 @@ export const serve_rendered = {
                 }
                 // eslint-disable-next-line security/detect-object-injection -- sourceId from internal style source names
                 const sourceSparse = map.sparseFlags[sourceId];
-                const sparse =
-                  sourceSparse ?? options.sparse ?? format !== 'pbf';
+                const sparse = resolveSparse(
+                  sourceSparse,
+                  options.sparse,
+                  format === 'pbf',
+                );
                 // sparse=true -> return empty callback so MapLibre can overzoom
                 if (sparse) {
                   callback();
@@ -1495,9 +1499,12 @@ export const serve_rendered = {
                 .toLowerCase();
               // eslint-disable-next-line security/detect-object-injection -- extension is from path.extname, limited set
               const format = extensionToFormat[extension] || '';
-              // Raster tiles are sparse by default so MapLibre can overzoom;
-              // vector tiles are not. Config overrides either way.
-              const sparse = options.sparse ?? extension !== '.pbf';
+              // A raw remote URL has no per-source config of its own.
+              const sparse = resolveSparse(
+                undefined,
+                options.sparse,
+                extension === '.pbf',
+              );
 
               try {
                 timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -1810,12 +1817,12 @@ export const serve_rendered = {
             }
           }
 
-          // Set sparse flag: user config overrides format-based default
-          // Vector tiles (pbf) default to false (204), raster tiles default to true (404)
-          const isVector = metadata.format === 'pbf';
           // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
-          map.sparseFlags[name] =
-            dataInfo.sparse ?? options.sparse ?? !isVector;
+          map.sparseFlags[name] = resolveSparse(
+            dataInfo.sparse,
+            options.sparse,
+            metadata.format === 'pbf',
+          );
         } else {
           // MBTiles does not support remote URLs
 
@@ -1864,12 +1871,12 @@ export const serve_rendered = {
             }
           }
 
-          // Set sparse flag: user config overrides format-based default
-          // Vector tiles (pbf) default to false (204), raster tiles default to true (404)
-          const isVector = info.format === 'pbf';
           // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
-          map.sparseFlags[name] =
-            dataInfo.sparse ?? options.sparse ?? !isVector;
+          map.sparseFlags[name] = resolveSparse(
+            dataInfo.sparse,
+            options.sparse,
+            info.format === 'pbf',
+          );
         }
       }
     }

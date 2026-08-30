@@ -452,10 +452,10 @@ async function start(opts) {
                       resolvedS3Region = sourceData.s3Region;
                     }
 
-                    // Get sparse: per-source overrides global. Left undefined
-                    // when neither is set, so the consumer applies the
-                    // format-based default (raster sparse, vector not).
-                    resolvedSparse = sourceData.sparse ?? options.sparse;
+                    // Pass the source's own setting through untouched. The
+                    // global option and the format-based default are applied
+                    // by resolveSparse() where the tile format is known.
+                    resolvedSparse = sourceData.sparse;
 
                     break; // Found our match, exit the outer loop
                   }

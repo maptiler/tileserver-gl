@@ -5,6 +5,7 @@ import MBTiles from '@mapbox/mbtiles';
 import sharp from 'sharp';
 import { server } from '../src/server.js';
 import { serve_data } from '../src/serve_data.js';
+import { resolveSparse } from '../src/utils.js';
 
 const SIGNALS = ['SIGHUP', 'SIGINT', 'SIGTERM'];
 
@@ -266,4 +267,43 @@ describe('Sparse tile responses', function () {
       404,
     );
   });
+});
+
+describe('resolveSparse precedence', function () {
+  // source, global, isVector, expected
+  const cases = [
+    // Neither level set: the format decides.
+    [undefined, undefined, true, false],
+    [undefined, undefined, false, true],
+    // The global option overrides the format default, both ways.
+    [undefined, true, true, true],
+    [undefined, true, false, true],
+    [undefined, false, true, false],
+    [undefined, false, false, false],
+    // A per-source value overrides the format default, both ways.
+    [true, undefined, true, true],
+    [true, undefined, false, true],
+    [false, undefined, true, false],
+    [false, undefined, false, false],
+    // A per-source value also overrides the global, both ways. These are the
+    // cases that break if the chain ever uses `||` instead of `??`.
+    [true, false, true, true],
+    [true, false, false, true],
+    [false, true, true, false],
+    [false, true, false, false],
+    // Agreement between the levels changes nothing.
+    [true, true, true, true],
+    [true, true, false, true],
+    [false, false, true, false],
+    [false, false, false, false],
+  ];
+
+  for (const [source, global, isVector, expected] of cases) {
+    const label =
+      `source=${source} global=${global} ` +
+      `${isVector ? 'vector' : 'raster'} -> ${expected}`;
+    it(label, function () {
+      expect(resolveSparse(source, global, isVector)).to.equal(expected);
+    });
+  }
 });

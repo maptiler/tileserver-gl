@@ -666,3 +666,20 @@ export async function fetchTileData(source, sourceType, z, x, y) {
     });
   }
 }
+
+/**
+ * Resolves whether a source should answer a missing tile sparsely.
+ *
+ * Precedence is per-source, then the global option, then a format-based
+ * default: raster sources are sparse so MapLibre overzooms from the parent,
+ * vector sources are not so an empty tile stops the overzoom. Nullish
+ * coalescing is deliberate - an explicit `false` at either level must win over
+ * the level below it.
+ * @param {boolean|undefined} sourceSparse - The source's own `sparse` setting.
+ * @param {boolean|undefined} globalSparse - The top-level `sparse` option.
+ * @param {boolean} isVector - Whether the source serves vector tiles.
+ * @returns {boolean} True when a missing tile should answer 404 rather than 204.
+ */
+export function resolveSparse(sourceSparse, globalSparse, isVector) {
+  return sourceSparse ?? globalSparse ?? !isVector;
+}
