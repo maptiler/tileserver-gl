@@ -15,6 +15,7 @@ import {
   isValidRemoteUrl,
   fetchTileData,
   lonLatToTilePixel,
+  resolveSparse,
 } from './utils.js';
 import { getPMtilesInfo, openPMtiles } from './pmtiles_adapter.js';
 import { gunzipP, gzipP } from './promises.js';
@@ -626,12 +627,12 @@ export const serve_data = {
       tileJSON = options.dataDecoratorFunc(id, 'tilejson', tileJSON);
     }
 
-    // Determine sparse: per-source overrides global, then format-based default
-    // sparse=true -> 404 (allows overzoom)
-    // sparse=false -> 204 (empty tile, no overzoom)
-    // Default: vector tiles (pbf) -> false, raster tiles -> true
-    const isVector = tileJSON.format === 'pbf';
-    const sparse = params.sparse ?? options.sparse ?? !isVector;
+    // sparse=true -> 404 (allows overzoom), sparse=false -> 204 (empty tile)
+    const sparse = resolveSparse(
+      params.sparse,
+      options.sparse,
+      tileJSON.format === 'pbf',
+    );
 
     // eslint-disable-next-line security/detect-object-injection -- id is from config file data source names
     repo[id] = {

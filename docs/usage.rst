@@ -119,7 +119,8 @@ TileServer GL can fetch tiles from remote HTTP/HTTPS sources referenced in your 
 
 **Default behavior:**
 - Default timeout is 15 seconds (15000 milliseconds)
-- If a remote tile request exceeds this timeout, an error is logged and an empty tile is returned to the renderer
+- If a remote tile request exceeds this timeout, an error is logged and the tile is treated as missing
+- What "missing" means follows the source's ``sparse`` setting: raster sources are sparse by default, so MapLibre overzooms from a parent tile, while vector sources are not, so an empty tile is returned to the renderer. See ``sparse`` in :doc:`/config`.
 
 **Tuning the timeout:**
 

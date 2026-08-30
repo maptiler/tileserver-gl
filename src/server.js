@@ -23,10 +23,6 @@ import {
   getPublicUrl,
   isValidHttpUrl,
   isValidRemoteUrl,
-  parseAllowedHosts,
-  isHostAllowed,
-  getCandidateHost,
-  getSafeProtocol,
 } from './utils.js';
 
 import { fileURLToPath } from 'url';
@@ -452,9 +448,10 @@ async function start(opts) {
                       resolvedS3Region = sourceData.s3Region;
                     }
 
-                    // Get sparse: per-source overrides global, default to true
-                    resolvedSparse =
-                      sourceData.sparse ?? options.sparse ?? true;
+                    // Pass the source's own setting through untouched. The
+                    // global option and the format-based default are applied
+                    // by resolveSparse() where the tile format is known.
+                    resolvedSparse = sourceData.sparse;
 
                     break; // Found our match, exit the outer loop
                   }
@@ -482,7 +479,7 @@ async function start(opts) {
                   requestPayer: false,
                   s3Region: undefined,
                   s3UrlFormat: undefined,
-                  sparse: true,
+                  sparse: undefined,
                 };
               }
 
