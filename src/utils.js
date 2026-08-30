@@ -668,18 +668,52 @@ export async function fetchTileData(source, sourceType, z, x, y) {
 }
 
 /**
+ * Reads a flag that may arrive as a boolean or as text.
+ *
+ * mbtiles metadata is a table of strings, so a `sparse` row reaches us as
+ * `"false"` - truthy if taken at face value. PMTiles metadata is JSON and can
+ * hold a real boolean. Anything unrecognised is treated as absent rather than
+ * guessed at, so a typo falls through to the next level of precedence instead
+ * of silently meaning `true`.
+ * @param {unknown} value - The raw value.
+ * @returns {boolean|undefined} The boolean, or undefined if absent/unrecognised.
+ */
+export function parseOptionalBoolean(value) {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true' || normalized === '1') {
+      return true;
+    }
+    if (normalized === 'false' || normalized === '0') {
+      return false;
+    }
+  }
+  return undefined;
+}
+
+/**
  * Resolves whether a source should answer a missing tile sparsely.
  *
- * Precedence is per-source, then the global option, then a format-based
- * default: raster sources are sparse so MapLibre overzooms from the parent,
- * vector sources are not so an empty tile stops the overzoom. Nullish
- * coalescing is deliberate - an explicit `false` at either level must win over
- * the level below it.
- * @param {boolean|undefined} sourceSparse - The source's own `sparse` setting.
- * @param {boolean|undefined} globalSparse - The top-level `sparse` option.
- * @param {boolean} isVector - Whether the source serves vector tiles.
+ * Precedence, highest first: the per-source config setting, the global config
+ * option, the archive's own metadata, then a format-based default - raster
+ * sources are sparse so MapLibre overzooms from the parent, vector sources are
+ * not so an empty tile stops the overzoom. Config outranks metadata because an
+ * operator can change their config but not always the archive.
+ *
+ * Nullish coalescing is deliberate: an explicit `false` at any level must win
+ * over the level below it. Named arguments, because four booleans in a row is
+ * an argument-order bug waiting to happen and two of the levels are often
+ * absent.
+ * @param {object} levels - The values to resolve between.
+ * @param {boolean} [levels.perSource] - The source's own `sparse` config setting.
+ * @param {boolean} [levels.globalOption] - The top-level `sparse` option.
+ * @param {boolean} [levels.metadata] - `sparse` from the archive's metadata.
+ * @param {boolean} levels.isVector - Whether the source serves vector tiles.
  * @returns {boolean} True when a missing tile should answer 404 rather than 204.
  */
-export function resolveSparse(sourceSparse, globalSparse, isVector) {
-  return sourceSparse ?? globalSparse ?? !isVector;
+export function resolveSparse({ perSource, globalOption, metadata, isVector }) {
+  return perSource ?? globalOption ?? metadata ?? !isVector;
 }

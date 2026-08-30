@@ -5,7 +5,7 @@ import MBTiles from '@mapbox/mbtiles';
 import sharp from 'sharp';
 import { server } from '../src/server.js';
 import { serve_data } from '../src/serve_data.js';
-import { resolveSparse } from '../src/utils.js';
+import { parseOptionalBoolean, resolveSparse } from '../src/utils.js';
 
 const SIGNALS = ['SIGHUP', 'SIGINT', 'SIGTERM'];
 
@@ -16,14 +16,17 @@ const MISSING_VECTOR_TILE = '14/0/0.pbf';
 const MISSING_RASTER_TILE = '1/0/0.png';
 
 const RASTER_FIXTURE = 'sparse-raster-fixture.mbtiles';
+// Same archive, but its own metadata asks not to be sparse.
+const META_FIXTURE = 'sparse-metadata-fixture.mbtiles';
 
 /**
  * Writes a raster mbtiles containing only its z0 tile, leaving every z1 tile
  * missing while still inside the archive's declared zoom range.
  * @param {string} file - Path of the mbtiles file to create.
+ * @param {object} [extraMetadata] - Extra keys to merge into the archive metadata.
  * @returns {Promise<void>}
  */
-async function createRasterMbtilesWithHole(file) {
+async function createRasterMbtilesWithHole(file, extraMetadata = {}) {
   const tile = await sharp({
     create: {
       width: 256,
@@ -52,6 +55,7 @@ async function createRasterMbtilesWithHole(file) {
     center: [0, 0, 0],
     minzoom: 0,
     maxzoom: 1,
+    ...extraMetadata,
   });
   await putTile(0, 0, 0, tile);
   await stopWriting();
@@ -110,16 +114,23 @@ function configFor(data, globalSparse) {
 
 describe('Sparse tile responses', function () {
   let fixturePath;
+  let metaFixturePath;
 
   before(async function () {
     // The global setup hook has already chdir'd into test_data.
     fixturePath = path.join(process.cwd(), RASTER_FIXTURE);
+    metaFixturePath = path.join(process.cwd(), META_FIXTURE);
     fs.rmSync(fixturePath, { force: true });
+    fs.rmSync(metaFixturePath, { force: true });
     await createRasterMbtilesWithHole(fixturePath);
+    // mbtiles metadata is a table of strings, so this round-trips as "false"
+    // and exercises the coercion on the way back out.
+    await createRasterMbtilesWithHole(metaFixturePath, { sparse: false });
   });
 
   after(function () {
     fs.rmSync(fixturePath, { force: true });
+    fs.rmSync(metaFixturePath, { force: true });
   });
 
   /**
@@ -267,43 +278,134 @@ describe('Sparse tile responses', function () {
       404,
     );
   });
+  describe('sparse from archive metadata', function () {
+    let running;
+    let globalRunning;
+
+    before(async function () {
+      running = await startServer(
+        configFor({
+          'meta-dense': { mbtiles: META_FIXTURE },
+          'meta-overridden': { mbtiles: META_FIXTURE, sparse: true },
+        }),
+      );
+      globalRunning = await startServer(
+        configFor({ 'meta-vs-global': { mbtiles: META_FIXTURE } }, true),
+      );
+    });
+
+    after(async function () {
+      await running.stop();
+      await globalRunning.stop();
+    });
+
+    // A raster archive that declares sparse=false in its own metadata.
+    expectMissingTile(
+      () => running.app,
+      'meta-dense',
+      MISSING_RASTER_TILE,
+      204,
+    );
+    // Per-source config outranks the archive.
+    expectMissingTile(
+      () => running.app,
+      'meta-overridden',
+      MISSING_RASTER_TILE,
+      404,
+    );
+    // So does the global option.
+    expectMissingTile(
+      () => globalRunning.app,
+      'meta-vs-global',
+      MISSING_RASTER_TILE,
+      404,
+    );
+
+    it('reports the resolved value in the TileJSON, not the raw metadata', function (done) {
+      supertest(running.app)
+        .get('/data/meta-dense.json')
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.sparse).to.equal(false);
+        })
+        .end(done);
+    });
+  });
 });
 
 describe('resolveSparse precedence', function () {
-  // source, global, isVector, expected
+  // perSource, globalOption, metadata, isVector, expected
   const cases = [
-    // Neither level set: the format decides.
-    [undefined, undefined, true, false],
-    [undefined, undefined, false, true],
+    // Nothing set: the format decides.
+    [undefined, undefined, undefined, true, false],
+    [undefined, undefined, undefined, false, true],
     // The global option overrides the format default, both ways.
-    [undefined, true, true, true],
-    [undefined, true, false, true],
-    [undefined, false, true, false],
-    [undefined, false, false, false],
+    [undefined, true, undefined, true, true],
+    [undefined, false, undefined, false, false],
     // A per-source value overrides the format default, both ways.
-    [true, undefined, true, true],
-    [true, undefined, false, true],
-    [false, undefined, true, false],
-    [false, undefined, false, false],
-    // A per-source value also overrides the global, both ways. These are the
-    // cases that break if the chain ever uses `||` instead of `??`.
-    [true, false, true, true],
-    [true, false, false, true],
-    [false, true, true, false],
-    [false, true, false, false],
-    // Agreement between the levels changes nothing.
-    [true, true, true, true],
-    [true, true, false, true],
-    [false, false, true, false],
-    [false, false, false, false],
+    [true, undefined, undefined, true, true],
+    [false, undefined, undefined, false, false],
+    // A per-source value also overrides the global, both ways. These break if
+    // the chain ever uses `||` instead of `??`.
+    [true, false, undefined, true, true],
+    [false, true, undefined, false, false],
+    // Archive metadata overrides the format default, both ways.
+    [undefined, undefined, true, true, true],
+    [undefined, undefined, false, false, false],
+    // ...but loses to a per-source value, both ways.
+    [true, undefined, false, true, true],
+    [false, undefined, true, false, false],
+    // ...and loses to the global option, both ways.
+    [undefined, true, false, true, true],
+    [undefined, false, true, false, false],
+    // Per-source still wins when all three disagree.
+    [true, false, false, true, true],
+    [false, true, true, false, false],
+    // Agreement between levels changes nothing.
+    [true, true, true, true, true],
+    [false, false, false, false, false],
   ];
 
-  for (const [source, global, isVector, expected] of cases) {
+  for (const [perSource, globalOption, metadata, isVector, expected] of cases) {
     const label =
-      `source=${source} global=${global} ` +
+      `source=${perSource} global=${globalOption} meta=${metadata} ` +
       `${isVector ? 'vector' : 'raster'} -> ${expected}`;
     it(label, function () {
-      expect(resolveSparse(source, global, isVector)).to.equal(expected);
+      expect(
+        resolveSparse({ perSource, globalOption, metadata, isVector }),
+      ).to.equal(expected);
+    });
+  }
+});
+
+describe('parseOptionalBoolean', function () {
+  // mbtiles metadata is a table of strings, so `sparse` arrives as text. Taken
+  // at face value "false" is truthy, which would invert the setting.
+  const cases = [
+    [true, true],
+    [false, false],
+    ['true', true],
+    ['false', false],
+    ['TRUE', true],
+    ['False', false],
+    ['  true  ', true],
+    ['1', true],
+    ['0', false],
+    // Anything unrecognised is absent, so it falls through to the next level
+    // of precedence rather than being guessed at.
+    [undefined, undefined],
+    [null, undefined],
+    ['', undefined],
+    ['yes', undefined],
+    ['maybe', undefined],
+    [1, undefined],
+    [0, undefined],
+    [{}, undefined],
+  ];
+
+  for (const [input, expected] of cases) {
+    it(`${JSON.stringify(input)} -> ${expected}`, function () {
+      expect(parseOptionalBoolean(input)).to.equal(expected);
     });
   }
 });

@@ -15,6 +15,7 @@ import {
   isValidRemoteUrl,
   fetchTileData,
   lonLatToTilePixel,
+  parseOptionalBoolean,
   resolveSparse,
 } from './utils.js';
 import { getPMtilesInfo, openPMtiles } from './pmtiles_adapter.js';
@@ -620,6 +621,13 @@ export const serve_data = {
     delete tileJSON['scheme'];
     tileJSON['tilejson'] = '3.0.0';
 
+    // MBTiles metadata is a table of strings, so a `sparse` row arrives as
+    // "false" - truthy at face value. Take it as a boolean here and drop the
+    // raw key, so nothing downstream (the data decorator, the served TileJSON)
+    // ever sees the unparsed form. The resolved value is put back below.
+    const metadataSparse = parseOptionalBoolean(tileJSON.sparse);
+    delete tileJSON['sparse'];
+
     Object.assign(tileJSON, params.tilejson || {});
     fixTileJSONCenter(tileJSON);
 
@@ -628,11 +636,14 @@ export const serve_data = {
     }
 
     // sparse=true -> 404 (allows overzoom), sparse=false -> 204 (empty tile)
-    const sparse = resolveSparse(
-      params.sparse,
-      options.sparse,
-      tileJSON.format === 'pbf',
-    );
+    const sparse = resolveSparse({
+      perSource: params.sparse,
+      globalOption: options.sparse,
+      metadata: metadataSparse,
+      isVector: tileJSON.format === 'pbf',
+    });
+    // Advertise what the server will actually do, not what the archive claimed.
+    tileJSON.sparse = sparse;
 
     // eslint-disable-next-line security/detect-object-injection -- id is from config file data source names
     repo[id] = {
