@@ -25,7 +25,7 @@ import {
   isValidRemoteUrl,
 } from './utils.js';
 
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const packageJson = JSON.parse(
   fs.readFileSync(__dirname + '/../package.json', 'utf8'),
@@ -190,7 +190,10 @@ async function start(opts) {
     try {
       const dataDecoratorPath = path.resolve(paths.root, options.dataDecorator);
 
-      const module = await import(dataDecoratorPath);
+      // import() needs a file:// URL, not a bare path: on Windows an absolute
+      // path starts with a drive letter and the ESM loader rejects it as an
+      // unknown URL scheme, so the decorator silently never loaded there.
+      const module = await import(pathToFileURL(dataDecoratorPath).href);
       options.dataDecoratorFunc = module.default;
     } catch (e) {
       console.error(`Error loading data decorator: ${e}`);

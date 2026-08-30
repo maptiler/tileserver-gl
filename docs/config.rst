@@ -214,6 +214,41 @@ Allows the rendering of inline marker icons or base64 urls.
 For security reasons only allow this if you can control the origins from where the markers are fetched!
 Not used by default.
 
+``dataDecorator``
+-----------------
+
+Path (relative to ``root``) to a JavaScript module whose default export is called to modify tile data and TileJSON on the fly. Not used by default.
+
+The module must be an ES module with a default export. The function is called as ``decorate(id, type, data, z, x, y)`` and **must return the value**, modified or not - returning nothing discards the data.
+
+The function is called synchronously: its return value is used directly and is never awaited, so it cannot do asynchronous work. Returning a promise replaces the tile data with the promise object.
+
+``id``
+  The data source id from the config, or the source name from the style.
+
+``type``
+  Either ``'tilejson'`` or ``'data'``.
+
+``data``
+  For ``'tilejson'``, the TileJSON object served at ``/data/{id}.json``, or a style's local source object. For ``'data'``, a ``Buffer`` of vector tile bytes, already un-gzipped.
+
+``z``, ``x``, ``y``
+  Tile coordinates. Only passed for ``'data'``.
+
+``'data'`` is called for vector (pbf) sources only, both for ``/data/{id}/{z}/{x}/{y}.pbf`` and for the tiles fed to the raster renderer. Raster tiles are never passed through it.
+
+.. code-block:: js
+
+  // decorator.js
+  export default function (id, type, data, z, x, y) {
+    if (type === 'tilejson') {
+      data.attribution = 'Example attribution';
+    }
+    return data;
+  }
+
+Errors loading the module are logged and the server starts without a decorator, so check the startup output if it does not appear to run.
+
 
 ``styles``
 ==========
