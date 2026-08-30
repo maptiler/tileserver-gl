@@ -1854,6 +1854,12 @@ export const serve_rendered = {
           ];
           delete source.scheme;
 
+          if (options.dataDecoratorFunc) {
+            source = options.dataDecoratorFunc(name, 'tilejson', source);
+            // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
+            styleJSON.sources[name] = source;
+          }
+
           if (
             !attributionOverride &&
             source.attribution &&
@@ -1906,6 +1912,8 @@ export const serve_rendered = {
 
           if (options.dataDecoratorFunc) {
             source = options.dataDecoratorFunc(name, 'tilejson', source);
+            // eslint-disable-next-line security/detect-object-injection -- name is from style sources object keys
+            styleJSON.sources[name] = source;
           }
 
           if (
