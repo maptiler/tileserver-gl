@@ -70,6 +70,26 @@ describe('Static endpoints', function () {
         testStatic(prefix, '8,40,2@10/300x150', 'png', 200, 3);
         testStatic(prefix, '8,40,2@10.3,20.4/300x300', 'png', 200);
         testStatic(prefix, '0,0,2@390,120/300x300', 'png', 200);
+
+        it('keeps overlays aligned when a large viewport raises the effective zoom', async function () {
+          const marker = '8.5432,47.3669|marker-icon.png|scale:0.1';
+          const requestedZoom = await supertest(app)
+            .get(`/styles/${prefix}/static/8.5432,47.3669,1/600x600.png`)
+            .query({ marker })
+            .expect(200);
+          const minimumZoom = Math.log2(600 / 256);
+          const effectiveZoom = await supertest(app)
+            .get(
+              `/styles/${prefix}/static/8.5432,47.3669,${minimumZoom}/600x600.png`,
+            )
+            .query({ marker })
+            .expect(200);
+
+          assert.ok(
+            requestedZoom.body.equals(effectiveZoom.body),
+            'expected requested and effective zoom renders to match',
+          );
+        });
       });
     });
 
