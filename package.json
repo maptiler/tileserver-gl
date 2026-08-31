@@ -9,6 +9,7 @@
   "type": "module",
   "files": [
     "docs",
+    "scripts",
     "src",
     "public",
     "test",
@@ -18,7 +19,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "prepare": "npm run copy:maplibre && npm run copy:maplibre-inspect && npm run copy:mapbox-rtl-text && npm run copy:leaflet && npm run copy:leaflet-hash",
+    "prepare": "npm run copy:maplibre && npm run copy:maplibre-inspect && npm run copy:mapbox-rtl-text && npm run copy:leaflet && npm run copy:leaflet-hash && npm run vendor:mlt",
+    "vendor:mlt": "node scripts/vendor-mlt.mjs",
     "copy:maplibre": "copyfiles -EVf node_modules/maplibre-gl/dist/maplibre-gl.js node_modules/maplibre-gl/dist/maplibre-gl.js.map node_modules/maplibre-gl/dist/maplibre-gl.css public/resources/",
     "copy:maplibre-inspect": "copyfiles -EVf node_modules/@maplibre/maplibre-gl-inspect/dist/maplibre-gl-inspect.js node_modules/@maplibre/maplibre-gl-inspect/dist/maplibre-gl-inspect.js.map node_modules/@maplibre/maplibre-gl-inspect/dist/maplibre-gl-inspect.css  public/resources/",
     "copy:mapbox-rtl-text": "copyfiles -EVf node_modules/@mapbox/mapbox-gl-rtl-text/dist/mapbox-gl-rtl-text.js public/resources/",
@@ -47,6 +49,7 @@
     "@maplibre/maplibre-gl-inspect": "1.8.2",
     "@maplibre/maplibre-gl-native": "6.4.1",
     "@maplibre/maplibre-gl-style-spec": "24.10.0",
+    "@maplibre/mlt": "^1.2.0",
     "@sindresorhus/fnv1a": "3.1.0",
     "advanced-pool": "0.3.3",
     "canvas": "3.2.3",
@@ -71,7 +74,8 @@
     "secure-json-parse": "^4.1.0",
     "semver": "^7.8.5",
     "sharp": "0.35.3",
-    "tileserver-gl-styles": "2.0.0"
+    "tileserver-gl-styles": "2.0.0",
+    "vt-pbf": "^3.1.3"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.0",

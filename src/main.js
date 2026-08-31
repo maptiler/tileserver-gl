@@ -16,7 +16,7 @@ import { fileURLToPath } from 'url';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { server } from './server.js';
-import { isValidRemoteUrl } from './utils.js';
+import { isValidRemoteUrl, isVectorFormat } from './utils.js';
 import { openPMtiles, getPMtilesInfo } from './pmtiles_adapter.js';
 import { program } from 'commander';
 import { existsP } from './promises.js';
@@ -303,7 +303,7 @@ const startWithInputFile = async (inputFile) => {
     const metadata = await getPMtilesInfo(fileOpenInfo, inputFile);
 
     if (
-      metadata.format === 'pbf' &&
+      isVectorFormat(metadata.format) &&
       metadata.name.toLowerCase().indexOf('openmaptiles') > -1
     ) {
       // Use inputFile directly for remote URLs (HTTP or S3)
@@ -375,7 +375,7 @@ const startWithInputFile = async (inputFile) => {
     const bounds = info.bounds;
 
     if (
-      info.format === 'pbf' &&
+      isVectorFormat(info.format) &&
       info.name.toLowerCase().indexOf('openmaptiles') > -1
     ) {
       config['data'][`v3`] = {

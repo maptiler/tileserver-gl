@@ -16,6 +16,29 @@ export const s3HttpTester = /^s3\+https?:\/\//i; // S3-compatible with custom en
 export const pmtilesTester = /^pmtiles:\/\//i;
 export const mbtilesTester = /^mbtiles:\/\//i;
 
+/** Media type maplibre-native uses for MapLibre Tile (MLT) data. */
+export const MLT_CONTENT_TYPE = 'application/vnd.maplibre-vector-tile';
+
+/**
+ * Tells whether a tile format holds vector data.
+ * @param {string} format - The tile format from tileJSON or source metadata.
+ * @returns {boolean} True for vector formats ('pbf', 'mlt').
+ */
+export function isVectorFormat(format) {
+  return format === 'pbf' || format === 'mlt';
+}
+
+/**
+ * Normalizes a source's declared tile format to the extension we serve it under.
+ * Planetiler writes the MLT media type into MBTiles metadata where the Rust `mlt`
+ * tooling writes 'mlt', so both spellings reach us.
+ * @param {string} format - The format as declared by the source metadata.
+ * @returns {string} The normalized format.
+ */
+export function normalizeTileFormat(format) {
+  return format === MLT_CONTENT_TYPE ? 'mlt' : format;
+}
+
 /**
  * Restrict user input to an allowed set of options.
  * @param {string[]} opts - An array of allowed option strings.
