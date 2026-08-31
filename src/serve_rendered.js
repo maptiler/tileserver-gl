@@ -40,7 +40,7 @@ import {
 } from './utils.js';
 import { openPMtiles, getPMtilesInfo } from './pmtiles_adapter.js';
 import { renderOverlay, renderWatermark, renderAttribution } from './render.js';
-import { getMapLibreRenderZoom } from './render_mode.js';
+import { getMapLibreRenderZoom, getStaticOverlayZoom } from './render_mode.js';
 import fsp from 'node:fs/promises';
 import { existsP, gunzipP } from './promises.js';
 import { openMbTilesWrapper } from './mbtiles_wrapper.js';
@@ -1069,9 +1069,10 @@ async function handleStaticRequest(
 
     const paths = extractPathsFromQuery(req.query, transformer);
     const markers = extractMarkersFromQuery(req.query, options, transformer);
+    const overlayZoom = getStaticOverlayZoom(z, parsedWidth, parsedHeight);
     // prettier-ignore
     const overlay = await renderOverlay(
-     z, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, paths, markers, req.query,
+     overlayZoom, x, y, bearing, pitch, parsedWidth, parsedHeight, scale, paths, markers, req.query,
    );
 
     // prettier-ignore
