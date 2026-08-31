@@ -7,6 +7,20 @@
 ### 🐞 Bug fixes
 - _...Add new stuff here..._
 
+## 5.7.0-pre.1
+### ✨ Features and improvements
+
+### 🐞 Bug fixes
+
+- feat: allow the data decorator to be asynchronous ([#2352](https://github.com/maptiler/tileserver-gl/pull/2352)) (by [acalcutt](https://github.com/acalcutt))
+- fix: never leave a renderer request or pool slot unsettled ([#2347](https://github.com/maptiler/tileserver-gl/pull/2347)) (by [acalcutt](https://github.com/acalcutt))
+- fix: honour sparse set in archive metadata ([#2350](https://github.com/maptiler/tileserver-gl/pull/2350)) (by [acalcutt](https://github.com/acalcutt))
+- fix: data decorator never ran on Windows, or on PMTiles style sources ([#2351](https://github.com/maptiler/tileserver-gl/pull/2351)) (by [acalcutt](https://github.com/acalcutt))
+- chore: drop unused host-validation imports from server.js ([#2349](https://github.com/maptiler/tileserver-gl/pull/2349)) (by [acalcutt](https://github.com/acalcutt))
+- fix: restore the format-based sparse default ([#2348](https://github.com/maptiler/tileserver-gl/pull/2348)) (by [acalcutt](https://github.com/acalcutt))
+- fix: align 512px static map overlays ([#2344](https://github.com/maptiler/tileserver-gl/pull/2344)) (by [miakh](https://github.com/miakh))
+- fix: allow native install scripts under npm 12 so canvas builds ([#2343](https://github.com/maptiler/tileserver-gl/pull/2343)) (by [mikey923](https://github.com/mikey923))
+
 ## 5.7.0-pre.0
 ### ✨ Features and improvements
 - feat: add opt-in Prometheus metrics endpoint ([#2211](https://github.com/maptiler/tileserver-gl/pull/2211)) (by [navidnabavi](https://github.com/navidnabavi))
