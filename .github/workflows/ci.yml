@@ -40,7 +40,7 @@ jobs:
         run: npm_config_build_from_source=true npm rebuild canvas
 
       - name: Run linter(s) 💅
-        uses: wearerequired/lint-action@v2
+        uses: wearerequired/lint-action@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           continue_on_error: false
