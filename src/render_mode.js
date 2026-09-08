@@ -18,3 +18,21 @@ export function getMapLibreRenderZoom(zoom, logicalWidth, mode) {
 
   throw new Error(`Unsupported render mode: ${mode}`);
 }
+
+/**
+ * Calculates the TileServer zoom MapLibre Native effectively uses for a
+ * static-map overlay. Horizontal world copies can wrap, but the world must
+ * fill the viewport vertically. The 256px zoom-zero render has a dedicated
+ * resize path in serve_rendered.
+ * @param {number} zoom Requested TileServer zoom level.
+ * @param {number} logicalWidth Unscaled request width in pixels.
+ * @param {number} logicalHeight Unscaled request height in pixels.
+ * @returns {number} Effective TileServer zoom level.
+ */
+export function getStaticOverlayZoom(zoom, logicalWidth, logicalHeight) {
+  const minimumViewportZoom = Math.log2(logicalHeight / 256);
+  if (zoom === 0 && logicalWidth === 256) {
+    return Math.max(0, minimumViewportZoom);
+  }
+  return Math.max(1, zoom, minimumViewportZoom);
+}
