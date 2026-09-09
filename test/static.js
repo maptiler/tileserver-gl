@@ -251,10 +251,8 @@ describe('Static endpoints', function () {
 
       it('POST applies JSON-style path option names', async function () {
         const path = '8.531,47.379|8.5375,47.385|8.544,47.379';
-        const fixedViewPath =
-          '/styles/' + prefix + '/static/8.5375,47.379,12/256x256.png';
         const expected = await supertest(app)
-          .get(fixedViewPath)
+          .get(staticAutoPath)
           .query({
             path,
             width: 30,
@@ -265,7 +263,7 @@ describe('Static endpoints', function () {
           .expect('Content-Type', /image\/png/);
 
         const actual = await supertest(app)
-          .post(fixedViewPath)
+          .post(staticAutoPath)
           .send({
             path,
             width: 30,
@@ -280,8 +278,6 @@ describe('Static endpoints', function () {
 
       it('POST preserves query options when matching body fields are null', async function () {
         const path = '8.531,47.379|8.5375,47.385|8.544,47.379';
-        const requestPath =
-          '/styles/' + prefix + '/static/8.5375,47.379,12/256x256.png';
         const query = {
           border: 'white',
           borderwidth: 5,
@@ -290,14 +286,14 @@ describe('Static endpoints', function () {
           width: 10,
         };
         const expected = await supertest(app)
-          .post(requestPath)
+          .post(staticAutoPath)
           .query(query)
           .send({ path })
           .expect(200)
           .expect('Content-Type', /image\/png/);
 
         const actual = await supertest(app)
-          .post(requestPath)
+          .post(staticAutoPath)
           .query(query)
           .send({
             path,
