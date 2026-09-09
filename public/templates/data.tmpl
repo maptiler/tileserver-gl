@@ -68,6 +68,9 @@
       sources: {
         'vector_layer_': {
           type: 'vector',
+          {{#is_mlt}}
+          encoding: 'mlt',
+          {{/is_mlt}}
           url: '{{public_url}}data/{{id}}.json' + keyParam
         }
       },

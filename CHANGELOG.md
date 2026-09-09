@@ -2,6 +2,8 @@
 
 ## master
 ### ✨ Features and improvements
+- Add support for MLT (MapLibre Tile) vector tiles in MBTiles and PMTiles sources: serve `.mlt`, render styles over them, and preview them in the data viewer. The style-spec vector `encoding` is derived from the source format, so existing styles work over MLT data unchanged
+- Serve MLT sources as `.pbf` and `.geojson` as well, transcoding on request, so clients that cannot read MLT are still served
 - _...Add new stuff here..._
 
 ### 🐞 Bug fixes

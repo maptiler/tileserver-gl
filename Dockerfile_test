@@ -54,6 +54,8 @@ RUN curl -L -o test_data.zip https://github.com/maptiler/tileserver-gl/releases/
     unzip -q test_data.zip -d test_data
 
 COPY package.json .
+# scripts/ too: npm install runs `prepare`, which vendors @maplibre/mlt from there.
+COPY scripts ./scripts
 # Running npm install for development (includes devDependencies for tests)
 RUN npm install && npm_config_build_from_source=true npm rebuild canvas
 COPY / .

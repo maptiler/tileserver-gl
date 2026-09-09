@@ -1,0 +1,30 @@
+{
+  "options": {
+    "paths": {
+      "root": "../..",
+      "fonts": "test_data/fonts",
+      "styles": "test/fixtures/mlt-styles",
+      "mbtiles": "test_data",
+      "pmtiles": "test/fixtures/mlt"
+    }
+  },
+  "styles": {
+    "mlt-demo": {
+      "style": "mlt-demo/style.json"
+    }
+  },
+  "data": {
+    "test_mlt": {
+      "mbtiles": "test-mlt.mbtiles"
+    },
+    "test_mlt_planetiler": {
+      "mbtiles": "test-mlt-planetiler.mbtiles"
+    },
+    "openmaptiles": {
+      "mbtiles": "zurich_switzerland.mbtiles"
+    },
+    "test_mlt_pmtiles": {
+      "pmtiles": "test-mlt.pmtiles"
+    }
+  }
+}

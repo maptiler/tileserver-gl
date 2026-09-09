@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { PMTiles, FetchSource, EtagMismatch } from 'pmtiles';
-import { isValidHttpUrl, isS3Url } from './utils.js';
+import { isValidHttpUrl, isS3Url, MLT_CONTENT_TYPE } from './utils.js';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { fromIni } from '@aws-sdk/credential-provider-ini';
 
@@ -576,7 +576,7 @@ export async function getPMtilesTile(pmtiles, z, x, y, maxRetries = 3) {
 
 /**
  * Maps PMTiles tile type number to tile format string and Content-Type header.
- * @param {number} typenum - The PMTiles tile type number (0=Unknown, 1=MVT/PBF, 2=PNG, 3=JPEG, 4=WebP, 5=AVIF).
+ * @param {number} typenum - The PMTiles tile type number (0=Unknown, 1=MVT/PBF, 2=PNG, 3=JPEG, 4=WebP, 5=AVIF, 6=MLT).
  * @returns {object} - An object containing type (string) and header (object with Content-Type).
  */
 function getPmtilesTileType(typenum) {
@@ -605,6 +605,10 @@ function getPmtilesTileType(typenum) {
     case 5:
       tileType = 'avif';
       head['Content-Type'] = 'image/avif';
+      break;
+    case 6:
+      tileType = 'mlt';
+      head['Content-Type'] = MLT_CONTENT_TYPE;
       break;
   }
   return { type: tileType, header: head };

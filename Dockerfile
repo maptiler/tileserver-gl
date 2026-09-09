@@ -39,7 +39,9 @@ RUN mkdir -p /usr/src/app
 
 WORKDIR /usr/src/app
 
+# scripts/ too: npm ci runs `prepare`, which vendors @maplibre/mlt from there.
 COPY package.json package-lock.json ./
+COPY scripts ./scripts
 
 RUN npm config set fetch-retries 5 && \
     npm config set fetch-retry-mintimeout 100000 && \

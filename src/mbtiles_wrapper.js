@@ -1,5 +1,6 @@
 import MBTiles from '@mapbox/mbtiles';
 import util from 'node:util';
+import { normalizeTileFormat } from './utils.js';
 
 /**
  * Promise-ful wrapper around the MBTiles class.
@@ -23,8 +24,12 @@ class MBTilesWrapper {
    * Get the MBTiles metadata object.
    * @returns {Promise<object>} A promise that resolves with the MBTiles metadata object.
    */
-  getInfo() {
-    return this._getInfoP();
+  async getInfo() {
+    const info = await this._getInfoP();
+    if (info?.format) {
+      info.format = normalizeTileFormat(info.format);
+    }
+    return info;
   }
 
   /**

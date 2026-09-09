@@ -35,6 +35,7 @@ import {
   fixTileJSONCenter,
   fetchTileData,
   readFile,
+  isVectorFormat,
   parseOptionalBoolean,
   resolveSparse,
 } from './utils.js';
@@ -101,13 +102,13 @@ const cachedEmptyResponses = {
 
 /**
  * Create an appropriate mlgl response for http errors.
- * @param {string} format The format (a sharp format or 'pbf').
+ * @param {string} format The format (a sharp format, or 'pbf'/'mlt').
  * @param {string} color The background color (or empty string for transparent).
  * @param {(err: Error|null, data: object|null) => void} callback The mlgl callback.
  * @returns {void}
  */
 function createEmptyResponse(format, color, callback) {
-  if (!format || format === 'pbf') {
+  if (!format || isVectorFormat(format)) {
     callback(null, { data: cachedEmptyResponses[''] });
     return;
   }
@@ -1510,7 +1511,7 @@ export const serve_rendered = {
                   response.modified = new Date(headers['Last-Modified']);
                 }
 
-                if (format === 'pbf') {
+                if (isVectorFormat(format)) {
                   let isGzipped =
                     response.data
                       .slice(0, 2)
@@ -1518,7 +1519,7 @@ export const serve_rendered = {
                   if (isGzipped) {
                     response.data = await gunzipP(response.data);
                   }
-                  if (options.dataDecoratorFunc) {
+                  if (format === 'pbf' && options.dataDecoratorFunc) {
                     response.data = await options.dataDecoratorFunc(
                       sourceId,
                       'data',
@@ -1854,6 +1855,13 @@ export const serve_rendered = {
             `pmtiles://${name}/{z}/{x}/{y}.${metadata.format || 'pbf'}`,
           ];
           delete source.scheme;
+
+          // maplibre-native reads the vector tile encoding off the style source, never
+          // from the tilejson, so derive it here rather than making styles declare it
+          if (metadata.format === 'mlt') {
+            source.encoding = 'mlt';
+          }
+
           // Object.assign copied the archive metadata onto the style source, so
           // `sparse` is sitting there unparsed - "false" as a string is truthy.
           // sparseFlags below is the value the request handler reads, so drop
@@ -1884,7 +1892,7 @@ export const serve_rendered = {
             perSource: dataInfo.sparse,
             globalOption: options.sparse,
             metadata: parseOptionalBoolean(metadata.sparse),
-            isVector: metadata.format === 'pbf',
+            isVector: isVectorFormat(metadata.format),
           });
         } else {
           // MBTiles does not support remote URLs
@@ -1916,6 +1924,12 @@ export const serve_rendered = {
             `mbtiles://${name}/{z}/{x}/{y}.${info.format || 'pbf'}`,
           ];
           delete source.scheme;
+
+          // see the pmtiles branch above
+          if (info.format === 'mlt') {
+            source.encoding = 'mlt';
+          }
+
           // Object.assign copied the archive metadata onto the style source, so
           // `sparse` is sitting there unparsed - "false" as a string is truthy.
           // sparseFlags below is the value the request handler reads, so drop
@@ -1946,7 +1960,7 @@ export const serve_rendered = {
             perSource: dataInfo.sparse,
             globalOption: options.sparse,
             metadata: parseOptionalBoolean(info.sparse),
-            isVector: info.format === 'pbf',
+            isVector: isVectorFormat(info.format),
           });
         }
       }
