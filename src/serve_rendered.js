@@ -171,9 +171,18 @@ const ALLOW_STATIC_PARAMS = new Set([
   'borderwidth',
 ]);
 
+const STATIC_PARAM_ALIASES = new Map([
+  ['latLng', 'latlng'],
+  ['maxZoom', 'maxzoom'],
+  ['lineCap', 'linecap'],
+  ['lineJoin', 'linejoin'],
+  ['borderWidth', 'borderwidth'],
+]);
+
 /**
  * Merges query and body into a null-prototype object.
- * Accumulates multiple values for the same key into arrays for a lossless merge.
+ * Normalizes JSON-style aliases and accumulates multiple non-null values for
+ * the same key into arrays for a lossless merge.
  * @param {object} query Request query parameters.
  * @param {object} body Request body parameters.
  * @returns {object} The merged parameters.
@@ -186,7 +195,8 @@ export function getSecureMergedParams(query, body) {
     if (typeof source !== 'object' || Array.isArray(source))
       throw new Error(`Invalid data.`);
 
-    for (const [key, value] of Object.entries(source)) {
+    for (const [sourceKey, value] of Object.entries(source)) {
+      const key = STATIC_PARAM_ALIASES.get(sourceKey) ?? sourceKey;
       if (!ALLOW_STATIC_PARAMS.has(key)) {
         continue;
       }
@@ -202,12 +212,20 @@ export function getSecureMergedParams(query, body) {
         );
 
       const ensureArray = (v) => (Array.isArray(v) ? v : [v]);
+      const values = ensureArray(value).filter((item) => item !== null);
+      if (values.length === 0) {
+        continue;
+      }
+      const normalizedValue = Array.isArray(value) ? values : values[0];
+
       if (key in result) {
         // eslint-disable-next-line security/detect-object-injection -- result is a null-prototype object; key is from validated source
-        result[key] = ensureArray(result[key]).concat(ensureArray(value));
+        result[key] = ensureArray(result[key]).concat(
+          ensureArray(normalizedValue),
+        );
       } else {
         // eslint-disable-next-line security/detect-object-injection -- result is a null-prototype object; key is from validated source
-        result[key] = value;
+        result[key] = normalizedValue;
       }
     }
   };

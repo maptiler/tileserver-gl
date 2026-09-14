@@ -89,6 +89,8 @@ Static images
 * All the static image endpoints support parameters passing using POST with a JSON body:
 
   * e.g. ``{"path": ["10,10|20,20", "10,20|20,10"]}`` is the equivalent of ``?path=10,10|20,20&path=10,20|20,10``
+  * multi-word parameters may use either their query spelling or camelCase (e.g. ``linejoin`` or ``lineJoin``)
+  * ``null`` values are ignored, so optional fields emitted by JSON serializers do not override query parameters
 
 * You can also use (experimental) ``/styles/{id}/static/raw/...`` endpoints with raw spherical mercator coordinates (EPSG:3857) instead of WGS84.
 
