@@ -1,5 +1,9 @@
 name: Create bump version PR
 on:
+  schedule:
+    # Cut a stable release every month so dependency and security updates
+    # merged into master reach the `latest` npm tag and Docker images.
+    - cron: '0 4 1 * *'
   workflow_dispatch:
     inputs:
       version:
@@ -31,6 +35,87 @@ jobs:
         with:
           fetch-depth: 0
           ref: master
+      - name: Resolve release type
+        id: release-type
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_PREID: ${{ inputs.preid }}
+        run: |
+          # How long to leave a fresh prerelease or major dependency bump alone
+          # before a scheduled run will promote it to stable.
+          SETTLE_DAYS=7
+
+          bump="$INPUT_VERSION"
+          preid="$INPUT_PREID"
+
+          # Manual dispatch uses whatever was asked for.
+          if [ -n "$bump" ]; then
+            echo "Manual dispatch: bump=$bump preid=${preid:-<none>}"
+            echo "bump=$bump" >> "$GITHUB_OUTPUT"
+            echo "preid=$preid" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Scheduled runs always cut a stable release, so measure from the last
+          # stable tag rather than the last tag, which is usually a prerelease.
+          tags="$( git tag --list 'v*' --sort=-v:refname )"
+          lastStable="$( awk '!/-/ { print; exit }' <<< "$tags" )"
+          range="${lastStable:+$lastStable..}HEAD"
+          echo "Considering everything since ${lastStable:-the first commit}"
+
+          if [ "$( git rev-list --count "$range" )" -eq 0 ]; then
+            echo "Nothing new to release."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          log="$( git log "$range" --format='%s%n%b' )"
+
+          # Never let the schedule turn a breaking change into a minor release.
+          if grep -qE '^[a-z]+(\(.+\))?!:|^BREAKING[ -]CHANGE' <<< "$log"; then
+            echo "Breaking changes present, a major release has to be dispatched manually."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          now="$( date +%s )"
+
+          # Cutting a prerelease means "not stable yet", so don't overrule a
+          # recent one a few days later.
+          lastTag="$( git describe --tags --abbrev=0 2>/dev/null || true )"
+          case "$lastTag" in
+            *-*)
+              age=$(( ( now - $( git log -1 --format=%ct "$lastTag" ) ) / 86400 ))
+              if [ "$age" -lt "$SETTLE_DAYS" ]; then
+                echo "$lastTag was cut ${age}d ago, leaving it to settle."
+                echo "skip=true" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+              ;;
+          esac
+
+          # Major dependency bumps aren't routine. 5.0.0 came out of a
+          # Maplibre-Native update, which is how breaking changes tend to
+          # reach this project, so give them the same wait.
+          majorDep="$( git log "$range" -1 --fixed-strings --grep='version-update:semver-major' --format='%ct' )"
+          if [ -n "$majorDep" ]; then
+            age=$(( ( now - majorDep ) / 86400 ))
+            if [ "$age" -lt "$SETTLE_DAYS" ]; then
+              echo "A major dependency bump landed ${age}d ago, letting it settle."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
+          if [ -n "$majorDep" ] || grep -qE '^feat(\(.+\))?:' <<< "$log"; then
+            bump=minor
+          else
+            bump=patch
+          fi
+
+          echo "Scheduled release: $bump"
+          echo "bump=$bump" >> "$GITHUB_OUTPUT"
+          echo "preid=" >> "$GITHUB_OUTPUT"
       - name: Setup node env 📦
         uses: actions/setup-node@v6
         with:
@@ -38,6 +123,7 @@ jobs:
           check-latest: true
           cache: 'npm'
       - name: Create bump script
+        if: steps.release-type.outputs.skip != 'true'
         run: |
           cat > bump-version.mjs << 'EOF'
           import { execSync } from 'child_process';
@@ -209,12 +295,16 @@ jobs:
           EOF
       - name: Bump version and update changelog
         id: version-details
+        if: steps.release-type.outputs.skip != 'true'
         run: |
-          node bump-version.mjs "${{ inputs.version }}" "${{ inputs.preid }}"
+          node bump-version.mjs "$BUMP" "$PREID"
           rm bump-version.mjs
         env:
           GH_TOKEN: ${{ github.token }}
+          BUMP: ${{ steps.release-type.outputs.bump }}
+          PREID: ${{ steps.release-type.outputs.preid }}
       - name: Create Pull Request
+        if: steps.release-type.outputs.skip != 'true'
         uses: peter-evans/create-pull-request@v8
         with:
           commit-message: Release v${{ steps.version-details.outputs.version }}
