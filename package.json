@@ -118,5 +118,11 @@
     "canvas": true,
     "sqlite3": true,
     "@maplibre/maplibre-gl-native": true
+  },
+  "overrides": {
+    "tar": "^7.5.22",
+    "shell-quote": "^1.10.0",
+    "body-parser": "^2.3.0",
+    "@tootallnate/once": "^2.0.1"
   }
 }
