@@ -141,6 +141,14 @@ List of available fonts
 =======================
 Array of names of the available fonts is at ``/fonts.json``
 
+Search
+======
+With the ``offlineSearch`` option (see the configuration), ``/search?q={text}`` searches the local index. ``{text}`` is a place name or ``latitude,longitude[,zoom]`` (at most 256 characters). It returns ``{"results": [{"label", "lat", "lon", "zoom"}], "attribution"}``, at most ten results.
+
+  * ``400`` - the query is empty, too long, or has coordinates out of range
+  * ``429`` - two searches are already running
+  * ``503`` - there is no index, it cannot be read, or the search took more than three seconds
+
 Health check
 ============
 Endpoint reporting health status is at ``/health`` and currently returns:

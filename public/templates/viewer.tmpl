@@ -11,6 +11,10 @@
   <script src="{{public_url}}maplibre-gl-inspect.js{{&key_query}}"></script>
   <script src="{{public_url}}leaflet.js{{&key_query}}"></script>
   <script src="{{public_url}}leaflet-hash.js{{&key_query}}"></script>
+  {{#if offline_search}}
+  <link rel="stylesheet" href="{{public_url}}offline-search.css{{&key_query}}" />
+  <script src="{{public_url}}offline-search.js{{&key_query}}"></script>
+  {{/if}}
   <style>
     body { margin:0; padding:0; }
     #map { position:absolute; top:0; bottom:0; width:100%; }
@@ -31,6 +35,17 @@
 <body>
   <h1 style="display:none;">{{name}}</h1>
   <div id='map'></div>
+  {{#if offline_search}}
+  <section id="offline-search" aria-label="Map search" data-endpoint="{{public_url}}search">
+    <form role="search">
+      <label for="place-query">Search places</label>
+      <div><input id="place-query" type="search" maxlength="256" placeholder="Place or latitude,longitude" autocomplete="off" required /><button type="submit">Search</button></div>
+    </form>
+    <div role="status" aria-live="polite"></div>
+    <ol aria-label="Search results"></ol>
+    <small></small>
+  </section>
+  {{/if}}
   <script>
     function isWebglSupported() {
         if (window.WebGLRenderingContext) {
@@ -149,6 +164,9 @@
             new L.Hash(map);
         }, 0);
     }
+    {{#if offline_search}}
+    installOfflineSearch(map, preference === 'vector');
+    {{/if}}
   </script>
 </body>
 </html>
