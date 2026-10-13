@@ -1,0 +1,10 @@
+#offline-search { position: absolute; z-index: 1000; top: 10px; left: 10px; width: min(350px, calc(100vw - 80px)); box-sizing: border-box; padding: 10px; border-radius: 5px; background: #fff; color: #20252b; box-shadow: 0 1px 5px #0005; font: 14px/1.4 sans-serif; }
+#offline-search label { display: block; font-weight: bold; margin-bottom: 5px; }
+#offline-search form > div { display: flex; gap: 5px; }
+#offline-search input { min-width: 0; flex: 1; padding: 7px; font: inherit; }
+#offline-search button { padding: 7px; font: inherit; cursor: pointer; }
+#offline-search [role=status] { overflow-wrap: anywhere; margin-top: 5px; }
+#offline-search ol { padding: 0; margin: 5px 0; list-style: none; max-height: 45vh; overflow-y: auto; }
+#offline-search li button { width: 100%; text-align: left; border: 0; background: #fff; overflow-wrap: anywhere; }
+#offline-search button:hover, #offline-search li button:focus { background: #e5efff; }
+#offline-search small { display: block; color: #555; font-size: 11px; }

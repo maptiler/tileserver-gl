@@ -250,6 +250,57 @@ The function may be ``async``, or return a promise. The return value is awaited,
 Errors loading the module are logged and the server starts without a decorator, so check the startup output if it does not appear to run.
 
 
+``offlineSearch``
+-----------------
+
+Adds a search box to the style and data viewers, answered by the server itself from a local SQLite index: no external geocoding service is contacted. Not used by default.
+
+.. code-block:: json
+
+  "offlineSearch": {
+    "database": "search.sqlite"
+  }
+
+``database`` is the path of the index (relative to ``root``). Without it (``"offlineSearch": {}``) the box accepts only coordinates, ``latitude,longitude[,zoom]``. The search runs in a worker thread with Node's built-in ``node:sqlite``, so it needs Node 22.13 or later (the Docker images use Node 24); on older versions names return an error and coordinates still work.
+
+The index is a small SQLite file with three tables, and it is opened read-only:
+
+.. code-block:: sql
+
+  CREATE TABLE places(id INTEGER PRIMARY KEY, name TEXT NOT NULL, label TEXT NOT NULL,
+    lat REAL NOT NULL, lon REAL NOT NULL, population INTEGER NOT NULL);
+  CREATE VIRTUAL TABLE place_names USING fts5(names, tokenize='unicode61 remove_diacritics 2');
+  CREATE TABLE metadata(key TEXT PRIMARY KEY, value TEXT NOT NULL);
+
+``place_names`` holds the searchable words of each place (names in every language, codes) with the same ``rowid`` as its row in ``places``; ``label`` is what the results show; results are ordered by ``population``. The ``attribution`` key of ``metadata``, if present, is shown under the results, for data that requires credit. Any data can go in: cities, streets, your own points.
+
+For example, every place with at least 500 inhabitants from `GeoNames <https://www.geonames.org/>`_ (CC BY 4.0), with nothing but the ``sqlite3`` command:
+
+.. code-block:: bash
+
+  curl -O https://download.geonames.org/export/dump/cities500.zip && unzip cities500.zip
+  sqlite3 search.sqlite <<'EOF'
+  CREATE TABLE geonames(id INTEGER, name, asciiname, alternatenames, lat REAL, lon REAL,
+    class, code, country, cc2, admin1, admin2, admin3, admin4, population INTEGER,
+    elevation, dem, timezone, modified);
+  .mode ascii
+  .separator "\t" "\n"
+  .import cities500.txt geonames
+  CREATE TABLE places(id INTEGER PRIMARY KEY, name TEXT NOT NULL, label TEXT NOT NULL,
+    lat REAL NOT NULL, lon REAL NOT NULL, population INTEGER NOT NULL);
+  CREATE VIRTUAL TABLE place_names USING fts5(names, tokenize='unicode61 remove_diacritics 2');
+  INSERT INTO places SELECT id, name, name || ', ' || admin1 || ', ' || country,
+    lat, lon, coalesce(population, 0) FROM geonames;
+  INSERT INTO place_names(rowid, names) SELECT id, name || ' ' || asciiname || ' ' ||
+    replace(alternatenames, ',', ' ') || ' ' || country FROM geonames;
+  CREATE TABLE metadata(key TEXT PRIMARY KEY, value TEXT NOT NULL);
+  INSERT INTO metadata VALUES ('attribution', 'GeoNames, CC BY 4.0');
+  DROP TABLE geonames;
+  VACUUM;
+  EOF
+
+This is a gazetteer, not a full geocoder: it matches word prefixes (``rom`` finds Rome and Roma), ignores accents, and returns at most ten results; it does no address parsing, fuzzy matching or reverse geocoding. Restart the server after replacing the file.
+
 ``styles``
 ==========
 

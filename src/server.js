@@ -17,6 +17,7 @@ import { serve_data } from './serve_data.js';
 import { serve_style } from './serve_style.js';
 import { serve_font } from './serve_font.js';
 import { clearPMtilesCache } from './pmtiles_adapter.js';
+import { createSearchHandler } from './serve_search.js';
 import {
   allowedTileSizes,
   getTileUrls,
@@ -207,6 +208,13 @@ async function start(opts) {
     app.use(cors());
   }
 
+  if (options.offlineSearch) {
+    const database = options.offlineSearch.database;
+    app.get(
+      '/search',
+      createSearchHandler(database ? path.resolve(paths.root, database) : null),
+    );
+  }
   app.use('/data/', serve_data.init(options, serving.data, opts));
   app.use('/files/', express.static(paths.files));
   app.use('/styles/', serve_style.init(options, serving.styles, opts));
@@ -763,6 +771,7 @@ async function start(opts) {
             data['public_url'] = opts.publicUrl || '/';
             data['is_light'] = isLight;
             data['leaflet_retina'] = options.leafletRetina === true;
+            data['offline_search'] = Boolean(options.offlineSearch);
             data['key_query_part'] = req.query.key
               ? `key=${encodeURIComponent(req.query.key)}&amp;`
               : '';
