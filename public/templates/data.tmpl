@@ -7,11 +7,9 @@
   {{#use_maplibre}}
   <link rel="stylesheet" type="text/css" href="{{public_url}}maplibre-gl.css{{&key_query}}" />
   <link rel="stylesheet" type="text/css" href="{{public_url}}maplibre-gl-inspect.css{{&key_query}}" />
-  <script src="{{public_url}}maplibre-gl.js{{&key_query}}"></script>
-  <script src="{{public_url}}maplibre-gl-inspect.js{{&key_query}}"></script>
-  {{^is_light}}
-  <script src="{{public_url}}elevation-control.js{{&key_query}}"></script>
-  {{/is_light}}
+  <script type="importmap">
+    { "imports": { "maplibre-gl": "{{public_url}}maplibre-gl.mjs{{&key_query}}" } }
+  </script>
   <style>
     body {background:#fff;color:#333;font-family:Arial, sans-serif;}
     {{^is_terrain}}
@@ -58,7 +56,15 @@
   <div id="layerList"></div>
   <pre id="propertyList"></pre>
   {{/is_terrain}}
-  <script>
+  <script type="module">
+    import * as maplibregl from 'maplibre-gl';
+    {{^is_terrain}}
+    import MaplibreInspect from '{{public_url}}maplibre-gl-inspect.mjs{{&key_query}}';
+    {{/is_terrain}}
+    {{^is_light}}
+    import ElevationInfoControl from '{{public_url}}elevation-control.js{{&key_query}}';
+    {{/is_light}}
+
     var keyMatch = location.search.match(/[\?\&]key=([^&]+)/i);
     var keyParam = keyMatch ? '?key=' + keyMatch[1] : '';
 
