@@ -7,8 +7,9 @@
   <link rel="stylesheet" type="text/css" href="{{public_url}}maplibre-gl.css{{&key_query}}" />
   <link rel="stylesheet" type="text/css" href="{{public_url}}maplibre-gl-inspect.css{{&key_query}}" />
   <link rel="stylesheet" type="text/css" href="{{public_url}}leaflet.css{{&key_query}}" />
-  <script src="{{public_url}}maplibre-gl.js{{&key_query}}"></script>
-  <script src="{{public_url}}maplibre-gl-inspect.js{{&key_query}}"></script>
+  <script type="importmap">
+    { "imports": { "maplibre-gl": "{{public_url}}maplibre-gl.mjs{{&key_query}}" } }
+  </script>
   <script src="{{public_url}}leaflet.js{{&key_query}}"></script>
   <script src="{{public_url}}leaflet-hash.js{{&key_query}}"></script>
   <style>
@@ -31,12 +32,15 @@
 <body>
   <h1 style="display:none;">{{name}}</h1>
   <div id='map'></div>
-  <script>
+  <script type="module">
+    import * as maplibregl from 'maplibre-gl';
+    import MaplibreInspect from '{{public_url}}maplibre-gl-inspect.mjs{{&key_query}}';
+
     function isWebglSupported() {
-        if (window.WebGLRenderingContext) {
+        if (window.WebGL2RenderingContext) {
             const canvas = document.createElement('canvas');
             try {
-                const context = canvas.getContext('webgl2') || canvas.getContext('webgl');
+                const context = canvas.getContext('webgl2');
                 if (context && typeof context.getParameter == 'function') {
                     return true;
                 }
@@ -45,7 +49,7 @@
             }
             return false;
         }
-        // WebGL not supported
+        // WebGL2 not supported (required by maplibre-gl v6+)
         return false;
     }
     var q = (location.search || '').substr(1).split('&');
@@ -107,7 +111,7 @@
         req.open('GET', url, true);
         req.onload = function() {
             var jsonResponse = JSON.parse(req.responseText);
-            for (key in jsonResponse) {
+            for (var key in jsonResponse) {
               var keyl = key.toLowerCase();
                 switch(keyl) {
                   case "tiles":
@@ -125,7 +129,7 @@
                 }
             }
 
-            for (tile_url in tile_urls) {
+            for (var tile_url in tile_urls) {
                 var leafletUrl = tile_urls[tile_url];
                 {{#leaflet_retina}}
                 // Inject {r} for Leaflet retina support without modifying TileJSON directly.

@@ -1,4 +1,6 @@
-class ElevationInfoControl {
+import { Marker } from 'maplibre-gl';
+
+export default class ElevationInfoControl {
     constructor(options) {
       this.url = options["url"];
       this.originalTerrain = null;
@@ -49,10 +51,12 @@ class ElevationInfoControl {
       this.controlContainer.classList.add("maplibre-ctrl-elevation");
       this.controlContainer.textContent = "Elevation: Click on Map";
 
-      this.marker = new maplibregl.Marker();
+      this.marker = new Marker();
 
       map.on('click', (e) => {
-        if (!map.transform.isPointOnMapSurface(e.point)) {
+        // map.transform was removed in maplibre-gl v6; a click off the globe unprojects
+        // to the horizon, so it does not round-trip back to the clicked pixel
+        if (map.project(map.unproject(e.point)).dist(e.point) > 1) {
           this.controlContainer.textContent = "Elevation: Click on Globe";
           return;
         }
@@ -77,7 +81,7 @@ class ElevationInfoControl {
             this.marker.remove();
           }
           
-          this.marker = new maplibregl.Marker();
+          this.marker = new Marker();
           this.marker.setLngLat({lng: lngLat.lng, lat: lngLat.lat});
           this.marker.addTo(this.map);
         } catch (_err) {
