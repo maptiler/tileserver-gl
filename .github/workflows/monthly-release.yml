@@ -1,0 +1,207 @@
+name: Monthly release
+on:
+  schedule:
+    # Cut a stable release every month so merged dependency and security
+    # updates reach the `latest` npm tag and Docker images.
+    - cron: '0 4 1 * *'
+  workflow_dispatch:
+    inputs:
+      min_age_days:
+        description: Only commits on master at least this many days old are released, and no release is cut within this many days of the previous stable one.
+        required: false
+        type: number
+        default: 14
+      dry_run:
+        description: Work out what would be released, but don't push or publish anything.
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  cut:
+    name: Cut release branch
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: master
+
+      - name: Setup node env 📦
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: 'package.json'
+          check-latest: true
+          cache: 'npm'
+
+      - name: Choose what to release
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MIN_AGE_DAYS: ${{ inputs.min_age_days }}
+        run: |
+          minAge="${MIN_AGE_DAYS:-14}"
+
+          # Stable releases are measured from the last stable tag. Prerelease
+          # tags in between are not a base, they are just steps towards this.
+          lastStable="$( git tag --list 'v*' --sort=-v:refname | awk '!/-/ { print; exit }' )"
+          if [ -z "$lastStable" ]; then
+            echo "::error::No stable v* tag found, nothing to measure from."
+            exit 1
+          fi
+          lastVersion="${lastStable#v}"
+          echo "Last stable release: $lastStable"
+
+          # Don't cut a release on the heels of the previous one, however it
+          # was cut. The GitHub release says when it went out; fall back to
+          # the tag's commit if there is none.
+          released="$( gh release view "$lastStable" --json publishedAt --jq .publishedAt 2>/dev/null || git log -1 --format=%cI "$lastStable" )"
+          releasedDays=$(( ( $( date +%s ) - $( date -d "$released" +%s ) ) / 86400 ))
+          if [ "$releasedDays" -lt "$minAge" ]; then
+            echo "$lastStable was released $releasedDays days ago, skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # A release cut from a release/* branch reaches master through its
+          # merge-back PR, usually squashed, so the tag itself is rarely an
+          # ancestor of master. What matters is the master commit it was cut
+          # from: the next release has to contain at least that.
+          base="$( git merge-base "$lastStable" HEAD )"
+          masterVersion="$( node -p "require('./package.json').version" )"
+          case "$masterVersion" in
+            "$lastVersion") ;;
+            "$lastVersion"-*)
+              echo "::warning::master is still at $masterVersion although $lastStable has been released. The merge-back PR for $lastStable is probably still open."
+              ;;
+          esac
+
+          # The cut is the newest commit on master that has been there long
+          # enough. Everything after it waits for next month.
+          cutoff="$( date -u -d "$minAge days ago" +%Y-%m-%dT%H:%M:%SZ )"
+          cut="$( git rev-list -1 --first-parent --before="$cutoff" HEAD )"
+          if [ -z "$cut" ]; then
+            echo "::error::No commit on master is $minAge days old yet."
+            exit 1
+          fi
+          echo "Cut: $( git log -1 --format='%h %cs %s' "$cut" ) (nothing newer than $cutoff)"
+
+          # Never go backwards: the cut has to contain everything the last
+          # release did.
+          if ! git merge-base --is-ancestor "$base" "$cut"; then
+            echo "::error::$lastStable contains $( git log -1 --format=%h "$base" ) from $( git log -1 --format=%cs "$base" ), which is newer than the cut. Wait, or run this workflow with a smaller min_age_days."
+            exit 1
+          fi
+
+          range="$base..$cut"
+          count="$( git log --no-merges --format=%s "$range" | grep -vc '^Merge release v' || true )"
+          if [ "$count" -eq 0 ]; then
+            echo "Nothing new has settled since $lastStable, skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "$count commits to release"
+
+          # Never let the schedule turn a breaking change into a minor release.
+          if git log "$range" --format='%s%n%b' | grep -qE '^[a-z]+(\(.+\))?!:|^BREAKING[ -]CHANGE'; then
+            echo "::error::Breaking changes are present since $lastStable. A major release has to be cut by hand."
+            exit 1
+          fi
+
+          # The maintainers choose minor or patch the way they already do, by
+          # cutting a prerelease: if the cut is working towards one, that is
+          # the version. Otherwise this is a patch on the last stable release.
+          IFS=. read -r major minor patch <<< "$lastVersion"
+          version="$major.$minor.$(( patch + 1 ))"
+          cutVersion="$( git show "$cut:package.json" | node -p "JSON.parse(require('fs').readFileSync(0, 'utf8')).version" )"
+          case "$cutVersion" in
+            *-*)
+              target="${cutVersion%%-*}"
+              if [ "$( printf '%s\n' "$version" "$target" | sort -V | tail -1 )" = "$target" ]; then
+                echo "The cut is working towards $target ($cutVersion)"
+                version="$target"
+              fi
+              ;;
+          esac
+          if git rev-parse -q --verify "refs/tags/v$version" > /dev/null; then
+            echo "::error::v$version already exists."
+            exit 1
+          fi
+          # Whatever the tags say, never go backwards from what npm serves.
+          npmLatest="$( npm view tileserver-gl dist-tags.latest )"
+          if [ "$( printf '%s\n' "$npmLatest" "$version" | sort -V | tail -1 )" != "$version" ] || [ "$npmLatest" = "$version" ]; then
+            echo "::error::v$version would not be newer than $npmLatest, the current latest on npm."
+            exit 1
+          fi
+
+          echo "Releasing v$version"
+          {
+            echo "cut=$cut"
+            echo "last_stable=$lastStable"
+            echo "version=$version"
+            echo "branch=release/v$version"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## v$version"
+            echo
+            echo "Cut at $( git log -1 --format='%h' "$cut" ) (\`$( git log -1 --format='%cs' "$cut" )\`), the newest commit on master at least $minAge days old."
+            echo
+            echo "Commits since $lastStable:"
+            echo
+            git log --no-merges "$range" --format='- %h %s'
+            held="$( git rev-list --count "$cut..HEAD" )"
+            if [ "$held" -gt 0 ]; then
+              echo
+              echo "Held back for next month ($held commits):"
+              echo
+              git log "$cut..HEAD" --format='- %h %s'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Bump version and update changelog
+        if: steps.plan.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CUT: ${{ steps.plan.outputs.cut }}
+          LAST_STABLE: ${{ steps.plan.outputs.last_stable }}
+          VERSION: ${{ steps.plan.outputs.version }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          # Take the script from master, the cut may predate it.
+          cp .github/scripts/bump-version.mjs "$RUNNER_TEMP/bump-version.mjs"
+          git checkout --detach "$CUT"
+          # Carry the previous release's version bump and changelog section
+          # forward even if master has not merged them, or squashed them.
+          if ! git merge-base --is-ancestor "$LAST_STABLE" HEAD; then
+            echo "Merging $LAST_STABLE into the cut"
+            if ! git merge --no-edit "$LAST_STABLE"; then
+              echo "::error::Merging $LAST_STABLE into the cut conflicts. Merge the merge-back PR for $LAST_STABLE into master and run this workflow again."
+              exit 1
+            fi
+          fi
+          node "$RUNNER_TEMP/bump-version.mjs" "$VERSION"
+          git --no-pager diff
+
+      - name: Push release branch and start the release
+        if: steps.plan.outputs.skip != 'true' && inputs.dry_run != true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.plan.outputs.version }}
+          BRANCH: ${{ steps.plan.outputs.branch }}
+        run: |
+          git checkout -b "$BRANCH"
+          git commit -am "Release v$VERSION"
+          # The branch belongs to this workflow. A leftover from a failed
+          # earlier attempt is replaced.
+          git push --force origin "$BRANCH"
+          gh workflow run release.yml --ref master -f "ref=$BRANCH"
+          echo "Started the release workflow for $BRANCH"
