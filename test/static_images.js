@@ -70,6 +70,11 @@ const tests = [
     url: '/styles/test-style/static/8.5375,47.379,12/400x300.png?marker=8.531,47.38|marker-icon.png|scale:0.8&marker=8.545,47.375|marker-icon-2x.png|offset:5,-10',
   },
   {
+    name: 'static-marker-low-zoom-large-viewport',
+    // Test marker alignment when the viewport raises the effective low zoom
+    url: '/styles/test-style/static/8.5432,47.3669,1/1000x1000.png?marker=8.5432,47.3669|marker-icon.png|scale:0.8|offset:0,30',
+  },
+  {
     name: 'static-bbox',
     // Test area-based map rendering using a bounding box (bbox)
     url: '/styles/test-style/static/8.5,47.35,8.6,47.4/400x300.png',
