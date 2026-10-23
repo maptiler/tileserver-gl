@@ -7,16 +7,11 @@
 ### 🐞 Bug fixes
 - _...Add new stuff here..._
 
-## 5.7.0
-### ✨ Features and improvements
-- Updates Maplibre-gl-js to v6 and maplibre-gl-inspect to v1.9.0. maplibre-gl-js v6 is ESM-only, so the viewer and data templates now load it as an ES module via an import map, and the elevation control is now an ES module. maplibre-gl-js v6 requires WebGL2; the viewer falls back to the raster (Leaflet) view without it ([#2360](https://github.com/maptiler/tileserver-gl/pull/2360)) (by [acalcutt](https://github.com/acalcutt))
-
-### 🐞 Bug fixes
-
 ## 5.7.0-pre.1
 ### ✨ Features and improvements
 - feat: add opt-in Prometheus metrics endpoint ([#2211](https://github.com/maptiler/tileserver-gl/pull/2211)) (by [navidnabavi](https://github.com/navidnabavi))
 - feat: allow the data decorator to be asynchronous ([#2352](https://github.com/maptiler/tileserver-gl/pull/2352)) (by [acalcutt](https://github.com/acalcutt))
+- Updates Maplibre-gl-js to v6 and maplibre-gl-inspect to v1.9.0. maplibre-gl-js v6 is ESM-only, so the viewer and data templates now load it as an ES module via an import map, and the elevation control is now an ES module. maplibre-gl-js v6 requires WebGL2; the viewer falls back to the raster (Leaflet) view without it ([#2360](https://github.com/maptiler/tileserver-gl/pull/2360)) (by [acalcutt](https://github.com/acalcutt))
 
 ### 🐞 Bug fixes
 - fix: TypeError when style source value is a string (e.g. sprite path) ([#2179](https://github.com/maptiler/tileserver-gl/pull/2179)) (by [app/copilot-swe-agent](https://github.com/app/copilot-swe-agent))
