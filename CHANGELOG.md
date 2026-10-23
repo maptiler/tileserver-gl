@@ -24,6 +24,9 @@
 - fix: restore the format-based sparse default ([#2348](https://github.com/maptiler/tileserver-gl/pull/2348)) (by [acalcutt](https://github.com/acalcutt))
 - fix: align 512px static map overlays ([#2344](https://github.com/maptiler/tileserver-gl/pull/2344)) (by [miakh](https://github.com/miakh))
 - fix: allow native install scripts under npm 12 so canvas builds ([#2343](https://github.com/maptiler/tileserver-gl/pull/2343)) (by [mikey923](https://github.com/mikey923))
+- fix: align low-zoom static map overlays ([#2355](https://github.com/maptiler/tileserver-gl/pull/2355)) (by [miakh](https://github.com/miakh))
+- perf: avoid recompressing gzipped mvt tiles ([#2369](https://github.com/maptiler/tileserver-gl/pull/2369)) (by [bvitlas](https://github.com/bvitlas))
+
 
 ## 5.6.0
 ### ✨ Features and improvements
@@ -102,6 +105,3 @@
   - This first release that use Metal for rendering instead of OpenGL (ES) for macOS. 
   - This the first release that uses OpenGL (ES) 3.0 on Windows and Linux 
   - Note: Windows users may need to update their [c++ redistributable ](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170) for maplibre-native v6.0.0
-
-- fix: align low-zoom static map overlays ([#2355](https://github.com/maptiler/tileserver-gl/pull/2355)) (by [miakh](https://github.com/miakh))
-- perf: avoid recompressing gzipped mvt tiles ([#2369](https://github.com/maptiler/tileserver-gl/pull/2369)) (by [bvitlas](https://github.com/bvitlas))
