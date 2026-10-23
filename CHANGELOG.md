@@ -3,10 +3,15 @@
 ## master
 ### ✨ Features and improvements
 - _...Add new stuff here..._
-- Updates Maplibre-gl-js to v6 and maplibre-gl-inspect to v1.9.0. maplibre-gl-js v6 is ESM-only, so the viewer and data templates now load it as an ES module via an import map, and the elevation control is now an ES module. maplibre-gl-js v6 requires WebGL2; the viewer falls back to the raster (Leaflet) view without it ([#2360](https://github.com/maptiler/tileserver-gl/pull/2360)) (by [acalcutt](https://github.com/acalcutt))
 
 ### 🐞 Bug fixes
 - _...Add new stuff here..._
+
+## 5.7.0
+### ✨ Features and improvements
+- Updates Maplibre-gl-js to v6 and maplibre-gl-inspect to v1.9.0. maplibre-gl-js v6 is ESM-only, so the viewer and data templates now load it as an ES module via an import map, and the elevation control is now an ES module. maplibre-gl-js v6 requires WebGL2; the viewer falls back to the raster (Leaflet) view without it ([#2360](https://github.com/maptiler/tileserver-gl/pull/2360)) (by [acalcutt](https://github.com/acalcutt))
+
+### 🐞 Bug fixes
 
 ## 5.7.0-pre.1
 ### ✨ Features and improvements
@@ -102,3 +107,6 @@
   - This first release that use Metal for rendering instead of OpenGL (ES) for macOS. 
   - This the first release that uses OpenGL (ES) 3.0 on Windows and Linux 
   - Note: Windows users may need to update their [c++ redistributable ](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170) for maplibre-native v6.0.0
+
+- fix: align low-zoom static map overlays ([#2355](https://github.com/maptiler/tileserver-gl/pull/2355)) (by [miakh](https://github.com/miakh))
+- perf: avoid recompressing gzipped mvt tiles ([#2369](https://github.com/maptiler/tileserver-gl/pull/2369)) (by [bvitlas](https://github.com/bvitlas))
