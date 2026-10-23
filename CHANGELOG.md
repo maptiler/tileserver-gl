@@ -7,7 +7,7 @@
 ### 🐞 Bug fixes
 - _...Add new stuff here..._
 
-## 5.7.0-pre.1
+## 5.7.0
 ### ✨ Features and improvements
 - feat: add opt-in Prometheus metrics endpoint ([#2211](https://github.com/maptiler/tileserver-gl/pull/2211)) (by [navidnabavi](https://github.com/navidnabavi))
 - feat: allow the data decorator to be asynchronous ([#2352](https://github.com/maptiler/tileserver-gl/pull/2352)) (by [acalcutt](https://github.com/acalcutt))
