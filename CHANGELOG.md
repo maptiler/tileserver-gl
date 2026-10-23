@@ -27,7 +27,6 @@
 - fix: align low-zoom static map overlays ([#2355](https://github.com/maptiler/tileserver-gl/pull/2355)) (by [miakh](https://github.com/miakh))
 - perf: avoid recompressing gzipped mvt tiles ([#2369](https://github.com/maptiler/tileserver-gl/pull/2369)) (by [bvitlas](https://github.com/bvitlas))
 
-
 ## 5.6.0
 ### ✨ Features and improvements
 - Update Maplibre-Native to v6.4.1
