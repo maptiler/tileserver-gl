@@ -6,6 +6,11 @@ permissions:
 
 on:
   workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch or commit to release. Leave empty to release master.
+        required: false
+        type: string
   push:
     branches:
       - master
@@ -23,6 +28,8 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
 
       - uses: actions/setup-node@v6
         with:
@@ -35,13 +42,17 @@ jobs:
         run: |
           currentVersion="$( node -e "console.log(require('./package.json').version)" )"
           isPublished="$( npm view tileserver-gl versions --json | jq -c --arg cv "$currentVersion" 'any(. == $cv)' )"
-          echo "version=$currentVersion" >> "$GITHUB_OUTPUT"
-          echo "published=$isPublished" >> "$GITHUB_OUTPUT"
+          {
+            echo "version=$currentVersion"
+            echo "published=$isPublished"
+            echo "sha=$( git rev-parse HEAD )"
+          } >> "$GITHUB_OUTPUT"
           echo "currentVersion: $currentVersion"
           echo "isPublished: $isPublished"
     outputs:
       published: ${{ steps.check.outputs.published }}
       version: ${{ steps.check.outputs.version }}
+      sha: ${{ steps.check.outputs.sha }}
 
   # Build and push individual architecture images (with tests)
   build_arch_images:
@@ -63,6 +74,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.release-check.outputs.sha }}
 
       - name: Setup node env 📦
         uses: actions/setup-node@v6
@@ -156,6 +169,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.release-check.outputs.sha }}
 
       - name: Setup node env 📦
         uses: actions/setup-node@v6
@@ -244,7 +259,37 @@ jobs:
         with:
           tag: v${{ needs.release-check.outputs.version }}
           name: v${{ needs.release-check.outputs.version }}
+          commit: ${{ needs.release-check.outputs.sha }}
           bodyFile: changelog_for_version.md
           allowUpdates: true
           draft: false
           prerelease: ${{ steps.prepare_release.outputs.prerelease }}
+
+  # A release cut from a release/* branch (see monthly-release.yml) is not on
+  # master yet. Open a PR so the tag, version and changelog get merged back.
+  merge-back:
+    name: Open merge-back PR
+    runs-on: ubuntu-latest
+    needs: [release-check, release]
+    if: ${{ startsWith(inputs.ref, 'release/') }}
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Open pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD: ${{ inputs.ref }}
+          VERSION: ${{ needs.release-check.outputs.version }}
+        run: |
+          if gh pr list --repo "$GITHUB_REPOSITORY" --head "$HEAD" --base master --state open --json number --jq '.[0].number' | grep -q .; then
+            echo "A merge-back PR for $HEAD is already open."
+            exit 0
+          fi
+          cat > body.md << EOF
+          v$VERSION was published from \`$HEAD\` by $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID.
+
+          Merging this brings the tag, the version bump and the changelog section back to master. Merge it before the next monthly release is cut.
+          EOF
+          gh pr create --repo "$GITHUB_REPOSITORY" --head "$HEAD" --base master \
+            --title "Merge release v$VERSION into master" --body-file body.md
