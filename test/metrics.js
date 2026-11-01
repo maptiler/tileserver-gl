@@ -36,6 +36,7 @@ describe('Prometheus metrics', function () {
       publicUrl: '/test/',
       metrics: true,
       metricsPort: 9999,
+      metricsAddress: '127.0.0.1',
     });
     tileServer = running.server;
     metricsServer = running.metricsServer;
@@ -78,6 +79,7 @@ describe('Prometheus metrics', function () {
       publicUrl: '/test/',
       metrics: false,
       metricsPort: 9998,
+      metricsAddress: '127.0.0.1',
     })
       .then((running) => {
         running.startupPromise

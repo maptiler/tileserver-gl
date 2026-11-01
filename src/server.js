@@ -1063,7 +1063,10 @@ async function start(opts) {
         res.end(await metricsModule.registry.metrics());
       });
       await new Promise((resolve) => {
-        metricsServer = metricsApp.listen(opts.metricsPort, '127.0.0.1');
+        metricsServer = metricsApp.listen(
+          opts.metricsPort,
+          opts.metricsAddress,
+        );
         metricsServer.once('error', (err) => {
           console.warn(
             `[metrics] Failed to start metrics server: ${err.message}`,
@@ -1073,7 +1076,7 @@ async function start(opts) {
         metricsServer.once('listening', resolve);
       });
       console.log(
-        `Prometheus metrics available at http://localhost:${opts.metricsPort}/metrics`,
+        `Prometheus metrics available at http://${opts.metricsAddress}:${opts.metricsPort}/metrics`,
       );
     } catch (err) {
       console.warn(`[metrics] Failed to initialize metrics: ${err.message}`);
