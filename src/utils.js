@@ -313,10 +313,10 @@ export function getTileUrls(
 
   const queryParams = [];
   if (req.query.key) {
-    queryParams.push(`key=${encodeURIComponent(req.query.key)}`);
+    queryParams.push(`key=${encodeURIComponent(String(req.query.key))}`);
   }
   if (req.query.style) {
-    queryParams.push(`style=${encodeURIComponent(req.query.style)}`);
+    queryParams.push(`style=${encodeURIComponent(String(req.query.style))}`);
   }
   const query = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
 

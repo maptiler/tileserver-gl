@@ -764,10 +764,10 @@ async function start(opts) {
             data['is_light'] = isLight;
             data['leaflet_retina'] = options.leafletRetina === true;
             data['key_query_part'] = req.query.key
-              ? `key=${encodeURIComponent(req.query.key)}&amp;`
+              ? `key=${encodeURIComponent(String(req.query.key))}&amp;`
               : '';
             data['key_query'] = req.query.key
-              ? `?key=${encodeURIComponent(req.query.key)}`
+              ? `?key=${encodeURIComponent(String(req.query.key))}`
               : '';
             if (template === 'wmts') res.set('Content-Type', 'text/xml');
             return res.status(200).send(compiled(data));
