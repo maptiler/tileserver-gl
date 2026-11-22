@@ -1,7 +1,12 @@
 'use strict';
 
-import { S3Client } from '@aws-sdk/client-s3';
+import path from 'node:path';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { fromIni } from '@aws-sdk/credential-provider-ini';
+import { isS3Url } from './utils.js';
+
+// Clients for whole-object reads (styles, sprites), shared per endpoint, region and profile.
+const objectClients = new Map();
 
 /**
  * Parses various S3 URL formats into bucket, key, endpoint, region, and profile.
@@ -210,4 +215,123 @@ export function describeS3Error(error, bucket, key, what = 'S3 object') {
 
   console.error(`S3 error for ${bucket}/${key}:`, error.message);
   return error;
+}
+
+/**
+ * Picks the S3 settings out of a config item (a data source or a style).
+ * @param {object} item - The config item.
+ * @param {number} [verbose] - Verbosity level (1-3).
+ * @returns {object} - Settings for resolveS3Url() and getS3Object().
+ */
+export function s3ConfigFrom(item, verbose) {
+  return {
+    s3Profile: item?.s3Profile,
+    requestPayer: item?.requestPayer,
+    s3Region: item?.s3Region,
+    s3UrlFormat: item?.s3UrlFormat,
+    verbose,
+  };
+}
+
+/**
+ * Reads a whole object from S3.
+ * @param {string} url - The S3 URL of the object.
+ * @param {object} [config] - S3 settings from the config, see resolveS3Url().
+ * @returns {Promise<{data: Buffer, etag: string, lastModified: Date}>} - The object's contents.
+ * @throws {Error} - Throws on S3 errors like NoSuchKey, AccessDenied, NoSuchBucket.
+ */
+export async function getS3Object(url, config = {}) {
+  const resolved = resolveS3Url(url, config);
+  const clientKey = JSON.stringify([
+    resolved.endpoint,
+    resolved.region,
+    resolved.profile,
+  ]);
+  let client = objectClients.get(clientKey);
+  if (!client) {
+    client = createS3Client(
+      resolved.endpoint,
+      resolved.region,
+      resolved.profile,
+      config.verbose,
+    );
+    objectClients.set(clientKey, client);
+  }
+
+  const commandParams = { Bucket: resolved.bucket, Key: resolved.key };
+  if (resolved.requestPayer) {
+    commandParams.RequestPayer = 'requester';
+  }
+
+  try {
+    const response = await client.send(new GetObjectCommand(commandParams));
+    const arr = await response.Body.transformToByteArray();
+    return {
+      data: Buffer.from(arr.buffer, arr.byteOffset, arr.byteLength),
+      etag: response.ETag,
+      lastModified: response.LastModified,
+    };
+  } catch (error) {
+    throw describeS3Error(error, resolved.bucket, resolved.key);
+  }
+}
+
+/**
+ * Splits a URL into the part before its query string and the query string.
+ * @param {string} url - The URL.
+ * @returns {[string, string]} - The URL without its query, and the query including '?' (or '').
+ */
+function splitQuery(url) {
+  const queryPos = url.indexOf('?');
+  return queryPos < 0
+    ? [url, '']
+    : [url.slice(0, queryPos), url.slice(queryPos)];
+}
+
+/**
+ * Inserts a suffix at the end of an S3 URL's key, before any query string.
+ * @param {string} url - The S3 URL.
+ * @param {string} suffix - The text to add to the key, e.g. '@2x.png'.
+ * @returns {string} - The new URL.
+ */
+export function appendToS3Key(url, suffix) {
+  const [base, query] = splitQuery(url);
+  return base + suffix + query;
+}
+
+/**
+ * Works out whether a style's sprite lives in S3, and where.
+ *
+ * A sprite is read from S3 when its URL is itself an S3 URL, or when the
+ * style was loaded from S3 and the sprite uses {styleJsonFolder}, which then
+ * means the folder holding the style in the bucket. The style's query string
+ * (profile, region, ...) carries over to a sprite found next to it.
+ * @param {string} spriteUrl - The sprite URL from the style.
+ * @param {string} style - The style's location from the config (a path or an S3 URL).
+ * @returns {string|null} - The sprite's S3 URL without scale or extension, or null for a local or HTTP sprite.
+ */
+export function resolveS3SpriteUrl(spriteUrl, style) {
+  if (typeof spriteUrl !== 'string') {
+    return null;
+  }
+  const styleIsS3 = isS3Url(style);
+  const besideS3Style = styleIsS3 && spriteUrl.includes('{styleJsonFolder}');
+  if (!isS3Url(spriteUrl) && !besideS3Style) {
+    return null;
+  }
+
+  const [styleBase, styleQuery] = styleIsS3 ? splitQuery(style) : [style, ''];
+  const styleName = path.posix.basename(
+    String(styleBase).replace(/\\/g, '/'),
+    '.json',
+  );
+  let url = spriteUrl.replace('{style}', styleName);
+  if (besideS3Style) {
+    const styleFolder = styleBase.slice(0, styleBase.lastIndexOf('/'));
+    url = url.replace('{styleJsonFolder}', styleFolder);
+    if (!url.includes('?')) {
+      url += styleQuery;
+    }
+  }
+  return url;
 }

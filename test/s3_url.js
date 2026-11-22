@@ -1,5 +1,10 @@
 import { expect } from 'chai';
-import { parseS3Url, resolveS3Url } from '../src/s3.js';
+import {
+  appendToS3Key,
+  parseS3Url,
+  resolveS3SpriteUrl,
+  resolveS3Url,
+} from '../src/s3.js';
 
 describe('S3 URL parsing', function () {
   it('reads s3://bucket/key as AWS S3', function () {
@@ -59,5 +64,46 @@ describe('S3 URL parsing', function () {
     expect(resolved.profile).to.equal('config');
     expect(resolved.region).to.equal('config');
     expect(resolved.requestPayer).to.equal(false);
+  });
+});
+
+describe('S3 sprite locations', function () {
+  const style = 's3+http://garage:3900/tiles/styles/osm/style.json';
+
+  it('puts {styleJsonFolder} sprites of an S3 style next to the style', function () {
+    expect(resolveS3SpriteUrl('{styleJsonFolder}/sprite', style)).to.equal(
+      's3+http://garage:3900/tiles/styles/osm/sprite',
+    );
+  });
+
+  it('carries the style query string over to a sprite beside it', function () {
+    expect(
+      resolveS3SpriteUrl(
+        '{styleJsonFolder}/{style}',
+        `${style}?profile=garage`,
+      ),
+    ).to.equal('s3+http://garage:3900/tiles/styles/osm/style?profile=garage');
+  });
+
+  it('keeps an explicit S3 sprite URL, for local styles too', function () {
+    expect(
+      resolveS3SpriteUrl('s3://my-bucket/sprites/{style}', 'osm/bright.json'),
+    ).to.equal('s3://my-bucket/sprites/bright');
+  });
+
+  it('leaves local and HTTP sprites alone', function () {
+    expect(
+      resolveS3SpriteUrl('{styleJsonFolder}/sprite', 'osm/style.json'),
+    ).to.equal(null);
+    expect(resolveS3SpriteUrl('sprites/osm', style)).to.equal(null);
+    expect(resolveS3SpriteUrl('https://example.com/sprite', style)).to.equal(
+      null,
+    );
+  });
+
+  it('adds the scale and extension before the query string', function () {
+    expect(
+      appendToS3Key('s3+http://garage:3900/tiles/sprite?profile=x', '@2x.png'),
+    ).to.equal('s3+http://garage:3900/tiles/sprite@2x.png?profile=x');
   });
 });

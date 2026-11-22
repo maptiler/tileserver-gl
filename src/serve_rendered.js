@@ -32,6 +32,7 @@ import {
   getTileUrls,
   isValidHttpUrl,
   isValidRemoteUrl,
+  isS3Url,
   fixTileJSONCenter,
   fetchTileData,
   readFile,
@@ -39,6 +40,7 @@ import {
   resolveSparse,
 } from './utils.js';
 import { openPMtiles, getPMtilesInfo } from './pmtiles_adapter.js';
+import { getS3Object, resolveS3SpriteUrl, s3ConfigFrom } from './s3.js';
 import { renderOverlay, renderWatermark, renderAttribution } from './render.js';
 import { getMapLibreRenderZoom, getStaticOverlayZoom } from './render_mode.js';
 import fsp from 'node:fs/promises';
@@ -1386,6 +1388,7 @@ export const serve_rendered = {
     }
 
     const styleJSON = clone(style);
+    const s3Config = s3ConfigFrom(params, verbose);
 
     /**
      * Creates a pool of renderers.
@@ -1437,6 +1440,11 @@ export const serve_rendered = {
                   .catch((err) => {
                     respond(err, null);
                   });
+              } else if (isS3Url(req.url)) {
+                // S3 URLs in the style, such as sprites (see resolveS3SpriteUrl()),
+                // read with the style's S3 settings.
+                const { data } = await getS3Object(req.url, s3Config);
+                respond(null, { data });
               } else if (protocol === 'fonts') {
                 const parts = req.url.split('/');
                 const fontstack = decodeURIComponent(parts[2]);
@@ -1692,8 +1700,11 @@ export const serve_rendered = {
         styleJSON.sprite = [{ id: 'default', url: styleJSON.sprite }];
       }
       styleJSON.sprite.forEach((spriteItem) => {
-        // Sprites should only be HTTP/HTTPS, not S3
-        if (!isValidHttpUrl(spriteItem.url)) {
+        // S3 sprites keep their URL; the request handler reads them from S3.
+        const s3Url = resolveS3SpriteUrl(spriteItem.url, styleFile);
+        if (s3Url) {
+          spriteItem.url = s3Url;
+        } else if (!isValidHttpUrl(spriteItem.url)) {
           spriteItem.url =
             'sprites://' +
             spriteItem.url
