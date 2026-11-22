@@ -443,6 +443,13 @@ PMTiles files can be accessed directly from AWS S3 or S3-compatible storage serv
 2. **S3-compatible storage with custom endpoint:**
    ``s3://endpoint-url/bucket-name/path/to/file.pmtiles``
 
+   The endpoint is reached over HTTPS.
+
+3. **S3-compatible storage with custom endpoint and scheme:**
+   ``s3+http://endpoint-url:port/bucket-name/path/to/file.pmtiles`` or ``s3+https://endpoint-url:port/bucket-name/path/to/file.pmtiles``
+
+   Use ``s3+http://`` for a self-hosted store that serves plain HTTP (such as Garage on port 3900 or MinIO on port 9000). The first segment is always the endpoint, so it needs no dot and ``s3UrlFormat`` does not apply.
+
 **AWS Credentials:**
 
 S3 sources require AWS credentials to be configured. The server will automatically use credentials from:

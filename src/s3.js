@@ -8,6 +8,8 @@ import { fromIni } from '@aws-sdk/credential-provider-ini';
  * Supports:
  * - AWS S3: s3://bucket-name/path/to/file
  * - S3-compatible with endpoint: s3://endpoint-url/bucket/path/to/file
+ * - S3-compatible with endpoint and scheme: s3+http://endpoint-url/bucket/path/to/file
+ *   or s3+https://endpoint-url/bucket/path/to/file
  * @param {string} url - The S3 URL to parse.
  * @param {string} [s3UrlFormat] - Optional format override: 'aws' or 'custom'.
  * @returns {object} - An object containing bucket, key, endpoint, region, profile, and requestPayer.
@@ -40,14 +42,28 @@ export function parseS3Url(url, s3UrlFormat) {
   }
 
   // Helper to build result object
-  const buildResult = (endpoint, bucket, key) => ({
-    endpoint: endpoint ? `https://${endpoint}` : null,
+  const buildResult = (endpoint, bucket, key, scheme = 'https') => ({
+    endpoint: endpoint ? `${scheme}://${endpoint}` : null,
     bucket,
     key,
     region,
     profile,
     requestPayer,
   });
+
+  // s3+http:// and s3+https:// name the endpoint's scheme, so they always
+  // carry an endpoint and s3UrlFormat does not apply.
+  const schemeMatch = cleanUrl.match(
+    /^s3\+(https?):\/\/([^/]+)\/([^/]+)\/(.+)$/i,
+  );
+  if (schemeMatch) {
+    return buildResult(
+      schemeMatch[2],
+      schemeMatch[3],
+      schemeMatch[4],
+      schemeMatch[1].toLowerCase(),
+    );
+  }
 
   // Define patterns based on format
   const patterns = {
@@ -79,6 +95,7 @@ export function parseS3Url(url, s3UrlFormat) {
       `Expected formats:\n` +
       `  AWS S3: s3://bucket-name/path/to/file.pmtiles\n` +
       `  Custom endpoint: s3://endpoint.com/bucket/path/to/file.pmtiles\n` +
+      `  Custom endpoint and scheme: s3+http://endpoint:port/bucket/path/to/file.pmtiles\n` +
       `Use s3UrlFormat parameter to override auto-detection if needed.`,
   );
 }
