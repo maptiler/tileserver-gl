@@ -221,6 +221,7 @@ const startServer = (configPath, config) => {
       const port = parseInt(process.env.METRICS_PORT, 10);
       return !isNaN(port) && port > 0 ? port : 9090;
     })(),
+    metricsAddress: process.env.METRICS_ADDRESS || '127.0.0.1',
   });
 };
 
