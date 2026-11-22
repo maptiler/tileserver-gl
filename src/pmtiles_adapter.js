@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import { PMTiles, FetchSource, EtagMismatch } from 'pmtiles';
 import { isValidHttpUrl, isS3Url } from './utils.js';
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
-import { fromIni } from '@aws-sdk/credential-provider-ini';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { createS3Client, describeS3Error, resolveS3Url } from './s3.js';
 
 /**
  * S3 Source for PMTiles
@@ -28,154 +28,31 @@ class S3Source {
     s3UrlFormat,
     verbose = false,
   ) {
-    const parsed = this.parseS3Url(s3Url, s3UrlFormat);
-    this.bucket = parsed.bucket;
-    this.key = parsed.key;
-    this.endpoint = parsed.endpoint;
+    // Apply configuration precedence: Config > URL > Default
+    const resolved = resolveS3Url(s3Url, {
+      s3Profile,
+      requestPayer: configRequestPayer,
+      s3Region: configRegion,
+      s3UrlFormat,
+      verbose,
+    });
+    this.bucket = resolved.bucket;
+    this.key = resolved.key;
+    this.endpoint = resolved.endpoint;
     this.url = s3Url;
     this.verbose = verbose;
-
-    // Apply configuration precedence: Config > URL > Default
-    // Using || for strings (empty string = not set)
-    // Using ?? for booleans (false is valid value)
-    const profile = s3Profile || parsed.profile;
-    this.requestPayer = configRequestPayer ?? parsed.requestPayer;
-    this.region = configRegion || parsed.region;
-
-    // Log precedence decisions for debugging
-    if (verbose >= 3) {
-      console.log(`S3 config precedence for ${s3Url}:`);
-      console.log(
-        `  Profile: ${s3Profile ? 'config' : parsed.profile ? 'url' : 'default'} = ${profile || 'none'}`,
-      );
-      console.log(
-        `  Region: ${configRegion ? 'config' : parsed.region !== (process.env.AWS_REGION || 'us-east-1') ? 'url' : 'env/default'} = ${this.region}`,
-      );
-      console.log(
-        `  RequestPayer: ${configRequestPayer !== undefined ? 'config' : parsed.requestPayer ? 'url' : 'default'} = ${this.requestPayer}`,
-      );
-    }
+    this.requestPayer = resolved.requestPayer;
+    this.region = resolved.region;
 
     // Create S3 client
-    this.s3Client = this.createS3Client(
-      parsed.endpoint,
+    this.s3Client = createS3Client(
+      resolved.endpoint,
       this.region,
-      profile,
+      resolved.profile,
       this.verbose,
     );
   }
 
-  /**
-   * Parses various S3 URL formats into bucket, key, endpoint, region, and profile.
-   * @param {string} url - The S3 URL to parse.
-   * @param {string} [s3UrlFormat] - Optional format override: 'aws' or 'custom'.
-   * @returns {object} - An object containing bucket, key, endpoint, region, and profile.
-   * @throws {Error} - Throws an error if the URL format is invalid.
-   */
-  parseS3Url(url, s3UrlFormat) {
-    // Validate s3UrlFormat if provided
-    if (s3UrlFormat && s3UrlFormat !== 'aws' && s3UrlFormat !== 'custom') {
-      console.warn(
-        `Invalid s3UrlFormat: "${s3UrlFormat}". Must be "aws" or "custom". Using auto-detection.`,
-      );
-      s3UrlFormat = undefined;
-    }
-
-    let region = process.env.AWS_REGION || 'us-east-1';
-    let profile = null;
-    let requestPayer = false;
-
-    // Parse URL parameters
-    const [cleanUrl, queryString] = url.split('?');
-    if (queryString) {
-      const params = new URLSearchParams(queryString);
-      // URL parameters override defaults
-      profile = params.get('profile') ?? profile;
-      region = params.get('region') ?? region;
-      s3UrlFormat = s3UrlFormat ?? params.get('s3UrlFormat'); // Config overrides URL
-
-      const payerVal = params.get('requestPayer');
-      requestPayer = payerVal === 'true' || payerVal === '1';
-    }
-
-    // Helper to build result object
-    const buildResult = (endpoint, bucket, key) => ({
-      endpoint: endpoint ? `https://${endpoint}` : null,
-      bucket,
-      key,
-      region,
-      profile,
-      requestPayer,
-    });
-
-    // Define patterns based on format
-    const patterns = {
-      customWithDot: /^s3:\/\/([^/]*\.[^/]+)\/([^/]+)\/(.+)$/, // Auto-detect: requires dot
-      customForced: /^s3:\/\/([^/]+)\/([^/]+)\/(.+)$/, // Explicit: no dot required
-      aws: /^s3:\/\/([^/]+)\/(.+)$/,
-    };
-
-    // Match based on s3UrlFormat or auto-detect
-    let match;
-
-    if (s3UrlFormat === 'custom') {
-      match = cleanUrl.match(patterns.customForced);
-      if (match) return buildResult(match[1], match[2], match[3]);
-    } else if (s3UrlFormat === 'aws') {
-      match = cleanUrl.match(patterns.aws);
-      if (match) return buildResult(null, match[1], match[2]);
-    } else {
-      // Auto-detection: try custom (with dot) first, then AWS
-      match = cleanUrl.match(patterns.customWithDot);
-      if (match) return buildResult(match[1], match[2], match[3]);
-
-      match = cleanUrl.match(patterns.aws);
-      if (match) return buildResult(null, match[1], match[2]);
-    }
-
-    throw new Error(
-      `Invalid S3 URL format: ${url}\n` +
-        `Expected formats:\n` +
-        `  AWS S3: s3://bucket-name/path/to/file.pmtiles\n` +
-        `  Custom endpoint: s3://endpoint.com/bucket/path/to/file.pmtiles\n` +
-        `Use s3UrlFormat parameter to override auto-detection if needed.`,
-    );
-  }
-
-  /**
-   * Creates an S3 client with optional custom endpoint and AWS profile support.
-   * @param {string|null} endpoint - The custom endpoint URL, or null for default AWS S3.
-   * @param {string} region - The AWS region.
-   * @param {string} [profile] - Optional AWS credential profile name.
-   * @param {number} [verbose] - Verbosity level (1-3). 1=important, 2=detailed, 3=debug/all requests.
-   * @returns {S3Client} - Configured S3Client instance.
-   */
-  createS3Client(endpoint, region, profile, verbose) {
-    const config = {
-      region: region,
-      requestHandler: {
-        connectionTimeout: 5000,
-        socketTimeout: 5000,
-      },
-      forcePathStyle: !!endpoint,
-    };
-
-    if (endpoint) {
-      config.endpoint = endpoint;
-      if (verbose >= 2) {
-        console.log(`Using custom S3 endpoint: ${endpoint}`);
-      }
-    }
-
-    if (profile) {
-      config.credentials = fromIni({ profile });
-      if (verbose >= 2) {
-        console.log(`Using AWS profile: ${profile}`);
-      }
-    }
-
-    return new S3Client(config);
-  }
   /**
    * Returns the unique key for this S3 source.
    * @returns {string} - The S3 URL.
@@ -231,28 +108,7 @@ class S3Source {
         throw new EtagMismatch();
       }
 
-      if (error.name === 'NoSuchKey') {
-        throw new Error(`PMTiles file not found: ${this.bucket}/${this.key}`, {
-          cause: error,
-        });
-      }
-
-      if (error.name === 'AccessDenied') {
-        throw new Error(
-          `Access denied: ${this.bucket}/${this.key}. Check credentials and bucket permissions.`,
-          { cause: error },
-        );
-      }
-
-      if (error.name === 'NoSuchBucket') {
-        throw new Error(
-          `Bucket not found: ${this.bucket}. Check bucket name and endpoint.`,
-          { cause: error },
-        );
-      }
-
-      console.error(`S3 error for ${this.bucket}/${this.key}:`, error.message);
-      throw error;
+      throw describeS3Error(error, this.bucket, this.key, 'PMTiles file');
     }
   }
 }
