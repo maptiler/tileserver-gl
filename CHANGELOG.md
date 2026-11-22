@@ -3,9 +3,11 @@
 ## master
 ### ✨ Features and improvements
 - _...Add new stuff here..._
+- feat: read styles and their sprites from S3 or S3-compatible storage, with the same URL formats and `s3Profile`/`s3Region`/`requestPayer`/`s3UrlFormat` options as PMTiles (by [acalcutt](https://github.com/acalcutt))
 
 ### 🐞 Bug fixes
 - _...Add new stuff here..._
+- fix: `s3+http://` and `s3+https://` URLs were accepted as S3 sources but then failed to parse; they now name a custom endpoint and its scheme, so plain-HTTP stores such as Garage or MinIO work (by [acalcutt](https://github.com/acalcutt))
 
 ## 5.7.0
 ### ✨ Features and improvements

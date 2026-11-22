@@ -23,7 +23,9 @@ import {
   getPublicUrl,
   isValidHttpUrl,
   isValidRemoteUrl,
+  isS3Url,
 } from './utils.js';
+import { getS3Object, s3ConfigFrom } from './s3.js';
 
 import { fileURLToPath, pathToFileURL } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -230,8 +232,13 @@ async function start(opts) {
 
     let styleJSON;
     try {
-      // Style files should only be HTTP/HTTPS, not S3
-      if (isValidHttpUrl(item.style)) {
+      if (isS3Url(item.style)) {
+        const { data } = await getS3Object(
+          item.style,
+          s3ConfigFrom(item, opts.verbose),
+        );
+        styleJSON = JSON.parse(data);
+      } else if (isValidHttpUrl(item.style)) {
         const res = await fetch(item.style);
         if (!res.ok) {
           throw new Error(`fetch error ${res.status}`);

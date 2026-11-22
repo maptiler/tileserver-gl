@@ -13,6 +13,12 @@ import {
   readFile,
   isValidHttpUrl,
 } from './utils.js';
+import {
+  appendToS3Key,
+  getS3Object,
+  resolveS3SpriteUrl,
+  s3ConfigFrom,
+} from './s3.js';
 
 let metricsModule = null;
 
@@ -180,11 +186,15 @@ export const serve_style = {
           }
         }
 
-        const sanitizedSpritePath = sprite.path.replace(/^(\.\.\/)+/, '');
-        const filename = `${sanitizedSpritePath}${spriteScale}.${validatedFormat}`;
+        const spriteSuffix = `${spriteScale}.${validatedFormat}`;
+        const filename = sprite.s3Url
+          ? appendToS3Key(sprite.s3Url, spriteSuffix)
+          : `${sprite.path.replace(/^(\.\.\/)+/, '')}${spriteSuffix}`;
         if (verbose >= 1) console.log(`Loading sprite from: %s`, filename);
         try {
-          const data = await readFile(filename);
+          const data = sprite.s3Url
+            ? (await getS3Object(filename, item.s3Config)).data
+            : await readFile(filename);
 
           if (validatedFormat === 'json') {
             res.header('Content-type', 'application/json');
@@ -357,7 +367,11 @@ export const serve_style = {
     let spritePaths = [];
     if (styleJSON.sprite) {
       if (!Array.isArray(styleJSON.sprite)) {
-        if (!isValidHttpUrl(styleJSON.sprite)) {
+        const s3Url = resolveS3SpriteUrl(styleJSON.sprite, params.style);
+        if (s3Url) {
+          styleJSON.sprite = `local://styles/${id}/sprite`;
+          spritePaths.push({ id: 'default', s3Url });
+        } else if (!isValidHttpUrl(styleJSON.sprite)) {
           let spritePath = path.join(
             options.paths.sprites,
             styleJSON.sprite
@@ -372,7 +386,11 @@ export const serve_style = {
         }
       } else {
         for (let spriteItem of styleJSON.sprite) {
-          if (!isValidHttpUrl(spriteItem.url)) {
+          const s3Url = resolveS3SpriteUrl(spriteItem.url, params.style);
+          if (s3Url) {
+            spriteItem.url = `local://styles/${id}/sprite/` + spriteItem.id;
+            spritePaths.push({ id: spriteItem.id, s3Url });
+          } else if (!isValidHttpUrl(spriteItem.url)) {
             let spritePath = path.join(
               options.paths.sprites,
               spriteItem.url
@@ -397,6 +415,7 @@ export const serve_style = {
     repo[id] = {
       styleJSON,
       spritePaths,
+      s3Config: s3ConfigFrom(params, programOpts.verbose),
       publicUrl,
       name: styleJSON.name,
       lastModified: new Date().toUTCString(),

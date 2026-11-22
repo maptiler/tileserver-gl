@@ -255,12 +255,36 @@ Errors loading the module are logged and the server starts without a decorator, 
 
 Each item in this object defines one style (map). It can have the following options:
 
-* ``style`` -- name of the style json file or url of a remote hosted style [required]
+* ``style`` -- name of the style json file, url of a remote hosted style, or S3 URL of a style [required]
 * ``serve_rendered`` -- whether to render the raster tiles for this style or not
 * ``serve_data`` -- whether to allow access to the original tiles, sprites and required glyphs
 * ``tilejson`` -- properties to add to the TileJSON created for the raster data
 
   * ``format`` and ``bounds`` can be especially useful
+
+* ``s3Profile``, ``s3Region``, ``requestPayer``, ``s3UrlFormat`` -- for a style read from S3, the same options as for an S3 data source (see `Data Source Options`_). They also apply to the style's sprites in S3.
+
+Styles in S3
+------------
+
+A style can be read from AWS S3 or S3-compatible storage with the same URL formats as PMTiles (see `S3 and S3-Compatible Storage`_)::
+
+  "styles": {
+    "basic": {
+      "style": "s3+http://garage.lan:3900/tiles/styles/basic/style.json",
+      "s3Profile": "garage",
+      "s3Region": "garage"
+    }
+  }
+
+The style's sprite is read from S3 when:
+
+* its URL uses ``{styleJsonFolder}``, which for a style in S3 is the folder holding the style in the bucket. ``"sprite": "{styleJsonFolder}/sprite"`` reads ``styles/basic/sprite.json``, ``sprite@2x.png`` and so on from the same bucket. Query parameters on the style URL (``?profile=...``) carry over to the sprite.
+* its URL is itself an S3 URL, such as ``"sprite": "s3://my-bucket/sprites/{style}"``. This works for local styles too.
+
+Any other sprite is resolved as before: an ``http(s)://`` URL is passed to clients, and anything else is a path under the ``sprites`` path. Glyphs are always served from the local ``fonts`` path or an ``http(s)://`` URL.
+
+A style in S3 is read when the server starts. Send ``SIGHUP`` to read it again after changing it.
 
 ``data``
 ========
@@ -433,7 +457,7 @@ For the config above, this is equivalent to ``pmtiles://source2.pmtiles``.
 S3 and S3-Compatible Storage
 -----------------------------
 
-PMTiles files can be accessed directly from AWS S3 or S3-compatible storage services (such as Contabo, DigitalOcean Spaces, MinIO, etc.) using S3 URLs. This provides better performance and eliminates HTTP rate limiting issues.
+PMTiles files, styles and sprites can be accessed directly from AWS S3 or S3-compatible storage services (such as Contabo, DigitalOcean Spaces, MinIO, Garage, etc.) using S3 URLs. This provides better performance and eliminates HTTP rate limiting issues. For styles, see `Styles in S3`_.
 
 **Supported URL Formats:**
 
@@ -442,6 +466,13 @@ PMTiles files can be accessed directly from AWS S3 or S3-compatible storage serv
 
 2. **S3-compatible storage with custom endpoint:**
    ``s3://endpoint-url/bucket-name/path/to/file.pmtiles``
+
+   The endpoint is reached over HTTPS.
+
+3. **S3-compatible storage with custom endpoint and scheme:**
+   ``s3+http://endpoint-url:port/bucket-name/path/to/file.pmtiles`` or ``s3+https://endpoint-url:port/bucket-name/path/to/file.pmtiles``
+
+   Use ``s3+http://`` for a self-hosted store that serves plain HTTP (such as Garage on port 3900 or MinIO on port 9000). The first segment is always the endpoint, so it needs no dot and ``s3UrlFormat`` does not apply.
 
 **AWS Credentials:**
 
